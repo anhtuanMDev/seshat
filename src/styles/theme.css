@@ -1,0 +1,100 @@
+/* ── Seshat Theme Variables ─────────────────────────────────────────────── */
+
+:root,
+[data-theme="light"] {
+  /* Backgrounds */
+  --bg-app:        #faf9f7;
+  --bg-side:       #faf9f7;
+  --bg-main:       #faf9f7;
+  --bg-top:        #faf9f7;
+  --bg-active:     #f0ede8;
+  --bg-hover:      #f5f3f0;
+  --bg-entry:      #faf9f7;
+  --bg-status:     #f0ede8;
+  --bg-export:     rgba(250,249,247,0.94);
+  --bg-export-ta:  #f0ede8;
+  --bg-field:      transparent;
+
+  /* Text */
+  --text-primary:   #1a1a1a;
+  --text-secondary: #444;
+  --text-muted:     #888;
+  --text-logo:      #444;
+  --text-dim:       #444;
+
+  /* Borders */
+  --border:        #e0ddd8;
+  --border-field:  #bbb;
+
+  /* Input */
+  --input-bg:      transparent;
+  --input-color:   #1a1a1a;
+
+  /* Select */
+  --select-bg:     transparent;
+  --select-color:  #1a1a1a;
+
+  /* Semantic colors (unchanged in both themes) */
+  --color-red:     #c0392b;
+  --color-blue:    #2980b9;
+  --color-green:   #27ae60;
+  --color-purple:  #8e44ad;
+  --color-orange:  #e67e22;
+  --color-teal:    #16a085;
+  --color-dark:    #2c3e50;
+  --color-brown:   #d35400;
+
+  /* MUI overrides */
+  --mui-input-before: #bbb;
+  --mui-label-color:  #444;
+  --mui-text-color:   #1a1a1a;
+}
+
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-app:        #12110f;
+  --bg-side:       #16150d;
+  --bg-main:       #12110f;
+  --bg-top:        #16150d;
+  --bg-active:     #1e1c16;
+  --bg-hover:      #1a1915;
+  --bg-entry:      #12110f;
+  --bg-status:     #1e1c16;
+  --bg-export:     rgba(12,11,9,0.96);
+  --bg-export-ta:  #1a1915;
+  --bg-field:      transparent;
+
+  /* Text */
+  --text-primary:   #e8e4dc;
+  --text-secondary: #b5ae9f;
+  --text-muted:     #6b6460;
+  --text-logo:      #b5ae9f;
+  --text-dim:       #b5ae9f;
+
+  /* Borders */
+  --border:        #2e2b24;
+  --border-field:  #3d3830;
+
+  /* Input */
+  --input-bg:      transparent;
+  --input-color:   #e8e4dc;
+
+  /* Select */
+  --select-bg:     #16150d;
+  --select-color:  #e8e4dc;
+
+  /* Semantic colors — slightly lighter for dark bg readability */
+  --color-red:     #e05445;
+  --color-blue:    #4a9fd4;
+  --color-green:   #3dc475;
+  --color-purple:  #a85cc4;
+  --color-orange:  #f0922a;
+  --color-teal:    #1abfa0;
+  --color-dark:    #8095b0;
+  --color-brown:   #e06020;
+
+  /* MUI overrides */
+  --mui-input-before: #3d3830;
+  --mui-label-color:  #b5ae9f;
+  --mui-text-color:   #e8e4dc;
+}

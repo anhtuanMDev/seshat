@@ -1,0 +1,12 @@
+export const CHAR_COLORS = ["#c0392b","#2980b9","#27ae60","#8e44ad","#e67e22","#16a085","#d35400","#2c3e50"];
+export const EVENT_TYPES = ["Story","Trauma","Revelation","Conflict","Bond","Loss","Growth","Mystery"];
+export const POWER_TIERS = ["Latent","Awakening","Capable","Skilled","Elite","Peak","Transcendent"];
+export const DIFFICULTY  = ["Trivial","Minor","Moderate","Significant","Severe","Catastrophic"];
+export const ARC_STAGES  = ["Unaware","Questioning","Resisting","Breaking","Transforming","Integrated"];
+export const COND_TYPES  = ["Physical","Mental","Social","Spiritual","Cursed","Blessed","Wounded","Enhanced"];
+export const EQUIP_SLOTS = ["Weapon","Offhand","Armor","Helmet","Boots","Gloves","Accessory","Relic","Mount","Other"];
+export const TECH_TYPES  = ["Blacksmithing","Martial Art","Technology","Biology","Alchemy","Runic","Forbidden","Other"];
+export const MON_TIERS   = ["Minion","Common","Elite","Champion","Boss","Legendary","World-Threat"];
+export const NAT_TYPES   = ["Kingdom","Empire","Tribe","Republic","Theocracy","Nomadic","Hidden","Ruin"];
+export const RARITY      = ["Common","Uncommon","Rare","Epic","Legendary","Unique","Mythic"];
+export const EQUIP_ACCESS = ["Equipped","Stored","No Access"];
