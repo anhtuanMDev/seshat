@@ -16,6 +16,7 @@
 8. [Features Map](#8-features-map)
 9. [Environment & Config](#9-environment--config)
 10. [Migration to TypeScript](#10-migration-to-typescript)
+11. [Legend State Patterns & Gotchas](#11-legend-state-patterns--gotchas)
 
 ---
 
@@ -297,3 +298,58 @@ TypeScript strict mode with `verbatimModuleSyntax` enforced. All style propertie
 - Entity types (`Character`, `Event`, `Nation`, etc.) defined in `src/lib/types.ts` for reuse
 - Legend State observable patterns require `any` casts for dynamic property access; these are documented with eslint-disable comments
 - `useTheme.tsx` exports types separately to satisfy react-refresh's component-only file restriction
+
+---
+
+## 11. Legend State Patterns & Gotchas
+
+### Common Bug: `.get()` on Array Elements
+
+When accessing array elements in Legend State, calling `.get()` on the array returns raw JavaScript values (not observables). Calling `.get()` again on those raw values causes:
+
+```
+TypeError: worldStore.events.get(...).find(...)?.get is not a function
+```
+
+**Incorrect:**
+```ts
+const event = useSelector(() =>
+  (worldStore.events.get() as any[]).find((e) => e.id === id)?.get(), // BUG
+);
+```
+
+**Correct (for read-only access):**
+```ts
+const event = useSelector(() =>
+  (worldStore.events.get() as any[]).find((e) => e.id === id),
+);
+```
+
+**Correct (for updates, get index too):**
+```ts
+const event = useSelector(() =>
+  (worldStore.events.get() as any[]).find((e) => e.id === id),
+);
+const eventIdx = useSelector(() =>
+  worldStore.events.get().findIndex((e) => e.id === id),
+);
+const up = (f: string, v: any) =>
+  (worldStore.events[eventIdx] as any)[f].set(v);
+```
+
+### Pattern Summary
+
+| Purpose              | Pattern                                                                 |
+| ------------------ | --------------------------------------------------------------------- |
+| Read primitive     | `useSelector(worldStore.title)`                                        |
+| Read array (full)  | `useSelector(() => worldStore.events.get())`                           |
+| Read array (find)  | `worldStore.events.get().find(e => e.id === id)` (raw object, no `.get()`) |
+| Update array item  | Keep index: `worldStore.collection[idx].field.set(newValue)`              |
+
+### Code Generation Reminder
+
+When generating Legend State code:
+- Never call `.get()` on array elements returned by `.find()`, `.map()`, or `.filter()`
+- Always get the array index if you need to update an item later
+- Use `useSelector()` for reactive reads, direct `.get()` only inside selectors
+- Cast to `any` for dynamic property access: `(obj as any).prop.set(value)`

@@ -19,7 +19,7 @@ export default function EventPage() {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const event = useSelector(() =>
-    (worldStore.events.get() as any[]).find((e) => e.id === id)?.get(),
+    (worldStore.events.get() as any[]).find((e) => e.id === id),
   );
   const eventIdx = useSelector(() =>
     worldStore.events.get().findIndex((e) => e.id === id),
