@@ -1,111 +1,151 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "./styles/theme.css";
 
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Georgia", serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 #root {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
+/* ── MUI theme overrides via CSS variables ─────────────────────────────── */
+.MuiInputBase-root {
+  color: var(--mui-text-color) !important;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.MuiInputBase-root::before {
+  border-bottom-color: var(--mui-input-before) !important;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+.MuiInputBase-root:hover::before {
+  border-bottom-color: var(--mui-input-before) !important;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.MuiInputLabel-root {
+  color: var(--mui-label-color) !important;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.MuiInputBase-input {
+  color: var(--mui-text-color) !important;
+  background: transparent !important;
+}
+
+.MuiInputBase-inputMultiline {
+  color: var(--mui-text-color) !important;
+}
+
+.MuiSelect-select {
+  color: var(--mui-text-color) !important;
+  background: var(--select-bg) !important;
+}
+
+.MuiSelect-icon {
+  color: var(--text-secondary) !important;
+}
+
+.MuiPaper-root,
+.MuiMenu-paper,
+.MuiPopover-paper {
+  background: var(--bg-side) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.MuiMenuItem-root {
+  color: var(--text-primary) !important;
+  font-family: "Georgia", serif !important;
+  font-size: 13px !important;
+}
+
+.MuiMenuItem-root:hover,
+.MuiMenuItem-root.Mui-selected {
+  background: var(--bg-hover) !important;
+}
+
+.MuiMenuItem-root.Mui-selected:hover {
+  background: var(--bg-active) !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border-color: var(--border) !important;
+}
+
+.MuiButton-outlined {
+  border-color: var(--border-field) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ── Scrollbar theming ─────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ── Input / textarea reset ────────────────────────────────────────────── */
+input,
+textarea,
+select {
+  color-scheme: light dark;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] input:-webkit-autofill:hover,
+[data-theme="dark"] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-app) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Theme transition ──────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+/* Prevent transition on SVG paths (avoids flicker in icons) */
+svg path,
+svg rect,
+svg circle {
+  transition: none;
 }

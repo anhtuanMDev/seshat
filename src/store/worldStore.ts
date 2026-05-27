@@ -1,14 +1,128 @@
-import { observable } from '@legendapp/state';
-import { configureObservablePersistence, persistObservable } from '@legendapp/state/persist';
-import { ObservablePersistLocalStorage } from '@legendapp/state/persist-plugins/local-storage';
+import { observable } from "@legendapp/state";
+import {
+  configureObservablePersistence,
+  persistObservable,
+} from "@legendapp/state/persist";
+import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/local-storage";
+import type { Character, Event } from "../lib/types";
 
 configureObservablePersistence({ pluginLocal: ObservablePersistLocalStorage });
 
-const INIT = {
-  title: "Untitled world", synopsis: "", setting: "", themes: "", rules: "",
-  nations: [] as any[], techniques: [] as any[], ingredients: [] as any[], monsters: [] as any[], treasures: [] as any[],
-  events: [{ id: Math.random().toString(36).slice(2, 8), time: 1, title: "The story begins", type: "Story", chapter: "", date: "", setting: "", description: "", consequence: "", characters: [] }],
-  characters: [] as any[],
+export type { Character, Event } from "../lib/types";
+
+export interface Nation {
+  id: string;
+  name: string;
+  type: string;
+  capital: string;
+  ruler: string;
+  population: string;
+  geography: string;
+  culture: string;
+  military: string;
+  economy: string;
+  allies: string;
+  enemies: string;
+  secrets: string;
+  lore: string;
+}
+
+export interface Technique {
+  id: string;
+  name: string;
+  type: string;
+  origin: string;
+  creator: string;
+  era: string;
+  description: string;
+  effect: string;
+  requirement: string;
+  cost: string;
+  secret: string;
+  lore: string;
+}
+
+export interface Ingredient {
+  id: string;
+  name: string;
+  rarity: string;
+  location: string;
+  appearance: string;
+  properties: string;
+  uses: string;
+  danger: string;
+  lore: string;
+}
+
+export interface Monster {
+  id: string;
+  name: string;
+  tier: string;
+  habitat: string;
+  appearance: string;
+  abilities: string;
+  weaknesses: string;
+  drops: string;
+  lore: string;
+  behavior: string;
+  firstSeen: string;
+}
+
+export interface Treasure {
+  id: string;
+  name: string;
+  rarity: string;
+  location: string;
+  description: string;
+  stats: string;
+  curses: string;
+  unbindCondition: string;
+  creator: string;
+  history: string;
+  ingredients: string;
+}
+
+interface WorldState {
+  title: string;
+  synopsis: string;
+  setting: string;
+  themes: string;
+  rules: string;
+  nations: Nation[];
+  techniques: Technique[];
+  ingredients: Ingredient[];
+  monsters: Monster[];
+  treasures: Treasure[];
+  events: Event[];
+  characters: Character[];
+}
+
+const INIT: WorldState = {
+  title: "Untitled world",
+  synopsis: "",
+  setting: "",
+  themes: "",
+  rules: "",
+  nations: [],
+  techniques: [],
+  ingredients: [],
+  monsters: [],
+  treasures: [],
+  events: [
+    {
+      id: Math.random().toString(36).slice(2, 8),
+      time: 1,
+      title: "The story begins",
+      type: "Story",
+      chapter: "",
+      date: "",
+      setting: "",
+      description: "",
+      consequence: "",
+      characters: [],
+    },
+  ],
+  characters: [],
 };
 
 export const worldStore = observable(INIT);

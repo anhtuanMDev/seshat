@@ -1,12 +1,15 @@
-/* Base component styles */
+/* Base resets — extended by index.css via @import of theme.css */
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-body, html, #root {
+body,
+html,
+#root {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'Georgia', serif;
 }
