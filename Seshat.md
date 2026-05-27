@@ -21,13 +21,13 @@
 
 ## 1. Stack Overview
 
-| Concern | Library | Why |
-|---|---|---|
-| Framework | React 18 + Vite | Fast HMR, modern JSX transform, ES2023 target |
-| Routing | React Router v6 | Nested routes with layout persistence |
-| State | Legend State | Fine-grained reactivity, built-in persistence, no boilerplate |
-| UI | MUI (Material UI) | Consistent, accessible components |
-| Animation | Anime.js v3 | Timeline-based, works on DOM refs |
+| Concern   | Library           | Why                                                           |
+| --------- | ----------------- | ------------------------------------------------------------- |
+| Framework | React 18 + Vite   | Fast HMR, modern JSX transform, ES2023 target                 |
+| Routing   | React Router v6   | Nested routes with layout persistence                         |
+| State     | Legend State      | Fine-grained reactivity, built-in persistence, no boilerplate |
+| UI        | MUI (Material UI) | Consistent, accessible components                             |
+| Animation | Anime.js v3       | Timeline-based, works on DOM refs                             |
 
 ---
 
@@ -40,14 +40,17 @@ seshat/
 │   ├── lib/
 │   │   ├── constants.ts    # CHAR_COLORS, EVENT_TYPES, POWER_TIERS, etc.
 │   │   ├── utils.ts        # uid(), mkChar(), mkEvent(), S styles object
-│   │   └── export.ts       # buildExport() — world → plaintext
+│   │   ├── export.ts       # buildExport() — world → plaintext
+│   │   └── types.ts        # Shared TypeScript interfaces for entities
 │   │
 │   ├── store/
 │   │   └── worldStore.ts   # Legend State observable + localStorage persistence
 │   │
 │   ├── hooks/
-│   │   ├── useWorldStore.ts # Typed selectors from legend-state
-│   │   └── useAnimateIn.ts  # Reusable anime.js mount animation
+│   │   ├── useWorldStore.ts    # Typed selectors from legend-state
+│   │   ├── useAnimateIn.ts     # Reusable anime.js mount animation
+│   │   ├── useTheme.tsx        # Theme context provider (light/dark toggle)
+│   │   └── useThemeHook.ts     # useTheme hook for consuming components
 │   │
 │   ├── components/
 │   │   ├── ui/               # Primitive, reusable MUI components
@@ -107,16 +110,39 @@ export const router = createBrowserRouter([
 
 ```ts
 import { observable } from "@legendapp/state";
-import { configureObservablePersistence, persistObservable } from "@legendapp/state/persist";
+import {
+  configureObservablePersistence,
+  persistObservable,
+} from "@legendapp/state/persist";
 import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/local-storage";
 
 configureObservablePersistence({ pluginLocal: ObservablePersistLocalStorage });
 
 export const worldStore = observable({
   title: "Untitled world",
-  synopsis: "", setting: "", themes: "", rules: "",
-  nations: [], techniques: [], ingredients: [], monsters: [], treasures: [],
-  events: [{ id: Math.random().toString(36).slice(2, 8), time: 1, title: "The story begins", type: "Story", chapter: "", date: "", setting: "", description: "", consequence: "", characters: [] }],
+  synopsis: "",
+  setting: "",
+  themes: "",
+  rules: "",
+  nations: [],
+  techniques: [],
+  ingredients: [],
+  monsters: [],
+  treasures: [],
+  events: [
+    {
+      id: Math.random().toString(36).slice(2, 8),
+      time: 1,
+      title: "The story begins",
+      type: "Story",
+      chapter: "",
+      date: "",
+      setting: "",
+      description: "",
+      consequence: "",
+      characters: [],
+    },
+  ],
   characters: [],
 });
 
@@ -151,9 +177,9 @@ export const useCharacters = () => useSelector(worldStore.characters);
 
 ```ts
 import { useEffect, useRef } from "react";
-import { animate } from "animejs/animation";
+import { animate } from "animejs";
 
-export function useAnimateIn(options: any = {}) {
+export function useAnimateIn(options: Partial<AnimationParams> = {}) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -178,15 +204,19 @@ export function useAnimateIn(options: any = {}) {
 All pages read from Legend State via typed hooks, render forms inline, write back on change.
 
 ### WorldPage (`/`)
+
 Renders world metadata and world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures).
 
 ### CharacterPage (`/characters/:id`)
+
 Full character sheet with Identity, Psychology, Conditions, Achievements & Losses sections.
 
 ### EventPage (`/events/:id`)
+
 Event editor with per-character attributes (power tier, arc stage, emotional state, etc.).
 
 ### FightPage (`/fight`)
+
 Combat simulation comparing two characters with a weighted score breakdown.
 
 ---
@@ -195,49 +225,52 @@ Combat simulation comparing two characters with a weighted score breakdown.
 
 All UI components in `src/components/ui/` use MUI and accept `value` + `onChange`:
 
-| Component | Props |
-|---|---|
-| `Field` | `{ label, value, onChange, multi?, rows?, placeholder?, width? }` |
-| `Sel` | `{ label, value, onChange, opts: string[] }` |
-| `Toggle` | `{ label, value, onChange }` |
-| `Section` | `{ title, children, action?, defaultOpen? }` |
-| `EntryBlock` | `{ color, onDelete, children }` |
-| `SideItem` | `{ label, sub?, active, color?, onClick, onDelete? }` |
-| `EventPicker` | `{ label, value, onChange, events[] }` |
-| `CharStatusPanel` | `{ char, events[] }` |
+| Component         | Props                                                             |
+| ----------------- | ----------------------------------------------------------------- |
+| `Field`           | `{ label, value, onChange, multi?, rows?, placeholder?, width? }` |
+| `Sel`             | `{ label, value, onChange, opts: string[] }`                      |
+| `Toggle`          | `{ label, value, onChange }`                                      |
+| `Section`         | `{ title, children, action?, defaultOpen? }`                      |
+| `EntryBlock`      | `{ color, onDelete, children }`                                   |
+| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }`             |
+| `EventPicker`     | `{ label, value, onChange, events[] }`                            |
+| `CharStatusPanel` | `{ char, events[] }`                                              |
 
 ---
 
 ## 8. Features Map
 
-| Feature | Location | Store path |
-|---|---|---|
-| World meta | `WorldPage` | `worldStore.title`, `.synopsis`, `.setting`, `.themes`, `.rules` |
-| Nations | `WorldPage` | `worldStore.nations[]` |
-| Techniques | `WorldPage` | `worldStore.techniques[]` |
-| Ingredients | `WorldPage` | `worldStore.ingredients[]` |
-| Monsters | `WorldPage` | `worldStore.monsters[]` |
-| Treasures | `WorldPage` | `worldStore.treasures[]` |
-| Characters | `CharacterPage` | `worldStore.characters[]` |
-| Traumas | `CharacterPage` | `.traumas[]` |
-| Conditions | `CharacterPage` | `.conditions[]` |
-| Achievements | `CharacterPage` | `.achievements[]` |
-| Losses | `CharacterPage` | `.losses[]` |
-| Events | `EventPage` | `worldStore.events[]` |
-| Event attributes | `EventPage` | `worldStore.characters[i].attributes[eventId]` |
-| Fight sim | `FightPage` | Read-only computed |
-| Export | `App.tsx` modal | `buildExport()` |
+| Feature          | Location        | Store path                                                       |
+| ---------------- | --------------- | ---------------------------------------------------------------- |
+| World meta       | `WorldPage`     | `worldStore.title`, `.synopsis`, `.setting`, `.themes`, `.rules` |
+| Nations          | `WorldPage`     | `worldStore.nations[]`                                           |
+| Techniques       | `WorldPage`     | `worldStore.techniques[]`                                        |
+| Ingredients      | `WorldPage`     | `worldStore.ingredients[]`                                       |
+| Monsters         | `WorldPage`     | `worldStore.monsters[]`                                          |
+| Treasures        | `WorldPage`     | `worldStore.treasures[]`                                         |
+| Characters       | `CharacterPage` | `worldStore.characters[]`                                        |
+| Traumas          | `CharacterPage` | `.traumas[]`                                                     |
+| Conditions       | `CharacterPage` | `.conditions[]`                                                  |
+| Achievements     | `CharacterPage` | `.achievements[]`                                                |
+| Losses           | `CharacterPage` | `.losses[]`                                                      |
+| Events           | `EventPage`     | `worldStore.events[]`                                            |
+| Event attributes | `EventPage`     | `worldStore.characters[i].attributes[eventId]`                   |
+| Fight sim        | `FightPage`     | Read-only computed                                               |
+| Export           | `App.tsx` modal | `buildExport()`                                                  |
+| Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
 
 ---
 
 ## 9. Environment & Config
 
 ### `.nvmrc`
+
 ```
 v24
 ```
 
 ### Required Node.js
+
 Node.js v24 (for ES2023 target support in tsconfig).
 
 ---
@@ -246,15 +279,21 @@ Node.js v24 (for ES2023 target support in tsconfig).
 
 The original `Seshat.jsx` was converted to a modular TypeScript project:
 
-| Was in `Seshat.jsx` | Moves to |
-|---|---|
-| All constants | `src/lib/constants.ts` |
-| Maker functions, `uid()`, `S` styles | `src/lib/utils.ts` |
-| `buildExport()` | `src/lib/export.ts` |
-| All UI components | `src/components/ui/*.tsx` |
-| Pages | `src/pages/*.tsx` |
-| State logic | `src/store/worldStore.ts` |
-| Routing | `src/router/index.tsx` |
-| App shell | `src/App.tsx` |
+| Was in `Seshat.jsx`                  | Moves to                  |
+| ------------------------------------ | ------------------------- |
+| All constants                        | `src/lib/constants.ts`    |
+| Maker functions, `uid()`, `S` styles | `src/lib/utils.ts`        |
+| `buildExport()`                      | `src/lib/export.ts`       |
+| All UI components                    | `src/components/ui/*.tsx` |
+| Pages                                | `src/pages/*.tsx`         |
+| State logic                          | `src/store/worldStore.ts` |
+| Routing                              | `src/router/index.tsx`    |
+| App shell                            | `src/App.tsx`             |
 
 TypeScript strict mode with `verbatimModuleSyntax` enforced. All style properties typed as `Record<string, any>` to avoid CSS property type conflicts.
+
+### Type Strategy
+
+- Entity types (`Character`, `Event`, `Nation`, etc.) defined in `src/lib/types.ts` for reuse
+- Legend State observable patterns require `any` casts for dynamic property access; these are documented with eslint-disable comments
+- `useTheme.tsx` exports types separately to satisfy react-refresh's component-only file restriction
