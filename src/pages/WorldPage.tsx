@@ -81,16 +81,18 @@ export default function WorldPage() {
 
   const addItem = (
     field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures",
-    mk: () => any,
+    mk: () => Nation | Technique | Ingredient | Monster | Treasure,
   ) => {
-    setValue(field, [...(getValues(field) as any[]), mk()] as any);
+    const items = getValues(field);
+    setValue(field, [...items, mk()] as typeof items);
   };
 
   const delItem = (
     field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures",
     delId: string,
   ) => {
-    setValue(field, (getValues(field) as any[]).filter((x: any) => x.id !== delId) as any);
+    const items = getValues(field);
+    setValue(field, items.filter((x) => x.id !== delId) as typeof items);
   };
 
   return (
