@@ -1,0 +1,124 @@
+import type { Character, Event, Equipment, Condition } from "./types";
+
+export interface Note {
+  label: string;
+  value: string | undefined;
+  pts: number;
+  positive: boolean;
+  neutral?: boolean;
+}
+
+const POWER_SCORE: Record<string, number> = {
+  Latent: 1, Awakening: 2, Capable: 3, Skilled: 4,
+  Elite: 5, Peak: 6, Transcendent: 7,
+};
+const COND_PENALTY: Record<string, number> = {
+  Physical: -1, Wounded: -1.5, Mental: -0.5, Cursed: -0.5,
+  Spiritual: 0, Social: 0, Blessed: 1, Enhanced: 1,
+};
+const ARC_MOD: Record<string, number> = {
+  Unaware: 0, Questioning: 0.2, Resisting: 0.5,
+  Breaking: 1, Transforming: 1.5, Integrated: 2,
+};
+
+export interface ScoreResult {
+  score: number;
+  notes: Note[];
+  attr: Record<string, string | undefined>;
+  resolveEvent: Event | undefined;
+}
+
+export function scoreFighter(char: Character, events: Event[], atEventId?: string): ScoreResult {
+  let score = 0;
+  const notes: Note[] = [];
+
+  const resolveEvent = atEventId
+    ? events.find((e) => e.id === atEventId)
+    : [...events]
+        .sort((a, b) => b.time - a.time)
+        .find((e) => (e.characters || []).includes(char.id));
+  const attr = resolveEvent ? char.attributes?.[resolveEvent.id] || {} : {};
+
+  const powerTier = attr.power || "";
+  const powerPts = POWER_SCORE[powerTier] || 0;
+  if (powerPts) {
+    score += powerPts * 3;
+    notes.push({ label: "Power tier", value: powerTier, pts: powerPts * 3, positive: true });
+  }
+
+  const skills = char.skills || [];
+  const skillPts = skills.length * 1.2;
+  if (skillPts) {
+    score += skillPts;
+    notes.push({ label: "Skills", value: `${skills.length} known`, pts: Math.round(skillPts * 10) / 10, positive: true });
+  }
+
+  const equippedItems = (char.equipment || []).filter(
+    (eq: Equipment) => (eq.accessState || "Equipped") === "Equipped",
+  );
+  const storedItems = (char.equipment || []).filter(
+    (eq: Equipment) => (eq.accessState || "Equipped") === "Stored",
+  );
+  const noAccessItems = (char.equipment || []).filter(
+    (eq: Equipment) => (eq.accessState || "Equipped") === "No Access",
+  );
+  const cursedEquipped = equippedItems.filter(
+    (eq: Equipment) => eq.curses && eq.curses.trim(),
+  );
+  const equipPts = equippedItems.length * 1.0 - cursedEquipped.length * 0.5;
+  if (equippedItems.length) {
+    score += equipPts;
+    notes.push({
+      label: "Equipped items",
+      value: `${equippedItems.length} on body${cursedEquipped.length ? `, ${cursedEquipped.length} cursed` : ""}`,
+      pts: Math.round(equipPts * 10) / 10,
+      positive: equipPts >= 0,
+    });
+  }
+  if (noAccessItems.length)
+    notes.push({ label: "No access items", value: `${noAccessItems.length} unavailable`, pts: 0, positive: false, neutral: true });
+  if (storedItems.length)
+    notes.push({ label: "Stored items", value: `${storedItems.length} not worn`, pts: 0, positive: false, neutral: true });
+
+  const activeConditions = (char.conditions || []).filter(
+    (cd: Condition) => cd.isActive,
+  );
+  for (const cd of activeConditions) {
+    const pen = COND_PENALTY[cd.type] ?? 0;
+    if (pen !== 0) {
+      score += pen;
+      notes.push({ label: `Condition: ${cd.name}`, value: `[${cd.type}]`, pts: pen, positive: pen > 0 });
+    }
+  }
+
+  const achievePts = (char.achievements || []).length * 0.3;
+  const lossPts = (char.losses || []).length * -0.15;
+  if (achievePts) {
+    score += achievePts;
+    notes.push({ label: "Achievements", value: `${char.achievements!.length}`, pts: Math.round(achievePts * 10) / 10, positive: true });
+  }
+  if (lossPts) {
+    score += lossPts;
+    notes.push({ label: "Losses", value: `${char.losses!.length}`, pts: Math.round(lossPts * 10) / 10, positive: false });
+  }
+
+  const arcMod = (attr.arcStage ? ARC_MOD[attr.arcStage] : undefined) ?? 0;
+  if (arcMod) {
+    score += arcMod;
+    notes.push({ label: "Arc stage", value: attr.arcStage, pts: arcMod, positive: true });
+  }
+
+  const emo = (attr.emotionalState || "").toLowerCase();
+  if (emo.includes("grief") || emo.includes("broken") || emo.includes("despair")) {
+    score -= 1;
+    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: -1, positive: false });
+  } else if (emo.includes("resolute") || emo.includes("focused") || emo.includes("calm")) {
+    score += 0.5;
+    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: 0.5, positive: true });
+  } else if (emo.includes("rage") || emo.includes("fury")) {
+    score += 0.3;
+    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: 0.3, positive: true });
+  }
+
+  return { score: Math.max(0.1, score), notes, attr, resolveEvent };
+}

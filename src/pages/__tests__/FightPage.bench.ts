@@ -1,4 +1,5 @@
 import { bench, describe } from "vitest";
+import { scoreFighter } from "../../lib/scoreFighter";
 import type { Character, Event } from "../../lib/types";
 
 const makeChar = (id: string): Character => ({
@@ -27,32 +28,6 @@ const makeEvent = (id: string, time: number): Event => ({
   consequence: "", characters: [id],
 });
 
-// Inlined scoring logic (same as FightPage.test.ts)
-const POWER_SCORE: Record<string, number> = { Latent: 1, Awakening: 2, Capable: 3, Skilled: 4, Elite: 5, Peak: 6, Transcendent: 7 };
-const COND_PENALTY: Record<string, number> = { Physical: -1, Wounded: -1.5, Mental: -0.5, Cursed: -0.5, Spiritual: 0, Social: 0, Blessed: 1, Enhanced: 1 };
-
-function scoreFighter(char: Character, events: Event[], atEventId?: string) {
-  let score = 0;
-  const resolveEvent = atEventId
-    ? events.find((e) => e.id === atEventId)
-    : [...events].sort((a, b) => b.time - a.time).find((e) => (e.characters || []).includes(char.id));
-  const attr = resolveEvent ? char.attributes?.[resolveEvent.id] || {} : {};
-  const powerPts = POWER_SCORE[attr.power || ""] || 0;
-  if (powerPts) score += powerPts * 3;
-  const skills = char.skills || [];
-  score += skills.length * 1.2;
-  const equipped = (char.equipment || []).filter((eq: any) => (eq.accessState || "Equipped") === "Equipped");
-  const cursed = equipped.filter((eq: any) => eq.curses && eq.curses.trim());
-  score += equipped.length * 1.0 - cursed.length * 0.5;
-  const activeCond = (char.conditions || []).filter((cd: any) => cd.isActive);
-  for (const cd of activeCond) score += COND_PENALTY[cd.type] ?? 0;
-  const achievePts = (char.achievements || []).length * 0.3;
-  const lossPts = (char.losses || []).length * -0.15;
-  score += achievePts + lossPts;
-  return Math.max(0.1, score);
-}
-
-// Build data sets
 const events50 = Array.from({ length: 50 }, (_, i) => makeEvent(`c${i}`, i + 1));
 const chars50 = Array.from({ length: 50 }, (_, i) => makeChar(`c${i}`));
 
@@ -62,7 +37,6 @@ describe("scoreFighter performance", () => {
   });
 
   bench("character with 50 events", () => {
-    // atEventId lookup is O(n) — measure with many events
     scoreFighter(makeChar("test"), events50, "e30");
   });
 

@@ -3,10 +3,13 @@ import { useSelector } from "@legendapp/state/react";
 import { worldStore } from "../store/worldStore";
 import { useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
-import { Field, Sel, Section } from "../components/ui";
+import { Field } from "../components/ui";
+import { CharacterAttrsBlock } from "../components/event/CharacterAttrsBlock";
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import type { Character, EventAttributes, EventType } from "../lib/types";
+import type { EventAttributes, EventType } from "../lib/types";
+import { EVENT_TYPES } from "../lib/constants";
+import { useAnimateIn } from "../hooks/useAnimateIn";
 
 interface EventForm {
   title: string;
@@ -20,13 +23,6 @@ interface EventForm {
   consequence: string;
   characters: string[];
 }
-import {
-  EVENT_TYPES,
-  POWER_TIERS,
-  DIFFICULTY,
-  ARC_STAGES,
-} from "../lib/constants";
-import { useAnimateIn } from "../hooks/useAnimateIn";
 
 export default function EventPage() {
   const { id } = useParams();
@@ -105,8 +101,6 @@ export default function EventPage() {
       [cid]: { ...prev[cid], [f]: v },
     }));
   }, []);
-
-  const getAttr = (cid: string) => charAttrs[cid] || {};
 
   const onSubmit = (data: EventForm) => {
     const ev = worldStore.events[eventIdx];
@@ -246,160 +240,13 @@ export default function EventPage() {
         rows={2}
       />
 
-      <Section title="Characters present">
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 8,
-            marginBottom: 20,
-          }}
-        >
-          {characters.map((c: Character) => {
-            const active = formChars.includes(c.id);
-            return (
-              <button
-                key={c.id}
-                onClick={() => toggleChar(c.id)}
-                style={{
-                  ...S.pill,
-                  color: active ? c.color : "var(--text-muted)",
-                  borderColor: active ? c.color : "var(--border)",
-                  fontFamily: "'Georgia', serif",
-                }}
-              >
-                {c.name}
-              </button>
-            );
-          })}
-          {!characters.length && (
-            <span style={S.dim}>Add characters first.</span>
-          )}
-        </div>
-
-        {formChars.map((cid: string) => {
-          const c = characters.find((x: Character) => x.id === cid);
-          if (!c) return null;
-          const a = getAttr(cid);
-          return (
-            <div
-              key={cid}
-              style={{
-                marginBottom: 28,
-                paddingLeft: 14,
-                borderLeft: `2px solid ${c.color}60`,
-              }}
-            >
-              <p
-                style={{
-                  ...S.dim,
-                  marginBottom: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    background: c.color,
-                    display: "inline-block",
-                  }}
-                />
-                {c.name}
-              </p>
-              <div style={S.grid3}>
-                <Sel
-                  label="Power tier"
-                  value={a.power || ""}
-                  onChange={(v) => patchAttr(cid, "power", v)}
-                  opts={POWER_TIERS}
-                />
-                <Sel
-                  label="Difficulty faced"
-                  value={a.difficulty || ""}
-                  onChange={(v) => patchAttr(cid, "difficulty", v)}
-                  opts={DIFFICULTY}
-                />
-                <Sel
-                  label="Arc stage"
-                  value={a.arcStage || ""}
-                  onChange={(v) => patchAttr(cid, "arcStage", v)}
-                  opts={ARC_STAGES}
-                />
-                <Field
-                  label="Emotional state"
-                  value={a.emotionalState || ""}
-                  onChange={(v) => patchAttr(cid, "emotionalState", v)}
-                  placeholder="Grief, resolute…"
-                />
-                <Field
-                  label="Physical state"
-                  value={a.physicalState || ""}
-                  onChange={(v) => patchAttr(cid, "physicalState", v)}
-                  placeholder="Injured, peak…"
-                />
-                <Field
-                  label="Scene motive"
-                  value={a.sceneMotive || ""}
-                  onChange={(v) => patchAttr(cid, "sceneMotive", v)}
-                  placeholder="What they want right now"
-                />
-              </div>
-              <div style={S.grid2}>
-                <Field
-                  label="Knowledge held"
-                  value={a.knowledge || ""}
-                  onChange={(v) => patchAttr(cid, "knowledge", v)}
-                  placeholder="What they know here…"
-                />
-                <Field
-                  label="Active beliefs"
-                  value={a.beliefs || ""}
-                  onChange={(v) => patchAttr(cid, "beliefs", v)}
-                  placeholder="Truths they hold now…"
-                />
-                <Field
-                  label="Secret in this scene"
-                  value={a.secret || ""}
-                  onChange={(v) => patchAttr(cid, "secret", v)}
-                  placeholder="What they're hiding here…"
-                />
-                <Field
-                  label="Trauma surfacing"
-                  value={a.traumaActive || ""}
-                  onChange={(v) => patchAttr(cid, "traumaActive", v)}
-                  placeholder="Which wound is active?"
-                />
-              </div>
-              <div style={S.grid2}>
-                <Field
-                  label="Before this event"
-                  value={a.arcBefore || ""}
-                  onChange={(v) => patchAttr(cid, "arcBefore", v)}
-                  placeholder="Who they are walking in…"
-                />
-                <Field
-                  label="After this event"
-                  value={a.arcAfter || ""}
-                  onChange={(v) => patchAttr(cid, "arcAfter", v)}
-                  placeholder="How this changes them…"
-                />
-              </div>
-              <Field
-                label="AI narrator note"
-                value={a.notes || ""}
-                onChange={(v) => patchAttr(cid, "notes", v)}
-                multi
-                rows={2}
-                placeholder="Private instruction. Subtext, what they can't say, how to betray the wound without naming it."
-              />
-            </div>
-          );
-        })}
-      </Section>
+      <CharacterAttrsBlock
+        characters={characters}
+        selectedIds={formChars}
+        charAttrs={charAttrs}
+        onToggle={toggleChar}
+        onPatchAttr={patchAttr}
+      />
     </div>
   );
 }
