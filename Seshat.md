@@ -22,14 +22,15 @@
 
 ## 1. Stack Overview
 
-| Concern   | Library           | Why                                                           |
-| --------- | ----------------- | ------------------------------------------------------------- |
-| Framework | React 18 + Vite   | Fast HMR, modern JSX transform, ES2023 target                 |
-| Routing   | React Router v6   | Nested routes with layout persistence                         |
-| State     | Legend State      | Fine-grained reactivity, built-in persistence, no boilerplate |
-| Forms     | react-hook-form   | Performant local form state, minimal re-renders               |
-| UI        | MUI (Material UI) | Consistent, accessible components                             |
-| Animation | Anime.js v3       | Timeline-based, works on DOM refs                             |
+| Concern     | Library                      | Why                                                           |
+| ----------- | ---------------------------- | ------------------------------------------------------------- |
+| Framework   | React 19 + Vite 8            | Fast HMR, modern JSX transform, ES2023 target                 |
+| Routing     | React Router v7              | Nested routes with layout persistence                         |
+| State       | Legend State                 | Fine-grained reactivity, built-in persistence, no boilerplate |
+| Forms       | react-hook-form + zod        | Performant local form state, minimal re-renders               |
+| UI          | MUI (Material UI) v9         | Consistent, accessible components                             |
+| Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
+| Testing     | Vitest + testing-library     | Unit/integration tests with jsdom environment                 |
 
 ---
 
@@ -40,13 +41,17 @@ seshat/
 ├── public/
 ├── src/
 │   ├── lib/
-│   │   ├── constants.ts    # CHAR_COLORS, EVENT_TYPES, POWER_TIERS, etc.
-│   │   ├── utils.ts        # uid(), mkChar(), mkEvent(), S styles object
-│   │   ├── export.ts       # buildExport() — world → plaintext
-│   │   └── types.ts        # Shared TypeScript interfaces for entities
+│   │   ├── constants.ts        # CHAR_COLORS, EVENT_TYPES, POWER_TIERS, etc.
+│   │   ├── utils.ts            # uid(), mkChar(), mkEvent(), S styles object
+│   │   ├── export.ts           # buildExport() — world → plaintext
+│   │   ├── types.ts            # Shared TypeScript interfaces for entities
+│   │   └── __tests__/          # Unit tests for lib utilities
+│   │       ├── utils.test.ts
+│   │       ├── export.test.ts
+│   │       └── export.bench.ts
 │   │
 │   ├── store/
-│   │   └── worldStore.ts   # Legend State observable + localStorage persistence
+│   │   └── worldStore.ts       # Legend State observable + localStorage persistence
 │   │
 │   ├── hooks/
 │   │   ├── useWorldStore.ts    # Typed selectors from legend-state
@@ -56,14 +61,19 @@ seshat/
 │   │
 │   ├── components/
 │   │   ├── ui/               # Primitive, reusable MUI components
-│   │   │   ├── Field.tsx     # MUI TextField wrapper
-│   │   │   ├── Sel.tsx       # MUI Select wrapper
-│   │   │   ├── Toggle.tsx    # MUI Button toggle
+│   │   │   ├── Field.tsx     # MUI TextField wrapper (generic <T extends FieldValues>)
+│   │   │   ├── Sel.tsx       # MUI Select wrapper (generic <T extends FieldValues>)
+│   │   │   ├── Toggle.tsx    # MUI Button toggle (generic <T extends FieldValues>)
 │   │   │   ├── Section.tsx   # Collapsible section wrapper
 │   │   │   ├── EntryBlock.tsx # Left-border content card
 │   │   │   ├── SideItem.tsx  # Sidebar nav item
-│   │   │   ├── EventPicker.tsx # Dropdown for timeline events
-│   │   │   └── CharStatusPanel.tsx # Character status badges
+│   │   │   ├── EventPicker.tsx # Dropdown for timeline events (generic <T extends FieldValues>)
+│   │   │   ├── CharStatusPanel.tsx # Character status badges
+│   │   │   └── __tests__/    # Component smoke tests
+│   │   │       ├── Field.test.tsx
+│   │   │       ├── Sel.test.tsx
+│   │   │       ├── Toggle.test.tsx
+│   │   │       └── EventPicker.test.tsx
 │   │   └── editor/
 │   │       └── RichEditor.tsx # Rich text editor (focus mode)
 │   │
@@ -72,13 +82,19 @@ seshat/
 │   │   ├── CharacterPage.tsx # Full character sheet
 │   │   ├── EventPage.tsx     # Event sheet + character attributes
 │   │   ├── ChapterPage.tsx   # Chapter prose editor with reference panel
-│   │   └── FightPage.tsx     # Fight simulator
+│   │   ├── FightPage.tsx     # Fight simulator
+│   │   └── __tests__/        # Page logic tests
+│   │       ├── FightPage.test.ts
+│   │       └── FightPage.bench.ts
+│   │
+│   ├── test/
+│   │   └── setup.ts          # Vitest setup (localStorage stub, jest-dom matchers)
 │   │
 │   ├── router/
-│   │   └── index.tsx       # createBrowserRouter definition
+│   │   └── index.tsx         # createBrowserRouter definition
 │   │
-│   ├── App.tsx             # Root layout (topbar + sidebar)
-│   └── main.tsx            # App entry — providers wrapper
+│   ├── App.tsx               # Root layout (topbar + sidebar)
+│   └── main.tsx              # App entry — providers wrapper
 │
 ├── .nvmrc                  # Node.js v24 requirement
 ├── kilo.json
@@ -454,6 +470,46 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 | React Compiler safety    | Prefer `useWatch` over `watch()`; extract sub-components for array items  |
 | Native input in form     | `{...register("field")}`                                                |
 | Array item sub-component | Define `ItemBlockProps` with `Control`, `UseFormSetValue`; pass `control`, `index` |
+
+## 12. Testing
+
+### Stack
+
+| Concern       | Library                  | Why                                       |
+| ------------- | ------------------------ | ----------------------------------------- |
+| Runner        | Vitest v4                | Vite-native, fast, supports bench mode    |
+| DOM env       | jsdom                    | Component rendering in Node               |
+| Component     | @testing-library/react   | Renders React components for smoke tests  |
+| Matchers      | @testing-library/jest-dom | DOM assertions (`toBeInTheDocument`, etc.) |
+| User events   | @testing-library/user-event | Realistic click/type simulation        |
+
+### Scripts
+
+| Command              | Action                                    |
+| -------------------- | ----------------------------------------- |
+| `npm test`           | `vitest run` — run all `.test.ts(x)` files |
+| `npm run test:watch` | `vitest` — watch mode                     |
+| `npm run test:bench` | `vitest bench --run` — run `.bench.ts(x)`  |
+
+Benchmark files (`.bench.ts`) are excluded from the normal `vitest run` and must be run via the bench command.
+
+### Test File Layout
+
+```
+src/lib/__tests__/          # Pure-logic unit tests
+src/pages/__tests__/        # Page-level logic tests (e.g. scoreFighter)
+src/components/ui/__tests__/ # Component smoke/rendering tests
+```
+
+### Conventions
+
+- `scoreFighter` in `FightPage.tsx` is a private function — tests replicate the logic directly
+- Use `describe` + `it` blocks; prefer `expect().toBe*` matchers from jest-dom
+- Mock `localStorage` in setup (no persistence during tests)
+- MUI Select components render `MenuItem` children in a portal — do not query them via `getByRole("option")` until the dropdown is opened; use `getByRole("combobox")` instead
+- Benchmarks use `bench()` from vitest; iterate over large datasets (50 chars, 100 events) for meaningful measurements
+
+---
 
 ### Code Generation Reminder
 

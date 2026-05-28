@@ -5,7 +5,7 @@ import { useEvents, useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { Character, Event } from "../lib/types";
 import RichEditor from "../components/editor/RichEditor";
 
@@ -253,7 +253,7 @@ export default function ChapterPage() {
       ) ?? -1,
   );
 
-  const { register, handleSubmit, watch, reset, setValue } = useForm<ChapterForm>({
+  const { register, handleSubmit, control, reset, setValue } = useForm<ChapterForm>({
     defaultValues: {
       number: "",
       title: "",
@@ -299,7 +299,7 @@ export default function ChapterPage() {
     el.style.height = el.scrollHeight + "px";
   }, []);
 
-  const body = watch("body");
+  const body = useWatch({ control, name: "body" });
   const bodyRegister = register("body");
 
   useEffect(() => {
@@ -599,8 +599,8 @@ export default function ChapterPage() {
         )}
         {focusMode && (
           <RichEditor
-            content={body}
-            onChange={(html) => setValue("body", html)}
+            control={control}
+            name="body"
           />
         )}
 

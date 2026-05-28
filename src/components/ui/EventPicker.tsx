@@ -1,5 +1,7 @@
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useController } from "react-hook-form";
+import type { Control, FieldValues } from "react-hook-form";
 
 const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
@@ -29,25 +31,22 @@ const StyledFormControl = styled(FormControl)(() => ({
   },
 }));
 
-interface EventPickerProps {
+interface EventPickerProps<T extends FieldValues = FieldValues> {
   label?: string;
-  value: string;
-  onChange: (v: string) => void;
+  value?: string;
+  onChange?: (v: string) => void;
   events: Array<{ id: string; time: number; title: string }>;
+  control?: Control<T>;
+  name?: string;
 }
 
-export function EventPicker({
-  label,
-  value,
-  onChange,
-  events,
-}: EventPickerProps) {
+function EventPickerInner({ label, value, onChange, events }: EventPickerProps) {
   return (
     <StyledFormControl variant="standard">
       {label && <InputLabel>{label}</InputLabel>}
       <Select
-        value={value}
-        onChange={(e) => onChange(e.target.value as string)}
+        value={value ?? ""}
+        onChange={(e) => onChange?.(e.target.value as string)}
         label={label}
         MenuProps={{
           slotProps: {
@@ -88,4 +87,16 @@ export function EventPicker({
       </Select>
     </StyledFormControl>
   );
+}
+
+function ControlledEventPicker<T extends FieldValues>({ control, name, ...props }: EventPickerProps<T>) {
+  const { field } = useController({ control: control!, name: name! });
+  return <EventPickerInner {...props} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
+}
+
+export function EventPicker<T extends FieldValues = FieldValues>(props: EventPickerProps<T>) {
+  if (props.control && props.name) {
+    return <ControlledEventPicker<T> {...(props as EventPickerProps<T>)} />;
+  }
+  return <EventPickerInner {...props} />;
 }

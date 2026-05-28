@@ -1,5 +1,7 @@
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useController } from "react-hook-form";
+import type { Control, FieldValues } from "react-hook-form";
 
 const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
@@ -30,20 +32,22 @@ const StyledFormControl = styled(FormControl)(() => ({
   },
 }));
 
-interface SelProps {
+interface SelProps<T extends FieldValues = FieldValues> {
   label?: string;
-  value: string;
-  onChange: (v: string) => void;
+  value?: string;
+  onChange?: (v: string) => void;
   opts: string[];
+  control?: Control<T>;
+  name?: string;
 }
 
-export function Sel({ label, value, onChange, opts }: SelProps) {
+function SelInner({ label, value, onChange, opts }: SelProps) {
   return (
     <StyledFormControl variant="standard">
       {label && <InputLabel>{label}</InputLabel>}
       <Select
-        value={value}
-        onChange={(e) => onChange(e.target.value as string)}
+        value={value ?? ""}
+        onChange={(e) => onChange?.(e.target.value as string)}
         label={label}
         MenuProps={{
           slotProps: {
@@ -82,4 +86,16 @@ export function Sel({ label, value, onChange, opts }: SelProps) {
       </Select>
     </StyledFormControl>
   );
+}
+
+function ControlledSel<T extends FieldValues>({ control, name, ...props }: SelProps<T>) {
+  const { field } = useController({ control: control!, name: name! });
+  return <SelInner {...props} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
+}
+
+export function Sel<T extends FieldValues = FieldValues>(props: SelProps<T>) {
+  if (props.control && props.name) {
+    return <ControlledSel<T> {...(props as SelProps<T>)} />;
+  }
+  return <SelInner {...props} />;
 }

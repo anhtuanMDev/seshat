@@ -1,6 +1,8 @@
 import { TextField } from "@mui/material";
 import type { TextFieldProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useController } from "react-hook-form";
+import type { Control, FieldValues } from "react-hook-form";
 
 const StyledTextField = styled(TextField)(() => ({
   width: "100%",
@@ -29,31 +31,25 @@ const StyledTextField = styled(TextField)(() => ({
   },
 }));
 
-interface FieldProps extends Omit<
+interface FieldProps<T extends FieldValues = FieldValues> extends Omit<
   TextFieldProps,
-  "onChange" | "multiline" | "rows" | "variant"
+  "onChange" | "multiline" | "rows" | "variant" | "value"
 > {
   label?: string;
-  value: string;
-  onChange: (v: string) => void;
+  value?: string;
+  onChange?: (v: string) => void;
+  control?: Control<T>;
+  name?: string;
   multi?: boolean;
   rows?: number;
 }
 
-export function Field({
-  label,
-  value,
-  onChange,
-  multi,
-  rows = 3,
-  placeholder = "",
-  ...props
-}: FieldProps) {
+function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "", ...props }: FieldProps) {
   return (
     <StyledTextField
       label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
+      value={value ?? ""}
+      onChange={(e) => onChange?.(e.target.value)}
       multiline={multi}
       rows={multi ? rows : undefined}
       placeholder={placeholder}
@@ -62,4 +58,16 @@ export function Field({
       {...props}
     />
   );
+}
+
+function ControlledField<T extends FieldValues>({ control, name, ...props }: FieldProps<T>) {
+  const { field } = useController({ control: control!, name: name! });
+  return <FieldInner {...props} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
+}
+
+export function Field<T extends FieldValues = FieldValues>(props: FieldProps<T>) {
+  if (props.control && props.name) {
+    return <ControlledField<T> {...(props as FieldProps<T>)} />;
+  }
+  return <FieldInner {...props} />;
 }

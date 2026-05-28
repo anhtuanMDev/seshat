@@ -5,7 +5,7 @@ import { useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field, Sel, Section } from "../components/ui";
 import { useState, useEffect, useCallback } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type { Character, EventAttributes, EventType } from "../lib/types";
 
 interface EventForm {
@@ -43,7 +43,7 @@ export default function EventPage() {
     {},
   );
 
-  const { register, handleSubmit, watch, reset, setValue, getValues } = useForm<EventForm>({
+  const { register, handleSubmit, control, reset, setValue, getValues } = useForm<EventForm>({
     defaultValues: {
       title: "",
       time: 1,
@@ -134,7 +134,7 @@ export default function EventPage() {
     });
   };
 
-  const formChars = watch("characters");
+  const formChars = useWatch({ control, name: "characters" }) || [];
 
   return (
     <div ref={ref}>
@@ -203,8 +203,8 @@ export default function EventPage() {
         </div>
         <Field
           label="Chapter"
-          value={watch("chapter")}
-          onChange={(v) => setValue("chapter", v)}
+          name="chapter"
+          control={control}
           placeholder="3 or Prologue"
         />
         <div>
@@ -227,21 +227,21 @@ export default function EventPage() {
 
       <Field
         label="Setting / location"
-        value={watch("setting")}
-        onChange={(v) => setValue("setting", v)}
+        name="setting"
+        control={control}
         placeholder="Where and what it feels like here…"
       />
       <Field
         label="What happens"
-        value={watch("description")}
-        onChange={(v) => setValue("description", v)}
+        name="description"
+        control={control}
         multi
         rows={3}
       />
       <Field
         label="Consequence / after-effects"
-        value={watch("consequence")}
-        onChange={(v) => setValue("consequence", v)}
+        name="consequence"
+        control={control}
         multi
         rows={2}
       />

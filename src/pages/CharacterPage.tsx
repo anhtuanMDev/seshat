@@ -24,7 +24,7 @@ import { Button, styled } from "@mui/material";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import type { Control, UseFormSetValue } from "react-hook-form";
+import type { Control } from "react-hook-form";
 
 import type {
   Trauma,
@@ -32,7 +32,6 @@ import type {
   Achievement,
   Loss,
   StatusEntry,
-  CondType,
 } from "../lib/types";
 
 interface CharacterForm {
@@ -68,7 +67,6 @@ const GhostButton = styled(Button)(() => ({
 interface BlockProps {
   control: Control<CharacterForm>;
   index: number;
-  setValue: UseFormSetValue<CharacterForm>;
   onDelete: () => void;
 }
 
@@ -77,57 +75,41 @@ function TraumaBlock({
   index,
   color,
   onDelete,
-  setValue,
 }: BlockProps & { color: string }) {
-  const title = useWatch({ control, name: `traumas.${index}.title` as const });
-  const when = useWatch({ control, name: `traumas.${index}.when` as const });
-  const description = useWatch({
-    control,
-    name: `traumas.${index}.description` as const,
-  });
-  const trigger = useWatch({
-    control,
-    name: `traumas.${index}.trigger` as const,
-  });
-  const manifestation = useWatch({
-    control,
-    name: `traumas.${index}.manifestation` as const,
-  });
-
   return (
     <EntryBlock color={color} onDelete={onDelete}>
       <div style={S.grid2}>
         <Field
           label="Trauma name"
-          value={title}
-          onChange={(v) => setValue(`traumas.${index}.title`, v)}
+          name={`traumas.${index}.title` as const}
+          control={control}
           placeholder="The abandonment…"
         />
         <Field
           label="When it happened"
-          value={when}
-          onChange={(v) => setValue(`traumas.${index}.when`, v)}
+          name={`traumas.${index}.when` as const}
+          control={control}
           placeholder="T2, age 12…"
         />
       </div>
       <Field
         label="What happened"
-        value={description}
-        onChange={(v) => setValue(`traumas.${index}.description`, v)}
+        name={`traumas.${index}.description` as const}
+        control={control}
         multi
         rows={2}
       />
       <div style={S.grid2}>
         <Field
           label="Triggered by"
-          value={trigger}
-          onChange={(v) => setValue(`traumas.${index}.trigger`, v)}
+          name={`traumas.${index}.trigger` as const}
+          control={control}
           placeholder="Loud voices, being abandoned…"
         />
         <Field
           label="Manifests as"
-          value={manifestation}
-          onChange={(v) => setValue(`traumas.${index}.manifestation`, v)}
+          name={`traumas.${index}.manifestation` as const}
+          control={control}
           placeholder="Freezes, lashes out…"
         />
       </div>
@@ -140,91 +122,66 @@ function ConditionBlock({
   index,
   color,
   onDelete,
-  setValue,
   events,
 }: BlockProps & {
   color: string;
   events: Array<{ id: string; time: number; title: string }>;
 }) {
-  const type = useWatch({ control, name: `conditions.${index}.type` as const });
-  const name = useWatch({ control, name: `conditions.${index}.name` as const });
-  const isActive = useWatch({
-    control,
-    name: `conditions.${index}.isActive` as const,
-  });
-  const atTime = useWatch({
-    control,
-    name: `conditions.${index}.atTime` as const,
-  });
-  const atEventId = useWatch({
-    control,
-    name: `conditions.${index}.atEventId` as const,
-  });
-  const why = useWatch({ control, name: `conditions.${index}.why` as const });
-  const description = useWatch({
-    control,
-    name: `conditions.${index}.description` as const,
-  });
-  const effects = useWatch({
-    control,
-    name: `conditions.${index}.effects` as const,
-  });
-
   return (
     <EntryBlock color={color} onDelete={onDelete}>
       <div style={S.grid3}>
         <Sel
           label="Type"
-          value={type}
-          onChange={(v) => setValue(`conditions.${index}.type`, v as CondType)}
+          name={`conditions.${index}.type` as const}
+          control={control}
           opts={COND_TYPES}
         />
         <Field
           label="Name"
-          value={name}
-          onChange={(v) => setValue(`conditions.${index}.name`, v)}
+          name={`conditions.${index}.name` as const}
+          control={control}
           placeholder="Cursed sight, broken ribs…"
         />
         <Toggle
           label="Currently active?"
-          value={isActive}
-          onChange={(v) => setValue(`conditions.${index}.isActive`, v)}
+          name={`conditions.${index}.isActive` as const}
+          control={control}
         />
       </div>
       <div style={S.grid2}>
         <Field
           label="At time (T#)"
-          value={atTime}
-          onChange={(v) => setValue(`conditions.${index}.atTime`, v)}
+          name={`conditions.${index}.atTime` as const}
+          control={control}
           placeholder="T3"
         />
         <EventPicker
           label="At event"
-          value={atEventId}
-          onChange={(v) => setValue(`conditions.${index}.atEventId`, v)}
+          name={`conditions.${index}.atEventId` as const}
+          control={control}
           events={events}
         />
       </div>
       <Field
         label="Why / how they got it"
-        value={why}
-        onChange={(v) => setValue(`conditions.${index}.why`, v)}
+        name={`conditions.${index}.why` as const}
+        control={control}
         multi
         rows={2}
         placeholder="What caused this condition?"
       />
       <Field
         label="Description"
-        value={description}
-        onChange={(v) => setValue(`conditions.${index}.description`, v)}
+        name={`conditions.${index}.description` as const}
+        control={control}
         multi
         rows={2}
         placeholder="What does it feel like, look like?"
       />
       <Field
         label="Effects on the character"
-        value={effects}
-        onChange={(v) => setValue(`conditions.${index}.effects`, v)}
+        name={`conditions.${index}.effects` as const}
+        control={control}
         multi
         rows={2}
       />
@@ -236,66 +193,44 @@ function AchievementBlock({
   control,
   index,
   onDelete,
-  setValue,
   events,
 }: BlockProps & {
   events: Array<{ id: string; time: number; title: string }>;
 }) {
-  const title = useWatch({
-    control,
-    name: `achievements.${index}.title` as const,
-  });
-  const atTime = useWatch({
-    control,
-    name: `achievements.${index}.atTime` as const,
-  });
-  const atEventId = useWatch({
-    control,
-    name: `achievements.${index}.atEventId` as const,
-  });
-  const description = useWatch({
-    control,
-    name: `achievements.${index}.description` as const,
-  });
-  const gained = useWatch({
-    control,
-    name: `achievements.${index}.gained` as const,
-  });
-
   return (
     <EntryBlock color="var(--color-green)" onDelete={onDelete}>
       <div style={S.grid2}>
         <Field
           label="Title"
-          value={title}
-          onChange={(v) => setValue(`achievements.${index}.title`, v)}
+          name={`achievements.${index}.title` as const}
+          control={control}
           placeholder="Mastered the void step…"
         />
         <Field
           label="At time (T#)"
-          value={atTime}
-          onChange={(v) => setValue(`achievements.${index}.atTime`, v)}
+          name={`achievements.${index}.atTime` as const}
+          control={control}
           placeholder="T4"
         />
       </div>
       <EventPicker
         label="At event"
-        value={atEventId}
-        onChange={(v) => setValue(`achievements.${index}.atEventId`, v)}
+        name={`achievements.${index}.atEventId` as const}
+        control={control}
         events={events}
       />
       <Field
         label="Description"
-        value={description}
-        onChange={(v) => setValue(`achievements.${index}.description`, v)}
+        name={`achievements.${index}.description` as const}
+        control={control}
         multi
         rows={2}
         placeholder="What happened. Why it matters."
       />
       <Field
         label="What they gained"
-        value={gained}
-        onChange={(v) => setValue(`achievements.${index}.gained`, v)}
+        name={`achievements.${index}.gained` as const}
+        control={control}
         placeholder="Respect of the guild, a new power, a scar…"
       />
     </EntryBlock>
@@ -306,51 +241,36 @@ function LossBlock({
   control,
   index,
   onDelete,
-  setValue,
   events,
 }: BlockProps & {
   events: Array<{ id: string; time: number; title: string }>;
 }) {
-  const title = useWatch({ control, name: `losses.${index}.title` as const });
-  const atTime = useWatch({
-    control,
-    name: `losses.${index}.atTime` as const,
-  });
-  const atEventId = useWatch({
-    control,
-    name: `losses.${index}.atEventId` as const,
-  });
-  const description = useWatch({
-    control,
-    name: `losses.${index}.description` as const,
-  });
-
   return (
     <EntryBlock color="var(--color-red)" onDelete={onDelete}>
       <div style={S.grid2}>
         <Field
           label="What was lost"
-          value={title}
-          onChange={(v) => setValue(`losses.${index}.title`, v)}
+          name={`losses.${index}.title` as const}
+          control={control}
           placeholder="Their mentor, their right eye…"
         />
         <Field
           label="At time (T#)"
-          value={atTime}
-          onChange={(v) => setValue(`losses.${index}.atTime`, v)}
+          name={`losses.${index}.atTime` as const}
+          control={control}
           placeholder="T6"
         />
       </div>
       <EventPicker
         label="At event"
-        value={atEventId}
-        onChange={(v) => setValue(`losses.${index}.atEventId`, v)}
+        name={`losses.${index}.atEventId` as const}
+        control={control}
         events={events}
       />
       <Field
         label="Description"
-        value={description}
-        onChange={(v) => setValue(`losses.${index}.description`, v)}
+        name={`losses.${index}.description` as const}
+        control={control}
         multi
         rows={2}
         placeholder="How it happened. What it cost them emotionally."
@@ -416,15 +336,6 @@ export default function CharacterPage() {
 
   const ref = useAnimateIn();
 
-  const role = useWatch({ control, name: "role" });
-  const archetype = useWatch({ control, name: "archetype" });
-  const coreWound = useWatch({ control, name: "coreWound" });
-  const coreFear = useWatch({ control, name: "coreFear" });
-  const coreDesire = useWatch({ control, name: "coreDesire" });
-  const philosophy = useWatch({ control, name: "philosophy" });
-  const secrets = useWatch({ control, name: "secrets" });
-  const arcStart = useWatch({ control, name: "arcStart" });
-  const arcEnd = useWatch({ control, name: "arcEnd" });
   const statusTimeline = useWatch({ control, name: "statusTimeline" }) || [];
   const traumas = useWatch({ control, name: "traumas" }) || [];
   const conditions = useWatch({ control, name: "conditions" }) || [];
@@ -576,14 +487,14 @@ export default function CharacterPage() {
         <div style={S.grid2}>
           <Field
             label="Role in story"
-            value={role}
-            onChange={(v) => setValue("role", v)}
+            name="role"
+            control={control}
             placeholder="Protagonist, mentor…"
           />
           <Field
             label="Archetype"
-            value={archetype}
-            onChange={(v) => setValue("archetype", v)}
+            name="archetype"
+            control={control}
             placeholder="The trickster…"
           />
         </div>
@@ -593,8 +504,8 @@ export default function CharacterPage() {
       <Section title="Psychological core">
         <Field
           label="Core wound"
-          value={coreWound}
-          onChange={(v) => setValue("coreWound", v)}
+          name="coreWound"
+          control={control}
           multi
           rows={2}
           placeholder="The formative trauma that shaped everything."
@@ -602,29 +513,29 @@ export default function CharacterPage() {
         <div style={S.grid2}>
           <Field
             label="Core fear"
-            value={coreFear}
-            onChange={(v) => setValue("coreFear", v)}
+            name="coreFear"
+            control={control}
             placeholder="What they most dread."
           />
           <Field
             label="Core desire"
-            value={coreDesire}
-            onChange={(v) => setValue("coreDesire", v)}
+            name="coreDesire"
+            control={control}
             placeholder="What they most want."
           />
         </div>
         <Field
           label="Philosophy / belief system"
-          value={philosophy}
-          onChange={(v) => setValue("philosophy", v)}
+          name="philosophy"
+          control={control}
           multi
           rows={2}
           placeholder="How they see the world."
         />
         <Field
           label="Secrets (always carried)"
-          value={secrets}
-          onChange={(v) => setValue("secrets", v)}
+          name="secrets"
+          control={control}
           multi
           rows={2}
           placeholder="What they hide. How it shapes every word they say."
@@ -639,7 +550,6 @@ export default function CharacterPage() {
             index={i}
             color={char.color}
             onDelete={() => delItem(t.id)}
-            setValue={setValue}
           />
         ))}
         <GhostButton onClick={addTrauma}>+ add trauma</GhostButton>
@@ -654,14 +564,14 @@ export default function CharacterPage() {
         <div style={S.grid2}>
           <Field
             label="Arc start — who they are"
-            value={arcStart}
-            onChange={(v) => setValue("arcStart", v)}
+            name="arcStart"
+            control={control}
             placeholder="Closed off, convinced the world is cruel…"
           />
           <Field
             label="Arc end — who they become"
-            value={arcEnd}
-            onChange={(v) => setValue("arcEnd", v)}
+            name="arcEnd"
+            control={control}
             placeholder="Capable of trust, grief without collapse…"
           />
         </div>
@@ -683,13 +593,10 @@ export default function CharacterPage() {
             index={i}
             color={cd.isActive ? "var(--color-orange)" : "var(--border)"}
             onDelete={() => delItem(cd.id)}
-            setValue={setValue}
             events={events}
           />
         ))}
-        {!conditions.length && (
-          <p style={S.dim}>No conditions yet.</p>
-        )}
+        {!conditions.length && <p style={S.dim}>No conditions yet.</p>}
       </Section>
 
       {/* ── Achievements & Losses ── */}
@@ -707,7 +614,6 @@ export default function CharacterPage() {
             control={control}
             index={i}
             onDelete={() => delItem(a.id)}
-            setValue={setValue}
             events={events}
           />
         ))}
@@ -723,7 +629,6 @@ export default function CharacterPage() {
             control={control}
             index={i}
             onDelete={() => delItem(ls.id)}
-            setValue={setValue}
             events={events}
           />
         ))}
