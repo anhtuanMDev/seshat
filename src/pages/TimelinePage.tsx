@@ -4,31 +4,31 @@ import { S, mkEvent } from "../lib/utils";
 import { Field, Sel, Section, EntryBlock } from "../components/ui";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { EVENT_TYPES } from "../lib/constants";
-import type { Event } from "../lib/types";
+import type { Event, EventType } from "../lib/types";
 import { useCallback } from "react";
+
+type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
 
 export default function TimelinePage() {
   const events = useEvents();
   const ref = useAnimateIn();
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const add = useCallback(() => {
     const maxT = events.reduce((m: number, e: Event) => Math.max(m, e.time), 0);
     const e = { ...mkEvent(), time: maxT + 1 };
-    (worldStore as any).events.push(e);
+    worldStore.events.push(e);
   }, [events]);
 
   const del = useCallback((id: string) => {
-    (worldStore as any).events.set((prev: Event[]) =>
+    worldStore.events.set((prev: Event[]) =>
       prev.filter((x) => x.id !== id),
     );
   }, []);
 
-  const update = useCallback((id: string, key: string, v: any) => {
-    const idx = (worldStore.events.get() as Event[]).findIndex((x) => x.id === id);
-    if (idx >= 0) (worldStore as any).events[idx][key].set(v);
+  const update = useCallback(<K extends keyof Event>(id: string, key: K, v: Event[K]) => {
+    const idx = worldStore.events.get().findIndex((x) => x.id === id);
+    if (idx >= 0) (worldStore.events[idx] as ObservableOf<Event>)[key].set(v);
   }, []);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
 
@@ -66,7 +66,7 @@ export default function TimelinePage() {
                 <Sel
                   label="Type"
                   value={e.type || ""}
-                  onChange={(v) => update(e.id, "type", v)}
+                  onChange={(v) => update(e.id, "type", v as EventType)}
                   opts={EVENT_TYPES}
                 />
                 <Field

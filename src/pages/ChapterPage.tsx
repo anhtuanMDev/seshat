@@ -241,19 +241,17 @@ export default function ChapterPage() {
   const events = useEvents();
   const characters = useCharacters();
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const chapter = useSelector(() =>
-    (worldStore.chapters?.get() as any[] | undefined)?.find(
-      (c: any) => c.id === id,
+    worldStore.chapters?.get()?.find(
+      (c) => c.id === id,
     ),
   );
   const chapterIdx = useSelector(
     () =>
-      (worldStore.chapters?.get() as any[] | undefined)?.findIndex(
-        (c: any) => c.id === id,
+      worldStore.chapters?.get()?.findIndex(
+        (c) => c.id === id,
       ) ?? -1,
   );
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const { register, handleSubmit, watch, reset, setValue } = useForm<ChapterForm>({
     defaultValues: {
@@ -317,11 +315,13 @@ export default function ChapterPage() {
   }
 
   const onSubmit = (data: ChapterForm) => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    (Object.keys(data) as (keyof ChapterForm)[]).forEach((key) => {
-      (worldStore.chapters[chapterIdx] as any)[key].set(data[key]);
-    });
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+    const ch = worldStore.chapters[chapterIdx];
+    ch.number.set(data.number);
+    ch.title.set(data.title);
+    ch.timeRef.set(data.timeRef);
+    ch.synopsis.set(data.synopsis);
+    ch.body.set(data.body);
+    ch.notes.set(data.notes);
   };
 
   const words = countWords(body || "");

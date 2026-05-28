@@ -6,11 +6,12 @@ import { useAnimateIn } from "../hooks/useAnimateIn";
 import type { Chapter } from "../store/worldStore";
 import { useCallback } from "react";
 
+type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
+
 export default function ChapterListPage() {
   const chapters = useChapters();
   const ref = useAnimateIn();
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const addChapter = useCallback(() => {
     const order = (chapters?.length || 0) + 1;
     const ch = {
@@ -23,20 +24,19 @@ export default function ChapterListPage() {
       notes: "",
       order,
     };
-    (worldStore.chapters as any).push(ch);
+    worldStore.chapters.push(ch);
   }, [chapters?.length]);
 
   const del = useCallback((id: string) => {
-    (worldStore.chapters as any).set((prev: Chapter[]) =>
+    worldStore.chapters.set((prev: Chapter[]) =>
       prev.filter((x) => x.id !== id),
     );
   }, []);
 
-  const update = useCallback((id: string, key: string, v: any) => {
-    const idx = (worldStore.chapters.get() as Chapter[]).findIndex((x) => x.id === id);
-    if (idx >= 0) (worldStore as any).chapters[idx][key].set(v);
+  const update = useCallback(<K extends keyof Chapter>(id: string, key: K, v: Chapter[K]) => {
+    const idx = worldStore.chapters.get().findIndex((x) => x.id === id);
+    if (idx >= 0) (worldStore.chapters[idx] as ObservableOf<Chapter>)[key].set(v);
   }, []);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const sortedChapters = [...(chapters || [])].sort(
     (a: Chapter, b: Chapter) => a.order - b.order,

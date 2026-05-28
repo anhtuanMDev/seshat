@@ -54,13 +54,11 @@ export default function App() {
   const addChapter = () => {
     const order = (chapters?.length || 0) + 1;
     const ch = mkChapter(order);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (worldStore.chapters as any).push(ch);
+    worldStore.chapters.push(ch);
     navigate(`/chapters/${ch.id}`);
   };
   const delChapter = (id: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (worldStore.chapters as any).set((prev: Chapter[]) =>
+    worldStore.chapters.set((prev: Chapter[]) =>
       prev.filter((c) => c.id !== id),
     );
   };

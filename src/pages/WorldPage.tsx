@@ -1,35 +1,25 @@
 import { worldStore } from "../store/worldStore";
-import {
-  useWorldTitle,
-  useSynopsis,
-  useSetting,
-  useThemes,
-  useRules,
-  useNations,
-  useTechniques,
-  useIngredients,
-  useMonsters,
-  useTreasures,
-} from "../hooks/useWorldStore";
-import {
-  mkNation,
-  mkMonster,
-  mkTechnique,
-  mkIngredient,
-  mkTreasure,
-  S,
-} from "../lib/utils";
+import { S, mkNation, mkMonster, mkTechnique, mkIngredient, mkTreasure } from "../lib/utils";
 import { Field, Sel, Section, EntryBlock } from "../components/ui";
 import { NAT_TYPES, TECH_TYPES, RARITY, MON_TIERS } from "../lib/constants";
 import { Button, styled } from "@mui/material";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import type {
-  Nation,
-  Technique,
-  Ingredient,
-  Monster,
-  Treasure,
-} from "../store/worldStore";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import type { Nation, Technique, Ingredient, Monster, Treasure } from "../store/worldStore";
+
+interface WorldForm {
+  title: string;
+  synopsis: string;
+  setting: string;
+  themes: string;
+  rules: string;
+  nations: Nation[];
+  techniques: Technique[];
+  ingredients: Ingredient[];
+  monsters: Monster[];
+  treasures: Treasure[];
+}
 
 const GhostButton = styled(Button)(() => ({
   fontFamily: "Georgia, serif",
@@ -44,81 +34,127 @@ const GhostButton = styled(Button)(() => ({
 }));
 
 export default function WorldPage() {
-  const title = useWorldTitle();
-  const synopsis = useSynopsis();
-  const setting = useSetting();
-  const themes = useThemes();
-  const rules = useRules();
-  const nations = useNations();
-  const techniques = useTechniques();
-  const ingredients = useIngredients();
-  const monsters = useMonsters();
-  const treasures = useTreasures();
+  const { register, handleSubmit, watch, reset, setValue, getValues } = useForm<WorldForm>({
+    defaultValues: {
+      title: "",
+      synopsis: "",
+      setting: "",
+      themes: "",
+      rules: "",
+      nations: [],
+      techniques: [],
+      ingredients: [],
+      monsters: [],
+      treasures: [],
+    },
+  });
 
-  const setTitle = (v: string) => worldStore.title.set(v);
-  const setSynopsis = (v: string) => worldStore.synopsis.set(v);
-  const setSetting = (v: string) => worldStore.setting.set(v);
-  const setThemes = (v: string) => worldStore.themes.set(v);
-  const setRules = (v: string) => worldStore.rules.set(v);
-
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const add = (field: string, mk: () => any) =>
-    (worldStore as any)[field].push(mk());
-  const del = (field: string, id: string) =>
-    (worldStore as any)[field].set((prev: any[]) =>
-      prev.filter((x: any) => x.id !== id),
-    );
-  const update = (field: string, id: string, key: string, v: string) => {
-    const idx = ((worldStore as any)[field].get() as any[]).findIndex(
-      (x: any) => x.id === id,
-    );
-    if (idx >= 0) (worldStore as any)[field][idx][key].set(v);
-  };
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  useEffect(() => {
+    reset({
+      title: worldStore.title.get() || "",
+      synopsis: worldStore.synopsis.get() || "",
+      setting: worldStore.setting.get() || "",
+      themes: worldStore.themes.get() || "",
+      rules: worldStore.rules.get() || "",
+      nations: worldStore.nations.get() || [],
+      techniques: worldStore.techniques.get() || [],
+      ingredients: worldStore.ingredients.get() || [],
+      monsters: worldStore.monsters.get() || [],
+      treasures: worldStore.treasures.get() || [],
+    });
+  }, [reset]);
 
   const ref = useAnimateIn();
+
+  const onSubmit = (data: WorldForm) => {
+    worldStore.title.set(data.title);
+    worldStore.synopsis.set(data.synopsis);
+    worldStore.setting.set(data.setting);
+    worldStore.themes.set(data.themes);
+    worldStore.rules.set(data.rules);
+    worldStore.nations.set(data.nations);
+    worldStore.techniques.set(data.techniques);
+    worldStore.ingredients.set(data.ingredients);
+    worldStore.monsters.set(data.monsters);
+    worldStore.treasures.set(data.treasures);
+  };
+
+  const addItem = (
+    field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures",
+    mk: () => any,
+  ) => {
+    setValue(field, [...(getValues(field) as any[]), mk()] as any);
+  };
+
+  const delItem = (
+    field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures",
+    delId: string,
+  ) => {
+    setValue(field, (getValues(field) as any[]).filter((x: any) => x.id !== delId) as any);
+  };
 
   return (
     <div ref={ref}>
       {/* ── Title ── */}
-      <div style={{ marginBottom: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 24,
+          gap: 16,
+        }}
+      >
         <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          {...register("title")}
           style={{
             ...S.input,
             fontSize: 22,
             border: "none",
             padding: 0,
+            flex: 1,
             color: "var(--text-primary)",
           }}
         />
+        <button
+          onClick={handleSubmit(onSubmit)}
+          title="Save changes"
+          style={{
+            ...S.ghost,
+            fontSize: 11,
+            letterSpacing: 1,
+            color: "var(--color-green)",
+            flexShrink: 0,
+          }}
+        >
+          save
+        </button>
       </div>
 
       <Field
         label="Synopsis / premise"
-        value={synopsis || ""}
-        onChange={setSynopsis}
+        value={watch("synopsis")}
+        onChange={(v) => setValue("synopsis", v)}
         multi
         rows={4}
         placeholder="What is this world? What is the central tension?"
       />
       <Field
         label="Setting"
-        value={setting || ""}
-        onChange={setSetting}
+        value={watch("setting")}
+        onChange={(v) => setValue("setting", v)}
         placeholder="Time period, place, atmosphere…"
       />
       <Field
         label="Themes"
-        value={themes || ""}
-        onChange={setThemes}
+        value={watch("themes")}
+        onChange={(v) => setValue("themes", v)}
         placeholder="The ideas the story is really about…"
       />
       <Field
         label="World rules / logic"
-        value={rules || ""}
-        onChange={setRules}
+        value={watch("rules")}
+        onChange={(v) => setValue("rules", v)}
         multi
         rows={3}
         placeholder="Magic systems, political structures, physical laws…"
@@ -126,9 +162,9 @@ export default function WorldPage() {
 
       {/* ── Nations ── */}
       <Section
-        title={`Nations & Factions (${nations.length})`}
+        title={`Nations & Factions (${(watch("nations") || []).length})`}
         action={
-          <GhostButton onClick={() => add("nations", mkNation)}>
+          <GhostButton onClick={() => addItem("nations", mkNation)}>
             + add
           </GhostButton>
         }
@@ -138,65 +174,65 @@ export default function WorldPage() {
           Kingdoms, empires, tribes, hidden societies. The political landscape
           your characters live inside.
         </p>
-        {nations.map((n: Nation) => (
+        {(watch("nations") || []).map((n: Nation, i: number) => (
           <EntryBlock
             key={n.id}
             color="var(--color-dark)"
-            onDelete={() => del("nations", n.id)}
+            onDelete={() => delItem("nations", n.id)}
           >
             <div style={S.grid3}>
               <Field
                 label="Name"
-                value={n.name || ""}
-                onChange={(v) => update("nations", n.id, "name", v)}
+                value={watch(`nations.${i}.name`)}
+                onChange={(v) => setValue(`nations.${i}.name`, v)}
                 placeholder="The Iron Dominion…"
               />
               <Sel
                 label="Type"
-                value={n.type || ""}
-                onChange={(v) => update("nations", n.id, "type", v)}
+                value={watch(`nations.${i}.type`)}
+                onChange={(v) => setValue(`nations.${i}.type`, v)}
                 opts={NAT_TYPES}
               />
               <Field
                 label="Capital"
-                value={n.capital || ""}
-                onChange={(v) => update("nations", n.id, "capital", v)}
+                value={watch(`nations.${i}.capital`)}
+                onChange={(v) => setValue(`nations.${i}.capital`, v)}
                 placeholder="Ashveil…"
               />
             </div>
             <div style={S.grid2}>
               <Field
                 label="Ruler / governing power"
-                value={n.ruler || ""}
-                onChange={(v) => update("nations", n.id, "ruler", v)}
+                value={watch(`nations.${i}.ruler`)}
+                onChange={(v) => setValue(`nations.${i}.ruler`, v)}
                 placeholder="Emperor Kael the Blind…"
               />
               <Field
                 label="Population / scale"
-                value={n.population || ""}
-                onChange={(v) => update("nations", n.id, "population", v)}
+                value={watch(`nations.${i}.population`)}
+                onChange={(v) => setValue(`nations.${i}.population`, v)}
                 placeholder="12 million, mostly agrarian…"
               />
             </div>
             <Field
               label="Geography"
-              value={n.geography || ""}
-              onChange={(v) => update("nations", n.id, "geography", v)}
+              value={watch(`nations.${i}.geography`)}
+              onChange={(v) => setValue(`nations.${i}.geography`, v)}
               placeholder="Frozen tundra split by the Ashen River…"
             />
             <div style={S.grid2}>
               <Field
                 label="Culture & customs"
-                value={n.culture || ""}
-                onChange={(v) => update("nations", n.id, "culture", v)}
+                value={watch(`nations.${i}.culture`)}
+                onChange={(v) => setValue(`nations.${i}.culture`, v)}
                 multi
                 rows={2}
                 placeholder="Warrior-scholars. Death rites, honor debts…"
               />
               <Field
                 label="Military power"
-                value={n.military || ""}
-                onChange={(v) => update("nations", n.id, "military", v)}
+                value={watch(`nations.${i}.military`)}
+                onChange={(v) => setValue(`nations.${i}.military`, v)}
                 multi
                 rows={2}
                 placeholder="50,000 standing army. Elite Grave Knights…"
@@ -205,49 +241,49 @@ export default function WorldPage() {
             <div style={S.grid2}>
               <Field
                 label="Economy & resources"
-                value={n.economy || ""}
-                onChange={(v) => update("nations", n.id, "economy", v)}
+                value={watch(`nations.${i}.economy`)}
+                onChange={(v) => setValue(`nations.${i}.economy`, v)}
                 placeholder="Exports void iron, imports grain…"
               />
               <Field
                 label="Allies"
-                value={n.allies || ""}
-                onChange={(v) => update("nations", n.id, "allies", v)}
+                value={watch(`nations.${i}.allies`)}
+                onChange={(v) => setValue(`nations.${i}.allies`, v)}
                 placeholder="The Sea Confederacy…"
               />
               <Field
                 label="Enemies"
-                value={n.enemies || ""}
-                onChange={(v) => update("nations", n.id, "enemies", v)}
+                value={watch(`nations.${i}.enemies`)}
+                onChange={(v) => setValue(`nations.${i}.enemies`, v)}
                 placeholder="The Free Holds…"
               />
             </div>
             <Field
               label="Hidden secrets"
-              value={n.secrets || ""}
-              onChange={(v) => update("nations", n.id, "secrets", v)}
+              value={watch(`nations.${i}.secrets`)}
+              onChange={(v) => setValue(`nations.${i}.secrets`, v)}
               multi
               rows={2}
               placeholder="The emperor is already dead. The throne is controlled by…"
             />
             <Field
               label="Lore & history"
-              value={n.lore || ""}
-              onChange={(v) => update("nations", n.id, "lore", v)}
+              value={watch(`nations.${i}.lore`)}
+              onChange={(v) => setValue(`nations.${i}.lore`, v)}
               multi
               rows={3}
               placeholder="Founded 400 years ago after the Collapse…"
             />
           </EntryBlock>
         ))}
-        {!nations.length && <p style={S.dim}>No nations yet.</p>}
+        {!(watch("nations") || []).length && <p style={S.dim}>No nations yet.</p>}
       </Section>
 
       {/* ── Techniques ── */}
       <Section
-        title={`Techniques (${techniques.length})`}
+        title={`Techniques (${(watch("techniques") || []).length})`}
         action={
-          <GhostButton onClick={() => add("techniques", mkTechnique)}>
+          <GhostButton onClick={() => addItem("techniques", mkTechnique)}>
             + add
           </GhostButton>
         }
@@ -257,58 +293,58 @@ export default function WorldPage() {
           Martial arts, blacksmithing schools, biological arts, forbidden
           knowledge. How things are made and mastered in this world.
         </p>
-        {techniques.map((t: Technique) => (
+        {(watch("techniques") || []).map((t: Technique, i: number) => (
           <EntryBlock
             key={t.id}
             color="var(--color-teal)"
-            onDelete={() => del("techniques", t.id)}
+            onDelete={() => delItem("techniques", t.id)}
           >
             <div style={S.grid3}>
               <Field
                 label="Name"
-                value={t.name || ""}
-                onChange={(v) => update("techniques", t.id, "name", v)}
+                value={watch(`techniques.${i}.name`)}
+                onChange={(v) => setValue(`techniques.${i}.name`, v)}
                 placeholder="Void Step Discipline…"
               />
               <Sel
                 label="Type"
-                value={t.type || ""}
-                onChange={(v) => update("techniques", t.id, "type", v)}
+                value={watch(`techniques.${i}.type`)}
+                onChange={(v) => setValue(`techniques.${i}.type`, v)}
                 opts={TECH_TYPES}
               />
               <Field
                 label="Era / period"
-                value={t.era || ""}
-                onChange={(v) => update("techniques", t.id, "era", v)}
+                value={watch(`techniques.${i}.era`)}
+                onChange={(v) => setValue(`techniques.${i}.era`, v)}
                 placeholder="Ancient, Third Age…"
               />
             </div>
             <div style={S.grid2}>
               <Field
                 label="Origin / where it came from"
-                value={t.origin || ""}
-                onChange={(v) => update("techniques", t.id, "origin", v)}
+                value={watch(`techniques.${i}.origin`)}
+                onChange={(v) => setValue(`techniques.${i}.origin`, v)}
                 placeholder="Born in the monastery of the silent…"
               />
               <Field
                 label="Creator (if known)"
-                value={t.creator || ""}
-                onChange={(v) => update("techniques", t.id, "creator", v)}
+                value={watch(`techniques.${i}.creator`)}
+                onChange={(v) => setValue(`techniques.${i}.creator`, v)}
                 placeholder="The Blind Master, unknown…"
               />
             </div>
             <Field
               label="What it does / how it works"
-              value={t.description || ""}
-              onChange={(v) => update("techniques", t.id, "description", v)}
+              value={watch(`techniques.${i}.description`)}
+              onChange={(v) => setValue(`techniques.${i}.description`, v)}
               multi
               rows={3}
               placeholder="A martial discipline that bends the practitioner's shadow…"
             />
             <Field
               label="Effects & power"
-              value={t.effect || ""}
-              onChange={(v) => update("techniques", t.id, "effect", v)}
+              value={watch(`techniques.${i}.effect`)}
+              onChange={(v) => setValue(`techniques.${i}.effect`, v)}
               multi
               rows={2}
               placeholder="Can intercept attacks, strike from unexpected angles…"
@@ -316,43 +352,43 @@ export default function WorldPage() {
             <div style={S.grid2}>
               <Field
                 label="Requirements to learn"
-                value={t.requirement || ""}
-                onChange={(v) => update("techniques", t.id, "requirement", v)}
+                value={watch(`techniques.${i}.requirement`)}
+                onChange={(v) => setValue(`techniques.${i}.requirement`, v)}
                 placeholder="Must have lost something precious…"
               />
               <Field
                 label="Cost / price of mastery"
-                value={t.cost || ""}
-                onChange={(v) => update("techniques", t.id, "cost", v)}
+                value={watch(`techniques.${i}.cost`)}
+                onChange={(v) => setValue(`techniques.${i}.cost`, v)}
                 placeholder="Gradual blindness, shortened lifespan…"
               />
             </div>
             <Field
               label="Secrets / hidden layers"
-              value={t.secret || ""}
-              onChange={(v) => update("techniques", t.id, "secret", v)}
+              value={watch(`techniques.${i}.secret`)}
+              onChange={(v) => setValue(`techniques.${i}.secret`, v)}
               multi
               rows={2}
               placeholder="The true final form requires…"
             />
             <Field
               label="Lore"
-              value={t.lore || ""}
-              onChange={(v) => update("techniques", t.id, "lore", v)}
+              value={watch(`techniques.${i}.lore`)}
+              onChange={(v) => setValue(`techniques.${i}.lore`, v)}
               multi
               rows={2}
               placeholder="Lost for three centuries until…"
             />
           </EntryBlock>
         ))}
-        {!techniques.length && <p style={S.dim}>No techniques yet.</p>}
+        {!(watch("techniques") || []).length && <p style={S.dim}>No techniques yet.</p>}
       </Section>
 
       {/* ── Ingredients ── */}
       <Section
-        title={`Ingredients & Resources (${ingredients.length})`}
+        title={`Ingredients & Resources (${(watch("ingredients") || []).length})`}
         action={
-          <GhostButton onClick={() => add("ingredients", mkIngredient)}>
+          <GhostButton onClick={() => addItem("ingredients", mkIngredient)}>
             + add
           </GhostButton>
         }
@@ -362,78 +398,78 @@ export default function WorldPage() {
           Materials, herbs, minerals, essences. The raw stuff of your world —
           what things are made from.
         </p>
-        {ingredients.map((i: Ingredient) => (
+        {(watch("ingredients") || []).map((i: Ingredient, idx: number) => (
           <EntryBlock
             key={i.id}
             color="var(--color-brown)"
-            onDelete={() => del("ingredients", i.id)}
+            onDelete={() => delItem("ingredients", i.id)}
           >
             <div style={S.grid3}>
               <Field
                 label="Name"
-                value={i.name || ""}
-                onChange={(v) => update("ingredients", i.id, "name", v)}
+                value={watch(`ingredients.${idx}.name`)}
+                onChange={(v) => setValue(`ingredients.${idx}.name`, v)}
                 placeholder="Void iron, Moonpetal…"
               />
               <Sel
                 label="Rarity"
-                value={i.rarity || ""}
-                onChange={(v) => update("ingredients", i.id, "rarity", v)}
+                value={watch(`ingredients.${idx}.rarity`)}
+                onChange={(v) => setValue(`ingredients.${idx}.rarity`, v)}
                 opts={RARITY}
               />
               <Field
                 label="Found at / habitat"
-                value={i.location || ""}
-                onChange={(v) => update("ingredients", i.id, "location", v)}
+                value={watch(`ingredients.${idx}.location`)}
+                onChange={(v) => setValue(`ingredients.${idx}.location`, v)}
                 placeholder="Deep rift mines, only in eclipse season…"
               />
             </div>
             <div style={S.grid2}>
               <Field
                 label="Appearance"
-                value={i.appearance || ""}
-                onChange={(v) => update("ingredients", i.id, "appearance", v)}
+                value={watch(`ingredients.${idx}.appearance`)}
+                onChange={(v) => setValue(`ingredients.${idx}.appearance`, v)}
                 placeholder="Black ore with crimson veins that pulse…"
               />
               <Field
                 label="Properties / nature"
-                value={i.properties || ""}
-                onChange={(v) => update("ingredients", i.id, "properties", v)}
+                value={watch(`ingredients.${idx}.properties`)}
+                onChange={(v) => setValue(`ingredients.${idx}.properties`, v)}
                 placeholder="Absorbs light, conducts soul energy…"
               />
             </div>
             <Field
               label="Uses — what it makes or enables"
-              value={i.uses || ""}
-              onChange={(v) => update("ingredients", i.id, "uses", v)}
+              value={watch(`ingredients.${idx}.uses`)}
+              onChange={(v) => setValue(`ingredients.${idx}.uses`, v)}
               multi
               rows={2}
               placeholder="Used in forging void-touched weapons…"
             />
             <Field
               label="Danger / handling risks"
-              value={i.danger || ""}
-              onChange={(v) => update("ingredients", i.id, "danger", v)}
+              value={watch(`ingredients.${idx}.danger`)}
+              onChange={(v) => setValue(`ingredients.${idx}.danger`, v)}
               placeholder="Prolonged contact causes memory erosion…"
             />
             <Field
               label="Lore"
-              value={i.lore || ""}
-              onChange={(v) => update("ingredients", i.id, "lore", v)}
+              value={watch(`ingredients.${idx}.lore`)}
+              onChange={(v) => setValue(`ingredients.${idx}.lore`, v)}
               multi
               rows={2}
               placeholder="Once abundant before the Sundering…"
             />
           </EntryBlock>
         ))}
-        {!ingredients.length && <p style={S.dim}>No ingredients yet.</p>}
+        {!(watch("ingredients") || []).length && <p style={S.dim}>No ingredients yet.</p>}
       </Section>
 
       {/* ── Monsters ── */}
       <Section
-        title={`Monsters (${monsters.length})`}
+        title={`Monsters (${(watch("monsters") || []).length})`}
         action={
-          <GhostButton onClick={() => add("monsters", mkMonster)}>
+          <GhostButton onClick={() => addItem("monsters", mkMonster)}>
             + add
           </GhostButton>
         }
@@ -443,52 +479,52 @@ export default function WorldPage() {
           Creatures, beasts, horrors. What hunts your characters — and what
           drops when they die.
         </p>
-        {monsters.map((m: Monster) => (
+        {(watch("monsters") || []).map((m: Monster, i: number) => (
           <EntryBlock
             key={m.id}
             color="var(--color-red)"
-            onDelete={() => del("monsters", m.id)}
+            onDelete={() => delItem("monsters", m.id)}
           >
             <div style={S.grid3}>
               <Field
                 label="Name"
-                value={m.name || ""}
-                onChange={(v) => update("monsters", m.id, "name", v)}
+                value={watch(`monsters.${i}.name`)}
+                onChange={(v) => setValue(`monsters.${i}.name`, v)}
                 placeholder="Hollow Warden…"
               />
               <Sel
                 label="Tier"
-                value={m.tier || ""}
-                onChange={(v) => update("monsters", m.id, "tier", v)}
+                value={watch(`monsters.${i}.tier`)}
+                onChange={(v) => setValue(`monsters.${i}.tier`, v)}
                 opts={MON_TIERS}
               />
               <Field
                 label="Habitat"
-                value={m.habitat || ""}
-                onChange={(v) => update("monsters", m.id, "habitat", v)}
+                value={watch(`monsters.${i}.habitat`)}
+                onChange={(v) => setValue(`monsters.${i}.habitat`, v)}
                 placeholder="Rifts, abandoned fortresses…"
               />
             </div>
             <Field
               label="Appearance"
-              value={m.appearance || ""}
-              onChange={(v) => update("monsters", m.id, "appearance", v)}
+              value={watch(`monsters.${i}.appearance`)}
+              onChange={(v) => setValue(`monsters.${i}.appearance`, v)}
               multi
               rows={2}
               placeholder="Twelve feet tall, skin of cracked obsidian…"
             />
             <Field
               label="Behavior / intelligence"
-              value={m.behavior || ""}
-              onChange={(v) => update("monsters", m.id, "behavior", v)}
+              value={watch(`monsters.${i}.behavior`)}
+              onChange={(v) => setValue(`monsters.${i}.behavior`, v)}
               multi
               rows={2}
               placeholder="Hunts by fear-scent. Territorial…"
             />
             <Field
               label="Abilities / attacks"
-              value={m.abilities || ""}
-              onChange={(v) => update("monsters", m.id, "abilities", v)}
+              value={watch(`monsters.${i}.abilities`)}
+              onChange={(v) => setValue(`monsters.${i}.abilities`, v)}
               multi
               rows={2}
               placeholder="Soul-shriek (paralyzes), Void-step (teleport)…"
@@ -496,41 +532,41 @@ export default function WorldPage() {
             <div style={S.grid2}>
               <Field
                 label="Weaknesses"
-                value={m.weaknesses || ""}
-                onChange={(v) => update("monsters", m.id, "weaknesses", v)}
+                value={watch(`monsters.${i}.weaknesses`)}
+                onChange={(v) => setValue(`monsters.${i}.weaknesses`, v)}
                 placeholder="Sunlight, salt circles, named iron…"
               />
               <Field
                 label="What it drops"
-                value={m.drops || ""}
-                onChange={(v) => update("monsters", m.id, "drops", v)}
+                value={watch(`monsters.${i}.drops`)}
+                onChange={(v) => setValue(`monsters.${i}.drops`, v)}
                 placeholder="Hollow core (ingredient), Warden's eye (relic)…"
               />
             </div>
             <Field
               label="First recorded encounter"
-              value={m.firstSeen || ""}
-              onChange={(v) => update("monsters", m.id, "firstSeen", v)}
+              value={watch(`monsters.${i}.firstSeen`)}
+              onChange={(v) => setValue(`monsters.${i}.firstSeen`, v)}
               placeholder="T3 — The Rift of Asveth"
             />
             <Field
               label="Lore"
-              value={m.lore || ""}
-              onChange={(v) => update("monsters", m.id, "lore", v)}
+              value={watch(`monsters.${i}.lore`)}
+              onChange={(v) => setValue(`monsters.${i}.lore`, v)}
               multi
               rows={2}
               placeholder="Once human. Created when the Ritual of Unmaking…"
             />
           </EntryBlock>
         ))}
-        {!monsters.length && <p style={S.dim}>No monsters yet.</p>}
+        {!(watch("monsters") || []).length && <p style={S.dim}>No monsters yet.</p>}
       </Section>
 
       {/* ── Treasures ── */}
       <Section
-        title={`Treasures & Artifacts (${treasures.length})`}
+        title={`Treasures & Artifacts (${(watch("treasures") || []).length})`}
         action={
-          <GhostButton onClick={() => add("treasures", mkTreasure)}>
+          <GhostButton onClick={() => addItem("treasures", mkTreasure)}>
             + add
           </GhostButton>
         }
@@ -540,44 +576,44 @@ export default function WorldPage() {
           World-level relics, legendary items not yet held by anyone. When a
           character claims one, add it to their equipment too.
         </p>
-        {treasures.map((tr: Treasure) => (
+        {(watch("treasures") || []).map((tr: Treasure, i: number) => (
           <EntryBlock
             key={tr.id}
             color="var(--color-orange)"
-            onDelete={() => del("treasures", tr.id)}
+            onDelete={() => delItem("treasures", tr.id)}
           >
             <div style={S.grid3}>
               <Field
                 label="Name"
-                value={tr.name || ""}
-                onChange={(v) => update("treasures", tr.id, "name", v)}
+                value={watch(`treasures.${i}.name`)}
+                onChange={(v) => setValue(`treasures.${i}.name`, v)}
                 placeholder="The Ashen Crown…"
               />
               <Sel
                 label="Rarity"
-                value={tr.rarity || ""}
-                onChange={(v) => update("treasures", tr.id, "rarity", v)}
+                value={watch(`treasures.${i}.rarity`)}
+                onChange={(v) => setValue(`treasures.${i}.rarity`, v)}
                 opts={RARITY}
               />
               <Field
                 label="Current location"
-                value={tr.location || ""}
-                onChange={(v) => update("treasures", tr.id, "location", v)}
+                value={watch(`treasures.${i}.location`)}
+                onChange={(v) => setValue(`treasures.${i}.location`, v)}
                 placeholder="Sealed in the Tomb of Kael…"
               />
             </div>
             <Field
               label="Description"
-              value={tr.description || ""}
-              onChange={(v) => update("treasures", tr.id, "description", v)}
+              value={watch(`treasures.${i}.description`)}
+              onChange={(v) => setValue(`treasures.${i}.description`, v)}
               multi
               rows={2}
               placeholder="A crown of blackened bone that weeps silver tears…"
             />
             <Field
               label="Stats & powers"
-              value={tr.stats || ""}
-              onChange={(v) => update("treasures", tr.id, "stats", v)}
+              value={watch(`treasures.${i}.stats`)}
+              onChange={(v) => setValue(`treasures.${i}.stats`, v)}
               multi
               rows={3}
               placeholder="+200 to all attributes · Grants command over the dead…"
@@ -585,18 +621,16 @@ export default function WorldPage() {
             <div style={S.grid2}>
               <Field
                 label="Curses (if any)"
-                value={tr.curses || ""}
-                onChange={(v) => update("treasures", tr.id, "curses", v)}
+                value={watch(`treasures.${i}.curses`)}
+                onChange={(v) => setValue(`treasures.${i}.curses`, v)}
                 multi
                 rows={2}
                 placeholder="Slowly replaces the wearer's blood with void-water…"
               />
               <Field
                 label="Condition to unbind curse"
-                value={tr.unbindCondition || ""}
-                onChange={(v) =>
-                  update("treasures", tr.id, "unbindCondition", v)
-                }
+                value={watch(`treasures.${i}.unbindCondition`)}
+                onChange={(v) => setValue(`treasures.${i}.unbindCondition`, v)}
                 multi
                 rows={2}
                 placeholder="Worn by its creator's descendant during a solar eclipse…"
@@ -605,28 +639,28 @@ export default function WorldPage() {
             <div style={S.grid2}>
               <Field
                 label="Creator"
-                value={tr.creator || ""}
-                onChange={(v) => update("treasures", tr.id, "creator", v)}
+                value={watch(`treasures.${i}.creator`)}
+                onChange={(v) => setValue(`treasures.${i}.creator`, v)}
                 placeholder="The God-Smith Velath…"
               />
               <Field
                 label="Ingredients / materials"
-                value={tr.ingredients || ""}
-                onChange={(v) => update("treasures", tr.id, "ingredients", v)}
+                value={watch(`treasures.${i}.ingredients`)}
+                onChange={(v) => setValue(`treasures.${i}.ingredients`, v)}
                 placeholder="God-bone, first tears, void iron…"
               />
             </div>
             <Field
               label="History"
-              value={tr.history || ""}
-              onChange={(v) => update("treasures", tr.id, "history", v)}
+              value={watch(`treasures.${i}.history`)}
+              onChange={(v) => setValue(`treasures.${i}.history`, v)}
               multi
               rows={3}
               placeholder="Forged to end the First War. Shattered into three pieces…"
             />
           </EntryBlock>
         ))}
-        {!treasures.length && <p style={S.dim}>No treasures yet.</p>}
+        {!(watch("treasures") || []).length && <p style={S.dim}>No treasures yet.</p>}
       </Section>
     </div>
   );

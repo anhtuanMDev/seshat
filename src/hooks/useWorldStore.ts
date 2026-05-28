@@ -19,11 +19,9 @@ export const useTreasures = () => useSelector(() => worldStore.treasures.get());
 export const useChapters = () => useSelector(() => worldStore.chapters.get());
 export const useEvent = (id: string) =>
   useSelector(() =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    worldStore.events.find((e: any) => e.id.get() === id)?.get(),
+    worldStore.events.find((e) => e.id.get() === id)?.get(),
   );
 export const useCharacter = (id: string) =>
   useSelector(() =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    worldStore.characters.find((c: any) => c.id.get() === id)?.get(),
+    worldStore.characters.find((c) => c.id.get() === id)?.get(),
   );

@@ -45,24 +45,24 @@ export function Sel({ label, value, onChange, opts }: SelProps) {
         value={value}
         onChange={(e) => onChange(e.target.value as string)}
         label={label}
-        /* eslint-disable @typescript-eslint/no-explicit-any */
         MenuProps={{
-          PaperProps: {
-            sx: {
-              background: "var(--bg-side)",
-              border: "1px solid var(--border)",
-              "& .MuiMenuItem-root": {
-                fontFamily: "Georgia, serif",
-                fontSize: 13,
-                color: "var(--text-primary)",
-                "&:hover": { background: "var(--bg-hover)" },
-                "&.Mui-selected": { background: "var(--bg-active)" },
-                "&.Mui-selected:hover": { background: "var(--bg-active)" },
-              },
+          slotProps: {
+            paper: {
+              sx: {
+                background: "var(--bg-side)",
+                border: "1px solid var(--border)",
+                "& .MuiMenuItem-root": {
+                  fontFamily: "Georgia, serif",
+                  fontSize: 13,
+                  color: "var(--text-primary)",
+                  "&:hover": { background: "var(--bg-hover)" },
+                  "&.Mui-selected": { background: "var(--bg-active)" },
+                  "&.Mui-selected:hover": { background: "var(--bg-active)" },
+                },
+              } as React.CSSProperties,
             },
           },
-        } as any}
-        /* eslint-enable @typescript-eslint/no-explicit-any */
+        }}
       >
         <MenuItem
           value=""

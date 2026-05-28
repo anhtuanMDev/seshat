@@ -254,7 +254,7 @@ Renders world metadata and world entity sections (Nations, Techniques, Ingredien
 
 ### CharacterPage (`/characters/:id`)
 
-Full character sheet with Identity, Psychology, Conditions, Achievements & Losses sections. Currently uses direct store writes (not yet migrated to react-hook-form).
+Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form for all character fields including nested array items (traumas, conditions, achievements, losses, statusTimeline). The Status Timeline section uses a custom `CharStatusPanel` component with editable per-period entries (each has start/end datetime-local pickers, power tier select, arc stage select, emotional/physical state inputs, and a note textarea). Entries are ordered by date. Top-level fields use `register()` (name) and `watch()`/`setValue()` (MUI Field wrappers). Nested arrays use dot-path notation (`traumas.${i}.title`) with `watch`/`setValue`; add/remove operations use `setValue` with the full array.
 
 ### EventPage (`/events/:id`)
 

@@ -16,8 +16,9 @@ export {
 export const uid = () => Math.random().toString(36).slice(2, 8);
 
 export const mkChar = (n: string, color: string) => ({
-  id: uid(),
+  id: Math.random().toString(36).slice(2, 8),
   name: n,
+  statusTimeline: [],
   color,
   role: "",
   archetype: "",
@@ -39,7 +40,19 @@ export const mkChar = (n: string, color: string) => ({
   losses: [],
 });
 
-import type { Event, EventType } from "./types";
+import type { Event, EventType, StatusEntry, Condition } from "./types";
+
+export const mkStatusEntry = (): StatusEntry => ({
+  id: Math.random().toString(36).slice(2, 8),
+  eventId: "",
+  startDate: "",
+  endDate: "",
+  power: "",
+  arcStage: "",
+  emotionalState: "",
+  physicalState: "",
+  note: "",
+});
 
 export const mkEvent = (): Event => ({
   id: uid(),
@@ -47,7 +60,8 @@ export const mkEvent = (): Event => ({
   title: "Untitled event",
   type: "Story" as EventType,
   chapter: "",
-  date: "",
+  startDate: "",
+  endDate: "",
   description: "",
   consequence: "",
   setting: "",
@@ -77,7 +91,7 @@ export const mkRel = () => ({
   feel: "",
   history: "",
 });
-export const mkCond = () => ({
+export const mkCond = (): Condition => ({
   id: uid(),
   type: "Physical",
   name: "",
@@ -209,8 +223,7 @@ export const mkTreasure = () => ({
 });
 
 // ── Styles using CSS variables ─────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const S: Record<string, any> = {
+const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties>> = {
   app: {
     display: "flex",
     flexDirection: "column",

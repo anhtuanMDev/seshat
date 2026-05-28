@@ -87,6 +87,18 @@ export type ArcStage =
   | "Transforming"
   | "Integrated";
 
+export interface StatusEntry {
+  id: string;
+  eventId: string;
+  startDate: string;
+  endDate: string;
+  power: string;
+  arcStage: string;
+  emotionalState: string;
+  physicalState: string;
+  note: string;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -100,6 +112,7 @@ export interface Character {
   secrets: string;
   arcStart: string;
   arcEnd: string;
+  statusTimeline: StatusEntry[];
   traumas: Trauma[];
   relationships: Relationship[];
   branch: Branch[];

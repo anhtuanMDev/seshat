@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
 import { worldStore } from "../store/worldStore";
 import { useEvents } from "../hooks/useWorldStore";
-import { S, mkTrauma, mkCond, mkAchieve, mkLoss } from "../lib/utils";
+import { S, mkTrauma, mkCond, mkAchieve, mkLoss, mkStatusEntry } from "../lib/utils";
 import {
   Field,
   Sel,
@@ -15,9 +15,28 @@ import { CharStatusPanel } from "../components/ui/CharStatusPanel";
 import { COND_TYPES } from "../lib/constants";
 import { Button, styled } from "@mui/material";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useCallback } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
-import type { Trauma, Condition, Achievement, Loss } from "../lib/types";
+import type { Trauma, Condition, Achievement, Loss, StatusEntry, CondType } from "../lib/types";
+
+interface CharacterForm {
+  name: string;
+  role: string;
+  archetype: string;
+  coreWound: string;
+  coreFear: string;
+  coreDesire: string;
+  philosophy: string;
+  secrets: string;
+  arcStart: string;
+  arcEnd: string;
+  statusTimeline: StatusEntry[];
+  traumas: Trauma[];
+  conditions: Condition[];
+  achievements: Achievement[];
+  losses: Loss[];
+}
 
 const GhostButton = styled(Button)(() => ({
   fontFamily: "Georgia, serif",
@@ -35,36 +54,54 @@ export default function CharacterPage() {
   const { id } = useParams();
   const events = useEvents();
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const char = useSelector(() =>
-    (worldStore.characters.get() as any[]).find((c: any) => c.id === id),
+    worldStore.characters.get().find((c) => c.id === id),
   );
   const idx = useSelector(() =>
-    worldStore.characters.get().findIndex((c: any) => c.id === id),
+    worldStore.characters.get().findIndex((c) => c.id === id),
   );
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const up = useCallback((f: string, v: any) => {
-    if (idx >= 0) (worldStore.characters[idx] as any)[f].set(v);
-  }, [idx]);
-  const add = useCallback((field: string, mk: () => any) => {
-    if (idx >= 0) (worldStore.characters[idx] as any)[field].push(mk());
-  }, [idx]);
-  const del = useCallback((field: string, delId: string) => {
-    if (idx >= 0)
-      (worldStore.characters[idx] as any)[field].set((prev: any[]) =>
-        prev.filter((x: any) => x.id !== delId),
-      );
-  }, [idx]);
-  const upIt = useCallback((field: string, delId: string, f: string, v: any) => {
-    if (idx >= 0) {
-      const arr = (worldStore.characters[idx] as any)[field].get();
-      const i = arr.findIndex((x: any) => x.id === delId);
-      if (i >= 0) (worldStore.characters[idx] as any)[field][i][f].set(v);
+  const { register, handleSubmit, watch, reset, setValue, getValues } = useForm<CharacterForm>({
+    defaultValues: {
+      name: "",
+      role: "",
+      archetype: "",
+      coreWound: "",
+      coreFear: "",
+      coreDesire: "",
+      philosophy: "",
+      secrets: "",
+      arcStart: "",
+      arcEnd: "",
+      statusTimeline: [],
+      traumas: [],
+      conditions: [],
+      achievements: [],
+      losses: [],
+    },
+  });
+
+  useEffect(() => {
+    if (char) {
+      reset({
+        name: char.name || "",
+        role: char.role || "",
+        archetype: char.archetype || "",
+        coreWound: char.coreWound || "",
+        coreFear: char.coreFear || "",
+        coreDesire: char.coreDesire || "",
+        philosophy: char.philosophy || "",
+        secrets: char.secrets || "",
+        arcStart: char.arcStart || "",
+        arcEnd: char.arcEnd || "",
+        statusTimeline: char.statusTimeline || [],
+        traumas: char.traumas || [],
+        conditions: char.conditions || [],
+        achievements: char.achievements || [],
+        losses: char.losses || [],
+      });
     }
-  }, [idx]);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  }, [char?.id, reset]);
 
   const ref = useAnimateIn();
 
@@ -76,6 +113,41 @@ export default function CharacterPage() {
     );
   }
 
+  const onSubmit = (data: CharacterForm) => {
+    const c = worldStore.characters[idx];
+    c.name.set(data.name);
+    c.role.set(data.role);
+    c.archetype.set(data.archetype);
+    c.coreWound.set(data.coreWound);
+    c.coreFear.set(data.coreFear);
+    c.coreDesire.set(data.coreDesire);
+    c.philosophy.set(data.philosophy);
+    c.secrets.set(data.secrets);
+    c.arcStart.set(data.arcStart);
+    c.arcEnd.set(data.arcEnd);
+    c.statusTimeline.set(data.statusTimeline);
+    c.traumas.set(data.traumas);
+    c.conditions.set(data.conditions);
+    c.achievements.set(data.achievements);
+    c.losses.set(data.losses);
+  };
+
+  const addTrauma = () => setValue("traumas", [...getValues("traumas"), mkTrauma()]);
+  const addCond = () => setValue("conditions", [...getValues("conditions"), mkCond()]);
+  const addAchieve = () => setValue("achievements", [...getValues("achievements"), mkAchieve()]);
+  const addLoss = () => setValue("losses", [...getValues("losses"), mkLoss()]);
+
+  const delItem = (id: string) => {
+    const traumas = getValues("traumas");
+    const conditions = getValues("conditions");
+    const achievements = getValues("achievements");
+    const losses = getValues("losses");
+    if (traumas.some((t) => t.id === id)) setValue("traumas", traumas.filter((t) => t.id !== id));
+    else if (conditions.some((c) => c.id === id)) setValue("conditions", conditions.filter((c) => c.id !== id));
+    else if (achievements.some((a) => a.id === id)) setValue("achievements", achievements.filter((a) => a.id !== id));
+    else if (losses.some((l) => l.id === id)) setValue("losses", losses.filter((l) => l.id !== id));
+  };
+
   return (
     <div ref={ref}>
       {/* ── Header ── */}
@@ -83,41 +155,73 @@ export default function CharacterPage() {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
+          justifyContent: "space-between",
           marginBottom: 20,
+          gap: 16,
         }}
       >
-        <span
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              background: char.color,
+              display: "inline-block",
+              flexShrink: 0,
+            }}
+          />
+          <input
+            {...register("name")}
+            style={{
+              ...S.input,
+              fontSize: 22,
+              border: "none",
+              padding: 0,
+              flex: 1,
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+        <button
+          onClick={handleSubmit(onSubmit)}
+          title="Save changes"
           style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: char.color,
-            display: "inline-block",
+            ...S.ghost,
+            fontSize: 11,
+            letterSpacing: 1,
+            color: "var(--color-green)",
             flexShrink: 0,
           }}
-        />
-        <input
-          value={char.name}
-          onChange={(e) => up("name", e.target.value)}
-          style={{
-            ...S.input,
-            fontSize: 22,
-            border: "none",
-            padding: 0,
-            flex: 1,
-            color: "var(--text-primary)",
-          }}
-        />
+        >
+          save
+        </button>
       </div>
 
-      {/* ── Status ── */}
-      <Section title="Status">
-        <CharStatusPanel char={char} events={events} />
-        <p style={{ ...S.dim, marginTop: 4 }}>
-          Derived from latest event appearance, active conditions, and equipped
-          items.
-        </p>
+      {/* ── Status Timeline ── */}
+      <Section title="Status Timeline">
+        <CharStatusPanel
+          statusTimeline={watch("statusTimeline")}
+          color={char.color}
+          events={events}
+          onChange={(entries) => setValue("statusTimeline", entries)}
+        />
+        <button
+          onClick={() => {
+            setValue("statusTimeline", [
+              ...getValues("statusTimeline"),
+              mkStatusEntry(),
+            ]);
+          }}
+          style={{
+            ...S.ghost,
+            fontSize: 12,
+            letterSpacing: 1,
+            color: "var(--text-secondary)",
+          }}
+        >
+          + add status entry
+        </button>
       </Section>
 
       {/* ── Identity ── */}
@@ -125,14 +229,14 @@ export default function CharacterPage() {
         <div style={S.grid2}>
           <Field
             label="Role in story"
-            value={char.role || ""}
-            onChange={(v) => up("role", v)}
+            value={watch("role")}
+            onChange={(v) => setValue("role", v)}
             placeholder="Protagonist, mentor…"
           />
           <Field
             label="Archetype"
-            value={char.archetype || ""}
-            onChange={(v) => up("archetype", v)}
+            value={watch("archetype")}
+            onChange={(v) => setValue("archetype", v)}
             placeholder="The trickster…"
           />
         </div>
@@ -142,8 +246,8 @@ export default function CharacterPage() {
       <Section title="Psychological core">
         <Field
           label="Core wound"
-          value={char.coreWound || ""}
-          onChange={(v) => up("coreWound", v)}
+          value={watch("coreWound")}
+          onChange={(v) => setValue("coreWound", v)}
           multi
           rows={2}
           placeholder="The formative trauma that shaped everything."
@@ -151,29 +255,29 @@ export default function CharacterPage() {
         <div style={S.grid2}>
           <Field
             label="Core fear"
-            value={char.coreFear || ""}
-            onChange={(v) => up("coreFear", v)}
+            value={watch("coreFear")}
+            onChange={(v) => setValue("coreFear", v)}
             placeholder="What they most dread."
           />
           <Field
             label="Core desire"
-            value={char.coreDesire || ""}
-            onChange={(v) => up("coreDesire", v)}
+            value={watch("coreDesire")}
+            onChange={(v) => setValue("coreDesire", v)}
             placeholder="What they most want."
           />
         </div>
         <Field
           label="Philosophy / belief system"
-          value={char.philosophy || ""}
-          onChange={(v) => up("philosophy", v)}
+          value={watch("philosophy")}
+          onChange={(v) => setValue("philosophy", v)}
           multi
           rows={2}
           placeholder="How they see the world."
         />
         <Field
           label="Secrets (always carried)"
-          value={char.secrets || ""}
-          onChange={(v) => up("secrets", v)}
+          value={watch("secrets")}
+          onChange={(v) => setValue("secrets", v)}
           multi
           rows={2}
           placeholder="What they hide. How it shapes every word they say."
@@ -181,50 +285,50 @@ export default function CharacterPage() {
 
         <hr style={S.rule} />
         <p style={{ ...S.h2, marginBottom: 8 }}>Traumas</p>
-        {(char.traumas || []).map((t: Trauma) => (
+        {(watch("traumas") || []).map((t: Trauma, i: number) => (
           <EntryBlock
             key={t.id}
             color={char.color}
-            onDelete={() => del("traumas", t.id)}
+            onDelete={() => delItem(t.id)}
           >
             <div style={S.grid2}>
               <Field
                 label="Trauma name"
-                value={t.title || ""}
-                onChange={(v) => upIt("traumas", t.id, "title", v)}
+                value={watch(`traumas.${i}.title`)}
+                onChange={(v) => setValue(`traumas.${i}.title`, v)}
                 placeholder="The abandonment…"
               />
               <Field
                 label="When it happened"
-                value={t.when || ""}
-                onChange={(v) => upIt("traumas", t.id, "when", v)}
+                value={watch(`traumas.${i}.when`)}
+                onChange={(v) => setValue(`traumas.${i}.when`, v)}
                 placeholder="T2, age 12…"
               />
             </div>
             <Field
               label="What happened"
-              value={t.description || ""}
-              onChange={(v) => upIt("traumas", t.id, "description", v)}
+              value={watch(`traumas.${i}.description`)}
+              onChange={(v) => setValue(`traumas.${i}.description`, v)}
               multi
               rows={2}
             />
             <div style={S.grid2}>
               <Field
                 label="Triggered by"
-                value={t.trigger || ""}
-                onChange={(v) => upIt("traumas", t.id, "trigger", v)}
+                value={watch(`traumas.${i}.trigger`)}
+                onChange={(v) => setValue(`traumas.${i}.trigger`, v)}
                 placeholder="Loud voices, being abandoned…"
               />
               <Field
                 label="Manifests as"
-                value={t.manifestation || ""}
-                onChange={(v) => upIt("traumas", t.id, "manifestation", v)}
+                value={watch(`traumas.${i}.manifestation`)}
+                onChange={(v) => setValue(`traumas.${i}.manifestation`, v)}
                 placeholder="Freezes, lashes out…"
               />
             </div>
           </EntryBlock>
         ))}
-        <GhostButton onClick={() => add("traumas", mkTrauma)}>
+        <GhostButton onClick={addTrauma}>
           + add trauma
         </GhostButton>
       </Section>
@@ -238,14 +342,14 @@ export default function CharacterPage() {
         <div style={S.grid2}>
           <Field
             label="Arc start — who they are"
-            value={char.arcStart || ""}
-            onChange={(v) => up("arcStart", v)}
+            value={watch("arcStart")}
+            onChange={(v) => setValue("arcStart", v)}
             placeholder="Closed off, convinced the world is cruel…"
           />
           <Field
             label="Arc end — who they become"
-            value={char.arcEnd || ""}
-            onChange={(v) => up("arcEnd", v)}
+            value={watch("arcEnd")}
+            onChange={(v) => setValue("arcEnd", v)}
             placeholder="Capable of trust, grief without collapse…"
           />
         </div>
@@ -253,9 +357,9 @@ export default function CharacterPage() {
 
       {/* ── Conditions ── */}
       <Section
-        title={`Conditions (${(char.conditions || []).length})`}
+        title={`Conditions (${(watch("conditions") || []).length})`}
         action={
-          <GhostButton onClick={() => add("conditions", mkCond)}>
+          <GhostButton onClick={addCond}>
             + add
           </GhostButton>
         }
@@ -264,173 +368,173 @@ export default function CharacterPage() {
           Current physical, mental, social, or spiritual states — wounds,
           curses, blessings, enhancements.
         </p>
-        {(char.conditions || []).map((cd: Condition) => (
+        {(watch("conditions") || []).map((cd: Condition, i: number) => (
           <EntryBlock
             key={cd.id}
             color={cd.isActive ? "var(--color-orange)" : "var(--border)"}
-            onDelete={() => del("conditions", cd.id)}
+            onDelete={() => delItem(cd.id)}
           >
             <div style={S.grid3}>
               <Sel
                 label="Type"
-                value={cd.type || ""}
-                onChange={(v) => upIt("conditions", cd.id, "type", v)}
+                value={watch(`conditions.${i}.type`)}
+                onChange={(v) => setValue(`conditions.${i}.type`, v as CondType)}
                 opts={COND_TYPES}
               />
               <Field
                 label="Name"
-                value={cd.name || ""}
-                onChange={(v) => upIt("conditions", cd.id, "name", v)}
+                value={watch(`conditions.${i}.name`)}
+                onChange={(v) => setValue(`conditions.${i}.name`, v)}
                 placeholder="Cursed sight, broken ribs…"
               />
               <Toggle
                 label="Currently active?"
-                value={cd.isActive}
-                onChange={(v) => upIt("conditions", cd.id, "isActive", v)}
+                value={watch(`conditions.${i}.isActive`)}
+                onChange={(v) => setValue(`conditions.${i}.isActive`, v)}
               />
             </div>
             <div style={S.grid2}>
               <Field
                 label="At time (T#)"
-                value={cd.atTime || ""}
-                onChange={(v) => upIt("conditions", cd.id, "atTime", v)}
+                value={watch(`conditions.${i}.atTime`)}
+                onChange={(v) => setValue(`conditions.${i}.atTime`, v)}
                 placeholder="T3"
               />
               <EventPicker
                 label="At event"
-                value={cd.atEventId || ""}
-                onChange={(v) => upIt("conditions", cd.id, "atEventId", v)}
+                value={watch(`conditions.${i}.atEventId`)}
+                onChange={(v) => setValue(`conditions.${i}.atEventId`, v)}
                 events={events}
               />
             </div>
             <Field
               label="Why / how they got it"
-              value={cd.why || ""}
-              onChange={(v) => upIt("conditions", cd.id, "why", v)}
+              value={watch(`conditions.${i}.why`)}
+              onChange={(v) => setValue(`conditions.${i}.why`, v)}
               multi
               rows={2}
               placeholder="What caused this condition?"
             />
             <Field
               label="Description"
-              value={cd.description || ""}
-              onChange={(v) => upIt("conditions", cd.id, "description", v)}
+              value={watch(`conditions.${i}.description`)}
+              onChange={(v) => setValue(`conditions.${i}.description`, v)}
               multi
               rows={2}
               placeholder="What does it feel like, look like?"
             />
             <Field
               label="Effects on the character"
-              value={cd.effects || ""}
-              onChange={(v) => upIt("conditions", cd.id, "effects", v)}
+              value={watch(`conditions.${i}.effects`)}
+              onChange={(v) => setValue(`conditions.${i}.effects`, v)}
               multi
               rows={2}
               placeholder="What can they no longer do?"
             />
           </EntryBlock>
         ))}
-        {!(char.conditions || []).length && (
+        {!(watch("conditions") || []).length && (
           <p style={S.dim}>No conditions yet.</p>
         )}
       </Section>
 
       {/* ── Achievements & Losses ── */}
       <Section
-        title={`Achievements & losses (${(char.achievements || []).length + (char.losses || []).length})`}
+        title={`Achievements & losses (${(watch("achievements") || []).length + (watch("losses") || []).length})`}
       >
         <p style={{ ...S.dim, marginBottom: 14 }}>
           What they've gained and lost over the course of the story.
         </p>
 
         <p style={{ ...S.h2, marginBottom: 8 }}>Achievements</p>
-        {(char.achievements || []).map((a: Achievement) => (
+        {(watch("achievements") || []).map((a: Achievement, i: number) => (
           <EntryBlock
             key={a.id}
             color="var(--color-green)"
-            onDelete={() => del("achievements", a.id)}
+            onDelete={() => delItem(a.id)}
           >
             <div style={S.grid2}>
               <Field
                 label="Title"
-                value={a.title || ""}
-                onChange={(v) => upIt("achievements", a.id, "title", v)}
+                value={watch(`achievements.${i}.title`)}
+                onChange={(v) => setValue(`achievements.${i}.title`, v)}
                 placeholder="Mastered the void step…"
               />
               <Field
                 label="At time (T#)"
-                value={a.atTime || ""}
-                onChange={(v) => upIt("achievements", a.id, "atTime", v)}
+                value={watch(`achievements.${i}.atTime`)}
+                onChange={(v) => setValue(`achievements.${i}.atTime`, v)}
                 placeholder="T4"
               />
             </div>
             <EventPicker
               label="At event"
-              value={a.atEventId || ""}
-              onChange={(v) => upIt("achievements", a.id, "atEventId", v)}
+              value={watch(`achievements.${i}.atEventId`)}
+              onChange={(v) => setValue(`achievements.${i}.atEventId`, v)}
               events={events}
             />
             <Field
               label="Description"
-              value={a.description || ""}
-              onChange={(v) => upIt("achievements", a.id, "description", v)}
+              value={watch(`achievements.${i}.description`)}
+              onChange={(v) => setValue(`achievements.${i}.description`, v)}
               multi
               rows={2}
               placeholder="What happened. Why it matters."
             />
             <Field
               label="What they gained"
-              value={a.gained || ""}
-              onChange={(v) => upIt("achievements", a.id, "gained", v)}
+              value={watch(`achievements.${i}.gained`)}
+              onChange={(v) => setValue(`achievements.${i}.gained`, v)}
               placeholder="Respect of the guild, a new power, a scar…"
             />
           </EntryBlock>
         ))}
         <GhostButton
           sx={{ marginBottom: 20 }}
-          onClick={() => add("achievements", mkAchieve)}
+          onClick={addAchieve}
         >
           + add achievement
         </GhostButton>
 
         <hr style={S.rule} />
         <p style={{ ...S.h2, marginBottom: 8 }}>Losses</p>
-        {(char.losses || []).map((ls: Loss) => (
+        {(watch("losses") || []).map((ls: Loss, i: number) => (
           <EntryBlock
             key={ls.id}
             color="var(--color-red)"
-            onDelete={() => del("losses", ls.id)}
+            onDelete={() => delItem(ls.id)}
           >
             <div style={S.grid2}>
               <Field
                 label="What was lost"
-                value={ls.title || ""}
-                onChange={(v) => upIt("losses", ls.id, "title", v)}
+                value={watch(`losses.${i}.title`)}
+                onChange={(v) => setValue(`losses.${i}.title`, v)}
                 placeholder="Their mentor, their right eye…"
               />
               <Field
                 label="At time (T#)"
-                value={ls.atTime || ""}
-                onChange={(v) => upIt("losses", ls.id, "atTime", v)}
+                value={watch(`losses.${i}.atTime`)}
+                onChange={(v) => setValue(`losses.${i}.atTime`, v)}
                 placeholder="T6"
               />
             </div>
             <EventPicker
               label="At event"
-              value={ls.atEventId || ""}
-              onChange={(v) => upIt("losses", ls.id, "atEventId", v)}
+              value={watch(`losses.${i}.atEventId`)}
+              onChange={(v) => setValue(`losses.${i}.atEventId`, v)}
               events={events}
             />
             <Field
               label="Description"
-              value={ls.description || ""}
-              onChange={(v) => upIt("losses", ls.id, "description", v)}
+              value={watch(`losses.${i}.description`)}
+              onChange={(v) => setValue(`losses.${i}.description`, v)}
               multi
               rows={2}
               placeholder="How it happened. What it cost them emotionally."
             />
           </EntryBlock>
         ))}
-        <GhostButton onClick={() => add("losses", mkLoss)}>
+        <GhostButton onClick={addLoss}>
           + add loss
         </GhostButton>
       </Section>

@@ -7,7 +7,7 @@ import type { Character, Event, Equipment, Condition } from "../lib/types";
 
 interface Note {
   label: string;
-  value: string;
+  value: string | undefined;
   pts: number;
   positive: boolean;
   neutral?: boolean;
@@ -35,8 +35,7 @@ const COND_PENALTY: Record<string, number> = {
 
 function scoreFighter(char: Character, events: Event[], atEventId?: string) {
   let score = 0;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const notes: any[] = [];
+  const notes: Note[] = [];
 
   const resolveEvent = atEventId
     ? events.find((e) => e.id === atEventId)

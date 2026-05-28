@@ -6,7 +6,7 @@ import { S } from "../lib/utils";
 import { Field, Sel, Section } from "../components/ui";
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import type { Character, EventAttributes } from "../lib/types";
+import type { Character, EventAttributes, EventType } from "../lib/types";
 
 interface EventForm {
   title: string;
@@ -32,9 +32,8 @@ export default function EventPage() {
   const { id } = useParams();
   const characters = useCharacters();
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const event = useSelector(() =>
-    (worldStore.events.get() as any[]).find((e) => e.id === id),
+    worldStore.events.get().find((e) => e.id === id),
   );
   const eventIdx = useSelector(() =>
     worldStore.events.get().findIndex((e) => e.id === id),
@@ -73,14 +72,12 @@ export default function EventPage() {
         consequence: event.consequence || "",
         characters: event.characters || [],
       });
-      /* eslint-disable @typescript-eslint/no-explicit-any */
       const attrs: Record<string, EventAttributes> = {};
-      (worldStore.characters.get() as any[]).forEach((c: any) => {
+      worldStore.characters.get().forEach((c) => {
         if (c.attributes?.[event.id]) {
           attrs[c.id] = { ...c.attributes[event.id] };
         }
       });
-      /* eslint-enable @typescript-eslint/no-explicit-any */
       setCharAttrs(attrs);
     }
   }, [event?.id, reset]);
@@ -102,7 +99,7 @@ export default function EventPage() {
     setValue("characters", updated);
   }, [getValues, setValue]);
 
-  const patchAttr = useCallback((cid: string, f: string, v: any) => {
+  const patchAttr = useCallback((cid: string, f: string, v: string) => {
     setCharAttrs((prev) => ({
       ...prev,
       [cid]: { ...prev[cid], [f]: v },
@@ -112,19 +109,29 @@ export default function EventPage() {
   const getAttr = (cid: string) => charAttrs[cid] || {};
 
   const onSubmit = (data: EventForm) => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    (Object.keys(data) as (keyof EventForm)[]).forEach((key) => {
-      (worldStore.events[eventIdx] as any)[key].set(data[key]);
-    });
+    const ev = worldStore.events[eventIdx];
+    ev.title.set(data.title);
+    ev.time.set(data.time);
+    ev.type.set(data.type as EventType);
+    ev.chapter.set(data.chapter);
+    ev.startDate.set(data.startDate);
+    ev.endDate.set(data.endDate);
+    ev.setting.set(data.setting);
+    ev.description.set(data.description);
+    ev.consequence.set(data.consequence);
+    ev.characters.set(data.characters);
     Object.entries(charAttrs).forEach(([cid, attrs]) => {
-      const cIdx = (worldStore.characters.get() as any[]).findIndex(
-        (c: any) => c.id === cid,
+      const cIdx = worldStore.characters.get().findIndex(
+        (c) => c.id === cid,
       );
       if (cIdx >= 0) {
-        (worldStore.characters[cIdx].attributes as any)[event.id].set(attrs);
+        const current = worldStore.characters[cIdx].attributes.get();
+        worldStore.characters[cIdx].attributes.set({
+          ...current,
+          [event.id]: attrs,
+        });
       }
     });
-    /* eslint-enable @typescript-eslint/no-explicit-any */
   };
 
   const formChars = watch("characters");

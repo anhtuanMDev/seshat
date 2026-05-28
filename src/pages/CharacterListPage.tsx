@@ -7,27 +7,27 @@ import { CHAR_COLORS } from "../lib/constants";
 import type { Character } from "../lib/types";
 import { useCallback } from "react";
 
+type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
+
 export default function CharacterListPage() {
   const characters = useCharacters();
   const ref = useAnimateIn();
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const add = useCallback(() => {
     const c = mkChar(`Character ${characters.length + 1}`, CHAR_COLORS[characters.length % CHAR_COLORS.length]);
-    (worldStore as any).characters.push(c);
+    worldStore.characters.push(c);
   }, [characters.length]);
 
   const del = useCallback((id: string) => {
-    (worldStore as any).characters.set((prev: Character[]) =>
+    worldStore.characters.set((prev: Character[]) =>
       prev.filter((x) => x.id !== id),
     );
   }, []);
 
-  const update = useCallback((id: string, key: string, v: any) => {
-    const idx = (worldStore.characters.get() as Character[]).findIndex((x) => x.id === id);
-    if (idx >= 0) (worldStore as any).characters[idx][key].set(v);
+  const update = useCallback(<K extends keyof Character>(id: string, key: K, v: Character[K]) => {
+    const idx = worldStore.characters.get().findIndex((x) => x.id === id);
+    if (idx >= 0) (worldStore.characters[idx] as ObservableOf<Character>)[key].set(v);
   }, []);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return (
     <div ref={ref}>

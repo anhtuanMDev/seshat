@@ -1,7 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export function buildExport(state: any): string {
+import type { Character, Event } from "./types";
+import type { Nation, Technique, Ingredient, Monster, Treasure } from "../store/worldStore";
+
+interface ExportState {
+  title: string;
+  synopsis: string;
+  setting: string;
+  themes: string;
+  rules: string;
+  nations: Nation[];
+  techniques: Technique[];
+  ingredients: Ingredient[];
+  monsters: Monster[];
+  treasures: Treasure[];
+  events: Event[];
+  characters: Character[];
+}
+
+export function buildExport(state: ExportState): string {
   const L: string[] = [];
-  const ev = (id: string) => state.events.find((e: any) => e.id === id);
+  const ev = (id: string) => state.events.find((e) => e.id === id);
   const evLabel = (id: string) => {
     const e = ev(id);
     return e ? `[T${e.time}] ${e.title}` : "";
@@ -102,28 +119,25 @@ export function buildExport(state: any): string {
     if (c.secrets) L.push(`  Secrets: ${c.secrets}`);
     if (c.arcStart || c.arcEnd) L.push(`  Arc: ${c.arcStart} → ${c.arcEnd}`);
 
-    const activeConditions = (c.conditions || []).filter(
-      (cd: any) => cd.isActive,
+    const timeline = (c.statusTimeline || []).sort(
+      (a, b) => {
+        const evA = state.events.find((e) => e.id === a.eventId);
+        const evB = state.events.find((e) => e.id === b.eventId);
+        return (evA?.time ?? 0) - (evB?.time ?? 0) || a.id.localeCompare(b.id);
+      },
     );
-    const latestEvent = [...state.events]
-      .sort((a, b) => b.time - a.time)
-      .find((e) => (e.characters || []).includes(c.id));
-    const currentAttr = latestEvent ? c.attributes?.[latestEvent.id] || {} : {};
-    if (latestEvent || activeConditions.length) {
-      L.push(`  ── Current Status ──`);
-      if (latestEvent) {
-        if (currentAttr.power) L.push(`    Power tier: ${currentAttr.power}`);
-        if (currentAttr.arcStage)
-          L.push(`    Arc stage: ${currentAttr.arcStage}`);
-        if (currentAttr.emotionalState)
-          L.push(`    Emotional state: ${currentAttr.emotionalState}`);
-        if (currentAttr.physicalState)
-          L.push(`    Physical state: ${currentAttr.physicalState}`);
-      }
-      if (activeConditions.length) {
-        L.push(
-          `    Active conditions: ${activeConditions.map((cd: any) => `${cd.name} (${cd.type})`).join(", ")}`,
-        );
+    if (timeline.length) {
+      L.push(`  ── Status Timeline ──`);
+      for (const s of timeline) {
+        const ev = state.events.find((e) => e.id === s.eventId);
+        const dateTag = [s.startDate && s.startDate.replace("T", " "), s.endDate && `→ ${s.endDate.replace("T", " ")}`].filter(Boolean).join(" ");
+        const label = ev ? `T${ev.time} — ${ev.title}` : "(no event)";
+        L.push(`    ${label}${dateTag ? `  (${dateTag})` : ""}`);
+        if (s.power) L.push(`      Power tier: ${s.power}`);
+        if (s.arcStage) L.push(`      Arc stage: ${s.arcStage}`);
+        if (s.emotionalState) L.push(`      Emotional state: ${s.emotionalState}`);
+        if (s.physicalState) L.push(`      Physical state: ${s.physicalState}`);
+        if (s.note) L.push(`      Note: ${s.note}`);
       }
     }
 
@@ -225,7 +239,7 @@ export function buildExport(state: any): string {
     if (c.relationships?.length) {
       L.push(`  Relationships:`);
       for (const r of c.relationships) {
-        const other = state.characters.find((x: any) => x.id === r.withId);
+        const other = state.characters.find((x) => x.id === r.withId);
         if (!other) continue;
         L.push(
           `    → ${other.name}: ${r.dynamic}${r.feel ? ` | ${r.feel}` : ""}${r.history ? ` | ${r.history}` : ""}`,
@@ -240,7 +254,7 @@ export function buildExport(state: any): string {
         if (bev.description) L.push(`      ${bev.description}`);
         if (bev.impact) L.push(`      Impact: ${bev.impact}`);
         for (const cr of bev.crossings || []) {
-          const other = state.characters.find((x: any) => x.id === cr.withId);
+          const other = state.characters.find((x) => x.id === cr.withId);
           if (other) L.push(`      ↔ Crosses ${other.name}: ${cr.note}`);
         }
       }
@@ -258,7 +272,7 @@ export function buildExport(state: any): string {
     if (ev.description) L.push(`  ${ev.description}`);
     if (ev.consequence) L.push(`  → ${ev.consequence}`);
     for (const cid of ev.characters || []) {
-      const c = state.characters.find((x: any) => x.id === cid);
+      const c = state.characters.find((x) => x.id === cid);
       if (!c) continue;
       const a = c.attributes?.[ev.id] || {};
       const parts: string[] = [];

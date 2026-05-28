@@ -1,61 +1,45 @@
-import type { Character, Event, Condition, Equipment } from "../../lib/types";
+import type { StatusEntry, Event } from "../../lib/types";
+import { POWER_TIERS, ARC_STAGES } from "../../lib/constants";
+import { S } from "../../lib/utils";
+import { EventPicker } from "./EventPicker";
 
 interface CharStatusPanelProps {
-  char: Character;
+  statusTimeline: StatusEntry[];
+  color: string;
   events: Event[];
+  onChange: (entries: StatusEntry[]) => void;
 }
 
-export function CharStatusPanel({ char, events }: CharStatusPanelProps) {
-  const sortedEvts = [...events].sort((a, b) => b.time - a.time);
-  const latestEvent = sortedEvts.find((e) =>
-    (e.characters || []).includes(char.id),
-  );
-  const currentAttr = latestEvent
-    ? char.attributes?.[latestEvent.id] || {}
-    : {};
-  const activeConditions = (char.conditions || []).filter(
-    (cd: Condition) => cd.isActive,
-  );
-  const equippedItems = (char.equipment || []).filter(
-    (eq: Equipment) => (eq.accessState || "Equipped") === "Equipped",
-  );
-  const cursedItems = equippedItems.filter(
-    (eq: Equipment) => eq.curses && eq.curses.trim().length > 0,
-  );
-  const achievements = char.achievements || [];
-  const losses = char.losses || [];
-
-  if (
-    !latestEvent &&
-    !activeConditions.length &&
-    !equippedItems.length &&
-    !achievements.length &&
-    !losses.length
-  )
-    return null;
-
-  const badgeStyle = (color: string) => ({
-    display: "inline-block",
-    padding: "2px 8px",
-    borderRadius: 2,
-    fontSize: 11,
-    border: `1px solid ${color}`,
-    color: color,
-    marginRight: 6,
-    marginBottom: 4,
-    letterSpacing: 1,
+export function CharStatusPanel({
+  statusTimeline,
+  color,
+  events,
+  onChange,
+}: CharStatusPanelProps) {
+  const sorted = [...statusTimeline].sort((a, b) => {
+    const evA = events.find((e) => e.id === a.eventId);
+    const evB = events.find((e) => e.id === b.eventId);
+    return (evA?.time ?? 0) - (evB?.time ?? 0) || a.id.localeCompare(b.id);
   });
 
-  const h2Style = {
-    fontSize: 11,
-    letterSpacing: 3,
-    textTransform: "uppercase" as const,
-    margin: "0 0 10px",
-    fontWeight: 400,
-    color: char.color,
+  const patch = (i: number, f: keyof StatusEntry, v: StatusEntry[keyof StatusEntry]) => {
+    const next = [...statusTimeline];
+    next[i] = { ...next[i], [f]: v };
+    onChange(next);
   };
 
-  const dimStyle = { color: "var(--text-dim)", fontSize: 12 };
+  const remove = (i: number) => {
+    onChange(statusTimeline.filter((_, idx) => idx !== i));
+  };
+
+  const cell = { marginBottom: 10 };
+  const dateInputStyle = {
+    ...S.input,
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    borderBottom: "1px solid var(--border)",
+    paddingBottom: 2,
+  };
 
   return (
     <div
@@ -64,114 +48,197 @@ export function CharStatusPanel({ char, events }: CharStatusPanelProps) {
         padding: 16,
         borderRadius: 2,
         marginBottom: 24,
-        borderLeft: `3px solid ${char.color}`,
+        borderLeft: `3px solid ${color}`,
       }}
     >
-      <p style={h2Style}>Current Status</p>
-
-      <div
-        style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}
+      <p
+        style={{
+          fontSize: 11,
+          letterSpacing: 3,
+          textTransform: "uppercase",
+          margin: "0 0 10px",
+          fontWeight: 400,
+          color,
+        }}
       >
-        {currentAttr.power && (
-          <span style={badgeStyle("var(--color-blue)")}>
-            {currentAttr.power}
-          </span>
-        )}
-        {currentAttr.arcStage && (
-          <span style={badgeStyle("var(--color-purple)")}>
-            {currentAttr.arcStage}
-          </span>
-        )}
-        {currentAttr.emotionalState && (
-          <span style={badgeStyle("var(--color-orange)")}>
-            {currentAttr.emotionalState}
-          </span>
-        )}
-        {currentAttr.physicalState && (
-          <span
-            style={badgeStyle(
-              currentAttr.physicalState.toLowerCase().includes("injur") ||
-                currentAttr.physicalState.toLowerCase().includes("wound")
-                ? "var(--color-red)"
-                : "var(--color-green)",
-            )}
-          >
-            {currentAttr.physicalState}
-          </span>
-        )}
-      </div>
+        Status Timeline
+      </p>
 
-      {latestEvent && (
-        <p style={{ ...dimStyle, marginBottom: 8 }}>
-          Last seen at:{" "}
-          <strong>
-            T{latestEvent.time} — {latestEvent.title}
-          </strong>
+      {sorted.map((entry, i) => {
+        const ev = events.find((e) => e.id === entry.eventId);
+        const evStart = ev?.startDate || "";
+        const evEnd = ev?.endDate || "";
+
+        return (
+          <div
+            key={entry.id}
+            style={{
+              ...cell,
+              padding: 12,
+              border: "1px solid var(--border)",
+              borderRadius: 2,
+              position: "relative",
+            }}
+          >
+            {/* ── Event picker row ── */}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                marginBottom: 8,
+                alignItems: "end",
+              }}
+            >
+              <EventPicker
+                label="Event"
+                value={entry.eventId}
+                onChange={(v) => patch(i, "eventId", v)}
+                events={events}
+              />
+              {ev && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    whiteSpace: "nowrap",
+                    paddingBottom: 4,
+                  }}
+                >
+                  {[evStart && evStart.replace("T", " "), evEnd && `→ ${evEnd.replace("T", " ")}`]
+                    .filter(Boolean)
+                    .join(" ")}
+                </span>
+              )}
+              <button
+                onClick={() => remove(i)}
+                style={{
+                  ...S.ghost,
+                  fontSize: 11,
+                  color: "var(--color-red)",
+                  marginLeft: "auto",
+                  flexShrink: 0,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* ── Status date range ── */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "6px 12px",
+                marginBottom: 8,
+              }}
+            >
+              <div>
+                <label style={S.label}>From</label>
+                <input
+                  type="datetime-local"
+                  value={entry.startDate || ""}
+                  min={evStart || undefined}
+                  max={evEnd || undefined}
+                  onChange={(e) => patch(i, "startDate", e.target.value)}
+                  style={dateInputStyle}
+                />
+              </div>
+              <div>
+                <label style={S.label}>To</label>
+                <input
+                  type="datetime-local"
+                  value={entry.endDate || ""}
+                  min={evStart || undefined}
+                  max={evEnd || undefined}
+                  onChange={(e) => patch(i, "endDate", e.target.value)}
+                  style={dateInputStyle}
+                />
+              </div>
+            </div>
+
+            {/* ── Power / Arc / Emotional / Physical ── */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "6px 12px",
+                marginBottom: 8,
+              }}
+            >
+              <div>
+                <label style={S.label}>Power tier</label>
+                <select
+                  value={entry.power}
+                  onChange={(e) => patch(i, "power", e.target.value)}
+                  style={S.select}
+                >
+                  <option value="">—</option>
+                  {POWER_TIERS.map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={S.label}>Arc stage</label>
+                <select
+                  value={entry.arcStage}
+                  onChange={(e) => patch(i, "arcStage", e.target.value)}
+                  style={S.select}
+                >
+                  <option value="">—</option>
+                  {ARC_STAGES.map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={S.label}>Emotional state</label>
+                <input
+                  value={entry.emotionalState}
+                  onChange={(e) => patch(i, "emotionalState", e.target.value)}
+                  placeholder="Grief, resolute…"
+                  style={S.input}
+                />
+              </div>
+              <div>
+                <label style={S.label}>Physical state</label>
+                <input
+                  value={entry.physicalState}
+                  onChange={(e) => patch(i, "physicalState", e.target.value)}
+                  placeholder="Injured, peak…"
+                  style={S.input}
+                />
+              </div>
+            </div>
+
+            <textarea
+              value={entry.note}
+              onChange={(e) => patch(i, "note", e.target.value)}
+              placeholder="How are they doing in this period? What's driving them?"
+              rows={2}
+              style={{
+                width: "100%",
+                fontFamily: "Georgia, serif",
+                fontSize: 12,
+                color: "var(--text-secondary)",
+                background: "transparent",
+                border: "none",
+                borderBottom: "1px solid var(--border)",
+                outline: "none",
+                resize: "none",
+                lineHeight: 1.6,
+                padding: "2px 0",
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {!statusTimeline.length && (
+        <p style={{ color: "var(--text-dim)", fontSize: 12, fontStyle: "italic" }}>
+          No status entries yet. Add one to track this character's state across the timeline.
         </p>
       )}
-
-      {activeConditions.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <p style={{ ...dimStyle, marginBottom: 4 }}>Active conditions:</p>
-          <div style={{ display: "flex", flexWrap: "wrap" }}>
-            {activeConditions.map((cd) => (
-              <span
-                key={cd.id}
-                style={badgeStyle(
-                  cd.type === "Cursed"
-                    ? "var(--color-purple)"
-                    : cd.type === "Wounded" || cd.type === "Physical"
-                      ? "var(--color-red)"
-                      : cd.type === "Blessed" || cd.type === "Enhanced"
-                        ? "var(--color-green)"
-                        : "var(--color-orange)",
-                )}
-              >
-                {cd.name} [{cd.type}]
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {cursedItems.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <p style={{ ...dimStyle, marginBottom: 4 }}>Cursed equipment:</p>
-          <div style={{ display: "flex", flexWrap: "wrap" }}>
-            {cursedItems.map((eq) => (
-              <span key={eq.id} style={badgeStyle("var(--color-purple)")}>
-                ⚠ {eq.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: "flex", gap: 16 }}>
-        {achievements.length > 0 && (
-          <p style={dimStyle}>
-            <strong>{achievements.length}</strong> achievement
-            {achievements.length !== 1 ? "s" : ""}
-          </p>
-        )}
-        {losses.length > 0 && (
-          <p style={{ ...dimStyle, color: "var(--color-red)" }}>
-            <strong>{losses.length}</strong> loss
-            {losses.length !== 1 ? "es" : ""}
-          </p>
-        )}
-        {(char.skills || []).length > 0 && (
-          <p style={dimStyle}>
-            <strong>{char.skills.length}</strong> skill
-            {char.skills.length !== 1 ? "s" : ""}
-          </p>
-        )}
-        {equippedItems.length > 0 && (
-          <p style={dimStyle}>
-            <strong>{equippedItems.length}</strong> equipped
-          </p>
-        )}
-      </div>
     </div>
   );
 }
