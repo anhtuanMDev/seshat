@@ -217,7 +217,8 @@ Pages use **react-hook-form** for local form state. Edits are held in local stat
 ### Common Pattern
 
 ```tsx
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
+import type { Control, UseFormSetValue } from "react-hook-form";
 import { worldStore } from "../store/worldStore";
 
 interface MyForm {
@@ -226,7 +227,7 @@ interface MyForm {
 }
 
 // Inside component:
-const { register, handleSubmit, watch, reset, setValue } = useForm<MyForm>({
+const { register, handleSubmit, control, reset, setValue } = useForm<MyForm>({
   defaultValues: { field1: "", field2: "" },
 });
 
@@ -235,26 +236,43 @@ useEffect(() => {
   if (entity) reset({ field1: entity.field1, field2: entity.field2 });
 }, [entity?.id, reset]);
 
-// Save writes to Legend State
+// Top-level useWatch for reactive reads (safer than watch() for React Compiler)
+const field1 = useWatch({ control, name: "field1" });
+
+// Save writes to Legend State (per-field .set() — verbose but fully type-safe)
 const onSubmit = (data: MyForm) => {
-  Object.entries(data).forEach(([key, value]) => {
-    (worldStore.collection[idx] as any)[key].set(value);
-  });
+  const c = worldStore.collection[idx];
+  c.field1.set(data.field1);
+  c.field2.set(data.field2);
 };
+
+// Sub-components for array items (required by React Compiler — useWatch cannot be called inside loops)
+interface ItemBlockProps {
+  control: Control<MyForm>;
+  index: number;
+  setValue: UseFormSetValue<MyForm>;
+  onDelete: () => void;
+}
+
+function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
+  const value = useWatch({ control, name: `items.${index}.field` as const });
+  return <Field value={value} onChange={(v) => setValue(`items.${index}.field`, v)} />;
+}
 
 // In JSX:
 //   Native inputs → register()
-//   MUI Field/Sel → watch() + setValue()
+//   MUI Field/Sel → useWatch({ control, name }) for value, setValue(name, v) for change
+//   Arrays        → top-level useWatch + sub-component per item index
 //   Save button   → handleSubmit(onSubmit)
 ```
 
 ### WorldPage (`/`)
 
-Renders world metadata and world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Currently uses direct store writes (not yet migrated to react-hook-form).
+Renders world metadata and five world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Uses react-hook-form with `watch`/`setValue` for all fields; array add/remove via generic typed `addItem`/`delItem` that uses `WorldForm[F][number]` to infer the element type from the field name, eliminating `any` casts.
 
 ### CharacterPage (`/characters/:id`)
 
-Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form for all character fields including nested array items (traumas, conditions, achievements, losses, statusTimeline). The Status Timeline section uses a custom `CharStatusPanel` component with editable per-period entries (each has start/end datetime-local pickers, power tier select, arc stage select, emotional/physical state inputs, and a note textarea). Entries are ordered by date. Top-level fields use `register()` (name) and `watch()`/`setValue()` (MUI Field wrappers). Nested arrays use dot-path notation (`traumas.${i}.title`) with `watch`/`setValue`; add/remove operations use `setValue` with the full array.
+Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Scalar fields are read via top-level `useWatch({ control, name })` calls. Each array type (traumas, conditions, achievements, losses) has its own sub-component (`TraumaBlock`, `ConditionBlock`, `AchievementBlock`, `LossBlock`) that calls `useWatch` per field with a static index path. The Status Timeline section uses a custom `CharStatusPanel` component with editable per-period entries (each has start/end datetime-local pickers constrained by the referenced event's date window, power tier select, arc stage select, emotional/physical state inputs, and a note textarea). Entries are ordered by date. `onSubmit` uses explicit per-field `.set()` calls — verbose but fully type-safe with no casts.
 
 ### EventPage (`/events/:id`)
 
@@ -340,13 +358,14 @@ The original `Seshat.jsx` was converted to a modular TypeScript project:
 | Routing                              | `src/router/index.tsx`    |
 | App shell                            | `src/App.tsx`             |
 
-TypeScript strict mode with `verbatimModuleSyntax` enforced. All style properties typed as `Record<string, any>` to avoid CSS property type conflicts.
+TypeScript strict mode with `verbatimModuleSyntax` enforced. All style properties typed as `Record<string, React.CSSProperties | Record<string, React.CSSProperties>>`.
 
 ### Type Strategy
 
 - Entity types (`Character`, `Event`, `Nation`, etc.) defined in `src/lib/types.ts` for reuse
-- Legend State observable patterns require `any` casts for dynamic property access; these are documented with eslint-disable comments
+- Legend State observable patterns use per-field `.set()` calls in `onSubmit` to avoid dynamic property access
 - `useTheme.tsx` exports types separately to satisfy react-refresh's component-only file restriction
+- `any` keyword is banned — no `as any`, no `: any`, no `eslint-disable @typescript-eslint/no-explicit-any` anywhere in the codebase
 
 ---
 
@@ -389,7 +408,10 @@ const eventIdx = useSelector(() =>
 Pages that edit store entities use **react-hook-form** for local state and only write to the store on explicit save:
 
 ```tsx
-const { register, handleSubmit, watch, reset, setValue } = useForm<FormType>({
+import { useForm, useWatch } from "react-hook-form";
+import type { Control, UseFormSetValue } from "react-hook-form";
+
+const { register, handleSubmit, control, reset, setValue } = useForm<FormType>({
   defaultValues: { ... },
 });
 
@@ -397,17 +419,25 @@ useEffect(() => {
   if (entity) reset({ field: entity.field });
 }, [entity?.id, reset]);
 
+// useWatch for reactive reads (React Compiler safe; watch() is not)
+const field = useWatch({ control, name: "field" });
+
+// Per-field .set() — verbose but fully type-safe (no any casts)
 const onSubmit = (data: FormType) => {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  (Object.keys(data) as (keyof FormType)[]).forEach((key) => {
-    (worldStore.collection[entityIdx] as any)[key].set(data[key]);
-  });
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const c = worldStore.collection[entityIdx];
+  c.field1.set(data.field1);
+  c.field2.set(data.field2);
 };
+
+// Sub-component for array items (useWatch cannot be called inside loops)
+function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
+  const val = useWatch({ control, name: `items.${index}.field` as const });
+  return <Field value={val} onChange={(v) => setValue(`items.${index}.field`, v)} />;
+}
 
 // JSX:
 //   <input {...register("field")} />
-//   <Field value={watch("field")} onChange={(v) => setValue("field", v)} />
+//   <Field value={field} onChange={(v) => setValue("field", v)} />
 //   <button onClick={handleSubmit(onSubmit)}>save</button>
 ```
 
@@ -419,9 +449,11 @@ const onSubmit = (data: FormType) => {
 | Read array (full)        | `useSelector(() => worldStore.events.get())`                           |
 | Read array (find)        | `worldStore.events.get().find(e => e.id === id)` (raw object, no `.get()`) |
 | Local form state         | `useForm<FormType>()` + `reset()` from store on entity change             |
-| Persist to store on save | `handleSubmit(onSubmit)` => iterate data keys, `.set()` each on store     |
-| MUI Field/Sel in form    | `watch(field)` for value, `setValue(field, v)` for change               |
+| Persist to store on save | `handleSubmit(onSubmit)` => per-field `.set()` calls                      |
+| MUI Field/Sel in form    | `useWatch({ control, name })` for value, `setValue(name, v)` for change   |
+| React Compiler safety    | Prefer `useWatch` over `watch()`; extract sub-components for array items  |
 | Native input in form     | `{...register("field")}`                                                |
+| Array item sub-component | Define `ItemBlockProps` with `Control`, `UseFormSetValue`; pass `control`, `index` |
 
 ### Code Generation Reminder
 
@@ -429,6 +461,9 @@ When generating Legend State code:
 - Never call `.get()` on array elements returned by `.find()`, `.map()`, or `.filter()`
 - Always get the array index if you need to update an item later (for save, not per-keystroke)
 - Use `useSelector()` for reactive reads, direct `.get()` only inside selectors
-- Cast to `any` for dynamic property access: `(obj as any).prop.set(value)`
-- Prefer react-hook-form for form state; batch-write to store on save
+- Use per-field `.set()` in `onSubmit` (no dynamic property access, no `any` casts)
+- Prefer react-hook-form for form state; per-field `.set()` to store on save
+- For React Compiler safety: use `useWatch({ control, name })` instead of `watch()`
+- Extract sub-components for array items (each calls `useWatch` with a static index)
 - For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data
+- `any` is banned — no `as any`, no `: any`, no eslint-disable for `no-explicit-any`
