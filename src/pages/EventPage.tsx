@@ -4,7 +4,22 @@ import { worldStore } from "../store/worldStore";
 import { useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field, Sel, Section } from "../components/ui";
-import type { Character } from "../lib/types";
+import { useState, useEffect, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import type { Character, EventAttributes } from "../lib/types";
+
+interface EventForm {
+  title: string;
+  time: number;
+  type: string;
+  chapter: string;
+  startDate: string;
+  endDate: string;
+  setting: string;
+  description: string;
+  consequence: string;
+  characters: string[];
+}
 import {
   EVENT_TYPES,
   POWER_TIERS,
@@ -25,6 +40,51 @@ export default function EventPage() {
     worldStore.events.get().findIndex((e) => e.id === id),
   );
 
+  const [charAttrs, setCharAttrs] = useState<Record<string, EventAttributes>>(
+    {},
+  );
+
+  const { register, handleSubmit, watch, reset, setValue, getValues } = useForm<EventForm>({
+    defaultValues: {
+      title: "",
+      time: 1,
+      type: "Story",
+      chapter: "",
+      startDate: "",
+      endDate: "",
+      setting: "",
+      description: "",
+      consequence: "",
+      characters: [],
+    },
+  });
+
+  useEffect(() => {
+    if (event) {
+      reset({
+        title: event.title || "",
+        time: event.time,
+        type: event.type,
+        chapter: event.chapter || "",
+        startDate: event.startDate || "",
+        endDate: event.endDate || "",
+        setting: event.setting || "",
+        description: event.description || "",
+        consequence: event.consequence || "",
+        characters: event.characters || [],
+      });
+      /* eslint-disable @typescript-eslint/no-explicit-any */
+      const attrs: Record<string, EventAttributes> = {};
+      (worldStore.characters.get() as any[]).forEach((c: any) => {
+        if (c.attributes?.[event.id]) {
+          attrs[c.id] = { ...c.attributes[event.id] };
+        }
+      });
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+      setCharAttrs(attrs);
+    }
+  }, [event?.id, reset]);
+
   const ref = useAnimateIn();
 
   if (!event)
@@ -34,58 +94,82 @@ export default function EventPage() {
       </div>
     );
 
-  const up = (f: string, v: any) =>
-    (worldStore.events[eventIdx] as any)[f].set(v);
+  const toggleChar = useCallback((cid: string) => {
+    const current = getValues("characters");
+    const updated = current.includes(cid)
+      ? current.filter((x: string) => x !== cid)
+      : [...current, cid];
+    setValue("characters", updated);
+  }, [getValues, setValue]);
 
-  const toggleChar = (cid: string) => {
-    const cur = event.characters || [];
-    up(
-      "characters",
-      cur.includes(cid) ? cur.filter((x: string) => x !== cid) : [...cur, cid],
-    );
+  const patchAttr = useCallback((cid: string, f: string, v: any) => {
+    setCharAttrs((prev) => ({
+      ...prev,
+      [cid]: { ...prev[cid], [f]: v },
+    }));
+  }, []);
+
+  const getAttr = (cid: string) => charAttrs[cid] || {};
+
+  const onSubmit = (data: EventForm) => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (Object.keys(data) as (keyof EventForm)[]).forEach((key) => {
+      (worldStore.events[eventIdx] as any)[key].set(data[key]);
+    });
+    Object.entries(charAttrs).forEach(([cid, attrs]) => {
+      const cIdx = (worldStore.characters.get() as any[]).findIndex(
+        (c: any) => c.id === cid,
+      );
+      if (cIdx >= 0) {
+        (worldStore.characters[cIdx].attributes as any)[event.id].set(attrs);
+      }
+    });
+    /* eslint-enable @typescript-eslint/no-explicit-any */
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const upAttr = (cid: string, f: string, v: any) => {
-    const cIdx = worldStore.characters.get().findIndex((c) => c.id === cid);
-    if (cIdx >= 0) {
-      const attr =
-        (worldStore.characters[cIdx].attributes as any)?.[event.id]?.get() ||
-        {};
-      (worldStore.characters[cIdx].attributes as any)[event.id].set({
-        ...attr,
-        [f]: v,
-      });
-    }
-  };
-  /* eslint-enable @typescript-eslint/no-explicit-any */
-
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const getAttr = (cid: string) =>
-    (
-      worldStore.characters.get().find((c) => c.id === cid)?.attributes as any
-    )?.[event.id]?.get() || {};
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const formChars = watch("characters");
 
   return (
     <div ref={ref}>
-      <input
-        value={event.title}
-        onChange={(e) => up("title", e.target.value)}
+      <div
         style={{
-          ...S.input,
-          fontSize: 22,
-          border: "none",
-          padding: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
           marginBottom: 16,
-          color: "var(--text-primary)",
+          gap: 16,
         }}
-      />
+      >
+        <input
+          {...register("title")}
+          style={{
+            ...S.input,
+            fontSize: 22,
+            border: "none",
+            padding: 0,
+            flex: 1,
+            color: "var(--text-primary)",
+          }}
+        />
+        <button
+          onClick={handleSubmit(onSubmit)}
+          title="Save changes"
+          style={{
+            ...S.ghost,
+            fontSize: 11,
+            letterSpacing: 1,
+            color: "var(--color-green)",
+            flexShrink: 0,
+          }}
+        >
+          save
+        </button>
+      </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "56px auto 1fr 1fr",
+          gridTemplateColumns: "56px auto 1fr 1fr 1fr",
           gap: "0 24px",
           marginBottom: 16,
           alignItems: "end",
@@ -95,16 +179,14 @@ export default function EventPage() {
           <label style={S.label}>Time</label>
           <input
             type="number"
-            value={event.time}
-            onChange={(e) => up("time", +e.target.value)}
+            {...register("time", { valueAsNumber: true })}
             style={{ ...S.input, width: 52 }}
           />
         </div>
         <div>
           <label style={S.label}>Type</label>
           <select
-            value={event.type}
-            onChange={(e) => up("type", e.target.value)}
+            {...register("type")}
             style={S.select}
           >
             {EVENT_TYPES.map((o) => (
@@ -114,35 +196,45 @@ export default function EventPage() {
         </div>
         <Field
           label="Chapter"
-          value={event.chapter || ""}
-          onChange={(v) => up("chapter", v)}
+          value={watch("chapter")}
+          onChange={(v) => setValue("chapter", v)}
           placeholder="3 or Prologue"
         />
-        <Field
-          label="Date / Period"
-          value={event.date || ""}
-          onChange={(v) => up("date", v)}
-          placeholder="March 1842"
-        />
+        <div>
+          <label style={S.label}>Start</label>
+          <input
+            type="datetime-local"
+            {...register("startDate")}
+            style={{ ...S.input, width: "100%", fontSize: 12 }}
+          />
+        </div>
+        <div>
+          <label style={S.label}>End</label>
+          <input
+            type="datetime-local"
+            {...register("endDate")}
+            style={{ ...S.input, width: "100%", fontSize: 12 }}
+          />
+        </div>
       </div>
 
       <Field
         label="Setting / location"
-        value={event.setting || ""}
-        onChange={(v) => up("setting", v)}
+        value={watch("setting")}
+        onChange={(v) => setValue("setting", v)}
         placeholder="Where and what it feels like here…"
       />
       <Field
         label="What happens"
-        value={event.description || ""}
-        onChange={(v) => up("description", v)}
+        value={watch("description")}
+        onChange={(v) => setValue("description", v)}
         multi
         rows={3}
       />
       <Field
         label="Consequence / after-effects"
-        value={event.consequence || ""}
-        onChange={(v) => up("consequence", v)}
+        value={watch("consequence")}
+        onChange={(v) => setValue("consequence", v)}
         multi
         rows={2}
       />
@@ -157,7 +249,7 @@ export default function EventPage() {
           }}
         >
           {characters.map((c: Character) => {
-            const active = event.characters?.includes(c.id);
+            const active = formChars.includes(c.id);
             return (
               <button
                 key={c.id}
@@ -178,7 +270,7 @@ export default function EventPage() {
           )}
         </div>
 
-        {(event.characters || []).map((cid: string) => {
+        {formChars.map((cid: string) => {
           const c = characters.find((x: Character) => x.id === cid);
           if (!c) return null;
           const a = getAttr(cid);
@@ -215,37 +307,37 @@ export default function EventPage() {
                 <Sel
                   label="Power tier"
                   value={a.power || ""}
-                  onChange={(v) => upAttr(cid, "power", v)}
+                  onChange={(v) => patchAttr(cid, "power", v)}
                   opts={POWER_TIERS}
                 />
                 <Sel
                   label="Difficulty faced"
                   value={a.difficulty || ""}
-                  onChange={(v) => upAttr(cid, "difficulty", v)}
+                  onChange={(v) => patchAttr(cid, "difficulty", v)}
                   opts={DIFFICULTY}
                 />
                 <Sel
                   label="Arc stage"
                   value={a.arcStage || ""}
-                  onChange={(v) => upAttr(cid, "arcStage", v)}
+                  onChange={(v) => patchAttr(cid, "arcStage", v)}
                   opts={ARC_STAGES}
                 />
                 <Field
                   label="Emotional state"
                   value={a.emotionalState || ""}
-                  onChange={(v) => upAttr(cid, "emotionalState", v)}
+                  onChange={(v) => patchAttr(cid, "emotionalState", v)}
                   placeholder="Grief, resolute…"
                 />
                 <Field
                   label="Physical state"
                   value={a.physicalState || ""}
-                  onChange={(v) => upAttr(cid, "physicalState", v)}
+                  onChange={(v) => patchAttr(cid, "physicalState", v)}
                   placeholder="Injured, peak…"
                 />
                 <Field
                   label="Scene motive"
                   value={a.sceneMotive || ""}
-                  onChange={(v) => upAttr(cid, "sceneMotive", v)}
+                  onChange={(v) => patchAttr(cid, "sceneMotive", v)}
                   placeholder="What they want right now"
                 />
               </div>
@@ -253,25 +345,25 @@ export default function EventPage() {
                 <Field
                   label="Knowledge held"
                   value={a.knowledge || ""}
-                  onChange={(v) => upAttr(cid, "knowledge", v)}
+                  onChange={(v) => patchAttr(cid, "knowledge", v)}
                   placeholder="What they know here…"
                 />
                 <Field
                   label="Active beliefs"
                   value={a.beliefs || ""}
-                  onChange={(v) => upAttr(cid, "beliefs", v)}
+                  onChange={(v) => patchAttr(cid, "beliefs", v)}
                   placeholder="Truths they hold now…"
                 />
                 <Field
                   label="Secret in this scene"
                   value={a.secret || ""}
-                  onChange={(v) => upAttr(cid, "secret", v)}
+                  onChange={(v) => patchAttr(cid, "secret", v)}
                   placeholder="What they're hiding here…"
                 />
                 <Field
                   label="Trauma surfacing"
                   value={a.traumaActive || ""}
-                  onChange={(v) => upAttr(cid, "traumaActive", v)}
+                  onChange={(v) => patchAttr(cid, "traumaActive", v)}
                   placeholder="Which wound is active?"
                 />
               </div>
@@ -279,20 +371,20 @@ export default function EventPage() {
                 <Field
                   label="Before this event"
                   value={a.arcBefore || ""}
-                  onChange={(v) => upAttr(cid, "arcBefore", v)}
+                  onChange={(v) => patchAttr(cid, "arcBefore", v)}
                   placeholder="Who they are walking in…"
                 />
                 <Field
                   label="After this event"
                   value={a.arcAfter || ""}
-                  onChange={(v) => upAttr(cid, "arcAfter", v)}
+                  onChange={(v) => patchAttr(cid, "arcAfter", v)}
                   placeholder="How this changes them…"
                 />
               </div>
               <Field
                 label="AI narrator note"
                 value={a.notes || ""}
-                onChange={(v) => upAttr(cid, "notes", v)}
+                onChange={(v) => patchAttr(cid, "notes", v)}
                 multi
                 rows={2}
                 placeholder="Private instruction. Subtext, what they can't say, how to betray the wound without naming it."

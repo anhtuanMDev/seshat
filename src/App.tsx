@@ -300,7 +300,10 @@ export default function App() {
           </div>
 
           {sortedEvt.map((e: Event) => {
-            const tag = [e.chapter && `Ch.${e.chapter}`, e.date]
+            const dateTag = [e.startDate && e.startDate.replace("T", " "), e.endDate && `→ ${e.endDate.replace("T", " ")}`]
+              .filter(Boolean)
+              .join(" ");
+            const tag = [e.chapter && `Ch.${e.chapter}`, dateTag]
               .filter(Boolean)
               .join(" · ");
             return (

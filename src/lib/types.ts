@@ -117,7 +117,8 @@ export interface Event {
   title: string;
   type: EventType;
   chapter: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   setting: string;
   description: string;
   consequence: string;

@@ -75,12 +75,24 @@ export default function TimelinePage() {
                   onChange={(v) => update(e.id, "chapter", v)}
                   placeholder="3 or Prologue"
                 />
-                <Field
-                  label="Date / Period"
-                  value={e.date || ""}
-                  onChange={(v) => update(e.id, "date", v)}
-                  placeholder="March 1842"
-                />
+                <div>
+                  <label style={S.label}>Start</label>
+                  <input
+                    type="datetime-local"
+                    value={e.startDate || ""}
+                    onChange={(v) => update(e.id, "startDate", v.target.value)}
+                    style={{ ...S.input, width: "100%", fontSize: 12 }}
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>End</label>
+                  <input
+                    type="datetime-local"
+                    value={e.endDate || ""}
+                    onChange={(v) => update(e.id, "endDate", v.target.value)}
+                    style={{ ...S.input, width: "100%", fontSize: 12 }}
+                  />
+                </div>
               </div>
               <Field
                 label="Title"

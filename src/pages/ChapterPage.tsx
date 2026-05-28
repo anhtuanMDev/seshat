@@ -5,8 +5,18 @@ import { useEvents, useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useForm } from "react-hook-form";
 import type { Character, Event } from "../lib/types";
 import RichEditor from "../components/editor/RichEditor";
+
+interface ChapterForm {
+  number: string;
+  title: string;
+  timeRef: string;
+  synopsis: string;
+  body: string;
+  notes: string;
+}
 
 /* ── word / char count ───────────────────────────────────────────────────── */
 function countWords(text: string) {
@@ -245,6 +255,30 @@ export default function ChapterPage() {
   );
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
+  const { register, handleSubmit, watch, reset, setValue } = useForm<ChapterForm>({
+    defaultValues: {
+      number: "",
+      title: "",
+      timeRef: "",
+      synopsis: "",
+      body: "",
+      notes: "",
+    },
+  });
+
+  useEffect(() => {
+    if (chapter) {
+      reset({
+        number: chapter.number || "",
+        title: chapter.title || "",
+        timeRef: chapter.timeRef || "",
+        synopsis: chapter.synopsis || "",
+        body: chapter.body || "",
+        notes: chapter.notes || "",
+      });
+    }
+  }, [chapter?.id, reset]);
+
   const ref = useAnimateIn();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -267,9 +301,12 @@ export default function ChapterPage() {
     el.style.height = el.scrollHeight + "px";
   }, []);
 
+  const body = watch("body");
+  const bodyRegister = register("body");
+
   useEffect(() => {
     autoGrow();
-  }, [chapter?.body, autoGrow]);
+  }, [body, autoGrow]);
 
   if (!chapter) {
     return (
@@ -279,12 +316,15 @@ export default function ChapterPage() {
     );
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  const up = (f: string, v: any) =>
-    (worldStore.chapters[chapterIdx] as any)[f].set(v);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const onSubmit = (data: ChapterForm) => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    (Object.keys(data) as (keyof ChapterForm)[]).forEach((key) => {
+      (worldStore.chapters[chapterIdx] as any)[key].set(data[key]);
+    });
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+  };
 
-  const words = countWords(chapter.body || "");
+  const words = countWords(body || "");
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedChars.includes(c.id),
   );
@@ -341,8 +381,7 @@ export default function ChapterPage() {
               }}
             >
               <input
-                value={chapter.number || ""}
-                onChange={(e) => up("number", e.target.value)}
+                {...register("number")}
                 placeholder="Ch. 1"
                 style={{
                   ...S.input,
@@ -357,8 +396,7 @@ export default function ChapterPage() {
                 }}
               />
               <input
-                value={chapter.timeRef || ""}
-                onChange={(e) => up("timeRef", e.target.value)}
+                {...register("timeRef")}
                 placeholder="Timeline ref (e.g. T3–T4)"
                 style={{
                   ...S.input,
@@ -374,8 +412,7 @@ export default function ChapterPage() {
             </div>
             {/* Title */}
             <input
-              value={chapter.title || ""}
-              onChange={(e) => up("title", e.target.value)}
+              {...register("title")}
               placeholder="Chapter title…"
               style={{
                 ...S.input,
@@ -408,6 +445,18 @@ export default function ChapterPage() {
             >
               {words.toLocaleString()} w
             </span>
+            <button
+              onClick={handleSubmit(onSubmit)}
+              title="Save changes"
+              style={{
+                ...S.ghost,
+                fontSize: 11,
+                letterSpacing: 1,
+                color: "var(--color-green)",
+              }}
+            >
+              save
+            </button>
             <button
               onClick={() => setFocusMode((f) => !f)}
               title="Focus mode"
@@ -446,8 +495,7 @@ export default function ChapterPage() {
 
         {/* Scene note / synopsis */}
         <textarea
-          value={chapter.synopsis || ""}
-          onChange={(e) => up("synopsis", e.target.value)}
+          {...register("synopsis")}
           placeholder="Scene note or synopsis for this chapter (not part of the prose)…"
           rows={2}
           style={{
@@ -526,11 +574,10 @@ export default function ChapterPage() {
         {/* Main prose - textarea or rich editor */}
         {!focusMode && (
           <textarea
-            ref={textareaRef}
-            value={chapter.body || ""}
-            onChange={(e) => {
-              up("body", e.target.value);
-              autoGrow();
+            {...bodyRegister}
+            ref={(e) => {
+              bodyRegister.ref(e);
+              textareaRef.current = e;
             }}
             onInput={autoGrow}
             placeholder="Begin writing the chapter here. The story lives in this space…"
@@ -552,8 +599,8 @@ export default function ChapterPage() {
         )}
         {focusMode && (
           <RichEditor
-            content={chapter.body || ""}
-            onChange={(html) => up("body", html)}
+            content={body}
+            onChange={(html) => setValue("body", html)}
           />
         )}
 
@@ -563,8 +610,7 @@ export default function ChapterPage() {
             <hr style={S.rule} />
             <p style={{ ...S.h2, marginBottom: 8 }}>Chapter notes</p>
             <textarea
-              value={chapter.notes || ""}
-              onChange={(e) => up("notes", e.target.value)}
+              {...register("notes")}
               placeholder="Private notes, research, threads to pull later, things you want to remember…"
               rows={4}
               style={{

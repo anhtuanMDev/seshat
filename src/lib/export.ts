@@ -249,7 +249,8 @@ export function buildExport(state: any): string {
 
   L.push(`\n${"─".repeat(60)}\nMAIN TIMELINE\n${"─".repeat(60)}`);
   for (const ev of [...state.events].sort((a, b) => a.time - b.time)) {
-    const tag = [ev.chapter && `Ch. ${ev.chapter}`, ev.date]
+    const dateTag = [ev.startDate && ev.startDate.replace("T", " "), ev.endDate && `→ ${ev.endDate.replace("T", " ")}`].filter(Boolean).join(" ");
+    const tag = [ev.chapter && `Ch. ${ev.chapter}`, dateTag]
       .filter(Boolean)
       .join(" · ");
     L.push(`\n[T${ev.time}${tag ? ` · ${tag}` : ""}] ${ev.title} — ${ev.type}`);
