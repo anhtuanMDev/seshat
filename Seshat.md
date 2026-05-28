@@ -27,6 +27,7 @@
 | Framework | React 18 + Vite   | Fast HMR, modern JSX transform, ES2023 target                 |
 | Routing   | React Router v6   | Nested routes with layout persistence                         |
 | State     | Legend State      | Fine-grained reactivity, built-in persistence, no boilerplate |
+| Forms     | react-hook-form   | Performant local form state, minimal re-renders               |
 | UI        | MUI (Material UI) | Consistent, accessible components                             |
 | Animation | Anime.js v3       | Timeline-based, works on DOM refs                             |
 
@@ -63,11 +64,14 @@ seshat/
 │   │   │   ├── SideItem.tsx  # Sidebar nav item
 │   │   │   ├── EventPicker.tsx # Dropdown for timeline events
 │   │   │   └── CharStatusPanel.tsx # Character status badges
+│   │   └── editor/
+│   │       └── RichEditor.tsx # Rich text editor (focus mode)
 │   │
 │   ├── pages/
 │   │   ├── WorldPage.tsx     # World sheet (nations, techniques, etc.)
 │   │   ├── CharacterPage.tsx # Full character sheet
 │   │   ├── EventPage.tsx     # Event sheet + character attributes
+│   │   ├── ChapterPage.tsx   # Chapter prose editor with reference panel
 │   │   └── FightPage.tsx     # Fight simulator
 │   │
 │   ├── router/
@@ -95,9 +99,13 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <WorldPage /> },
+      { path: "characters", element: <CharacterListPage /> },
       { path: "characters/:id", element: <CharacterPage /> },
+      { path: "events", element: <TimelinePage /> },
       { path: "events/:id", element: <EventPage /> },
       { path: "fight", element: <FightPage /> },
+      { path: "chapters", element: <ChapterListPage /> },
+      { path: "chapters/:id", element: <ChapterPage /> },
     ],
   },
 ]);
@@ -137,7 +145,8 @@ export const worldStore = observable({
       title: "The story begins",
       type: "Story",
       chapter: "",
-      date: "",
+      startDate: "",
+      endDate: "",
       setting: "",
       description: "",
       consequence: "",
@@ -145,6 +154,7 @@ export const worldStore = observable({
     },
   ],
   characters: [],
+  chapters: [],
 });
 
 persistObservable(worldStore, { local: "loreweaver" });
@@ -202,19 +212,57 @@ export function useAnimateIn(options: Partial<AnimationParams> = {}) {
 
 ## 6. Page Patterns
 
-All pages read from Legend State via typed hooks, render forms inline, write back on change.
+Pages use **react-hook-form** for local form state. Edits are held in local state and only persisted to the Legend State store when the user presses a **Save** button. This avoids writing to the observable on every keystroke.
+
+### Common Pattern
+
+```tsx
+import { useForm } from "react-hook-form";
+import { worldStore } from "../store/worldStore";
+
+interface MyForm {
+  field1: string;
+  field2: string;
+}
+
+// Inside component:
+const { register, handleSubmit, watch, reset, setValue } = useForm<MyForm>({
+  defaultValues: { field1: "", field2: "" },
+});
+
+// Initialize from store when entity loads
+useEffect(() => {
+  if (entity) reset({ field1: entity.field1, field2: entity.field2 });
+}, [entity?.id, reset]);
+
+// Save writes to Legend State
+const onSubmit = (data: MyForm) => {
+  Object.entries(data).forEach(([key, value]) => {
+    (worldStore.collection[idx] as any)[key].set(value);
+  });
+};
+
+// In JSX:
+//   Native inputs → register()
+//   MUI Field/Sel → watch() + setValue()
+//   Save button   → handleSubmit(onSubmit)
+```
 
 ### WorldPage (`/`)
 
-Renders world metadata and world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures).
+Renders world metadata and world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Currently uses direct store writes (not yet migrated to react-hook-form).
 
 ### CharacterPage (`/characters/:id`)
 
-Full character sheet with Identity, Psychology, Conditions, Achievements & Losses sections.
+Full character sheet with Identity, Psychology, Conditions, Achievements & Losses sections. Currently uses direct store writes (not yet migrated to react-hook-form).
 
 ### EventPage (`/events/:id`)
 
-Event editor with per-character attributes (power tier, arc stage, emotional state, etc.).
+Event editor with per-character attributes (power tier, arc stage, emotional state, etc.). Uses react-hook-form for event fields; character attribute overrides for this event are held in a separate `useState<Record<string, EventAttributes>>`. Start/end date-time pickers use native `<input type="datetime-local">`.
+
+### ChapterPage (`/chapters/:id`)
+
+Chapter prose editor with a reference panel (characters, events, world info). Uses react-hook-form for all chapter fields (number, title, timeRef, synopsis, body, notes). Body field supports both plain textarea and a RichEditor (toggled by focus mode). Auto-grow effect watches `watch("body")`.
 
 ### FightPage (`/fight`)
 
@@ -254,8 +302,9 @@ All UI components in `src/components/ui/` use MUI and accept `value` + `onChange
 | Conditions       | `CharacterPage` | `.conditions[]`                                                  |
 | Achievements     | `CharacterPage` | `.achievements[]`                                                |
 | Losses           | `CharacterPage` | `.losses[]`                                                      |
-| Events           | `EventPage`     | `worldStore.events[]`                                            |
+| Events           | `EventPage`     | `worldStore.events[]` (fields: startDate, endDate)               |
 | Event attributes | `EventPage`     | `worldStore.characters[i].attributes[eventId]`                   |
+| Chapters         | `ChapterPage`   | `worldStore.chapters[]`                                          |
 | Fight sim        | `FightPage`     | Read-only computed                                               |
 | Export           | `App.tsx` modal | `buildExport()`                                                  |
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
@@ -325,7 +374,7 @@ const event = useSelector(() =>
 );
 ```
 
-**Correct (for updates, get index too):**
+**Correct (for updates via save, get index too):**
 ```ts
 const event = useSelector(() =>
   (worldStore.events.get() as any[]).find((e) => e.id === id),
@@ -333,23 +382,53 @@ const event = useSelector(() =>
 const eventIdx = useSelector(() =>
   worldStore.events.get().findIndex((e) => e.id === id),
 );
-const up = (f: string, v: any) =>
-  (worldStore.events[eventIdx] as any)[f].set(v);
+```
+
+### Form State Pattern (react-hook-form)
+
+Pages that edit store entities use **react-hook-form** for local state and only write to the store on explicit save:
+
+```tsx
+const { register, handleSubmit, watch, reset, setValue } = useForm<FormType>({
+  defaultValues: { ... },
+});
+
+useEffect(() => {
+  if (entity) reset({ field: entity.field });
+}, [entity?.id, reset]);
+
+const onSubmit = (data: FormType) => {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  (Object.keys(data) as (keyof FormType)[]).forEach((key) => {
+    (worldStore.collection[entityIdx] as any)[key].set(data[key]);
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+};
+
+// JSX:
+//   <input {...register("field")} />
+//   <Field value={watch("field")} onChange={(v) => setValue("field", v)} />
+//   <button onClick={handleSubmit(onSubmit)}>save</button>
 ```
 
 ### Pattern Summary
 
-| Purpose              | Pattern                                                                 |
-| ------------------ | --------------------------------------------------------------------- |
-| Read primitive     | `useSelector(worldStore.title)`                                        |
-| Read array (full)  | `useSelector(() => worldStore.events.get())`                           |
-| Read array (find)  | `worldStore.events.get().find(e => e.id === id)` (raw object, no `.get()`) |
-| Update array item  | Keep index: `worldStore.collection[idx].field.set(newValue)`              |
+| Purpose                  | Pattern                                                                 |
+| ----------------------   | --------------------------------------------------------------------- |
+| Read primitive           | `useSelector(worldStore.title)`                                        |
+| Read array (full)        | `useSelector(() => worldStore.events.get())`                           |
+| Read array (find)        | `worldStore.events.get().find(e => e.id === id)` (raw object, no `.get()`) |
+| Local form state         | `useForm<FormType>()` + `reset()` from store on entity change             |
+| Persist to store on save | `handleSubmit(onSubmit)` => iterate data keys, `.set()` each on store     |
+| MUI Field/Sel in form    | `watch(field)` for value, `setValue(field, v)` for change               |
+| Native input in form     | `{...register("field")}`                                                |
 
 ### Code Generation Reminder
 
 When generating Legend State code:
 - Never call `.get()` on array elements returned by `.find()`, `.map()`, or `.filter()`
-- Always get the array index if you need to update an item later
+- Always get the array index if you need to update an item later (for save, not per-keystroke)
 - Use `useSelector()` for reactive reads, direct `.get()` only inside selectors
 - Cast to `any` for dynamic property access: `(obj as any).prop.set(value)`
+- Prefer react-hook-form for form state; batch-write to store on save
+- For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data
