@@ -15,6 +15,7 @@ import { CharStatusPanel } from "../components/ui/CharStatusPanel";
 import { COND_TYPES } from "../lib/constants";
 import { Button, styled } from "@mui/material";
 import { useAnimateIn } from "../hooks/useAnimateIn";
+import { useCallback } from "react";
 
 import type { Trauma, Condition, Achievement, Loss } from "../lib/types";
 
@@ -36,29 +37,44 @@ export default function CharacterPage() {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const char = useSelector(() =>
-    (worldStore.characters.get() as any[]).find((c) => c.id === id)?.get(),
+    (worldStore.characters.get() as any[]).find((c: any) => c.id === id),
   );
   const idx = useSelector(() =>
-    worldStore.characters.get().findIndex((c) => c.id === id),
+    worldStore.characters.get().findIndex((c: any) => c.id === id),
   );
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  const up = (f: string, v: any) =>
-    (worldStore.characters[idx] as any)[f].set(v);
-  const add = (field: string, mk: () => any) =>
-    (worldStore.characters[idx] as any)[field].push(mk());
-  const del = (field: string, delId: string) =>
-    (worldStore.characters[idx] as any)[field].set((prev: any[]) =>
-      prev.filter((x: any) => x.id !== delId),
-    );
-  const upIt = (field: string, delId: string, f: string, v: any) => {
-    const arr = (worldStore.characters[idx] as any)[field].get();
-    const i = arr.findIndex((x: any) => x.id === delId);
-    if (i >= 0) (worldStore.characters[idx] as any)[field][i][f].set(v);
-  };
+  const up = useCallback((f: string, v: any) => {
+    if (idx >= 0) (worldStore.characters[idx] as any)[f].set(v);
+  }, [idx]);
+  const add = useCallback((field: string, mk: () => any) => {
+    if (idx >= 0) (worldStore.characters[idx] as any)[field].push(mk());
+  }, [idx]);
+  const del = useCallback((field: string, delId: string) => {
+    if (idx >= 0)
+      (worldStore.characters[idx] as any)[field].set((prev: any[]) =>
+        prev.filter((x: any) => x.id !== delId),
+      );
+  }, [idx]);
+  const upIt = useCallback((field: string, delId: string, f: string, v: any) => {
+    if (idx >= 0) {
+      const arr = (worldStore.characters[idx] as any)[field].get();
+      const i = arr.findIndex((x: any) => x.id === delId);
+      if (i >= 0) (worldStore.characters[idx] as any)[field][i][f].set(v);
+    }
+  }, [idx]);
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const ref = useAnimateIn();
+
+  if (!char) {
+    return (
+      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
+        Character not found.
+      </div>
+    );
+  }
 
   return (
     <div ref={ref}>

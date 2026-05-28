@@ -1,18 +1,26 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { worldStore } from "./store/worldStore";
-import { useWorldTitle, useEvents, useCharacters } from "./hooks/useWorldStore";
+import {
+  useWorldTitle,
+  useEvents,
+  useCharacters,
+  useChapters,
+} from "./hooks/useWorldStore";
 import { S, mkChar, mkEvent } from "./lib/utils";
+import { mkChapter } from "./lib/mkChapter";
 import { SideItem } from "./components/ui";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useThemeHook";
 import type { Character, Event } from "./lib/types";
+import type { Chapter } from "./store/worldStore";
 
 export default function App() {
   const title = useWorldTitle();
   const events = useEvents();
   const characters = useCharacters();
+  const chapters = useChapters();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
@@ -43,6 +51,20 @@ export default function App() {
     worldStore.events.set((prev: Event[]) => prev.filter((e) => e.id !== id));
   };
 
+  const addChapter = () => {
+    const order = (chapters?.length || 0) + 1;
+    const ch = mkChapter(order);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (worldStore.chapters as any).push(ch);
+    navigate(`/chapters/${ch.id}`);
+  };
+  const delChapter = (id: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (worldStore.chapters as any).set((prev: Chapter[]) =>
+      prev.filter((c) => c.id !== id),
+    );
+  };
+
   const selEvent =
     (location.pathname.startsWith("/events/") &&
       location.pathname.split("/")[2]) ||
@@ -51,8 +73,15 @@ export default function App() {
     (location.pathname.startsWith("/characters/") &&
       location.pathname.split("/")[2]) ||
     null;
+  const selChapter =
+    (location.pathname.startsWith("/chapters/") &&
+      location.pathname.split("/")[2]) ||
+    null;
 
   const sortedEvt = [...events].sort((a, b) => a.time - b.time);
+  const sortedChapters = [...(chapters || [])].sort(
+    (a, b) => a.order - b.order,
+  );
 
   const worldCount =
     (worldStore.nations.get()?.length || 0) +
@@ -99,6 +128,12 @@ export default function App() {
     color: active ? "var(--text-primary)" : "var(--text-secondary)",
     fontFamily: "'Georgia', serif",
   });
+
+  // total word count across all chapters
+  const totalWords = (chapters || []).reduce((sum: number, ch: Chapter) => {
+    const body = ch.body || "";
+    return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
+  }, 0);
 
   return (
     <div style={S.app}>
@@ -170,7 +205,10 @@ export default function App() {
             <button
               onClick={() => navigate("/")}
               style={navBtnStyle(
-                location.pathname === "/" && !selChar && !selEvent,
+                location.pathname === "/" &&
+                  !selChar &&
+                  !selEvent &&
+                  !selChapter,
               )}
             >
               {worldCount > 0 ? `World (${worldCount})` : "World"}
@@ -185,6 +223,7 @@ export default function App() {
             }}
           />
 
+          {/* ── Chapters section ── */}
           <div
             style={{
               padding: "0 24px 8px",
@@ -194,11 +233,64 @@ export default function App() {
             }}
           >
             <button
-              onClick={() => navigate("/")}
-              style={navBtnStyle(
-                location.pathname.startsWith("/events") ||
-                  location.pathname === "/",
-              )}
+              onClick={() => navigate("/chapters")}
+              style={navBtnStyle(location.pathname.startsWith("/chapters"))}
+            >
+              {totalWords > 0
+                ? `Chapters (${sortedChapters.length}) · ${totalWords >= 1000 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords}w`
+                : `Chapters (${sortedChapters.length})`}
+            </button>
+            <button onClick={addChapter} style={{ ...S.ghost, fontSize: 16 }}>
+              +
+            </button>
+          </div>
+
+          {sortedChapters.map((ch: Chapter) => (
+            <SideItem
+              key={ch.id}
+              label={ch.title || "Untitled chapter"}
+              sub={
+                [ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined
+              }
+              active={selChapter === ch.id}
+              onClick={() => navigate(`/chapters/${ch.id}`)}
+              onDelete={() => delChapter(ch.id)}
+            />
+          ))}
+
+          {sortedChapters.length === 0 && (
+            <p
+              style={{
+                ...S.dim,
+                fontSize: 11,
+                padding: "2px 24px 10px",
+                fontStyle: "italic",
+              }}
+            >
+              No chapters yet.
+            </p>
+          )}
+
+          <div
+            style={{
+              height: 1,
+              background: "var(--border)",
+              margin: "4px 0 10px",
+            }}
+          />
+
+          {/* ── Timeline section ── */}
+          <div
+            style={{
+              padding: "0 24px 8px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <button
+              onClick={() => navigate("/events")}
+              style={navBtnStyle(location.pathname.startsWith("/events"))}
             >
               Timeline
             </button>
@@ -231,6 +323,7 @@ export default function App() {
             }}
           />
 
+          {/* ── Characters section ── */}
           <div
             style={{
               padding: "0 24px 8px",
@@ -240,11 +333,8 @@ export default function App() {
             }}
           >
             <button
-              onClick={() => navigate("/")}
-              style={navBtnStyle(
-                location.pathname.startsWith("/characters") ||
-                  location.pathname === "/",
-              )}
+              onClick={() => navigate("/characters")}
+              style={navBtnStyle(location.pathname.startsWith("/characters"))}
             >
               Characters
             </button>

@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
-import type { AnimationParams } from "animejs";
 import { animate } from "animejs";
 
-export function useAnimateIn(options: Partial<AnimationParams> = {}) {
+export function useAnimateIn() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -12,9 +11,8 @@ export function useAnimateIn(options: Partial<AnimationParams> = {}) {
       translateY: [10, 0],
       duration: 260,
       easing: "easeOutQuad",
-      ...options,
     });
-  }, [options]);
+  }, []);
 
   return ref;
 }

@@ -139,8 +139,15 @@ select {
 *::after {
   transition:
     background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+    border-color 0.15s ease;
+}
+
+/* Prevent transition on text while typing */
+input,
+textarea,
+select,
+.MuiInputBase-input {
+  transition: none;
 }
 
 /* Prevent transition on SVG paths (avoids flicker in icons) */

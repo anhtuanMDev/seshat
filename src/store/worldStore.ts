@@ -82,6 +82,17 @@ export interface Treasure {
   ingredients: string;
 }
 
+export interface Chapter {
+  id: string;
+  number: string;
+  title: string;
+  timeRef: string;
+  synopsis: string;
+  body: string;
+  notes: string;
+  order: number;
+}
+
 interface WorldState {
   title: string;
   synopsis: string;
@@ -95,6 +106,7 @@ interface WorldState {
   treasures: Treasure[];
   events: Event[];
   characters: Character[];
+  chapters: Chapter[];
 }
 
 const INIT: WorldState = {
@@ -123,6 +135,7 @@ const INIT: WorldState = {
     },
   ],
   characters: [],
+  chapters: [],
 };
 
 export const worldStore = observable(INIT);

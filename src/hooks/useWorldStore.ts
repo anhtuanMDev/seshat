@@ -16,6 +16,7 @@ export const useIngredients = () =>
   useSelector(() => worldStore.ingredients.get());
 export const useMonsters = () => useSelector(() => worldStore.monsters.get());
 export const useTreasures = () => useSelector(() => worldStore.treasures.get());
+export const useChapters = () => useSelector(() => worldStore.chapters.get());
 export const useEvent = (id: string) =>
   useSelector(() =>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

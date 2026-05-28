@@ -1,0 +1,109 @@
+import { worldStore } from "../store/worldStore";
+import { useChapters } from "../hooks/useWorldStore";
+import { S } from "../lib/utils";
+import { Field, Section, EntryBlock } from "../components/ui";
+import { useAnimateIn } from "../hooks/useAnimateIn";
+import type { Chapter } from "../store/worldStore";
+import { useCallback } from "react";
+
+export default function ChapterListPage() {
+  const chapters = useChapters();
+  const ref = useAnimateIn();
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const addChapter = useCallback(() => {
+    const order = (chapters?.length || 0) + 1;
+    const ch = {
+      id: Math.random().toString(36).slice(2, 8),
+      number: `Ch. ${order}`,
+      title: "",
+      timeRef: "",
+      synopsis: "",
+      body: "",
+      notes: "",
+      order,
+    };
+    (worldStore.chapters as any).push(ch);
+  }, [chapters?.length]);
+
+  const del = useCallback((id: string) => {
+    (worldStore.chapters as any).set((prev: Chapter[]) =>
+      prev.filter((x) => x.id !== id),
+    );
+  }, []);
+
+  const update = useCallback((id: string, key: string, v: any) => {
+    const idx = (worldStore.chapters.get() as Chapter[]).findIndex((x) => x.id === id);
+    if (idx >= 0) (worldStore as any).chapters[idx][key].set(v);
+  }, []);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  const sortedChapters = [...(chapters || [])].sort(
+    (a: Chapter, b: Chapter) => a.order - b.order,
+  );
+
+  return (
+    <div ref={ref}>
+      <Section
+        title={`Chapters (${chapters?.length || 0})`}
+        action={
+          <button onClick={addChapter} style={S.ghost}>
+            + add
+          </button>
+        }
+        defaultOpen={true}
+      >
+        <p style={{ ...S.dim, marginBottom: 14 }}>
+          Your story's chapters and their synopsis notes.
+        </p>
+        {sortedChapters.map((c: Chapter) => {
+          return (
+            <EntryBlock
+              key={c.id}
+              color="var(--color-purple)"
+              onDelete={() => del(c.id)}
+            >
+              <div style={S.grid3}>
+                <Field
+                  label="Number"
+                  value={c.number || ""}
+                  onChange={(v) => update(c.id, "number", v)}
+                  placeholder="Ch. 1"
+                />
+                <Field
+                  label="Time ref"
+                  value={c.timeRef || ""}
+                  onChange={(v) => update(c.id, "timeRef", v)}
+                  placeholder="T3–T4"
+                />
+              </div>
+              <Field
+                label="Title"
+                value={c.title || ""}
+                onChange={(v) => update(c.id, "title", v)}
+                placeholder="Chapter title…"
+              />
+              <Field
+                label="Synopsis / scene notes"
+                value={c.synopsis || ""}
+                onChange={(v) => update(c.id, "synopsis", v)}
+                multi
+                rows={3}
+                placeholder="Scene note or synopsis for this chapter (not part of the prose)…"
+              />
+              <Field
+                label="Notes"
+                value={c.notes || ""}
+                onChange={(v) => update(c.id, "notes", v)}
+                multi
+                rows={4}
+                placeholder="Private notes, research, threads to pull later…"
+              />
+            </EntryBlock>
+          );
+        })}
+        {!chapters?.length && <p style={S.dim}>No chapters yet.</p>}
+      </Section>
+    </div>
+  );
+}
