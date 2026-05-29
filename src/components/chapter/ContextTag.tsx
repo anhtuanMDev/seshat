@@ -5,7 +5,9 @@ interface ContextTagProps {
   active: boolean;
 }
 
-export function ContextTag({
+import { memo } from "react";
+
+export const ContextTag = memo(function ContextTag({
   label,
   color,
   onClick,
@@ -33,4 +35,4 @@ export function ContextTag({
       {label}
     </button>
   );
-}
+});

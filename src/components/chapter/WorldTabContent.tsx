@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { S } from "../../lib/utils";
 
 interface WorldTabContentProps {
@@ -7,7 +8,7 @@ interface WorldTabContentProps {
   rules: string;
 }
 
-function WorldField({
+const WorldField = memo(function WorldField({
   label,
   value,
 }: {
@@ -33,9 +34,9 @@ function WorldField({
       </p>
     </div>
   );
-}
+});
 
-export function WorldTabContent({
+export const WorldTabContent = memo(function WorldTabContent({
   synopsis,
   themes,
   setting,
@@ -59,4 +60,4 @@ export function WorldTabContent({
       <WorldField label="World rules" value={rules} />
     </div>
   );
-}
+});

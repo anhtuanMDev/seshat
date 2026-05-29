@@ -1,6 +1,7 @@
+import { memo } from "react";
 import type { Note } from "../../lib/scoreFighter";
 
-export function NoteRow({ n }: { n: Note }) {
+export const NoteRow = memo(function NoteRow({ n }: { n: Note }) {
   return (
     <div
       style={{
@@ -43,4 +44,4 @@ export function NoteRow({ n }: { n: Note }) {
       )}
     </div>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { S } from "../../lib/utils";
 import type { Event } from "../../lib/types";
 
@@ -7,7 +8,7 @@ interface SnapshotCardProps {
   power: string | undefined;
 }
 
-export function SnapshotCard({ color, event, power }: SnapshotCardProps) {
+export const SnapshotCard = memo(function SnapshotCard({ color, event, power }: SnapshotCardProps) {
   return (
     <div
       style={{
@@ -30,4 +31,4 @@ export function SnapshotCard({ color, event, power }: SnapshotCardProps) {
       )}
     </div>
   );
-}
+});

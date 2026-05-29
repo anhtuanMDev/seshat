@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { S } from "../../lib/utils";
 
 interface WinBarProps {
@@ -9,7 +10,7 @@ interface WinBarProps {
   nameB: string;
 }
 
-export function WinBar({ pctA, pctB, colA, colB, nameA, nameB }: WinBarProps) {
+export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, nameB }: WinBarProps) {
   return (
     <div style={{ marginBottom: 28 }}>
       <div
@@ -74,4 +75,4 @@ export function WinBar({ pctA, pctB, colA, colB, nameA, nameB }: WinBarProps) {
       </div>
     </div>
   );
-}
+});
