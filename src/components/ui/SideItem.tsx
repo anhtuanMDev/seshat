@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { IconButton } from "@mui/material";
+import { CloseIcon } from "./icons";
 
 interface SideItemProps {
   label: string;
@@ -85,31 +87,22 @@ export function SideItem({
         )}
       </div>
       {(hover || active) && onDelete && (
-        <button
+        <IconButton
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 16,
+          size="small"
+          sx={{
             color: "var(--text-muted)",
-            padding: 0,
-            marginLeft: 6,
+            padding: "2px",
+            marginLeft: "6px",
             flexShrink: 0,
-            lineHeight: 1,
+            "&:hover": { color: "var(--color-red)" },
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = "var(--color-red)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = "var(--text-muted)")
-          }
         >
-          ×
-        </button>
+          <CloseIcon sx={{ fontSize: 14 }} />
+        </IconButton>
       )}
     </div>
   );

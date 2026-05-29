@@ -2,6 +2,7 @@ import { worldStore } from "../store/worldStore";
 import { useCharacters } from "../hooks/useWorldStore";
 import { S, mkChar } from "../lib/utils";
 import { Field, Section, EntryBlock } from "../components/ui";
+import { PeopleIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { CHAR_COLORS } from "../lib/constants";
 import type { Character } from "../lib/types";
@@ -32,10 +33,10 @@ export default function CharacterListPage() {
   return (
     <div ref={ref}>
       <Section
-        title={`Characters (${characters.length})`}
+        title={<><PeopleIcon sx={{ fontSize: 12, marginRight: 4 }} />Characters ({characters.length})</>}
         action={
-          <button onClick={add} style={S.ghost}>
-            + add
+          <button onClick={add} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 2 }}>
+            <AddIcon sx={{ fontSize: 14 }} />add
           </button>
         }
         defaultOpen={true}

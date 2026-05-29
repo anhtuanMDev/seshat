@@ -5,6 +5,7 @@ import { useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field } from "../components/ui";
 import { CharacterAttrsBlock } from "../components/event/CharacterAttrsBlock";
+import { SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon } from "../components/ui/icons";
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { EventAttributes, EventType } from "../lib/types";
@@ -161,9 +162,12 @@ export default function EventPage() {
             letterSpacing: 1,
             color: "var(--color-green)",
             flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
           }}
         >
-          save
+          <SaveIcon sx={{ fontSize: 12 }} />save
         </button>
       </div>
 
@@ -177,7 +181,7 @@ export default function EventPage() {
         }}
       >
         <div>
-          <label style={S.label}>Time</label>
+          <label style={S.label}><ScheduleIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Time</label>
           <input
             type="number"
             {...register("time", { valueAsNumber: true })}
@@ -202,7 +206,7 @@ export default function EventPage() {
           placeholder="3 or Prologue"
         />
         <div>
-          <label style={S.label}>Start</label>
+          <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Start</label>
           <input
             type="datetime-local"
             {...register("startDate")}
@@ -210,7 +214,7 @@ export default function EventPage() {
           />
         </div>
         <div>
-          <label style={S.label}>End</label>
+          <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />End</label>
           <input
             type="datetime-local"
             {...register("endDate")}
@@ -220,7 +224,7 @@ export default function EventPage() {
       </div>
 
       <Field
-        label="Setting / location"
+        label={<><LocationOnIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Setting / location</>}
         name="setting"
         control={control}
         placeholder="Where and what it feels like here…"

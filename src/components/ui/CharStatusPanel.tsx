@@ -2,6 +2,7 @@ import type { StatusEntry, Event } from "../../lib/types";
 import { POWER_TIERS, ARC_STAGES } from "../../lib/constants";
 import { S } from "../../lib/utils";
 import { EventPicker } from "./EventPicker";
+import { CloseIcon, TimelineIcon, CalendarTodayIcon } from "./icons";
 
 interface CharStatusPanelProps {
   statusTimeline: StatusEntry[];
@@ -59,9 +60,12 @@ export function CharStatusPanel({
           margin: "0 0 10px",
           fontWeight: 400,
           color,
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
         }}
       >
-        Status Timeline
+        <TimelineIcon sx={{ fontSize: 12 }} />Status Timeline
       </p>
 
       {sorted.map((entry, i) => {
@@ -117,9 +121,11 @@ export function CharStatusPanel({
                   color: "var(--color-red)",
                   marginLeft: "auto",
                   flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
-                ×
+                <CloseIcon sx={{ fontSize: 14 }} />
               </button>
             </div>
 
@@ -133,7 +139,7 @@ export function CharStatusPanel({
               }}
             >
               <div>
-                <label style={S.label}>From</label>
+                <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 9, marginRight: 3, verticalAlign: "middle" }} />From</label>
                 <input
                   type="datetime-local"
                   value={entry.startDate || ""}
@@ -144,7 +150,7 @@ export function CharStatusPanel({
                 />
               </div>
               <div>
-                <label style={S.label}>To</label>
+                <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 9, marginRight: 3, verticalAlign: "middle" }} />To</label>
                 <input
                   type="datetime-local"
                   value={entry.endDate || ""}

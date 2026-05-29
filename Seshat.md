@@ -29,7 +29,7 @@
 | Routing     | React Router v7              | Nested routes with layout persistence                         |
 | State       | Legend State                 | Fine-grained reactivity, built-in persistence, no boilerplate |
 | Forms       | react-hook-form              | Performant local form state, minimal re-renders               |
-| UI          | MUI (Material UI) v9         | Consistent, accessible components                             |
+| UI/Icons    | MUI (Material UI) v9 + @mui/icons-material | Consistent, accessible components; centralized icon exports via `src/components/ui/icons.tsx` |
 | Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
 | Testing     | Vitest + testing-library     | Unit/integration tests with jsdom environment                 |
 
@@ -66,13 +66,14 @@ seshat/
 │   │   │   ├── Field.tsx      # MUI TextField wrapper (generic <T extends FieldValues>)
 │   │   │   ├── Sel.tsx        # MUI Select wrapper (generic <T extends FieldValues>)
 │   │   │   ├── Toggle.tsx     # MUI Button toggle (generic <T extends FieldValues>)
-│   │   │   ├── Section.tsx    # Collapsible section wrapper
-│   │   │   ├── EntryBlock.tsx # Left-border content card
-│   │   │   ├── SideItem.tsx   # Sidebar nav item
+│   │   │   ├── Section.tsx    # Collapsible section wrapper (title accepts ReactNode for icons)
+│   │   │   ├── EntryBlock.tsx # Left-border content card (CloseIcon delete button)
+│   │   │   ├── SideItem.tsx   # Sidebar nav item (CloseIcon delete button)
 │   │   │   ├── GhostButton.tsx # Shared styled ghost button (MUI Button)
 │   │   │   ├── EventPicker.tsx # Dropdown for timeline events (generic <T extends FieldValues>)
 │   │   │   ├── CharStatusPanel.tsx # Character status badges
-│   │   │   ├── index.ts       # Barrel export
+│   │   │   ├── icons.tsx      # Centralized MUI icon re-exports (37 named exports)
+│   │   │   ├── index.ts       # Barrel export (includes icons via `export *`)
 │   │   │   └── __tests__/     # Component smoke tests
 │   │   │       ├── Field.test.tsx
 │   │   │       ├── Sel.test.tsx
@@ -146,7 +147,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 8 pages totaling 1446 lines.**
+**Total: 73 tests across 8 test files. 8 pages totaling ~1770 lines (incl. icons).**
 
 ---
 
@@ -330,16 +331,16 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 
 ### Page Size Summary
 
-| Page                | Lines | Extracted sub-components                        |
-| ------------------- | ----- | ----------------------------------------------- |
-| WorldPage           | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure) |
-| CharacterPage       | 220   | 4 character blocks (Trauma, Condition, Achievement, Loss) + CharStatusPanel |
-| CharacterListPage   | 132   | inline (lean)                                   |
-| EventPage           | 252   | CharacterAttrsBlock                             |
-| TimelinePage        | 129   | inline (lean)                                   |
-| ChapterPage         | 344   | ReferencePanel, PinnedContextStrip, ChapterToolbar, ContextTag, CharCard, EventRef, WorldTabContent |
-| ChapterListPage     | 108   | inline (lean)                                   |
-| FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow |
+| Page                | Lines | Extracted sub-components                        | Icons added |
+| ------------------- | ----- | ----------------------------------------------- | ----------- |
+| WorldPage           | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure) | Section icons: Flag, Build, Science, BugReport, Diamond; SaveIcon |
+| CharacterPage       | 220   | 4 character blocks (Trauma, Condition, Achievement, Loss) + CharStatusPanel | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
+| CharacterListPage   | 132   | inline (lean)                                   | PeopleIcon, AddIcon |
+| EventPage           | 252   | CharacterAttrsBlock                             | SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon; PeopleAltIcon in block |
+| TimelinePage        | 129   | inline (lean)                                   | TimelineIcon, AddIcon |
+| ChapterPage         | 344   | ReferencePanel, PinnedContextStrip, ChapterToolbar, ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, CenterFocusStrongIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
+| ChapterListPage     | 108   | inline (lean)                                   | AutoStoriesIcon, AddIcon |
+| FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
 
 ### WorldPage (`/`)
 
@@ -375,15 +376,16 @@ All accept `value` + `onChange` (uncontrolled) or `control` + `name` (controlled
 
 | Component         | Props                                                          |
 | ----------------- | -------------------------------------------------------------- |
-| `Field`           | `{ label, value?, onChange?, control?, name?, multi?, rows? }` |
+| `Field`           | `{ label: ReactNode, value?, onChange?, control?, name?, multi?, rows? }` |
 | `Sel`             | `{ label, value?, onChange?, control?, name?, opts }`          |
 | `Toggle`          | `{ label, value, onChange }`                                   |
-| `Section`         | `{ title, children, action?, defaultOpen? }`                   |
-| `EntryBlock`      | `{ color, onDelete, children }`                                |
-| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }`          |
+| `Section`         | `{ title: ReactNode, children, action?, defaultOpen? }`        |
+| `EntryBlock`      | `{ color, onDelete, children }` (CloseIcon delete button)      |
+| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }` (CloseIcon delete) |
 | `GhostButton`     | MUI `styled(Button)` — shared ghost button across pages        |
 | `EventPicker`     | `{ label, value, onChange, events[] }`                         |
 | `CharStatusPanel` | `{ statusTimeline, color, events, onChange }`                  |
+| `icons.tsx`       | 37 named re-exports from `@mui/icons-material`; import via `../ui/icons` or barrel |
 
 ### React.memo usage
 
@@ -399,6 +401,50 @@ Leaf display components wrapped in `React.memo` to prevent unnecessary re-render
 | `WorldTabContent`    | `src/components/chapter/`     | All strings               |
 
 Components receiving object/array props (e.g. `PinnedContextStrip`, `ScoreBreakdown`) are not memoized — they would need a custom comparator.
+
+### Icon Usage
+
+Icons are imported from `@mui/icons-material` via `src/components/ui/icons.tsx` (centralized re-exports for tree-shaking and easy swapping). Key conventions:
+
+- Pass icon + text as `ReactNode` to `Section.title` and `Field.label` (both accept `ReactNode`)
+- Use `sx={{ fontSize: N }}` for sizing (no hardcoded `width`/`height`)
+- Use CSS variable colors via `sx={{ color: "var(--var-name)" }}` — icons inherit theme automatically
+- `transition: none` is set on SVG paths in `index.css` (line 154-157) to prevent flicker on theme toggle
+- Icons are grouped with their label text (never standalone without a textual label)
+
+| Icon                     | Context                                    |
+| ------------------------ | ------------------------------------------ |
+| `PublicIcon`             | World nav, World tab in reference panel    |
+| `AutoStoriesIcon`        | Chapters nav, Chapters list page           |
+| `TimelineIcon`           | Timeline nav, Status Timeline section      |
+| `PeopleIcon`/`PeopleAltIcon` | Characters nav, Characters present     |
+| `SportsKabaddiIcon`      | Fight nav, Fight page title                |
+| `FileDownloadIcon`       | Export button                              |
+| `LightModeIcon`/`DarkModeIcon` | Theme toggle                         |
+| `AddIcon`                | Add button (sidebar headers, list pages)   |
+| `CloseIcon`/`DeleteIcon` | Remove/delete buttons (EntryBlock, SideItem, CharStatusPanel) |
+| `SaveIcon`               | Save button (all pages)                    |
+| `ExpandMoreIcon`/`ChevronRightIcon` | Section collapse/expand        |
+| `FlagIcon`               | Nations section                            |
+| `BuildIcon`              | Techniques section                         |
+| `ScienceIcon`            | Ingredients section                        |
+| `BugReportIcon`          | Monsters section                           |
+| `DiamondIcon`            | Treasures section                          |
+| `BadgeIcon`              | Identity section (Character page)          |
+| `PsychologyIcon`         | Psychological core, Scene motive           |
+| `RouteIcon`              | Character arc section                      |
+| `CrisisAlertIcon`        | Traumas sub-header                         |
+| `MedicalInformationIcon` | Conditions section                         |
+| `EmojiEventsIcon`        | Achievements sub-header                    |
+| `HeartBrokenIcon`        | Losses sub-header                          |
+| `ScheduleIcon`           | Time field (Event page)                    |
+| `CalendarTodayIcon`      | Start/End date fields, Status From/To      |
+| `LocationOnIcon`         | Setting/location field                     |
+| `CameraAltIcon`          | Snapshot card (Fight page)                 |
+| `CenterFocusStrongIcon`  | Focus mode button (Chapter toolbar)        |
+| `ArticleIcon`            | Refs panel button (Chapter toolbar)        |
+| `EventNoteIcon`          | Events tab (reference panel)               |
+| `NotesIcon`              | Chapter notes, AI narrator note            |
 
 ### Domain-specific components
 
@@ -640,3 +686,6 @@ When generating Legend State code:
 - `any` is banned — no `as any`, no `: any`, no eslint-disable for `no-explicit-any`
 - Pure display leaf components (primitives-only props) should be wrapped in `React.memo`
 - `scoreFighter` is in `src/lib/scoreFighter.ts` — import it directly; do not replicate the logic in tests
+- Use MUI icons via `src/components/ui/icons.tsx` (named imports, tree-shakeable)
+- Pass icon + text as `ReactNode` to `Section.title` and `Field.label`
+- Size icons with `sx={{ fontSize: N }}`; theme colors via CSS variables; no transition on SVG paths to prevent theme-toggle flicker

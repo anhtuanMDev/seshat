@@ -2,6 +2,7 @@ import { worldStore } from "../store/worldStore";
 import { useChapters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field, Section, EntryBlock } from "../components/ui";
+import { AutoStoriesIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import type { Chapter } from "../store/worldStore";
 import { useCallback } from "react";
@@ -45,10 +46,10 @@ export default function ChapterListPage() {
   return (
     <div ref={ref}>
       <Section
-        title={`Chapters (${chapters?.length || 0})`}
+        title={<><AutoStoriesIcon sx={{ fontSize: 12, marginRight: 4 }} />Chapters ({chapters?.length || 0})</>}
         action={
-          <button onClick={addChapter} style={S.ghost}>
-            + add
+          <button onClick={addChapter} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 2 }}>
+            <AddIcon sx={{ fontSize: 14 }} />add
           </button>
         }
         defaultOpen={true}

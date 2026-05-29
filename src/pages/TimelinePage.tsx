@@ -2,6 +2,7 @@ import { worldStore } from "../store/worldStore";
 import { useEvents } from "../hooks/useWorldStore";
 import { S, mkEvent } from "../lib/utils";
 import { Field, Sel, Section, EntryBlock } from "../components/ui";
+import { TimelineIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { EVENT_TYPES } from "../lib/constants";
 import type { Event, EventType } from "../lib/types";
@@ -35,10 +36,10 @@ export default function TimelinePage() {
   return (
     <div ref={ref}>
       <Section
-        title={`Timeline (${events.length})`}
+        title={<><TimelineIcon sx={{ fontSize: 12, marginRight: 4 }} />Timeline ({events.length})</>}
         action={
-          <button onClick={add} style={S.ghost}>
-            + add
+          <button onClick={add} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 2 }}>
+            <AddIcon sx={{ fontSize: 14 }} />add
           </button>
         }
         defaultOpen={true}

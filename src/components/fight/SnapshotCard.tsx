@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { S } from "../../lib/utils";
+import { CameraAltIcon } from "../ui/icons";
 import type { Event } from "../../lib/types";
 
 interface SnapshotCardProps {
@@ -18,7 +19,8 @@ export const SnapshotCard = memo(function SnapshotCard({ color, event, power }: 
         borderLeft: `3px solid ${color}`,
       }}
     >
-      <p style={{ ...S.dim, marginBottom: 4 }}>Snapshot</p>
+      <p style={{ ...S.dim, marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+        <CameraAltIcon sx={{ fontSize: 11 }} />Snapshot</p>
       <p style={{ fontSize: 12, color: "var(--text-primary)" }}>
         {event
           ? `T${event.time} — ${event.title}`

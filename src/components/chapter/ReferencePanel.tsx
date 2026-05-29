@@ -3,6 +3,7 @@ import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
+import { PeopleIcon, EventNoteIcon, PublicIcon } from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
@@ -61,27 +62,36 @@ export function ReferencePanel({
           paddingBottom: 8,
         }}
       >
-        {(["chars", "events", "world"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => onTabChange(tab)}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color:
-                panelTab === tab
-                  ? "var(--text-primary)"
-                  : "var(--text-muted)",
-              borderBottom:
-                panelTab === tab ? "1px solid var(--text-primary)" : "none",
-              paddingBottom: 2,
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {(["chars", "events", "world"] as const).map((tab) => {
+          const icon = tab === "chars" ? <PeopleIcon sx={{ fontSize: 12 }} />
+            : tab === "events" ? <EventNoteIcon sx={{ fontSize: 12 }} />
+            : <PublicIcon sx={{ fontSize: 12 }} />;
+          return (
+            <button
+              key={tab}
+              onClick={() => onTabChange(tab)}
+              style={{
+                ...S.ghost,
+                fontSize: 11,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color:
+                  panelTab === tab
+                    ? "var(--text-primary)"
+                    : "var(--text-muted)",
+                borderBottom:
+                  panelTab === tab ? "1px solid var(--text-primary)" : "none",
+                paddingBottom: 2,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              {icon}
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
       {panelTab === "chars" && (

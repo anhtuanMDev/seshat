@@ -1,5 +1,6 @@
 import { S } from "../../lib/utils";
 import { Field, Sel, Section } from "../ui";
+import { PeopleAltIcon, PsychologyIcon, NotesIcon } from "../ui/icons";
 import {
   POWER_TIERS,
   DIFFICULTY,
@@ -25,7 +26,7 @@ export function CharacterAttrsBlock({
   const getAttr = (cid: string) => charAttrs[cid] || {};
 
   return (
-    <Section title="Characters present">
+    <Section title={<><PeopleAltIcon sx={{ fontSize: 12, marginRight: 4 }} />Characters present</>}>
       <div
         style={{
           display: "flex",
@@ -121,7 +122,7 @@ export function CharacterAttrsBlock({
                 placeholder="Injured, peak…"
               />
               <Field
-                label="Scene motive"
+                label={<><PsychologyIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Scene motive</>}
                 value={a.sceneMotive || ""}
                 onChange={(v) => onPatchAttr(cid, "sceneMotive", v)}
                 placeholder="What they want right now"
@@ -168,7 +169,7 @@ export function CharacterAttrsBlock({
               />
             </div>
             <Field
-              label="AI narrator note"
+              label={<><NotesIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />AI narrator note</>}
               value={a.notes || ""}
               onChange={(v) => onPatchAttr(cid, "notes", v)}
               multi

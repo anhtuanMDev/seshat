@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { ExpandMoreIcon, ChevronRightIcon } from "./icons";
 
 const GhostButton = styled(Button)(() => ({
   fontFamily: "Georgia, serif",
@@ -14,7 +15,7 @@ const GhostButton = styled(Button)(() => ({
 }));
 
 interface SectionProps {
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   action?: React.ReactNode;
   defaultOpen?: boolean;
@@ -45,11 +46,11 @@ export function Section({
         }}
       >
         <GhostButton onClick={() => setOpen((o) => !o)}>
-          <span
-            style={{ fontSize: 10, color: "var(--text-muted)", marginRight: 8 }}
-          >
-            {open ? "▾" : "▸"}
-          </span>
+          {open ? (
+            <ExpandMoreIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: 8 }} />
+          ) : (
+            <ChevronRightIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: 8 }} />
+          )}
           {title}
         </GhostButton>
         {open && action}

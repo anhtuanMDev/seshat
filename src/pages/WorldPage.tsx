@@ -1,6 +1,7 @@
 import { worldStore } from "../store/worldStore";
 import { S, mkNation, mkMonster, mkTechnique, mkIngredient, mkTreasure } from "../lib/utils";
 import { Field, Section, GhostButton } from "../components/ui";
+import { FlagIcon, BuildIcon, ScienceIcon, BugReportIcon, DiamondIcon, SaveIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -70,7 +71,7 @@ export default function WorldPage() {
     <div ref={ref}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
         <input {...register("title")} style={{ ...S.input, fontSize: 22, border: "none", padding: 0, flex: 1, color: "var(--text-primary)" }} />
-        <button onClick={handleSubmit(onSubmit)} title="Save changes" style={{ ...S.ghost, fontSize: 11, letterSpacing: 1, color: "var(--color-green)", flexShrink: 0 }}>save</button>
+        <button onClick={handleSubmit(onSubmit)} title="Save changes" style={{ ...S.ghost, fontSize: 11, letterSpacing: 1, color: "var(--color-green)", flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}><SaveIcon sx={{ fontSize: 12 }} />save</button>
       </div>
 
       <Field label="Synopsis / premise" name="synopsis" control={control} multi rows={4} placeholder="What is this world? What is the central tension?" />
@@ -78,31 +79,31 @@ export default function WorldPage() {
       <Field label="Themes" name="themes" control={control} placeholder="The ideas the story is really about…" />
       <Field label="World rules / logic" name="rules" control={control} multi rows={3} placeholder="Magic systems, political structures, physical laws…" />
 
-      <Section title={`Nations & Factions (${nations.length})`} action={<GhostButton onClick={() => addItem("nations", mkNation)}>+ add</GhostButton>} defaultOpen={false}>
+      <Section title={<><FlagIcon sx={{ fontSize: 12, marginRight: 4 }} />Nations & Factions ({nations.length})</>} action={<GhostButton onClick={() => addItem("nations", mkNation)}>+ add</GhostButton>} defaultOpen={false}>
         <p style={{ ...S.dim, marginBottom: 14 }}>Kingdoms, empires, tribes, hidden societies. The political landscape your characters live inside.</p>
         {nations.map((n: Nation, i: number) => <NationBlock key={n.id} control={control} index={i} onDelete={() => delItem("nations", n.id)} />)}
         {!nations.length && <p style={S.dim}>No nations yet.</p>}
       </Section>
 
-      <Section title={`Techniques (${techniques.length})`} action={<GhostButton onClick={() => addItem("techniques", mkTechnique)}>+ add</GhostButton>} defaultOpen={false}>
+      <Section title={<><BuildIcon sx={{ fontSize: 12, marginRight: 4 }} />Techniques ({techniques.length})</>} action={<GhostButton onClick={() => addItem("techniques", mkTechnique)}>+ add</GhostButton>} defaultOpen={false}>
         <p style={{ ...S.dim, marginBottom: 14 }}>Martial arts, blacksmithing schools, biological arts, forbidden knowledge. How things are made and mastered in this world.</p>
         {techniques.map((t: Technique, i: number) => <TechniqueBlock key={t.id} control={control} index={i} onDelete={() => delItem("techniques", t.id)} />)}
         {!techniques.length && <p style={S.dim}>No techniques yet.</p>}
       </Section>
 
-      <Section title={`Ingredients & Resources (${ingredients.length})`} action={<GhostButton onClick={() => addItem("ingredients", mkIngredient)}>+ add</GhostButton>} defaultOpen={false}>
+      <Section title={<><ScienceIcon sx={{ fontSize: 12, marginRight: 4 }} />Ingredients & Resources ({ingredients.length})</>} action={<GhostButton onClick={() => addItem("ingredients", mkIngredient)}>+ add</GhostButton>} defaultOpen={false}>
         <p style={{ ...S.dim, marginBottom: 14 }}>Materials, herbs, minerals, essences. The raw stuff of your world — what things are made from.</p>
         {ingredients.map((item: Ingredient, i: number) => <IngredientBlock key={item.id} control={control} index={i} onDelete={() => delItem("ingredients", item.id)} />)}
         {!ingredients.length && <p style={S.dim}>No ingredients yet.</p>}
       </Section>
 
-      <Section title={`Monsters (${monsters.length})`} action={<GhostButton onClick={() => addItem("monsters", mkMonster)}>+ add</GhostButton>} defaultOpen={false}>
+      <Section title={<><BugReportIcon sx={{ fontSize: 12, marginRight: 4 }} />Monsters ({monsters.length})</>} action={<GhostButton onClick={() => addItem("monsters", mkMonster)}>+ add</GhostButton>} defaultOpen={false}>
         <p style={{ ...S.dim, marginBottom: 14 }}>Creatures, beasts, horrors. What hunts your characters — and what drops when they die.</p>
         {monsters.map((m: Monster, i: number) => <MonsterBlock key={m.id} control={control} index={i} onDelete={() => delItem("monsters", m.id)} />)}
         {!monsters.length && <p style={S.dim}>No monsters yet.</p>}
       </Section>
 
-      <Section title={`Treasures & Artifacts (${treasures.length})`} action={<GhostButton onClick={() => addItem("treasures", mkTreasure)}>+ add</GhostButton>} defaultOpen={false}>
+      <Section title={<><DiamondIcon sx={{ fontSize: 12, marginRight: 4 }} />Treasures & Artifacts ({treasures.length})</>} action={<GhostButton onClick={() => addItem("treasures", mkTreasure)}>+ add</GhostButton>} defaultOpen={false}>
         <p style={{ ...S.dim, marginBottom: 14 }}>World-level relics, legendary items not yet held by anyone. When a character claims one, add it to their equipment too.</p>
         {treasures.map((tr: Treasure, i: number) => <TreasureBlock key={tr.id} control={control} index={i} onDelete={() => delItem("treasures", tr.id)} />)}
         {!treasures.length && <p style={S.dim}>No treasures yet.</p>}

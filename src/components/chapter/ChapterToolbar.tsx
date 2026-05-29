@@ -1,4 +1,5 @@
 import { S } from "../../lib/utils";
+import { SaveIcon, CenterFocusStrongIcon, ArticleIcon } from "../ui/icons";
 
 interface ChapterToolbarProps {
   words: number;
@@ -44,8 +45,12 @@ export function ChapterToolbar({
           fontSize: 11,
           letterSpacing: 1,
           color: "var(--color-green)",
+          display: "flex",
+          alignItems: "center",
+          gap: 3,
         }}
       >
+        <SaveIcon sx={{ fontSize: 12 }} />
         save
       </button>
       <button
@@ -57,8 +62,12 @@ export function ChapterToolbar({
           letterSpacing: 1,
           color: focusMode ? "var(--color-purple)" : "var(--text-muted)",
           borderBottom: focusMode ? "1px solid var(--color-purple)" : "none",
+          display: "flex",
+          alignItems: "center",
+          gap: 3,
         }}
       >
+        <CenterFocusStrongIcon sx={{ fontSize: 12 }} />
         focus
       </button>
       {!focusMode && (
@@ -70,8 +79,12 @@ export function ChapterToolbar({
             letterSpacing: 1,
             color: showPanel ? "var(--color-purple)" : "var(--text-muted)",
             borderBottom: showPanel ? "1px solid var(--color-purple)" : "none",
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
           }}
         >
+          <ArticleIcon sx={{ fontSize: 12 }} />
           refs
         </button>
       )}

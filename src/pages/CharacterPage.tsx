@@ -5,6 +5,7 @@ import { useEvents } from "../hooks/useWorldStore";
 import { S, mkTrauma, mkCond, mkAchieve, mkLoss, mkStatusEntry } from "../lib/utils";
 import { Field, Section, GhostButton } from "../components/ui";
 import { CharStatusPanel } from "../components/ui/CharStatusPanel";
+import { TimelineIcon, BadgeIcon, PsychologyIcon, RouteIcon, CrisisAlertIcon, MedicalInformationIcon, EmojiEventsIcon, HeartBrokenIcon, SaveIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -130,13 +131,13 @@ export default function CharacterPage() {
         <button
           onClick={handleSubmit(onSubmit)}
           title="Save changes"
-          style={{ ...S.ghost, fontSize: 11, letterSpacing: 1, color: "var(--color-green)", flexShrink: 0 }}
+          style={{ ...S.ghost, fontSize: 11, letterSpacing: 1, color: "var(--color-green)", flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}
         >
-          save
+          <SaveIcon sx={{ fontSize: 12 }} />save
         </button>
       </div>
 
-      <Section title="Status Timeline">
+      <Section title={<><TimelineIcon sx={{ fontSize: 12, marginRight: 4 }} />Status Timeline</>}>
         <CharStatusPanel
           statusTimeline={statusTimeline}
           color={char.color}
@@ -151,14 +152,14 @@ export default function CharacterPage() {
         </button>
       </Section>
 
-      <Section title="Identity">
+      <Section title={<><BadgeIcon sx={{ fontSize: 12, marginRight: 4 }} />Identity</>}>
         <div style={S.grid2}>
           <Field label="Role in story" name="role" control={control} placeholder="Protagonist, mentor…" />
           <Field label="Archetype" name="archetype" control={control} placeholder="The trickster…" />
         </div>
       </Section>
 
-      <Section title="Psychological core">
+      <Section title={<><PsychologyIcon sx={{ fontSize: 12, marginRight: 4 }} />Psychological core</>}>
         <Field label="Core wound" name="coreWound" control={control} multi rows={2} placeholder="The formative trauma that shaped everything." />
         <div style={S.grid2}>
           <Field label="Core fear" name="coreFear" control={control} placeholder="What they most dread." />
@@ -167,14 +168,14 @@ export default function CharacterPage() {
         <Field label="Philosophy / belief system" name="philosophy" control={control} multi rows={2} placeholder="How they see the world." />
         <Field label="Secrets (always carried)" name="secrets" control={control} multi rows={2} placeholder="What they hide. How it shapes every word they say." />
         <hr style={S.rule} />
-        <p style={{ ...S.h2, marginBottom: 8 }}>Traumas</p>
+        <p style={{ ...S.h2, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}><CrisisAlertIcon sx={{ fontSize: 12 }} />Traumas</p>
         {traumas.map((t: Trauma, i: number) => (
           <TraumaBlock key={t.id} control={control} index={i} color={char.color} onDelete={() => delItem(t.id)} />
         ))}
         <GhostButton onClick={addTrauma}>+ add trauma</GhostButton>
       </Section>
 
-      <Section title="Character arc">
+      <Section title={<><RouteIcon sx={{ fontSize: 12, marginRight: 4 }} />Character arc</>}>
         <p style={{ ...S.dim, marginBottom: 12 }}>
           Where they begin and where they end. The transformation the story puts them through.
         </p>
@@ -185,7 +186,7 @@ export default function CharacterPage() {
       </Section>
 
       <Section
-        title={`Conditions (${conditions.length})`}
+        title={<><MedicalInformationIcon sx={{ fontSize: 12, marginRight: 4 }} />Conditions ({conditions.length})</>}
         action={<GhostButton onClick={addCond}>+ add</GhostButton>}
       >
         <p style={{ ...S.dim, marginBottom: 14 }}>
@@ -201,15 +202,15 @@ export default function CharacterPage() {
         {!conditions.length && <p style={S.dim}>No conditions yet.</p>}
       </Section>
 
-      <Section title={`Achievements & losses (${achievements.length + losses.length})`}>
+      <Section title={<><EmojiEventsIcon sx={{ fontSize: 12, marginRight: 4 }} />Achievements & losses ({achievements.length + losses.length})</>}>
         <p style={{ ...S.dim, marginBottom: 14 }}>What they've gained and lost over the course of the story.</p>
-        <p style={{ ...S.h2, marginBottom: 8 }}>Achievements</p>
+        <p style={{ ...S.h2, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}><EmojiEventsIcon sx={{ fontSize: 12 }} />Achievements</p>
         {achievements.map((a: Achievement, i: number) => (
           <AchievementBlock key={a.id} control={control} index={i} onDelete={() => delItem(a.id)} events={events} />
         ))}
         <GhostButton sx={{ marginBottom: 20 }} onClick={addAchieve}>+ add achievement</GhostButton>
         <hr style={S.rule} />
-        <p style={{ ...S.h2, marginBottom: 8 }}>Losses</p>
+        <p style={{ ...S.h2, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}><HeartBrokenIcon sx={{ fontSize: 12 }} />Losses</p>
         {losses.map((ls: Loss, i: number) => (
           <LossBlock key={ls.id} control={control} index={i} onDelete={() => delItem(ls.id)} events={events} />
         ))}

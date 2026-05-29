@@ -9,6 +9,11 @@ import {
 import { S, mkChar, mkEvent } from "./lib/utils";
 import { mkChapter } from "./lib/mkChapter";
 import { SideItem } from "./components/ui";
+import {
+  PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
+  SportsKabaddiIcon, FileDownloadIcon, LightModeIcon,
+  DarkModeIcon, AddIcon,
+} from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
@@ -154,8 +159,9 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <button
             onClick={() => setShowExport(true)}
-            style={{ ...S.ghost, letterSpacing: 2, fontSize: 12 }}
+            style={{ ...S.ghost, letterSpacing: 2, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}
           >
+            <FileDownloadIcon sx={{ fontSize: 14 }} />
             Export for AI
           </button>
           <button
@@ -164,6 +170,9 @@ export default function App() {
               ...S.ghost,
               letterSpacing: 2,
               fontSize: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
               color:
                 location.pathname === "/fight"
                   ? "var(--color-red)"
@@ -174,7 +183,8 @@ export default function App() {
                   : "none",
             }}
           >
-            ⚔ Fight
+            <SportsKabaddiIcon sx={{ fontSize: 14 }} />
+            Fight
           </button>
           {/* ── Theme toggle ── */}
           <button
@@ -187,11 +197,12 @@ export default function App() {
               padding: "2px 4px",
               opacity: 0.7,
               transition: "opacity 0.15s",
+              display: "flex",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
           >
-            {theme === "light" ? "◐" : "◑"}
+            {theme === "light" ? <LightModeIcon sx={{ fontSize: 16 }} /> : <DarkModeIcon sx={{ fontSize: 16 }} />}
           </button>
         </div>
       </div>
@@ -202,13 +213,14 @@ export default function App() {
           <div style={{ padding: "0 24px 10px" }}>
             <button
               onClick={() => navigate("/")}
-              style={navBtnStyle(
+              style={{ ...navBtnStyle(
                 location.pathname === "/" &&
                   !selChar &&
                   !selEvent &&
                   !selChapter,
-              )}
+              ), display: "flex", alignItems: "center", gap: 6 }}
             >
+              <PublicIcon sx={{ fontSize: 14 }} />
               {worldCount > 0 ? `World (${worldCount})` : "World"}
             </button>
           </div>
@@ -232,14 +244,15 @@ export default function App() {
           >
             <button
               onClick={() => navigate("/chapters")}
-              style={navBtnStyle(location.pathname.startsWith("/chapters"))}
+              style={{ ...navBtnStyle(location.pathname.startsWith("/chapters")), display: "flex", alignItems: "center", gap: 6 }}
             >
+              <AutoStoriesIcon sx={{ fontSize: 14 }} />
               {totalWords > 0
                 ? `Chapters (${sortedChapters.length}) · ${totalWords >= 1000 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords}w`
                 : `Chapters (${sortedChapters.length})`}
             </button>
-            <button onClick={addChapter} style={{ ...S.ghost, fontSize: 16 }}>
-              +
+            <button onClick={addChapter} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
+              <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
 
@@ -288,12 +301,13 @@ export default function App() {
           >
             <button
               onClick={() => navigate("/events")}
-              style={navBtnStyle(location.pathname.startsWith("/events"))}
+              style={{ ...navBtnStyle(location.pathname.startsWith("/events")), display: "flex", alignItems: "center", gap: 6 }}
             >
+              <TimelineIcon sx={{ fontSize: 14 }} />
               Timeline
             </button>
-            <button onClick={addEvent} style={{ ...S.ghost, fontSize: 16 }}>
-              +
+            <button onClick={addEvent} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
+              <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
 
@@ -335,12 +349,13 @@ export default function App() {
           >
             <button
               onClick={() => navigate("/characters")}
-              style={navBtnStyle(location.pathname.startsWith("/characters"))}
+              style={{ ...navBtnStyle(location.pathname.startsWith("/characters")), display: "flex", alignItems: "center", gap: 6 }}
             >
+              <PeopleIcon sx={{ fontSize: 14 }} />
               Characters
             </button>
-            <button onClick={addChar} style={{ ...S.ghost, fontSize: 16 }}>
-              +
+            <button onClick={addChar} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
+              <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
 

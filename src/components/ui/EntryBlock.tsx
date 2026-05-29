@@ -1,19 +1,5 @@
-import { Button } from "@mui/material";
-import { styled } from "@mui/material/styles";
-
-const GhostButton = styled(Button)(() => ({
-  fontFamily: "Georgia, serif",
-  fontSize: 12,
-  color: "var(--text-muted)",
-  background: "none",
-  padding: "0 4px",
-  minWidth: 0,
-  textTransform: "none",
-  "&:hover": {
-    background: "none",
-    color: "var(--color-red)",
-  },
-}));
+import { IconButton } from "@mui/material";
+import { CloseIcon } from "./icons";
 
 interface EntryBlockProps {
   color?: string;
@@ -34,7 +20,17 @@ export function EntryBlock({ color, onDelete, children }: EntryBlockProps) {
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}
       >
-        <GhostButton onClick={onDelete}>remove</GhostButton>
+        <IconButton
+          onClick={onDelete}
+          size="small"
+          sx={{
+            color: "var(--text-muted)",
+            padding: "2px",
+            "&:hover": { color: "var(--color-red)" },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: 14 }} />
+        </IconButton>
       </div>
       {children}
     </div>

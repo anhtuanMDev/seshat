@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCharacters, useEvents } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
+import { SportsKabaddiIcon } from "../components/ui/icons";
 import { scoreFighter } from "../lib/scoreFighter";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { FighterPicker } from "../components/fight/FighterPicker";
@@ -41,8 +42,12 @@ export default function FightPage() {
             fontFamily: "Georgia,serif",
             color: "var(--text-primary)",
             marginBottom: 4,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
+          <SportsKabaddiIcon sx={{ fontSize: 20 }} />
           Fight Simulation
         </p>
         <p style={S.dim}>

@@ -35,7 +35,7 @@ interface FieldProps<T extends FieldValues = FieldValues> extends Omit<
   TextFieldProps,
   "onChange" | "multiline" | "rows" | "variant" | "value"
 > {
-  label?: string;
+  label?: React.ReactNode;
   value?: string;
   onChange?: (v: string) => void;
   control?: Control<T>;

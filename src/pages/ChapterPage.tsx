@@ -3,6 +3,7 @@ import { useSelector } from "@legendapp/state/react";
 import { worldStore } from "../store/worldStore";
 import { useEvents, useCharacters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
+import { NotesIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -293,7 +294,7 @@ export default function ChapterPage() {
         {!focusMode && (
           <>
             <hr style={S.rule} />
-            <p style={{ ...S.h2, marginBottom: 8 }}>Chapter notes</p>
+            <p style={{ ...S.h2, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}><NotesIcon sx={{ fontSize: 12 }} />Chapter notes</p>
             <textarea
               {...register("notes")}
               placeholder="Private notes, research, threads to pull later, things you want to remember…"
