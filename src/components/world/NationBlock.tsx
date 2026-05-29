@@ -1,9 +1,17 @@
 import { S } from "../../lib/utils";
-import { Field, Sel, EntryBlock } from "../ui";
+import { Field, Sel, EntryBlock, GhostButton } from "../ui";
 import { NAT_TYPES } from "../../lib/constants";
+import { NationConnectionBlock } from "./NationConnectionBlock";
 import type { BlockProps } from "./types";
+import type { NationConnection } from "../../lib/types";
 
-export function NationBlock({ control, index, onDelete }: BlockProps) {
+interface NationBlockProps extends BlockProps {
+  connections: NationConnection[];
+  onAddConnection: () => void;
+  onDelConnection: (connId: string) => void;
+}
+
+export function NationBlock({ control, index, onDelete, connections, onAddConnection, onDelConnection }: NationBlockProps) {
   return (
     <EntryBlock color="var(--color-dark)" onDelete={onDelete}>
       <div style={S.grid3}>
@@ -22,9 +30,30 @@ export function NationBlock({ control, index, onDelete }: BlockProps) {
       </div>
       <div style={S.grid2}>
         <Field label="Economy & resources" name={`nations.${index}.economy` as const} control={control} placeholder="Exports void iron, imports grain…" />
-        <Field label="Allies" name={`nations.${index}.allies` as const} control={control} placeholder="The Sea Confederacy…" />
-        <Field label="Enemies" name={`nations.${index}.enemies` as const} control={control} placeholder="The Free Holds…" />
+        <Field label="Period active" name={`nations.${index}.periodActive` as const} control={control} placeholder="T0–T12, Year 120–340…" />
       </div>
+
+      <hr style={S.rule} />
+      <p style={{ ...S.h2, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+        Diplomacy & Alliances
+      </p>
+      <Field label="Alliance logic / diplomatic landscape" name={`nations.${index}.allianceLogic` as const} control={control} multi rows={2} placeholder="Who holds power? What treaties define the region?" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <p style={{ ...S.dim, margin: 0 }}>Connections ({connections.length})</p>
+        <GhostButton onClick={onAddConnection}>+ add connection</GhostButton>
+      </div>
+      {connections.map((conn: NationConnection, ci: number) => (
+        <NationConnectionBlock
+          key={conn.id}
+          control={control}
+          nationIndex={index}
+          connIndex={ci}
+          onDelete={() => onDelConnection(conn.id)}
+        />
+      ))}
+      {!connections.length && <p style={{ ...S.dim, fontStyle: "italic" }}>No connections yet.</p>}
+
+      <hr style={S.rule} />
       <Field label="Hidden secrets" name={`nations.${index}.secrets` as const} control={control} multi rows={2} placeholder="The emperor is already dead. The throne is controlled by…" />
       <Field label="Lore & history" name={`nations.${index}.lore` as const} control={control} multi rows={3} placeholder="Founded 400 years ago after the Collapse…" />
     </EntryBlock>

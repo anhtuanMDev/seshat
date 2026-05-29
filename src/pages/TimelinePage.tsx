@@ -71,10 +71,12 @@ export default function TimelinePage() {
                   opts={EVENT_TYPES}
                 />
                 <Field
-                  label="Chapter"
-                  value={e.chapter || ""}
-                  onChange={(v) => update(e.id, "chapter", v)}
-                  placeholder="3 or Prologue"
+                  label="Chapters (one per line)"
+                  value={(e.chapters || []).join("\n")}
+                  onChange={(v) => update(e.id, "chapters", v.split("\n").map((s: string) => s.trim()).filter(Boolean))}
+                  multi
+                  rows={2}
+                  placeholder="3&#10;Prologue"
                 />
                 <div>
                   <label style={S.label}>Start</label>

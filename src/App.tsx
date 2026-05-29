@@ -315,7 +315,8 @@ export default function App() {
             const dateTag = [e.startDate && e.startDate.replace("T", " "), e.endDate && `→ ${e.endDate.replace("T", " ")}`]
               .filter(Boolean)
               .join(" ");
-            const tag = [e.chapter && `Ch.${e.chapter}`, dateTag]
+            const chTag = (e.chapters || []).length ? `Ch. ${e.chapters.join(", ")}` : "";
+            const tag = [chTag, dateTag]
               .filter(Boolean)
               .join(" · ");
             return (

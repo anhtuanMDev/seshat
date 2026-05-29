@@ -67,7 +67,7 @@ describe("mkEvent", () => {
     expect(e.consequence).toBe("");
     expect(e.startDate).toBe("");
     expect(e.endDate).toBe("");
-    expect(e.chapter).toBe("");
+    expect(e.chapters).toEqual([]);
   });
 });
 

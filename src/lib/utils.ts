@@ -11,6 +11,7 @@ export {
   NAT_TYPES,
   RARITY,
   EQUIP_ACCESS,
+  NATION_CONNECTION_TYPES,
 } from "./constants";
 
 export const uid = () => Math.random().toString(36).slice(2, 8);
@@ -59,7 +60,7 @@ export const mkEvent = (): Event => ({
   time: 1,
   title: "Untitled event",
   type: "Story" as EventType,
-  chapter: "",
+  chapters: [],
   startDate: "",
   endDate: "",
   description: "",
@@ -154,6 +155,15 @@ export const mkLoss = () => ({
   description: "",
 });
 
+export const mkNationConnection = () => ({
+  id: uid(),
+  withNation: "",
+  relation: "Alliance",
+  since: "",
+  until: "",
+  notes: "",
+});
+
 export const mkNation = () => ({
   id: uid(),
   name: "",
@@ -165,8 +175,9 @@ export const mkNation = () => ({
   culture: "",
   military: "",
   economy: "",
-  allies: "",
-  enemies: "",
+  periodActive: "",
+  connections: [],
+  allianceLogic: "",
   secrets: "",
   lore: "",
 });

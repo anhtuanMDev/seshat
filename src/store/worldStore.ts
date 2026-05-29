@@ -21,8 +21,9 @@ export interface Nation {
   culture: string;
   military: string;
   economy: string;
-  allies: string;
-  enemies: string;
+  periodActive: string;
+  connections: { id: string; withNation: string; relation: string; since: string; until: string; notes: string }[];
+  allianceLogic: string;
   secrets: string;
   lore: string;
 }
@@ -126,7 +127,7 @@ const INIT: WorldState = {
       time: 1,
       title: "The story begins",
       type: "Story",
-      chapter: "",
+      chapters: [],
       startDate: "",
       endDate: "",
       setting: "",

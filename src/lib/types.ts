@@ -124,12 +124,21 @@ export interface Character {
   losses: Loss[];
 }
 
+export interface NationConnection {
+  id: string;
+  withNation: string;
+  relation: string;
+  since: string;
+  until: string;
+  notes: string;
+}
+
 export interface Event {
   id: string;
   time: number;
   title: string;
   type: EventType;
-  chapter: string;
+  chapters: string[];
   startDate: string;
   endDate: string;
   setting: string;
@@ -264,8 +273,9 @@ export interface Nation {
   culture: string;
   military: string;
   economy: string;
-  allies: string;
-  enemies: string;
+  periodActive: string;
+  connections: NationConnection[];
+  allianceLogic: string;
   secrets: string;
   lore: string;
 }

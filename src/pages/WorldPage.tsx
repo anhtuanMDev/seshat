@@ -1,5 +1,5 @@
 import { worldStore } from "../store/worldStore";
-import { S, mkNation, mkMonster, mkTechnique, mkIngredient, mkTreasure } from "../lib/utils";
+import { S, mkNation, mkNationConnection, mkMonster, mkTechnique, mkIngredient, mkTreasure, uid } from "../lib/utils";
 import { Field, Section, GhostButton } from "../components/ui";
 import { FlagIcon, BuildIcon, ScienceIcon, BugReportIcon, DiamondIcon, SaveIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
@@ -12,6 +12,7 @@ import { MonsterBlock } from "../components/world/MonsterBlock";
 import { TreasureBlock } from "../components/world/TreasureBlock";
 import type { WorldForm } from "../components/world/types";
 import type { Nation, Technique, Ingredient, Monster, Treasure } from "../store/worldStore";
+import type { NationConnection } from "../lib/types";
 
 export default function WorldPage() {
   const { register, handleSubmit, control, reset, setValue, getValues } = useForm<WorldForm>({
@@ -67,6 +68,20 @@ export default function WorldPage() {
     setValue(field, items.filter((x) => x.id !== delId) as typeof items);
   };
 
+  const addConnection = (nationIdx: number) => {
+    const nations = getValues("nations");
+    const updated = [...nations];
+    updated[nationIdx] = { ...updated[nationIdx], connections: [...(updated[nationIdx].connections || []), mkNationConnection()] };
+    setValue("nations", updated);
+  };
+
+  const delConnection = (nationIdx: number, connId: string) => {
+    const nations = getValues("nations");
+    const updated = [...nations];
+    updated[nationIdx] = { ...updated[nationIdx], connections: (updated[nationIdx].connections || []).filter((c: NationConnection) => c.id !== connId) };
+    setValue("nations", updated);
+  };
+
   return (
     <div ref={ref}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
@@ -81,7 +96,7 @@ export default function WorldPage() {
 
       <Section title={<><FlagIcon sx={{ fontSize: 12, marginRight: 4 }} />Nations & Factions ({nations.length})</>} action={<GhostButton onClick={() => addItem("nations", mkNation)}>+ add</GhostButton>} defaultOpen={false}>
         <p style={{ ...S.dim, marginBottom: 14 }}>Kingdoms, empires, tribes, hidden societies. The political landscape your characters live inside.</p>
-        {nations.map((n: Nation, i: number) => <NationBlock key={n.id} control={control} index={i} onDelete={() => delItem("nations", n.id)} />)}
+        {nations.map((n: Nation, i: number) => <NationBlock key={n.id} control={control} index={i} onDelete={() => delItem("nations", n.id)} connections={n.connections || []} onAddConnection={() => addConnection(i)} onDelConnection={(connId) => delConnection(i, connId)} />)}
         {!nations.length && <p style={S.dim}>No nations yet.</p>}
       </Section>
 

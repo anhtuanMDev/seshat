@@ -84,6 +84,20 @@ export const MON_TIERS = [
   "Legendary",
   "World-Threat",
 ];
+export const NATION_CONNECTION_TYPES = [
+  "Alliance",
+  "Trade",
+  "Vassal",
+  "War",
+  "Rivalry",
+  "Non-aggression",
+  "Cultural",
+  "Marriage",
+  "Colony",
+  "Annexed",
+  "Successor",
+  "Federation",
+];
 export const NAT_TYPES = [
   "Kingdom",
   "Empire",

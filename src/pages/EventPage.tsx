@@ -16,7 +16,7 @@ interface EventForm {
   title: string;
   time: number;
   type: string;
-  chapter: string;
+  chapters: string;
   startDate: string;
   endDate: string;
   setting: string;
@@ -61,7 +61,7 @@ export default function EventPage() {
         title: event.title || "",
         time: event.time,
         type: event.type,
-        chapter: event.chapter || "",
+        chapters: (event.chapters || []).join("\n"),
         startDate: event.startDate || "",
         endDate: event.endDate || "",
         setting: event.setting || "",
@@ -108,7 +108,7 @@ export default function EventPage() {
     ev.title.set(data.title);
     ev.time.set(data.time);
     ev.type.set(data.type as EventType);
-    ev.chapter.set(data.chapter);
+    ev.chapters.set(data.chapters.split("\n").map((s: string) => s.trim()).filter(Boolean));
     ev.startDate.set(data.startDate);
     ev.endDate.set(data.endDate);
     ev.setting.set(data.setting);
@@ -200,10 +200,12 @@ export default function EventPage() {
           </select>
         </div>
         <Field
-          label="Chapter"
-          name="chapter"
+          label="Chapters (one per line)"
+          name="chapters"
           control={control}
-          placeholder="3 or Prologue"
+          multi
+          rows={3}
+          placeholder="3&#10;Prologue&#10;7"
         />
         <div>
           <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Start</label>

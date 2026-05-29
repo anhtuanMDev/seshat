@@ -99,7 +99,8 @@ seshat/
 │   │   │
 │   │   ├── world/             # WorldPage sub-components
 │   │   │   ├── types.ts       # WorldForm interface
-│   │   │   ├── NationBlock.tsx
+│   │   │   ├── NationBlock.tsx # Nations with periodActive, connections (diplomacy), allianceLogic
+│   │   │   ├── NationConnectionBlock.tsx # Individual diplomatic relation entry
 │   │   │   ├── TechniqueBlock.tsx
 │   │   │   ├── IngredientBlock.tsx
 │   │   │   ├── MonsterBlock.tsx
@@ -208,7 +209,7 @@ export const worldStore = observable({
       time: 1,
       title: "The story begins",
       type: "Story",
-      chapter: "",
+      chapters: [],
       startDate: "",
       endDate: "",
       setting: "",
@@ -346,6 +347,8 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 
 Renders world metadata and five world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Uses react-hook-form with `useWatch`/`setValue` for all fields; array add/remove via generic typed `addItem`/`delItem` that uses `WorldForm[F][number]` to infer the element type from the field name, eliminating `any` casts. Five extracted block components in `src/components/world/`.
 
+Nation blocks include `periodActive` (time range the nation existed), structured `connections[]` (diplomatic relations with other nations — alliance, war, trade, vassal, etc.), and `allianceLogic` (free-text diplomatic landscape description). Connections are edited via `NationConnectionBlock` sub-component. Add/remove logic for connections lives in `WorldPage` alongside the existing nation add/remove handlers.
+
 ### CharacterPage (`/characters/:id`)
 
 Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (traumas, conditions, achievements, losses) has its own sub-component in `src/components/character/`. Status Timeline uses a custom `CharStatusPanel`. `onSubmit` uses explicit per-field `.set()` calls.
@@ -452,7 +455,7 @@ Each domain directory mirrors a page and contains components that are only used 
 
 - `src/components/fight/` — 5 components for FightPage
 - `src/components/character/` — 4 blocks + types for CharacterPage
-- `src/components/world/` — 5 blocks + types for WorldPage
+- `src/components/world/` — 5 blocks + types + NationConnectionBlock for WorldPage
 - `src/components/event/` — 1 block for EventPage
 - `src/components/chapter/` — 7 components for ChapterPage
 
@@ -463,7 +466,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Feature          | Location        | Store path                                                       |
 | ---------------- | --------------- | ---------------------------------------------------------------- |
 | World meta       | `WorldPage`     | `worldStore.title`, `.synopsis`, `.setting`, `.themes`, `.rules` |
-| Nations          | `WorldPage`     | `worldStore.nations[]`                                           |
+| Nations          | `WorldPage`     | `worldStore.nations[]` (periodActive, connections[], allianceLogic) |
 | Techniques       | `WorldPage`     | `worldStore.techniques[]`                                        |
 | Ingredients      | `WorldPage`     | `worldStore.ingredients[]`                                       |
 | Monsters         | `WorldPage`     | `worldStore.monsters[]`                                          |
@@ -473,7 +476,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Conditions       | `CharacterPage` | `.conditions[]`                                                  |
 | Achievements     | `CharacterPage` | `.achievements[]`                                                |
 | Losses           | `CharacterPage` | `.losses[]`                                                      |
-| Events           | `EventPage`     | `worldStore.events[]` (fields: startDate, endDate)               |
+| Events           | `EventPage`     | `worldStore.events[]` (chapters[], startDate, endDate)           |
 | Event attributes | `EventPage`     | `worldStore.characters[i].attributes[eventId]`                   |
 | Chapters         | `ChapterPage`   | `worldStore.chapters[]`                                          |
 | Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |

@@ -264,7 +264,8 @@ export function buildExport(state: ExportState): string {
   L.push(`\n${"─".repeat(60)}\nMAIN TIMELINE\n${"─".repeat(60)}`);
   for (const ev of [...state.events].sort((a, b) => a.time - b.time)) {
     const dateTag = [ev.startDate && ev.startDate.replace("T", " "), ev.endDate && `→ ${ev.endDate.replace("T", " ")}`].filter(Boolean).join(" ");
-    const tag = [ev.chapter && `Ch. ${ev.chapter}`, dateTag]
+    const chTag = (ev.chapters || []).length ? `Ch. ${ev.chapters.join(", ")}` : "";
+    const tag = [chTag, dateTag]
       .filter(Boolean)
       .join(" · ");
     L.push(`\n[T${ev.time}${tag ? ` · ${tag}` : ""}] ${ev.title} — ${ev.type}`);
