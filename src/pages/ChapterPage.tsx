@@ -1,7 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
-import { useEvents, useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
+import {
+  useEvents,
+  useCharacters,
+  useActiveBookIdx,
+} from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { NotesIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
@@ -34,18 +38,17 @@ export default function ChapterPage() {
 
   const chapter = useSelector(() => {
     if (bookIdx < 0) return undefined;
-    return appStore.books[bookIdx].chapters?.get()?.find(
-      (c) => c.id === id,
-    );
+    return appStore.books[bookIdx].chapters?.get()?.find((c) => c.id === id);
   });
   const chapterIdx = useSelector(() => {
     if (bookIdx < 0) return -1;
-    return appStore.books[bookIdx].chapters?.get()?.findIndex(
-      (c) => c.id === id,
-    ) ?? -1;
+    return (
+      appStore.books[bookIdx].chapters?.get()?.findIndex((c) => c.id === id) ??
+      -1
+    );
   });
 
-  const { register, handleSubmit, control, reset, setValue } = useForm<ChapterForm>({
+  const { register, handleSubmit, control, reset } = useForm<ChapterForm>({
     defaultValues: {
       number: "",
       title: "",
@@ -67,6 +70,7 @@ export default function ChapterPage() {
         notes: chapter.notes || "",
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapter?.id, reset]);
 
   const ref = useAnimateIn();
@@ -275,17 +279,23 @@ export default function ChapterPage() {
             }}
           />
         )}
-        {focusMode && (
-          <RichEditor
-            control={control}
-            name="body"
-          />
-        )}
+        {focusMode && <RichEditor control={control} name="body" />}
 
         {!focusMode && (
           <>
             <hr style={S.rule} />
-            <p style={{ ...S.h2, marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}><NotesIcon sx={{ fontSize: 12 }} />Chapter notes</p>
+            <p
+              style={{
+                ...S.h2,
+                marginBottom: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <NotesIcon sx={{ fontSize: 12 }} />
+              Chapter notes
+            </p>
             <textarea
               {...register("notes")}
               placeholder="Private notes, research, threads to pull later, things you want to remember…"
