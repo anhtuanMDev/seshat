@@ -1,138 +1,288 @@
+import { useNavigate, useParams } from "react-router-dom";
 import { appStore } from "../store/appStore";
 import { useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, mkChar } from "../lib/utils";
-import { Field, Section, EntryBlock } from "../components/ui";
 import { PeopleIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { CHAR_COLORS } from "../lib/constants";
 import type { Character } from "../lib/types";
 import { useCallback } from "react";
 
-type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
-
 export default function CharacterListPage() {
+  const { bookId } = useParams();
+  const navigate = useNavigate();
   const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
   const ref = useAnimateIn();
 
   const add = useCallback(() => {
     if (bookIdx < 0) return;
-    const c = mkChar(`Character ${characters.length + 1}`, CHAR_COLORS[characters.length % CHAR_COLORS.length]);
-    appStore.books[bookIdx].characters.push(c);
-  }, [characters.length, bookIdx]);
-
-  const del = useCallback((id: string) => {
-    if (bookIdx < 0) return;
-    appStore.books[bookIdx].characters.set((prev: Character[]) =>
-      prev.filter((x) => x.id !== id),
+    const c = mkChar(
+      `Character ${characters.length + 1}`,
+      CHAR_COLORS[characters.length % CHAR_COLORS.length],
     );
-  }, [bookIdx]);
-
-  const update = useCallback(<K extends keyof Character>(id: string, key: K, v: Character[K]) => {
-    if (bookIdx < 0) return;
-    const idx = appStore.books[bookIdx].characters.get().findIndex((x) => x.id === id);
-    if (idx >= 0) (appStore.books[bookIdx].characters[idx] as ObservableOf<Character>)[key].set(v);
-  }, [bookIdx]);
+    appStore.books[bookIdx].characters.push(c);
+    navigate(`/book/${bookId}/characters/${c.id}`);
+  }, [characters.length, bookIdx, bookId, navigate]);
 
   return (
     <div ref={ref}>
-      <Section
-        title={<><PeopleIcon sx={{ fontSize: 12, marginRight: 4 }} />Characters ({characters.length})</>}
-        action={
-          <button onClick={add} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 2 }}>
-            <AddIcon sx={{ fontSize: 14 }} />add
-          </button>
-        }
-        defaultOpen={true}
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 32,
+        }}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
-          Your story's characters with their core details.
-        </p>
-        {characters.map((c: Character) => {
-          const color = c.color || "#c0392b";
-          return (
-            <EntryBlock
-              key={c.id}
-              color={color}
-              onDelete={() => del(c.id)}
-            >
-              <div style={S.grid2}>
-                <Field
-                  label="Name"
-                  value={c.name || ""}
-                  onChange={(v) => update(c.id, "name", v)}
-                  placeholder="Character name…"
-                />
-                <Field
-                  label="Role in story"
-                  value={c.role || ""}
-                  onChange={(v) => update(c.id, "role", v)}
-                  placeholder="Protagonist, mentor…"
-                />
-                <Field
-                  label="Archetype"
-                  value={c.archetype || ""}
-                  onChange={(v) => update(c.id, "archetype", v)}
-                  placeholder="The trickster…"
-                />
-              </div>
-              <Field
-                label="Core wound"
-                value={c.coreWound || ""}
-                onChange={(v) => update(c.id, "coreWound", v)}
-                multi
-                rows={2}
-                placeholder="The formative trauma that shaped everything."
-              />
-              <div style={S.grid2}>
-                <Field
-                  label="Core fear"
-                  value={c.coreFear || ""}
-                  onChange={(v) => update(c.id, "coreFear", v)}
-                  placeholder="What they most dread."
-                />
-                <Field
-                  label="Core desire"
-                  value={c.coreDesire || ""}
-                  onChange={(v) => update(c.id, "coreDesire", v)}
-                  placeholder="What they most want."
-                />
-                <Field
-                  label="Philosophy / belief system"
-                  value={c.philosophy || ""}
-                  onChange={(v) => update(c.id, "philosophy", v)}
-                  multi
-                  rows={2}
-                  placeholder="How they see the world."
-                />
-                <Field
-                  label="Secrets (always carried)"
-                  value={c.secrets || ""}
-                  onChange={(v) => update(c.id, "secrets", v)}
-                  multi
-                  rows={2}
-                  placeholder="What they hide. How it shapes every word they say."
-                />
-              </div>
-              <div style={S.grid2}>
-                <Field
-                  label="Arc start — who they are"
-                  value={c.arcStart || ""}
-                  onChange={(v) => update(c.id, "arcStart", v)}
-                  placeholder="Closed off, convinced the world is cruel…"
-                />
-                <Field
-                  label="Arc end — who they become"
-                  value={c.arcEnd || ""}
-                  onChange={(v) => update(c.id, "arcEnd", v)}
-                  placeholder="Capable of trust, grief without collapse…"
-                />
-              </div>
-            </EntryBlock>
-          );
-        })}
-        {!characters.length && <p style={S.dim}>No characters yet.</p>}
-      </Section>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <PeopleIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
+          <span
+            style={{
+              fontSize: 11,
+              letterSpacing: 3,
+              textTransform: "uppercase",
+              color: "var(--text-secondary)",
+            }}
+          >
+            Characters ({characters.length})
+          </span>
+        </div>
+        <button
+          onClick={add}
+          style={{
+            ...S.ghost,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontSize: 12,
+            color: "var(--text-secondary)",
+          }}
+        >
+          <AddIcon sx={{ fontSize: 14 }} />
+          add character
+        </button>
+      </div>
+
+      {/* Cards */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {characters.map((c: Character) => (
+          <CharacterCard
+            key={c.id}
+            character={c}
+            onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
+          />
+        ))}
+      </div>
+
+      {!characters.length && (
+        <div
+          style={{
+            paddingTop: 60,
+            textAlign: "center",
+            color: "var(--text-muted)",
+            fontSize: 13,
+            fontStyle: "italic",
+          }}
+        >
+          No characters yet. Add one to begin.
+        </div>
+      )}
     </div>
+  );
+}
+
+function CharacterCard({
+  character: c,
+  onClick,
+}: {
+  character: Character;
+  onClick: () => void;
+}) {
+  const hasContent =
+    c.role || c.archetype || c.coreWound || c.coreFear || c.coreDesire;
+  const conditionCount = (c.conditions || []).filter(
+    (cd) => cd.isActive,
+  ).length;
+  const skillCount = (c.skills || []).length;
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        padding: "20px 24px",
+        borderLeft: `3px solid ${c.color || "var(--border)"}`,
+        cursor: "pointer",
+        background: "var(--bg-entry)",
+        marginBottom: 10,
+        borderRadius: "0 2px 2px 0",
+        transition: "background 0.12s",
+        position: "relative",
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.background = "var(--bg-hover)")
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.background = "var(--bg-entry)")
+      }
+    >
+      {/* Name + role row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 12,
+          marginBottom: hasContent ? 12 : 0,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 17,
+            color: "var(--text-primary)",
+            fontWeight: 400,
+            letterSpacing: 0.3,
+          }}
+        >
+          {c.name || "Unnamed"}
+        </span>
+        {c.role && (
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--text-muted)",
+              fontStyle: "italic",
+            }}
+          >
+            {c.role}
+          </span>
+        )}
+        {c.archetype && (
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--text-muted)",
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              marginLeft: "auto",
+            }}
+          >
+            {c.archetype}
+          </span>
+        )}
+      </div>
+
+      {/* Core wound — the most important thing to reference */}
+      {c.coreWound && (
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            lineHeight: 1.6,
+            margin: "0 0 10px",
+            paddingLeft: 1,
+          }}
+        >
+          {c.coreWound}
+        </p>
+      )}
+
+      {/* Fear / Desire inline */}
+      {(c.coreFear || c.coreDesire) && (
+        <div style={{ display: "flex", gap: 24, marginBottom: 10 }}>
+          {c.coreFear && (
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              <span
+                style={{
+                  color: "var(--color-red)",
+                  marginRight: 4,
+                  fontSize: 10,
+                }}
+              >
+                ▲
+              </span>
+              {c.coreFear}
+            </span>
+          )}
+          {c.coreDesire && (
+            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              <span
+                style={{
+                  color: "var(--color-green)",
+                  marginRight: 4,
+                  fontSize: 10,
+                }}
+              >
+                ◆
+              </span>
+              {c.coreDesire}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Stat pills */}
+      {(conditionCount > 0 ||
+        skillCount > 0 ||
+        (c.traumas || []).length > 0) && (
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          {skillCount > 0 && (
+            <StatPill
+              label={`${skillCount} skill${skillCount !== 1 ? "s" : ""}`}
+            />
+          )}
+          {conditionCount > 0 && (
+            <StatPill
+              label={`${conditionCount} active condition${conditionCount !== 1 ? "s" : ""}`}
+              color="var(--color-orange)"
+            />
+          )}
+          {(c.traumas || []).length > 0 && (
+            <StatPill
+              label={`${c.traumas.length} trauma${c.traumas.length !== 1 ? "s" : ""}`}
+              color="var(--color-red)"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Arrow hint */}
+      <span
+        style={{
+          position: "absolute",
+          right: 20,
+          top: "50%",
+          transform: "translateY(-50%)",
+          fontSize: 11,
+          color: "var(--text-muted)",
+          opacity: 0.5,
+        }}
+      >
+        →
+      </span>
+    </div>
+  );
+}
+
+function StatPill({
+  label,
+  color = "var(--text-muted)",
+}: {
+  label: string;
+  color?: string;
+}) {
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        color,
+        border: `1px solid ${color}44`,
+        padding: "1px 8px",
+        borderRadius: 2,
+        letterSpacing: 0.3,
+      }}
+    >
+      {label}
+    </span>
   );
 }

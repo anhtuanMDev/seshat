@@ -14,10 +14,11 @@
 6. [Page Patterns](#6-page-patterns)
 7. [Component Patterns](#7-component-patterns)
 8. [Features Map](#8-features-map)
-9. [Environment & Config](#9-environment--config)
-10. [Migration to TypeScript](#10-migration-to-typescript)
-11. [Legend State Patterns & Gotchas](#11-legend-state-patterns--gotchas)
-12. [Testing](#12-testing)
+9. [Theme & Style Architecture](#9-theme--style-architecture)
+10. [Environment & Config](#10-environment--config)
+11. [Migration to TypeScript](#11-migration-to-typescript)
+12. [Legend State Patterns & Gotchas](#12-legend-state-patterns--gotchas)
+13. [Testing](#13-testing)
 
 ---
 
@@ -73,7 +74,8 @@ seshat/
 │   │   │   ├── GhostButton.tsx # Shared styled ghost button (MUI Button)
 │   │   │   ├── EventPicker.tsx # Dropdown for timeline events (generic <T extends FieldValues>)
 │   │   │   ├── CharStatusPanel.tsx # Character status badges
-│   │   │   ├── icons.tsx      # Centralized MUI icon re-exports (37 named exports)
+│   │   │   ├── Modal.tsx      # Portal-based modal dialog (Escape to close, overlay click to close)
+│   │   │   ├── icons.tsx      # Centralized MUI icon re-exports (35 named exports)
 │   │   │   ├── index.ts       # Barrel export (includes icons via `export *`)
 │   │   │   └── __tests__/     # Component smoke tests
 │   │   │       ├── Field.test.tsx
@@ -123,14 +125,14 @@ seshat/
 │   │       └── renderPerformance.test.tsx  # 18 tests
 │   │
 │   ├── pages/
-│   │   ├── BookListPage.tsx     # 90 lines — book manager (list, create, delete books)
+│   │   ├── BookListPage.tsx     # 143 lines — book manager (list, create, rename, delete books)
 │   │   ├── WorldPage.tsx        # 112 lines — world sheet (nations, techniques, etc.)
-│   │   ├── CharacterPage.tsx    # 220 lines — full character sheet
-│   │   ├── CharacterListPage.tsx # 132 lines — character list
+│   │   ├── CharacterPage.tsx    # 220 lines — full character sheet (with modal-based array item editing via Modal.tsx)
+│   │   ├── CharacterListPage.tsx # 288 lines — character list (card-based with hover effects, stat pills)
 │   │   ├── EventPage.tsx        # 252 lines — event sheet + character attributes
-│   │   ├── ChapterPage.tsx      # 344 lines — chapter prose editor with reference panel
-│   │   ├── ChapterListPage.tsx  # 108 lines — chapter list
-│   │   ├── TimelinePage.tsx     # 129 lines — timeline CRUD
+│   │   ├── ChapterPage.tsx      # 335 lines — chapter prose editor with reference panel
+│   │   ├── ChapterListPage.tsx  # 237 lines — chapter list (card-based with word count)
+│   │   ├── TimelinePage.tsx     # 326 lines — timeline (visual vertical-line layout with event cards)
 │   │   ├── FightPage.tsx        # 162 lines — fight simulator
 │   │   └── __tests__/           # Page logic tests
 │   │       ├── FightPage.test.ts  # 22 tests
@@ -150,7 +152,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 9 pages totaling ~1860 lines (incl. icons).**
+**Total: 73 tests across 8 test files. 9 pages totaling ~2080 lines (incl. icons).**
 
 ---
 
@@ -342,12 +344,12 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | Page                | Lines | Extracted sub-components                        | Icons added |
 | ------------------- | ----- | ----------------------------------------------- | ----------- |
 | WorldPage           | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure) | Section icons: Flag, Build, Science, BugReport, Diamond; SaveIcon |
-| CharacterPage       | 220   | 4 character blocks (Trauma, Condition, Achievement, Loss) + CharStatusPanel | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
-| CharacterListPage   | 132   | inline (lean)                                   | PeopleIcon, AddIcon |
+| CharacterPage       | 220   | 4 character blocks (Trauma, Condition, Achievement, Loss) + CharStatusPanel + ArrayItemCard + Modal | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
+| CharacterListPage   | 288   | CharacterCard, StatPill                          | PeopleIcon, AddIcon |
 | EventPage           | 252   | CharacterAttrsBlock                             | SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon; PeopleAltIcon in block |
-| TimelinePage        | 129   | inline (lean)                                   | TimelineIcon, AddIcon |
-| ChapterPage         | 344   | ReferencePanel, PinnedContextStrip, ChapterToolbar, ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, CenterFocusStrongIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
-| ChapterListPage     | 108   | inline (lean)                                   | AutoStoriesIcon, AddIcon |
+| TimelinePage        | 326   | EventCard                                       | TimelineIcon, AddIcon |
+| ChapterPage         | 335   | ReferencePanel, PinnedContextStrip, ChapterToolbar, ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, CenterFocusStrongIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
+| ChapterListPage     | 237   | ChapterCard                                     | AutoStoriesIcon, AddIcon |
 | FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
 
 ### BookListPage (`/`)
@@ -398,6 +400,7 @@ All accept `value` + `onChange` (uncontrolled) or `control` + `name` (controlled
 | `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }` (CloseIcon delete) |
 | `GhostButton`     | MUI `styled(Button)` — shared ghost button across pages        |
 | `EventPicker`     | `{ label, value, onChange, events[] }`                         |
+| `Modal`           | `{ title, onClose, children, footer? }` — portal-based modal, Escape to close, overlay click to close, body scroll lock |
 | `CharStatusPanel` | `{ statusTimeline, color, events, onChange }`                  |
 | `icons.tsx`       | 37 named re-exports from `@mui/icons-material`; import via `../ui/icons` or barrel |
 
@@ -497,7 +500,57 @@ Each domain directory mirrors a page and contains components that are only used 
 
 ---
 
-## 9. Environment & Config
+## 9. Theme & Style Architecture
+
+### CSS Variables (`src/styles/theme.css`)
+
+Light/dark theming via `[data-theme="light"]` and `[data-theme="dark"]` attribute selectors. All colors, backgrounds, borders, and MUI overrides use CSS custom properties to enable instant theme switching without re-renders.
+
+| Variable group     | Examples                                   |
+| ------------------ | ------------------------------------------ |
+| Backgrounds        | `--bg-app`, `--bg-side`, `--bg-main`, `--bg-hover`, `--bg-entry` |
+| Text               | `--text-primary`, `--text-secondary`, `--text-muted`, `--text-logo` |
+| Borders            | `--border`, `--border-field`               |
+| Semantic colors    | `--color-red`, `--color-blue`, `--color-green`, `--color-purple`, `--color-orange`, `--color-teal`, `--color-dark` |
+| MUI overrides      | `--mui-input-before`, `--mui-label-color`, `--mui-text-color` |
+
+Dark theme semantic colors are slightly lighter for readability on dark backgrounds.
+
+### Theme Transition (`src/index.css`)
+
+```css
+*, *::before, *::after {
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+```
+
+Inputs, textareas, selects, and SVG paths exclude transitions to prevent flicker while typing or toggling theme.
+
+### MUI Override Strategy
+
+MUI components are themed via CSS class overrides rather than `createTheme()`. Global selectors target `.MuiInputBase-root`, `.MuiSelect-select`, `.MuiPaper-root`, `.MuiMenuItem-root`, etc. with `!important` to override MUI's inline styles. This approach avoids re-renders from theme context changes and keeps the theme toggle instant.
+
+### Modal Component (`src/components/ui/Modal.tsx`)
+
+Portal-based modal using `createPortal(document.body)`. Features:
+- Escape key and overlay click to close
+- Body scroll lock while open
+- Optional footer slot with auto-save pattern
+- CSS classes `seshat-modal-overlay`, `seshat-modal`, `seshat-modal-header`, `seshat-modal-title`
+
+### List Page Patterns
+
+Three distinct visual patterns for list pages:
+
+- **CharacterListPage**: Card-based (`CharacterCard` + `StatPill`), left border colored by character, inline stat pills for skills/conditions/traumas
+- **ChapterListPage**: Card-based (`ChapterCard`), left purple border, chapter number, word count, synopsis excerpt
+- **TimelinePage**: Timeline layout (`EventCard`), vertical connecting line, colored time bubbles by event type, present character tags
+
+All list pages use extracted card components to isolate hover/click logic and avoid re-rendering the entire list.
+
+---
+
+## 10. Environment & Config
 
 ### `.nvmrc`
 
@@ -511,7 +564,7 @@ Node.js v24 (for ES2023 target support in tsconfig). Run `nvm use 24` before dev
 
 ---
 
-## 10. Migration to TypeScript
+## 11. Migration to TypeScript
 
 The original `Seshat.jsx` was converted to a modular TypeScript project:
 
@@ -538,7 +591,7 @@ TypeScript strict mode with `verbatimModuleSyntax` enforced. All style propertie
 
 ---
 
-## 11. Legend State Patterns & Gotchas
+## 12. Legend State Patterns & Gotchas
 
 ### Common Bug: `.get()` on Array Elements
 
@@ -646,7 +699,7 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 
 ---
 
-## 12. Testing
+## 13. Testing
 
 ### Stack
 

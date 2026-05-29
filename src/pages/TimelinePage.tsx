@@ -1,17 +1,32 @@
+import { useNavigate, useParams } from "react-router-dom";
 import { appStore } from "../store/appStore";
-import { useEvents, useActiveBookIdx } from "../hooks/useWorldStore";
+import {
+  useEvents,
+  useCharacters,
+  useActiveBookIdx,
+} from "../hooks/useWorldStore";
 import { S, mkEvent } from "../lib/utils";
-import { Field, Sel, Section, EntryBlock } from "../components/ui";
 import { TimelineIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { EVENT_TYPES } from "../lib/constants";
-import type { Event, EventType } from "../lib/types";
+import type { Event, Character } from "../lib/types";
 import { useCallback } from "react";
 
-type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  Story: "var(--color-blue)",
+  Trauma: "var(--color-red)",
+  Revelation: "var(--color-purple)",
+  Conflict: "var(--color-orange)",
+  Bond: "var(--color-green)",
+  Loss: "var(--color-red)",
+  Growth: "var(--color-teal)",
+  Mystery: "var(--color-dark)",
+};
 
 export default function TimelinePage() {
+  const { bookId } = useParams();
+  const navigate = useNavigate();
   const events = useEvents();
+  const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
   const ref = useAnimateIn();
 
@@ -20,118 +35,292 @@ export default function TimelinePage() {
     const maxT = events.reduce((m: number, e: Event) => Math.max(m, e.time), 0);
     const e = { ...mkEvent(), time: maxT + 1 };
     appStore.books[bookIdx].events.push(e);
-  }, [events, bookIdx]);
-
-  const del = useCallback((id: string) => {
-    if (bookIdx < 0) return;
-    appStore.books[bookIdx].events.set((prev: Event[]) =>
-      prev.filter((x) => x.id !== id),
-    );
-  }, [bookIdx]);
-
-  const update = useCallback(<K extends keyof Event>(id: string, key: K, v: Event[K]) => {
-    if (bookIdx < 0) return;
-    const idx = appStore.books[bookIdx].events.get().findIndex((x) => x.id === id);
-    if (idx >= 0) (appStore.books[bookIdx].events[idx] as ObservableOf<Event>)[key].set(v);
-  }, [bookIdx]);
+    navigate(`/book/${bookId}/events/${e.id}`);
+  }, [events, bookIdx, bookId, navigate]);
 
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
 
   return (
     <div ref={ref}>
-      <Section
-        title={<><TimelineIcon sx={{ fontSize: 12, marginRight: 4 }} />Timeline ({events.length})</>}
-        action={
-          <button onClick={add} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 2 }}>
-            <AddIcon sx={{ fontSize: 14 }} />add
-          </button>
-        }
-        defaultOpen={true}
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 32,
+        }}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
-          Your story's events in chronological order.
-        </p>
-        {sortedEvents.map((e: Event) => {
-          return (
-            <EntryBlock
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <TimelineIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
+          <span
+            style={{
+              fontSize: 11,
+              letterSpacing: 3,
+              textTransform: "uppercase",
+              color: "var(--text-secondary)",
+            }}
+          >
+            Timeline ({events.length})
+          </span>
+        </div>
+        <button
+          onClick={add}
+          style={{
+            ...S.ghost,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontSize: 12,
+            color: "var(--text-secondary)",
+          }}
+        >
+          <AddIcon sx={{ fontSize: 14 }} />
+          add event
+        </button>
+      </div>
+
+      {/* Timeline */}
+      <div style={{ position: "relative" }}>
+        {/* Vertical line */}
+        {sortedEvents.length > 1 && (
+          <div
+            style={{
+              position: "absolute",
+              left: 30,
+              top: 16,
+              bottom: 16,
+              width: 1,
+              background: "var(--border)",
+            }}
+          />
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {sortedEvents.map((e: Event) => (
+            <EventCard
               key={e.id}
-              color="var(--color-blue)"
-              onDelete={() => del(e.id)}
+              event={e}
+              characters={characters}
+              onClick={() => navigate(`/book/${bookId}/events/${e.id}`)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {!events.length && (
+        <div
+          style={{
+            paddingTop: 60,
+            textAlign: "center",
+            color: "var(--text-muted)",
+            fontSize: 13,
+            fontStyle: "italic",
+          }}
+        >
+          No events yet. Add one to begin.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EventCard({
+  event: e,
+  characters,
+  onClick,
+}: {
+  event: Event;
+  characters: Character[];
+  onClick: () => void;
+}) {
+  const typeColor = EVENT_TYPE_COLORS[e.type] || "var(--text-muted)";
+  const presentChars = (e.characters || [])
+    .map((id: string) => characters.find((c: Character) => c.id === id))
+    .filter(Boolean) as Character[];
+
+  const dateTag = [
+    e.startDate && e.startDate.replace("T", " "),
+    e.endDate && `→ ${e.endDate.replace("T", " ")}`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: "flex",
+        gap: 20,
+        cursor: "pointer",
+        padding: "16px 0",
+        position: "relative",
+        paddingLeft: 60,
+      }}
+      onMouseEnter={(e) => {
+        const card = e.currentTarget.querySelector(
+          ".event-card-inner",
+        ) as HTMLElement;
+        if (card) card.style.background = "var(--bg-hover)";
+      }}
+      onMouseLeave={(e) => {
+        const card = e.currentTarget.querySelector(
+          ".event-card-inner",
+        ) as HTMLElement;
+        if (card) card.style.background = "var(--bg-entry)";
+      }}
+    >
+      {/* Time bubble */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          background: typeColor + "22",
+          border: `1px solid ${typeColor}66`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          zIndex: 1,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 10,
+            color: typeColor,
+            fontWeight: 400,
+            letterSpacing: 0.5,
+          }}
+        >
+          T{e.time}
+        </span>
+      </div>
+
+      {/* Card body */}
+      <div
+        className="event-card-inner"
+        style={{
+          flex: 1,
+          padding: "14px 18px",
+          background: "var(--bg-entry)",
+          borderRadius: "2px",
+          borderLeft: `2px solid ${typeColor}`,
+          transition: "background 0.12s",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 10,
+            marginBottom: e.description ? 8 : 0,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 15,
+              color: "var(--text-primary)",
+            }}
+          >
+            {e.title}
+          </span>
+          <span
+            style={{
+              fontSize: 10,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: typeColor,
+              opacity: 0.8,
+            }}
+          >
+            {e.type}
+          </span>
+          {dateTag && (
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-muted)",
+                marginLeft: "auto",
+              }}
             >
-              <div style={S.grid3}>
-                <div>
-                  <label style={S.label}>Time</label>
-                  <input
-                    type="number"
-                    value={e.time}
-                    onChange={(v) => update(e.id, "time", +v.target.value)}
-                    style={{ ...S.input, width: 52 }}
-                  />
-                </div>
-                <Sel
-                  label="Type"
-                  value={e.type || ""}
-                  onChange={(v) => update(e.id, "type", v as EventType)}
-                  opts={EVENT_TYPES}
-                />
-                <Field
-                  label="Chapters (one per line)"
-                  value={(e.chapters || []).join("\n")}
-                  onChange={(v) => update(e.id, "chapters", v.split("\n").map((s: string) => s.trim()).filter(Boolean))}
-                  multi
-                  rows={2}
-                  placeholder="3&#10;Prologue"
-                />
-                <div>
-                  <label style={S.label}>Start</label>
-                  <input
-                    type="datetime-local"
-                    value={e.startDate || ""}
-                    onChange={(v) => update(e.id, "startDate", v.target.value)}
-                    style={{ ...S.input, width: "100%", fontSize: 12 }}
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>End</label>
-                  <input
-                    type="datetime-local"
-                    value={e.endDate || ""}
-                    onChange={(v) => update(e.id, "endDate", v.target.value)}
-                    style={{ ...S.input, width: "100%", fontSize: 12 }}
-                  />
-                </div>
-              </div>
-              <Field
-                label="Title"
-                value={e.title || ""}
-                onChange={(v) => update(e.id, "title", v)}
-                placeholder="What happens here…"
-              />
-              <Field
-                label="Setting / location"
-                value={e.setting || ""}
-                onChange={(v) => update(e.id, "setting", v)}
-                placeholder="Where and what it feels like here…"
-              />
-              <Field
-                label="What happens"
-                value={e.description || ""}
-                onChange={(v) => update(e.id, "description", v)}
-                multi
-                rows={3}
-              />
-              <Field
-                label="Consequence / after-effects"
-                value={e.consequence || ""}
-                onChange={(v) => update(e.id, "consequence", v)}
-                multi
-                rows={2}
-              />
-            </EntryBlock>
-          );
-        })}
-        {!events.length && <p style={S.dim}>No events yet.</p>}
-      </Section>
+              {dateTag}
+            </span>
+          )}
+        </div>
+
+        {e.description && (
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              lineHeight: 1.65,
+              margin: "0 0 8px",
+            }}
+          >
+            {e.description.length > 160
+              ? e.description.slice(0, 157) + "…"
+              : e.description}
+          </p>
+        )}
+
+        {e.consequence && (
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--text-muted)",
+              margin: 0,
+              fontStyle: "italic",
+            }}
+          >
+            →{" "}
+            {e.consequence.length > 100
+              ? e.consequence.slice(0, 97) + "…"
+              : e.consequence}
+          </p>
+        )}
+
+        {/* Characters present */}
+        {presentChars.length > 0 && (
+          <div
+            style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}
+          >
+            {presentChars.map((c: Character) => (
+              <span
+                key={c.id}
+                style={{
+                  fontSize: 11,
+                  color: c.color,
+                  border: `1px solid ${c.color}44`,
+                  padding: "1px 7px",
+                  borderRadius: 2,
+                }}
+              >
+                {c.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <span
+          style={{
+            position: "absolute",
+            right: 14,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 11,
+            color: "var(--text-muted)",
+            opacity: 0.4,
+          }}
+        >
+          →
+        </span>
+      </div>
     </div>
   );
 }
