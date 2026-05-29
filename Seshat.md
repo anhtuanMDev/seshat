@@ -17,6 +17,7 @@
 9. [Environment & Config](#9-environment--config)
 10. [Migration to TypeScript](#10-migration-to-typescript)
 11. [Legend State Patterns & Gotchas](#11-legend-state-patterns--gotchas)
+12. [Testing](#12-testing)
 
 ---
 
@@ -27,7 +28,7 @@
 | Framework   | React 19 + Vite 8            | Fast HMR, modern JSX transform, ES2023 target                 |
 | Routing     | React Router v7              | Nested routes with layout persistence                         |
 | State       | Legend State                 | Fine-grained reactivity, built-in persistence, no boilerplate |
-| Forms       | react-hook-form + zod        | Performant local form state, minimal re-renders               |
+| Forms       | react-hook-form              | Performant local form state, minimal re-renders               |
 | UI          | MUI (Material UI) v9         | Consistent, accessible components                             |
 | Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
 | Testing     | Vitest + testing-library     | Unit/integration tests with jsdom environment                 |
@@ -44,10 +45,11 @@ seshat/
 │   │   ├── constants.ts        # CHAR_COLORS, EVENT_TYPES, POWER_TIERS, etc.
 │   │   ├── utils.ts            # uid(), mkChar(), mkEvent(), S styles object
 │   │   ├── export.ts           # buildExport() — world → plaintext
+│   │   ├── scoreFighter.ts     # scoreFighter() — combat scoring logic + Note/ScoreResult types
 │   │   ├── types.ts            # Shared TypeScript interfaces for entities
 │   │   └── __tests__/          # Unit tests for lib utilities
-│   │       ├── utils.test.ts
-│   │       ├── export.test.ts
+│   │       ├── utils.test.ts   #   10 tests
+│   │       ├── export.test.ts  #   12 tests
 │   │       └── export.bench.ts
 │   │
 │   ├── store/
@@ -61,45 +63,90 @@ seshat/
 │   │
 │   ├── components/
 │   │   ├── ui/               # Primitive, reusable MUI components
-│   │   │   ├── Field.tsx     # MUI TextField wrapper (generic <T extends FieldValues>)
-│   │   │   ├── Sel.tsx       # MUI Select wrapper (generic <T extends FieldValues>)
-│   │   │   ├── Toggle.tsx    # MUI Button toggle (generic <T extends FieldValues>)
-│   │   │   ├── Section.tsx   # Collapsible section wrapper
+│   │   │   ├── Field.tsx      # MUI TextField wrapper (generic <T extends FieldValues>)
+│   │   │   ├── Sel.tsx        # MUI Select wrapper (generic <T extends FieldValues>)
+│   │   │   ├── Toggle.tsx     # MUI Button toggle (generic <T extends FieldValues>)
+│   │   │   ├── Section.tsx    # Collapsible section wrapper
 │   │   │   ├── EntryBlock.tsx # Left-border content card
-│   │   │   ├── SideItem.tsx  # Sidebar nav item
+│   │   │   ├── SideItem.tsx   # Sidebar nav item
+│   │   │   ├── GhostButton.tsx # Shared styled ghost button (MUI Button)
 │   │   │   ├── EventPicker.tsx # Dropdown for timeline events (generic <T extends FieldValues>)
 │   │   │   ├── CharStatusPanel.tsx # Character status badges
-│   │   │   └── __tests__/    # Component smoke tests
+│   │   │   ├── index.ts       # Barrel export
+│   │   │   └── __tests__/     # Component smoke tests
 │   │   │       ├── Field.test.tsx
 │   │   │       ├── Sel.test.tsx
 │   │   │       ├── Toggle.test.tsx
 │   │   │       └── EventPicker.test.tsx
-│   │   └── editor/
-│   │       └── RichEditor.tsx # Rich text editor (focus mode)
+│   │   │
+│   │   ├── editor/
+│   │   │   └── RichEditor.tsx # Rich text editor (focus mode)
+│   │   │
+│   │   ├── fight/             # FightPage sub-components
+│   │   │   ├── FighterPicker.tsx  # Character + event dropdown
+│   │   │   ├── WinBar.tsx        # Win percentage bar (memo)
+│   │   │   ├── SnapshotCard.tsx  # Event snapshot card (memo)
+│   │   │   ├── ScoreBreakdown.tsx # Score breakdown with NoteRow list
+│   │   │   └── NoteRow.tsx       # Score breakdown row (memo)
+│   │   │
+│   │   ├── character/         # CharacterPage sub-components
+│   │   │   ├── types.ts       # CharacterForm interface
+│   │   │   ├── TraumaBlock.tsx
+│   │   │   ├── ConditionBlock.tsx
+│   │   │   ├── AchievementBlock.tsx
+│   │   │   └── LossBlock.tsx
+│   │   │
+│   │   ├── world/             # WorldPage sub-components
+│   │   │   ├── types.ts       # WorldForm interface
+│   │   │   ├── NationBlock.tsx
+│   │   │   ├── TechniqueBlock.tsx
+│   │   │   ├── IngredientBlock.tsx
+│   │   │   ├── MonsterBlock.tsx
+│   │   │   └── TreasureBlock.tsx
+│   │   │
+│   │   ├── event/
+│   │   │   └── CharacterAttrsBlock.tsx  # EventPage per-character attribute editor
+│   │   │
+│   │   ├── chapter/           # ChapterPage sub-components (344 lines total)
+│   │   │   ├── ChapterToolbar.tsx    # Save/focus/refs buttons (memo)
+│   │   │   ├── PinnedContextStrip.tsx # Pinned char/event badges
+│   │   │   ├── ReferencePanel.tsx    # 3-tab sidebar panel
+│   │   │   ├── ContextTag.tsx        # Toggleable context pill button (memo)
+│   │   │   ├── CharCard.tsx          # Character quick-ref card
+│   │   │   ├── EventRef.tsx          # Event quick-ref card
+│   │   │   └── WorldTabContent.tsx    # World info display (memo)
+│   │   │
+│   │   └── __tests__/         # Render performance tests
+│   │       └── renderPerformance.test.tsx  # 18 tests
 │   │
 │   ├── pages/
-│   │   ├── WorldPage.tsx     # World sheet (nations, techniques, etc.)
-│   │   ├── CharacterPage.tsx # Full character sheet
-│   │   ├── EventPage.tsx     # Event sheet + character attributes
-│   │   ├── ChapterPage.tsx   # Chapter prose editor with reference panel
-│   │   ├── FightPage.tsx     # Fight simulator
-│   │   └── __tests__/        # Page logic tests
-│   │       ├── FightPage.test.ts
+│   │   ├── WorldPage.tsx        # 112 lines — world sheet (nations, techniques, etc.)
+│   │   ├── CharacterPage.tsx    # 220 lines — full character sheet
+│   │   ├── CharacterListPage.tsx # 132 lines — character list
+│   │   ├── EventPage.tsx        # 252 lines — event sheet + character attributes
+│   │   ├── ChapterPage.tsx      # 344 lines — chapter prose editor with reference panel
+│   │   ├── ChapterListPage.tsx  # 108 lines — chapter list
+│   │   ├── TimelinePage.tsx     # 129 lines — timeline CRUD
+│   │   ├── FightPage.tsx        # 162 lines — fight simulator
+│   │   └── __tests__/           # Page logic tests
+│   │       ├── FightPage.test.ts  # 22 tests
 │   │       └── FightPage.bench.ts
 │   │
 │   ├── test/
-│   │   └── setup.ts          # Vitest setup (localStorage stub, jest-dom matchers)
+│   │   └── setup.ts             # Vitest setup (localStorage stub, jest-dom matchers)
 │   │
 │   ├── router/
-│   │   └── index.tsx         # createBrowserRouter definition
+│   │   └── index.tsx            # createBrowserRouter definition
 │   │
-│   ├── App.tsx               # Root layout (topbar + sidebar)
-│   └── main.tsx              # App entry — providers wrapper
+│   ├── App.tsx                  # Root layout (topbar + sidebar)
+│   └── main.tsx                 # App entry — providers wrapper
 │
-├── .nvmrc                  # Node.js v24 requirement
+├── .nvmrc                     # Node.js v24 requirement
 ├── kilo.json
 └── package.json
 ```
+
+**Total: 73 tests across 8 test files. 8 pages totaling 1446 lines.**
 
 ---
 
@@ -234,7 +281,7 @@ Pages use **react-hook-form** for local form state. Edits are held in local stat
 
 ```tsx
 import { useForm, useWatch } from "react-hook-form";
-import type { Control, UseFormSetValue } from "react-hook-form";
+import type { Control } from "react-hook-form";
 import { worldStore } from "../store/worldStore";
 
 interface MyForm {
@@ -262,15 +309,14 @@ const onSubmit = (data: MyForm) => {
   c.field2.set(data.field2);
 };
 
-// Sub-components for array items (required by React Compiler — useWatch cannot be called inside loops)
+// Sub-components for array items (required — useWatch cannot be called inside loops)
 interface ItemBlockProps {
   control: Control<MyForm>;
   index: number;
-  setValue: UseFormSetValue<MyForm>;
   onDelete: () => void;
 }
 
-function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
+function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
   const value = useWatch({ control, name: `items.${index}.field` as const });
   return <Field value={value} onChange={(v) => setValue(`items.${index}.field`, v)} />;
 }
@@ -282,42 +328,87 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 //   Save button   → handleSubmit(onSubmit)
 ```
 
+### Page Size Summary
+
+| Page                | Lines | Extracted sub-components                        |
+| ------------------- | ----- | ----------------------------------------------- |
+| WorldPage           | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure) |
+| CharacterPage       | 220   | 4 character blocks (Trauma, Condition, Achievement, Loss) + CharStatusPanel |
+| CharacterListPage   | 132   | inline (lean)                                   |
+| EventPage           | 252   | CharacterAttrsBlock                             |
+| TimelinePage        | 129   | inline (lean)                                   |
+| ChapterPage         | 344   | ReferencePanel, PinnedContextStrip, ChapterToolbar, ContextTag, CharCard, EventRef, WorldTabContent |
+| ChapterListPage     | 108   | inline (lean)                                   |
+| FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow |
+
 ### WorldPage (`/`)
 
-Renders world metadata and five world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Uses react-hook-form with `watch`/`setValue` for all fields; array add/remove via generic typed `addItem`/`delItem` that uses `WorldForm[F][number]` to infer the element type from the field name, eliminating `any` casts.
+Renders world metadata and five world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Uses react-hook-form with `useWatch`/`setValue` for all fields; array add/remove via generic typed `addItem`/`delItem` that uses `WorldForm[F][number]` to infer the element type from the field name, eliminating `any` casts. Five extracted block components in `src/components/world/`.
 
 ### CharacterPage (`/characters/:id`)
 
-Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Scalar fields are read via top-level `useWatch({ control, name })` calls. Each array type (traumas, conditions, achievements, losses) has its own sub-component (`TraumaBlock`, `ConditionBlock`, `AchievementBlock`, `LossBlock`) that calls `useWatch` per field with a static index path. The Status Timeline section uses a custom `CharStatusPanel` component with editable per-period entries (each has start/end datetime-local pickers constrained by the referenced event's date window, power tier select, arc stage select, emotional/physical state inputs, and a note textarea). Entries are ordered by date. `onSubmit` uses explicit per-field `.set()` calls — verbose but fully type-safe with no casts.
+Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (traumas, conditions, achievements, losses) has its own sub-component in `src/components/character/`. Status Timeline uses a custom `CharStatusPanel`. `onSubmit` uses explicit per-field `.set()` calls.
 
 ### EventPage (`/events/:id`)
 
-Event editor with per-character attributes (power tier, arc stage, emotional state, etc.). Uses react-hook-form for event fields; character attribute overrides for this event are held in a separate `useState<Record<string, EventAttributes>>`. Start/end date-time pickers use native `<input type="datetime-local">`.
+Event editor with per-character attributes (power tier, arc stage, emotional state, etc.). Uses react-hook-form for event fields; character attribute overrides for this event are held in a separate `useState<Record<string, EventAttributes>>`. Character attribute editor extracted to `CharacterAttrsBlock` in `src/components/event/`.
 
 ### ChapterPage (`/chapters/:id`)
 
-Chapter prose editor with a reference panel (characters, events, world info). Uses react-hook-form for all chapter fields (number, title, timeRef, synopsis, body, notes). Body field supports both plain textarea and a RichEditor (toggled by focus mode). Auto-grow effect watches `watch("body")`.
+Chapter prose editor with a reference panel (characters, events, world info). Uses react-hook-form for all chapter fields. Body field supports both plain textarea and a RichEditor (toggled by focus mode). Reference panel and toolbar extracted to `src/components/chapter/`.
 
 ### FightPage (`/fight`)
 
-Combat simulation comparing two characters with a weighted score breakdown.
+Combat simulation comparing two characters with a weighted score breakdown. Uses `scoreFighter()` from `src/lib/scoreFighter.ts`. Display components (WinBar, SnapshotCard, ScoreBreakdown, NoteRow, FighterPicker) extracted to `src/components/fight/`.
+
+### TimelinePage / ChapterListPage / CharacterListPage
+
+CRUD-style list pages using `EntryBlock` + `Section` with inline Field/Sel components. Lean at 108–132 lines each.
 
 ---
 
 ## 7. Component Patterns
 
-All UI components in `src/components/ui/` use MUI and accept `value` + `onChange`:
+### UI primitives (`src/components/ui/`)
 
-| Component         | Props                                                             |
-| ----------------- | ----------------------------------------------------------------- |
-| `Field`           | `{ label, value, onChange, multi?, rows?, placeholder?, width? }` |
-| `Sel`             | `{ label, value, onChange, opts: string[] }`                      |
-| `Toggle`          | `{ label, value, onChange }`                                      |
-| `Section`         | `{ title, children, action?, defaultOpen? }`                      |
-| `EntryBlock`      | `{ color, onDelete, children }`                                   |
-| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }`             |
-| `EventPicker`     | `{ label, value, onChange, events[] }`                            |
-| `CharStatusPanel` | `{ char, events[] }`                                              |
+All accept `value` + `onChange` (uncontrolled) or `control` + `name` (controlled via react-hook-form):
+
+| Component         | Props                                                          |
+| ----------------- | -------------------------------------------------------------- |
+| `Field`           | `{ label, value?, onChange?, control?, name?, multi?, rows? }` |
+| `Sel`             | `{ label, value?, onChange?, control?, name?, opts }`          |
+| `Toggle`          | `{ label, value, onChange }`                                   |
+| `Section`         | `{ title, children, action?, defaultOpen? }`                   |
+| `EntryBlock`      | `{ color, onDelete, children }`                                |
+| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }`          |
+| `GhostButton`     | MUI `styled(Button)` — shared ghost button across pages        |
+| `EventPicker`     | `{ label, value, onChange, events[] }`                         |
+| `CharStatusPanel` | `{ statusTimeline, color, events, onChange }`                  |
+
+### React.memo usage
+
+Leaf display components wrapped in `React.memo` to prevent unnecessary re-renders when parent state changes but props are stable:
+
+| Component            | File                          | Props type                |
+| -------------------- | ----------------------------- | ------------------------- |
+| `WinBar`             | `src/components/fight/`       | All primitives            |
+| `NoteRow`            | `src/components/fight/`       | `Note` object             |
+| `SnapshotCard`       | `src/components/fight/`       | Primitives + optional Event |
+| `ContextTag`         | `src/components/chapter/`     | Primitives + callback     |
+| `WorldField`         | `src/components/chapter/`     | Primitives                |
+| `WorldTabContent`    | `src/components/chapter/`     | All strings               |
+
+Components receiving object/array props (e.g. `PinnedContextStrip`, `ScoreBreakdown`) are not memoized — they would need a custom comparator.
+
+### Domain-specific components
+
+Each domain directory mirrors a page and contains components that are only used by that page:
+
+- `src/components/fight/` — 5 components for FightPage
+- `src/components/character/` — 4 blocks + types for CharacterPage
+- `src/components/world/` — 5 blocks + types for WorldPage
+- `src/components/event/` — 1 block for EventPage
+- `src/components/chapter/` — 7 components for ChapterPage
 
 ---
 
@@ -339,7 +430,7 @@ All UI components in `src/components/ui/` use MUI and accept `value` + `onChange
 | Events           | `EventPage`     | `worldStore.events[]` (fields: startDate, endDate)               |
 | Event attributes | `EventPage`     | `worldStore.characters[i].attributes[eventId]`                   |
 | Chapters         | `ChapterPage`   | `worldStore.chapters[]`                                          |
-| Fight sim        | `FightPage`     | Read-only computed                                               |
+| Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |
 | Export           | `App.tsx` modal | `buildExport()`                                                  |
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
 
@@ -355,7 +446,7 @@ v24
 
 ### Required Node.js
 
-Node.js v24 (for ES2023 target support in tsconfig).
+Node.js v24 (for ES2023 target support in tsconfig). Run `nvm use 24` before dev/testing.
 
 ---
 
@@ -368,6 +459,7 @@ The original `Seshat.jsx` was converted to a modular TypeScript project:
 | All constants                        | `src/lib/constants.ts`    |
 | Maker functions, `uid()`, `S` styles | `src/lib/utils.ts`        |
 | `buildExport()`                      | `src/lib/export.ts`       |
+| `scoreFighter()`                     | `src/lib/scoreFighter.ts` |
 | All UI components                    | `src/components/ui/*.tsx` |
 | Pages                                | `src/pages/*.tsx`         |
 | State logic                          | `src/store/worldStore.ts` |
@@ -425,7 +517,7 @@ Pages that edit store entities use **react-hook-form** for local state and only 
 
 ```tsx
 import { useForm, useWatch } from "react-hook-form";
-import type { Control, UseFormSetValue } from "react-hook-form";
+import type { Control } from "react-hook-form";
 
 const { register, handleSubmit, control, reset, setValue } = useForm<FormType>({
   defaultValues: { ... },
@@ -469,7 +561,11 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 | MUI Field/Sel in form    | `useWatch({ control, name })` for value, `setValue(name, v)` for change   |
 | React Compiler safety    | Prefer `useWatch` over `watch()`; extract sub-components for array items  |
 | Native input in form     | `{...register("field")}`                                                |
-| Array item sub-component | Define `ItemBlockProps` with `Control`, `UseFormSetValue`; pass `control`, `index` |
+| Array item sub-component | Define `ItemBlockProps` with `Control`; pass `control`, `index`          |
+| EventPage char attrs     | Separate `useState<Record<string, EventAttributes>>`, write on save      |
+| Component memoization    | Wrap pure display components in `React.memo` (primitive-only props)      |
+
+---
 
 ## 12. Testing
 
@@ -496,18 +592,37 @@ Benchmark files (`.bench.ts`) are excluded from the normal `vitest run` and must
 ### Test File Layout
 
 ```
-src/lib/__tests__/          # Pure-logic unit tests
-src/pages/__tests__/        # Page-level logic tests (e.g. scoreFighter)
+src/lib/__tests__/          # Pure-logic unit tests (utils, export)
+src/pages/__tests__/        # Page-level logic tests (scoreFighter)
 src/components/ui/__tests__/ # Component smoke/rendering tests
+src/components/__tests__/    # Cross-component render-performance tests
 ```
+
+### Test Suite Summary (73 total)
+
+| File                                  | Tests | What it covers                     |
+| ------------------------------------- | ----- | ---------------------------------- |
+| `src/lib/__tests__/utils.test.ts`     | 10    | uid(), mk helpers, style object S  |
+| `src/lib/__tests__/export.test.ts`    | 12    | buildExport() plaintext generation |
+| `src/pages/__tests__/FightPage.test.ts` | 22  | scoreFighter scoring logic         |
+| `src/components/ui/__tests__/*`       | 11    | Field, Sel, Toggle, EventPicker    |
+| `src/components/__tests__/renderPerformance.test.tsx` | 18 | Memoized component DOM stability   |
+
+### Benchmarks
+
+| File                                    | What it measures      |
+| --------------------------------------- | --------------------- |
+| `src/lib/__tests__/export.bench.ts`     | buildExport() throughput |
+| `src/pages/__tests__/FightPage.bench.ts` | scoreFighter() throughput (3 scales) |
 
 ### Conventions
 
-- `scoreFighter` in `FightPage.tsx` is a private function — tests replicate the logic directly
+- `scoreFighter` lives in `src/lib/scoreFighter.ts` (single source of truth — tests and benchmarks import from there)
 - Use `describe` + `it` blocks; prefer `expect().toBe*` matchers from jest-dom
 - Mock `localStorage` in setup (no persistence during tests)
 - MUI Select components render `MenuItem` children in a portal — do not query them via `getByRole("option")` until the dropdown is opened; use `getByRole("combobox")` instead
-- Benchmarks use `bench()` from vitest; iterate over large datasets (50 chars, 100 events) for meaningful measurements
+- Benchmarks use `bench()` from vitest; iterate over large datasets for meaningful measurements
+- Render-performance tests verify DOM stability — re-rendering a memoized component with identical props must produce identical `innerHTML`
 
 ---
 
@@ -523,3 +638,5 @@ When generating Legend State code:
 - Extract sub-components for array items (each calls `useWatch` with a static index)
 - For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data
 - `any` is banned — no `as any`, no `: any`, no eslint-disable for `no-explicit-any`
+- Pure display leaf components (primitives-only props) should be wrapped in `React.memo`
+- `scoreFighter` is in `src/lib/scoreFighter.ts` — import it directly; do not replicate the logic in tests
