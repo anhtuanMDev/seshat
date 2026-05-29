@@ -32,6 +32,7 @@
 | Forms       | react-hook-form              | Performant local form state, minimal re-renders               |
 | UI/Icons    | MUI (Material UI) v9 + @mui/icons-material | Consistent, accessible components; centralized icon exports via `src/components/ui/icons.tsx` |
 | Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
+| Rich text   | Tiptap v3 (StarterKit + Underline, Link, Highlight, TextAlign, Typography, Placeholder) | ProseMirror-based editor with formatting toolbar |
 | Testing     | Vitest + testing-library     | Unit/integration tests with jsdom environment                 |
 
 ---
@@ -84,7 +85,7 @@ seshat/
 │   │   │       └── EventPicker.test.tsx
 │   │   │
 │   │   ├── editor/
-│   │   │   └── RichEditor.tsx # Rich text editor (focus mode)
+│   │   │   └── RichEditor.tsx # Tiptap-based rich text editor with formatting toolbar (bold, italic, underline, headings, lists, blockquote, code, link, highlight)
 │   │   │
 │   │   ├── fight/             # FightPage sub-components
 │   │   │   ├── FighterPicker.tsx  # Character + event dropdown
@@ -130,7 +131,7 @@ seshat/
 │   │   ├── CharacterPage.tsx    # 220 lines — full character sheet (with modal-based array item editing via Modal.tsx)
 │   │   ├── CharacterListPage.tsx # 288 lines — character list (card-based with hover effects, stat pills)
 │   │   ├── EventPage.tsx        # 252 lines — event sheet + character attributes
-│   │   ├── ChapterPage.tsx      # 335 lines — chapter prose editor with reference panel
+│   │   ├── ChapterPage.tsx      # ~300 lines — chapter prose editor with always-on RichEditor + reference panel
 │   │   ├── ChapterListPage.tsx  # 237 lines — chapter list (card-based with word count)
 │   │   ├── TimelinePage.tsx     # 326 lines — timeline (visual vertical-line layout with event cards)
 │   │   ├── FightPage.tsx        # 162 lines — fight simulator
@@ -152,7 +153,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 9 pages totaling ~2080 lines (incl. icons).**
+**Total: 73 tests across 8 test files. 9 pages totaling ~2050 lines (incl. icons).**
 
 ---
 
@@ -348,7 +349,7 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | CharacterListPage   | 288   | CharacterCard, StatPill                          | PeopleIcon, AddIcon |
 | EventPage           | 252   | CharacterAttrsBlock                             | SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon; PeopleAltIcon in block |
 | TimelinePage        | 326   | EventCard                                       | TimelineIcon, AddIcon |
-| ChapterPage         | 335   | ReferencePanel, PinnedContextStrip, ChapterToolbar, ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, CenterFocusStrongIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
+| ChapterPage         | ~300  | ReferencePanel, PinnedContextStrip, ChapterToolbar (no focus toggle — always-on RichEditor), ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
 | ChapterListPage     | 237   | ChapterCard                                     | AutoStoriesIcon, AddIcon |
 | FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
 
@@ -372,7 +373,7 @@ Event editor with per-character attributes (power tier, arc stage, emotional sta
 
 ### ChapterPage (`/book/:bookId/chapters/:id`)
 
-Chapter prose editor with a reference panel (characters, events, world info). Uses react-hook-form for all chapter fields. Body field supports both plain textarea and a RichEditor (toggled by focus mode). Reference panel and toolbar extracted to `src/components/chapter/`.
+Chapter prose editor with a reference panel (characters, events, world info). Uses react-hook-form for all chapter fields. Body field uses a Tiptap-based RichEditor (always visible) with a formatting toolbar (bold, italic, underline, headings, lists, blockquote, code, link, highlight). Reference panel, toolbar, pinned-context strip extracted to `src/components/chapter/`.
 
 ### FightPage (`/book/:bookId/fight`)
 
@@ -462,6 +463,10 @@ Icons are imported from `@mui/icons-material` via `src/components/ui/icons.tsx` 
 | `ArticleIcon`            | Refs panel button (Chapter toolbar)        |
 | `EventNoteIcon`          | Events tab (reference panel)               |
 | `NotesIcon`              | Chapter notes, AI narrator note            |
+
+### RichEditor (`src/components/editor/RichEditor.tsx`)
+
+Tiptap-based rich text editor with inline `MenuBar` toolbar. Always shown for the chapter body field. Supports both controlled (via `react-hook-form` `Control` + `name`) and uncontrolled (`content` + `onChange`) usage. Tiptap extensions enabled: `StarterKit` (bold, italic, strike, heading, lists, blockquote, code), `Underline`, `Link` (prompt-based URL), `Highlight`, `TextAlign`, `Typography`, `Placeholder`. ProseMirror styling in `index.css` for headings, lists, blockquote, code, links, and placeholder.
 
 ### Domain-specific components
 

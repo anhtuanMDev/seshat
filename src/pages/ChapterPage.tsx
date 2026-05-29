@@ -9,7 +9,7 @@ import {
 import { S } from "../lib/utils";
 import { NotesIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { Character, Event } from "../lib/types";
 import RichEditor from "../components/editor/RichEditor";
@@ -74,30 +74,14 @@ export default function ChapterPage() {
   }, [chapter?.id, reset]);
 
   const ref = useAnimateIn();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [showPanel, setShowPanel] = useState(true);
   const [panelTab, setPanelTab] = useState<"chars" | "events" | "world">(
     "chars",
   );
-  const [focusMode, setFocusMode] = useState(false);
 
   const [pinnedChars, setPinnedChars] = useState<string[]>([]);
   const [pinnedEvents, setPinnedEvents] = useState<string[]>([]);
-
-  const autoGrow = useCallback(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
-  }, []);
-
-  const body = useWatch({ control, name: "body" });
-  const bodyRegister = register("body");
-
-  useEffect(() => {
-    autoGrow();
-  }, [body, autoGrow]);
 
   if (!chapter) {
     return (
@@ -118,6 +102,7 @@ export default function ChapterPage() {
     ch.notes.set(data.notes);
   };
 
+  const body = useWatch({ control, name: "body" });
   const words = countWords(body || "");
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedChars.includes(c.id),
@@ -149,7 +134,7 @@ export default function ChapterPage() {
         style={{
           flex: 1,
           minWidth: 0,
-          paddingRight: showPanel && !focusMode ? 24 : 0,
+          paddingRight: showPanel ? 24 : 0,
           transition: "padding 0.2s",
         }}
       >
@@ -218,9 +203,7 @@ export default function ChapterPage() {
 
           <ChapterToolbar
             words={words}
-            focusMode={focusMode}
             showPanel={showPanel}
-            onToggleFocus={() => setFocusMode((f) => !f)}
             onTogglePanel={() => setShowPanel((s) => !s)}
             onSave={handleSubmit(onSubmit)}
           />
@@ -247,78 +230,49 @@ export default function ChapterPage() {
           }}
         />
 
-        {pinnedCharObjs.length + pinnedEventObjs.length > 0 && !focusMode && (
+        {pinnedCharObjs.length + pinnedEventObjs.length > 0 && (
           <PinnedContextStrip
             pinnedCharObjs={pinnedCharObjs}
             pinnedEventObjs={pinnedEventObjs}
           />
         )}
 
-        {!focusMode && (
-          <textarea
-            {...bodyRegister}
-            ref={(e) => {
-              bodyRegister.ref(e);
-              textareaRef.current = e;
-            }}
-            onInput={autoGrow}
-            placeholder="Begin writing the chapter here. The story lives in this space…"
-            style={{
-              width: "100%",
-              fontFamily: "Georgia, serif",
-              fontSize: 15,
-              lineHeight: 1.9,
-              color: "var(--text-primary)",
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              resize: "none",
-              overflow: "hidden",
-              minHeight: 400,
-              padding: 0,
-            }}
-          />
-        )}
-        {focusMode && <RichEditor control={control} name="body" />}
+        <RichEditor control={control} name="body" placeholder="Begin writing the chapter here. The story lives in this space…" />
 
-        {!focusMode && (
-          <>
-            <hr style={S.rule} />
-            <p
-              style={{
-                ...S.h2,
-                marginBottom: 8,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <NotesIcon sx={{ fontSize: 12 }} />
-              Chapter notes
-            </p>
-            <textarea
-              {...register("notes")}
-              placeholder="Private notes, research, threads to pull later, things you want to remember…"
-              rows={4}
-              style={{
-                width: "100%",
-                fontFamily: "Georgia, serif",
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                background: "transparent",
-                border: "none",
-                borderBottom: "1px solid var(--border)",
-                outline: "none",
-                resize: "vertical",
-                lineHeight: 1.7,
-                padding: "4px 0",
-              }}
-            />
-          </>
-        )}
+        <hr style={S.rule} />
+        <p
+          style={{
+            ...S.h2,
+            marginBottom: 8,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <NotesIcon sx={{ fontSize: 12 }} />
+          Chapter notes
+        </p>
+        <textarea
+          {...register("notes")}
+          placeholder="Private notes, research, threads to pull later, things you want to remember…"
+          rows={4}
+          style={{
+            width: "100%",
+            fontFamily: "Georgia, serif",
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            background: "transparent",
+            border: "none",
+            borderBottom: "1px solid var(--border)",
+            outline: "none",
+            resize: "vertical",
+            lineHeight: 1.7,
+            padding: "4px 0",
+          }}
+        />
       </div>
 
-      {showPanel && !focusMode && (
+      {showPanel && (
         <ReferencePanel
           panelTab={panelTab}
           onTabChange={setPanelTab}

@@ -1,20 +1,16 @@
 import { S } from "../../lib/utils";
-import { SaveIcon, CenterFocusStrongIcon, ArticleIcon } from "../ui/icons";
+import { SaveIcon, ArticleIcon } from "../ui/icons";
 
 interface ChapterToolbarProps {
   words: number;
-  focusMode: boolean;
   showPanel: boolean;
-  onToggleFocus: () => void;
   onTogglePanel: () => void;
   onSave: () => void;
 }
 
 export function ChapterToolbar({
   words,
-  focusMode,
   showPanel,
-  onToggleFocus,
   onTogglePanel,
   onSave,
 }: ChapterToolbarProps) {
@@ -54,40 +50,21 @@ export function ChapterToolbar({
         save
       </button>
       <button
-        onClick={onToggleFocus}
-        title="Focus mode"
+        onClick={onTogglePanel}
         style={{
           ...S.ghost,
           fontSize: 11,
           letterSpacing: 1,
-          color: focusMode ? "var(--color-purple)" : "var(--text-muted)",
-          borderBottom: focusMode ? "1px solid var(--color-purple)" : "none",
+          color: showPanel ? "var(--color-purple)" : "var(--text-muted)",
+          borderBottom: showPanel ? "1px solid var(--color-purple)" : "none",
           display: "flex",
           alignItems: "center",
           gap: 3,
         }}
       >
-        <CenterFocusStrongIcon sx={{ fontSize: 12 }} />
-        focus
+        <ArticleIcon sx={{ fontSize: 12 }} />
+        refs
       </button>
-      {!focusMode && (
-        <button
-          onClick={onTogglePanel}
-          style={{
-            ...S.ghost,
-            fontSize: 11,
-            letterSpacing: 1,
-            color: showPanel ? "var(--color-purple)" : "var(--text-muted)",
-            borderBottom: showPanel ? "1px solid var(--color-purple)" : "none",
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-          }}
-        >
-          <ArticleIcon sx={{ fontSize: 12 }} />
-          refs
-        </button>
-      )}
     </div>
   );
 }
