@@ -1,7 +1,6 @@
 import { useParams } from "react-router-dom";
-import { useSelector } from "@legendapp/state/react";
-import { worldStore } from "../store/worldStore";
-import { useEvents } from "../hooks/useWorldStore";
+import { appStore } from "../store/appStore";
+import { useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, mkTrauma, mkCond, mkAchieve, mkLoss, mkStatusEntry } from "../lib/utils";
 import { Field, Section, GhostButton } from "../components/ui";
 import { CharStatusPanel } from "../components/ui/CharStatusPanel";
@@ -9,6 +8,8 @@ import { TimelineIcon, BadgeIcon, PsychologyIcon, RouteIcon, CrisisAlertIcon, Me
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { useSelector } from "@legendapp/state/react";
+import { useEvents } from "../hooks/useWorldStore";
 import { TraumaBlock } from "../components/character/TraumaBlock";
 import { ConditionBlock } from "../components/character/ConditionBlock";
 import { AchievementBlock } from "../components/character/AchievementBlock";
@@ -19,13 +20,16 @@ import type { Trauma, Condition, Achievement, Loss } from "../lib/types";
 export default function CharacterPage() {
   const { id } = useParams();
   const events = useEvents();
+  const bookIdx = useActiveBookIdx();
 
-  const char = useSelector(() =>
-    worldStore.characters.get().find((c) => c.id === id),
-  );
-  const idx = useSelector(() =>
-    worldStore.characters.get().findIndex((c) => c.id === id),
-  );
+  const char = useSelector(() => {
+    if (bookIdx < 0) return undefined;
+    return appStore.books[bookIdx].characters.get().find((c) => c.id === id);
+  });
+  const idx = useSelector(() => {
+    if (bookIdx < 0) return -1;
+    return appStore.books[bookIdx].characters.get().findIndex((c) => c.id === id);
+  });
 
   const { register, handleSubmit, control, reset, setValue, getValues } =
     useForm<CharacterForm>({
@@ -67,7 +71,8 @@ export default function CharacterPage() {
   }
 
   const onSubmit = (data: CharacterForm) => {
-    const c = worldStore.characters[idx];
+    if (bookIdx < 0) return;
+    const c = appStore.books[bookIdx].characters[idx];
     c.name.set(data.name);
     c.role.set(data.role);
     c.archetype.set(data.archetype);

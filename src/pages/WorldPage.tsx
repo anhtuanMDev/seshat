@@ -1,5 +1,6 @@
-import { worldStore } from "../store/worldStore";
-import { S, mkNation, mkNationConnection, mkMonster, mkTechnique, mkIngredient, mkTreasure, uid } from "../lib/utils";
+import { appStore } from "../store/appStore";
+import { useActiveBookIdx } from "../hooks/useWorldStore";
+import { S, mkNation, mkNationConnection, mkMonster, mkTechnique, mkIngredient, mkTreasure } from "../lib/utils";
 import { Field, Section, GhostButton } from "../components/ui";
 import { FlagIcon, BuildIcon, ScienceIcon, BugReportIcon, DiamondIcon, SaveIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
@@ -11,10 +12,12 @@ import { IngredientBlock } from "../components/world/IngredientBlock";
 import { MonsterBlock } from "../components/world/MonsterBlock";
 import { TreasureBlock } from "../components/world/TreasureBlock";
 import type { WorldForm } from "../components/world/types";
-import type { Nation, Technique, Ingredient, Monster, Treasure } from "../store/worldStore";
+import type { Nation, Technique, Ingredient, Monster, Treasure } from "../store/appStore";
 import type { NationConnection } from "../lib/types";
 
 export default function WorldPage() {
+  const bookIdx = useActiveBookIdx();
+
   const { register, handleSubmit, control, reset, setValue, getValues } = useForm<WorldForm>({
     defaultValues: {
       title: "", synopsis: "", setting: "", themes: "", rules: "",
@@ -23,19 +26,20 @@ export default function WorldPage() {
   });
 
   useEffect(() => {
+    if (bookIdx < 0) return;
     reset({
-      title: worldStore.title.get() || "",
-      synopsis: worldStore.synopsis.get() || "",
-      setting: worldStore.setting.get() || "",
-      themes: worldStore.themes.get() || "",
-      rules: worldStore.rules.get() || "",
-      nations: worldStore.nations.get() || [],
-      techniques: worldStore.techniques.get() || [],
-      ingredients: worldStore.ingredients.get() || [],
-      monsters: worldStore.monsters.get() || [],
-      treasures: worldStore.treasures.get() || [],
+      title: appStore.books[bookIdx].title.get() || "",
+      synopsis: appStore.books[bookIdx].synopsis.get() || "",
+      setting: appStore.books[bookIdx].setting.get() || "",
+      themes: appStore.books[bookIdx].themes.get() || "",
+      rules: appStore.books[bookIdx].rules.get() || "",
+      nations: appStore.books[bookIdx].nations.get() || [],
+      techniques: appStore.books[bookIdx].techniques.get() || [],
+      ingredients: appStore.books[bookIdx].ingredients.get() || [],
+      monsters: appStore.books[bookIdx].monsters.get() || [],
+      treasures: appStore.books[bookIdx].treasures.get() || [],
     });
-  }, [reset]);
+  }, [bookIdx, reset]);
 
   const ref = useAnimateIn();
 
@@ -46,16 +50,17 @@ export default function WorldPage() {
   const treasures = useWatch({ control, name: "treasures" }) || [];
 
   const onSubmit = (data: WorldForm) => {
-    worldStore.title.set(data.title);
-    worldStore.synopsis.set(data.synopsis);
-    worldStore.setting.set(data.setting);
-    worldStore.themes.set(data.themes);
-    worldStore.rules.set(data.rules);
-    worldStore.nations.set(data.nations);
-    worldStore.techniques.set(data.techniques);
-    worldStore.ingredients.set(data.ingredients);
-    worldStore.monsters.set(data.monsters);
-    worldStore.treasures.set(data.treasures);
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].title.set(data.title);
+    appStore.books[bookIdx].synopsis.set(data.synopsis);
+    appStore.books[bookIdx].setting.set(data.setting);
+    appStore.books[bookIdx].themes.set(data.themes);
+    appStore.books[bookIdx].rules.set(data.rules);
+    appStore.books[bookIdx].nations.set(data.nations);
+    appStore.books[bookIdx].techniques.set(data.techniques);
+    appStore.books[bookIdx].ingredients.set(data.ingredients);
+    appStore.books[bookIdx].monsters.set(data.monsters);
+    appStore.books[bookIdx].treasures.set(data.treasures);
   };
 
   const addItem = (field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures", mk: () => Nation | Technique | Ingredient | Monster | Treasure) => {

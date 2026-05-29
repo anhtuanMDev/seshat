@@ -94,7 +94,8 @@ export interface Chapter {
   order: number;
 }
 
-interface WorldState {
+export interface BookData {
+  id: string;
   title: string;
   synopsis: string;
   setting: string;
@@ -110,8 +111,11 @@ interface WorldState {
   chapters: Chapter[];
 }
 
-const INIT: WorldState = {
-  title: "Untitled world",
+const uid = () => Math.random().toString(36).slice(2, 8);
+
+export const mkBook = (title: string): BookData => ({
+  id: uid(),
+  title,
   synopsis: "",
   setting: "",
   themes: "",
@@ -123,7 +127,7 @@ const INIT: WorldState = {
   treasures: [],
   events: [
     {
-      id: Math.random().toString(36).slice(2, 8),
+      id: uid(),
       time: 1,
       title: "The story begins",
       type: "Story",
@@ -138,8 +142,11 @@ const INIT: WorldState = {
   ],
   characters: [],
   chapters: [],
-};
+});
 
-export const worldStore = observable(INIT);
+export const appStore = observable({
+  activeBookId: null as string | null,
+  books: [] as BookData[],
+});
 
-persistObservable(worldStore, { local: "loreweaver" });
+persistObservable(appStore, { local: "seshat-app" });

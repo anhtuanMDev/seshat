@@ -321,6 +321,34 @@ export interface Ingredient {
   lore: string;
 }
 
+export interface BookData {
+  id: string;
+  title: string;
+  synopsis: string;
+  setting: string;
+  themes: string;
+  rules: string;
+  nations: Nation[];
+  techniques: Technique[];
+  ingredients: Ingredient[];
+  monsters: Monster[];
+  treasures: Treasure[];
+  events: Event[];
+  characters: Character[];
+  chapters: Chapter[];
+}
+
+export interface Chapter {
+  id: string;
+  number: string;
+  title: string;
+  timeRef: string;
+  synopsis: string;
+  body: string;
+  notes: string;
+  order: number;
+}
+
 export interface Treasure {
   id: string;
   name: string;

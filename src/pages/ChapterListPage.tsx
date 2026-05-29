@@ -1,22 +1,24 @@
-import { worldStore } from "../store/worldStore";
-import { useChapters } from "../hooks/useWorldStore";
-import { S } from "../lib/utils";
+import { appStore } from "../store/appStore";
+import { useChapters, useActiveBookIdx } from "../hooks/useWorldStore";
+import { S, uid } from "../lib/utils";
 import { Field, Section, EntryBlock } from "../components/ui";
 import { AutoStoriesIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import type { Chapter } from "../store/worldStore";
+import type { Chapter } from "../store/appStore";
 import { useCallback } from "react";
 
 type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
 
 export default function ChapterListPage() {
   const chapters = useChapters();
+  const bookIdx = useActiveBookIdx();
   const ref = useAnimateIn();
 
   const addChapter = useCallback(() => {
+    if (bookIdx < 0) return;
     const order = (chapters?.length || 0) + 1;
-    const ch = {
-      id: Math.random().toString(36).slice(2, 8),
+    const ch: Chapter = {
+      id: uid(),
       number: `Ch. ${order}`,
       title: "",
       timeRef: "",
@@ -25,19 +27,21 @@ export default function ChapterListPage() {
       notes: "",
       order,
     };
-    worldStore.chapters.push(ch);
-  }, [chapters?.length]);
+    appStore.books[bookIdx].chapters.push(ch);
+  }, [chapters?.length, bookIdx]);
 
   const del = useCallback((id: string) => {
-    worldStore.chapters.set((prev: Chapter[]) =>
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].chapters.set((prev: Chapter[]) =>
       prev.filter((x) => x.id !== id),
     );
-  }, []);
+  }, [bookIdx]);
 
   const update = useCallback(<K extends keyof Chapter>(id: string, key: K, v: Chapter[K]) => {
-    const idx = worldStore.chapters.get().findIndex((x) => x.id === id);
-    if (idx >= 0) (worldStore.chapters[idx] as ObservableOf<Chapter>)[key].set(v);
-  }, []);
+    if (bookIdx < 0) return;
+    const idx = appStore.books[bookIdx].chapters.get().findIndex((x) => x.id === id);
+    if (idx >= 0) (appStore.books[bookIdx].chapters[idx] as ObservableOf<Chapter>)[key].set(v);
+  }, [bookIdx]);
 
   const sortedChapters = [...(chapters || [])].sort(
     (a: Chapter, b: Chapter) => a.order - b.order,

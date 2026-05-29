@@ -53,7 +53,8 @@ seshat/
 │   │       └── export.bench.ts
 │   │
 │   ├── store/
-│   │   └── worldStore.ts       # Legend State observable + localStorage persistence
+│   │   ├── appStore.ts         # Multi-book Legend State observable + localStorage persistence
+│   │   └── worldStore.ts       # (removed — merged into appStore.ts)
 │   │
 │   ├── hooks/
 │   │   ├── useWorldStore.ts    # Typed selectors from legend-state
@@ -122,6 +123,7 @@ seshat/
 │   │       └── renderPerformance.test.tsx  # 18 tests
 │   │
 │   ├── pages/
+│   │   ├── BookListPage.tsx     # 90 lines — book manager (list, create, delete books)
 │   │   ├── WorldPage.tsx        # 112 lines — world sheet (nations, techniques, etc.)
 │   │   ├── CharacterPage.tsx    # 220 lines — full character sheet
 │   │   ├── CharacterListPage.tsx # 132 lines — character list
@@ -148,7 +150,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 8 pages totaling ~1770 lines (incl. icons).**
+**Total: 73 tests across 8 test files. 9 pages totaling ~1860 lines (incl. icons).**
 
 ---
 
@@ -163,24 +165,37 @@ export const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <WorldPage /> },
-      { path: "characters", element: <CharacterListPage /> },
-      { path: "characters/:id", element: <CharacterPage /> },
-      { path: "events", element: <TimelinePage /> },
-      { path: "events/:id", element: <EventPage /> },
-      { path: "fight", element: <FightPage /> },
-      { path: "chapters", element: <ChapterListPage /> },
-      { path: "chapters/:id", element: <ChapterPage /> },
+      { index: true, element: <BookListPage /> },
+      {
+        path: "book/:bookId",
+        children: [
+          { index: true, element: <WorldPage /> },
+          { path: "world", element: <WorldPage /> },
+          { path: "characters", element: <CharacterListPage /> },
+          { path: "characters/:id", element: <CharacterPage /> },
+          { path: "events", element: <TimelinePage /> },
+          { path: "events/:id", element: <EventPage /> },
+          { path: "fight", element: <FightPage /> },
+          { path: "chapters", element: <ChapterListPage /> },
+          { path: "chapters/:id", element: <ChapterPage /> },
+        ],
+      },
     ],
   },
 ]);
+
+// Root `/` shows BookListPage (multi-book manager).
+// All world/character/event/chapter/fight routes are nested under `/book/:bookId`.
+
 ```
 
 ---
 
 ## 4. State Management — Legend State
 
-### Store definition (`src/store/worldStore.ts`)
+### Store definition (`src/store/appStore.ts`)
+
+The store supports **multiple books**, each containing a complete independent world state. All books and the active book ID are persisted under a single localStorage key (`seshat-app`).
 
 ```ts
 import { observable } from "@legendapp/state";
@@ -192,57 +207,36 @@ import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/
 
 configureObservablePersistence({ pluginLocal: ObservablePersistLocalStorage });
 
-export const worldStore = observable({
-  title: "Untitled world",
-  synopsis: "",
-  setting: "",
-  themes: "",
-  rules: "",
-  nations: [],
-  techniques: [],
-  ingredients: [],
-  monsters: [],
-  treasures: [],
-  events: [
-    {
-      id: Math.random().toString(36).slice(2, 8),
-      time: 1,
-      title: "The story begins",
-      type: "Story",
-      chapters: [],
-      startDate: "",
-      endDate: "",
-      setting: "",
-      description: "",
-      consequence: "",
-      characters: [],
-    },
-  ],
-  characters: [],
-  chapters: [],
+export const appStore = observable({
+  activeBookId: null as string | null,
+  books: [] as BookData[],
 });
 
-persistObservable(worldStore, { local: "loreweaver" });
+persistObservable(appStore, { local: "seshat-app" });
 ```
+
+Each `BookData` contains: `id`, `title`, `synopsis`, `setting`, `themes`, `rules`, `nations[]`, `techniques[]`, `ingredients[]`, `monsters[]`, `treasures[]`, `events[]`, `characters[]`, `chapters[]`.
 
 ### Typed selectors (`src/hooks/useWorldStore.ts`)
 
+Hooks are scoped to the active book (identified by `appStore.activeBookId`):
+
 ```ts
 import { useSelector } from "@legendapp/state/react";
-import { worldStore } from "../store/worldStore";
+import { appStore } from "../store/appStore";
 
-export const useWorldTitle = () => useSelector(worldStore.title);
-export const useSynopsis = () => useSelector(worldStore.synopsis);
-export const useSetting = () => useSelector(worldStore.setting);
-export const useThemes = () => useSelector(worldStore.themes);
-export const useRules = () => useSelector(worldStore.rules);
-export const useNations = () => useSelector(worldStore.nations);
-export const useTechniques = () => useSelector(worldStore.techniques);
-export const useIngredients = () => useSelector(worldStore.ingredients);
-export const useMonsters = () => useSelector(worldStore.monsters);
-export const useTreasures = () => useSelector(worldStore.treasures);
-export const useEvents = () => useSelector(worldStore.events);
-export const useCharacters = () => useSelector(worldStore.characters);
+export const useActiveBookIdx = () => useSelector(() => {
+  const activeId = appStore.activeBookId.get();
+  return appStore.books.get().findIndex(b => b.id === activeId);
+});
+
+export const useWorldTitle = () => {
+  const idx = useActiveBookIdx();
+  return useSelector(() => idx >= 0 ? appStore.books[idx].title.get() : "");
+};
+// ... same pattern for synopsis, setting, themes, rules,
+//     events, characters, nations, techniques, ingredients,
+//     monsters, treasures, chapters
 ```
 
 ---
@@ -284,7 +278,19 @@ Pages use **react-hook-form** for local form state. Edits are held in local stat
 ```tsx
 import { useForm, useWatch } from "react-hook-form";
 import type { Control } from "react-hook-form";
-import { worldStore } from "../store/worldStore";
+import { useActiveBookIdx, appStore } from "../store/appStore";
+import { useSelector } from "@legendapp/state/react";
+
+// Inside component:
+const bookIdx = useActiveBookIdx();
+const entity = useSelector(() => bookIdx >= 0
+  ? appStore.books[bookIdx].collection.get().find((x: { id: string }) => x.id === entityId)
+  : undefined
+);
+const entityIdx = useSelector(() => bookIdx >= 0
+  ? appStore.books[bookIdx].collection.get().findIndex((x: { id: string }) => x.id === entityId)
+  : -1
+);
 
 interface MyForm {
   field1: string;
@@ -306,7 +312,8 @@ const field1 = useWatch({ control, name: "field1" });
 
 // Save writes to Legend State (per-field .set() — verbose but fully type-safe)
 const onSubmit = (data: MyForm) => {
-  const c = worldStore.collection[idx];
+  if (bookIdx < 0) return;
+  const c = appStore.books[bookIdx].collection.get()[entityIdx];
   c.field1.set(data.field1);
   c.field2.set(data.field2);
 };
@@ -343,25 +350,29 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | ChapterListPage     | 108   | inline (lean)                                   | AutoStoriesIcon, AddIcon |
 | FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
 
-### WorldPage (`/`)
+### BookListPage (`/`)
+
+Multi-book manager. Lists all books with create/delete actions. Clicking a book navigates to `/book/:id/world`. Each book is an independent world — no data shared between books. New books start with a single "The story begins" event.
+
+### WorldPage (`/book/:bookId/world`)
 
 Renders world metadata and five world entity sections (Nations, Techniques, Ingredients, Monsters, Treasures). Uses react-hook-form with `useWatch`/`setValue` for all fields; array add/remove via generic typed `addItem`/`delItem` that uses `WorldForm[F][number]` to infer the element type from the field name, eliminating `any` casts. Five extracted block components in `src/components/world/`.
 
 Nation blocks include `periodActive` (time range the nation existed), structured `connections[]` (diplomatic relations with other nations — alliance, war, trade, vassal, etc.), and `allianceLogic` (free-text diplomatic landscape description). Connections are edited via `NationConnectionBlock` sub-component. Add/remove logic for connections lives in `WorldPage` alongside the existing nation add/remove handlers.
 
-### CharacterPage (`/characters/:id`)
+### CharacterPage (`/book/:bookId/characters/:id`)
 
 Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (traumas, conditions, achievements, losses) has its own sub-component in `src/components/character/`. Status Timeline uses a custom `CharStatusPanel`. `onSubmit` uses explicit per-field `.set()` calls.
 
-### EventPage (`/events/:id`)
+### EventPage (`/book/:bookId/events/:id`)
 
 Event editor with per-character attributes (power tier, arc stage, emotional state, etc.). Uses react-hook-form for event fields; character attribute overrides for this event are held in a separate `useState<Record<string, EventAttributes>>`. Character attribute editor extracted to `CharacterAttrsBlock` in `src/components/event/`.
 
-### ChapterPage (`/chapters/:id`)
+### ChapterPage (`/book/:bookId/chapters/:id`)
 
 Chapter prose editor with a reference panel (characters, events, world info). Uses react-hook-form for all chapter fields. Body field supports both plain textarea and a RichEditor (toggled by focus mode). Reference panel and toolbar extracted to `src/components/chapter/`.
 
-### FightPage (`/fight`)
+### FightPage (`/book/:bookId/fight`)
 
 Combat simulation comparing two characters with a weighted score breakdown. Uses `scoreFighter()` from `src/lib/scoreFighter.ts`. Display components (WinBar, SnapshotCard, ScoreBreakdown, NoteRow, FighterPicker) extracted to `src/components/fight/`.
 
@@ -465,20 +476,21 @@ Each domain directory mirrors a page and contains components that are only used 
 
 | Feature          | Location        | Store path                                                       |
 | ---------------- | --------------- | ---------------------------------------------------------------- |
-| World meta       | `WorldPage`     | `worldStore.title`, `.synopsis`, `.setting`, `.themes`, `.rules` |
-| Nations          | `WorldPage`     | `worldStore.nations[]` (periodActive, connections[], allianceLogic) |
-| Techniques       | `WorldPage`     | `worldStore.techniques[]`                                        |
-| Ingredients      | `WorldPage`     | `worldStore.ingredients[]`                                       |
-| Monsters         | `WorldPage`     | `worldStore.monsters[]`                                          |
-| Treasures        | `WorldPage`     | `worldStore.treasures[]`                                         |
-| Characters       | `CharacterPage` | `worldStore.characters[]`                                        |
+| Books            | `BookListPage`  | `appStore.books[]`, `.activeBookId`                              |
+| World meta       | `WorldPage`     | `appStore.books[i].title`, `.synopsis`, `.setting`, `.themes`, `.rules` |
+| Nations          | `WorldPage`     | `appStore.books[i].nations[]` (periodActive, connections[], allianceLogic) |
+| Techniques       | `WorldPage`     | `appStore.books[i].techniques[]`                                 |
+| Ingredients      | `WorldPage`     | `appStore.books[i].ingredients[]`                                |
+| Monsters         | `WorldPage`     | `appStore.books[i].monsters[]`                                   |
+| Treasures        | `WorldPage`     | `appStore.books[i].treasures[]`                                  |
+| Characters       | `CharacterPage` | `appStore.books[i].characters[]`                                 |
 | Traumas          | `CharacterPage` | `.traumas[]`                                                     |
 | Conditions       | `CharacterPage` | `.conditions[]`                                                  |
 | Achievements     | `CharacterPage` | `.achievements[]`                                                |
 | Losses           | `CharacterPage` | `.losses[]`                                                      |
-| Events           | `EventPage`     | `worldStore.events[]` (chapters[], startDate, endDate)           |
-| Event attributes | `EventPage`     | `worldStore.characters[i].attributes[eventId]`                   |
-| Chapters         | `ChapterPage`   | `worldStore.chapters[]`                                          |
+| Events           | `EventPage`     | `appStore.books[i].events[]` (chapters[], startDate, endDate)    |
+| Event attributes | `EventPage`     | `appStore.books[i].characters[j].attributes[eventId]`            |
+| Chapters         | `ChapterPage`   | `appStore.books[i].chapters[]`                                   |
 | Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |
 | Export           | `App.tsx` modal | `buildExport()`                                                  |
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
@@ -511,7 +523,7 @@ The original `Seshat.jsx` was converted to a modular TypeScript project:
 | `scoreFighter()`                     | `src/lib/scoreFighter.ts` |
 | All UI components                    | `src/components/ui/*.tsx` |
 | Pages                                | `src/pages/*.tsx`         |
-| State logic                          | `src/store/worldStore.ts` |
+| State logic                          | `src/store/appStore.ts` |
 | Routing                              | `src/router/index.tsx`    |
 | App shell                            | `src/App.tsx`             |
 
@@ -533,31 +545,47 @@ TypeScript strict mode with `verbatimModuleSyntax` enforced. All style propertie
 When accessing array elements in Legend State, calling `.get()` on the array returns raw JavaScript values (not observables). Calling `.get()` again on those raw values causes:
 
 ```
-TypeError: worldStore.events.get(...).find(...)?.get is not a function
+TypeError: appStore.books[idx].events.get(...).find(...)?.get is not a function
 ```
 
 **Incorrect:**
 ```ts
 const event = useSelector(() =>
-  (worldStore.events.get() as any[]).find((e) => e.id === id)?.get(), // BUG
+  (appStore.books[idx].events.get() as any[]).find((e) => e.id === id)?.get(), // BUG
 );
 ```
 
 **Correct (for read-only access):**
 ```ts
 const event = useSelector(() =>
-  (worldStore.events.get() as any[]).find((e) => e.id === id),
+  (appStore.books[idx].events.get() as any[]).find((e) => e.id === id),
 );
 ```
 
 **Correct (for updates via save, get index too):**
 ```ts
 const event = useSelector(() =>
-  (worldStore.events.get() as any[]).find((e) => e.id === id),
+  (appStore.books[idx].events.get() as any[]).find((e) => e.id === id),
 );
 const eventIdx = useSelector(() =>
-  worldStore.events.get().findIndex((e) => e.id === id),
+  appStore.books[idx].events.get().findIndex((e) => e.id === id),
 );
+```
+
+### Multi-Book Store Access
+
+The `appStore` is a single observable containing `activeBookId` and `books[]`. All page data lives inside the active book:
+
+```ts
+// Get active book index reactively
+const bookIdx = useActiveBookIdx();
+
+// Read data from the active book (inside useSelector)
+useSelector(() => appStore.books[bookIdx].characters.get())
+
+// Write to the active book
+appStore.books[bookIdx].characters.push(newChar);
+appStore.books[bookIdx].title.set("New title");
 ```
 
 ### Form State Pattern (react-hook-form)
@@ -581,7 +609,8 @@ const field = useWatch({ control, name: "field" });
 
 // Per-field .set() — verbose but fully type-safe (no any casts)
 const onSubmit = (data: FormType) => {
-  const c = worldStore.collection[entityIdx];
+  if (bookIdx < 0) return;
+  const c = appStore.books[bookIdx].collection.get()[entityIdx];
   c.field1.set(data.field1);
   c.field2.set(data.field2);
 };
@@ -602,11 +631,12 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 
 | Purpose                  | Pattern                                                                 |
 | ----------------------   | --------------------------------------------------------------------- |
-| Read primitive           | `useSelector(worldStore.title)`                                        |
-| Read array (full)        | `useSelector(() => worldStore.events.get())`                           |
-| Read array (find)        | `worldStore.events.get().find(e => e.id === id)` (raw object, no `.get()`) |
+| Read primitive           | `useSelector(() => appStore.books[idx].title.get())`                   |
+| Read array (full)        | `useSelector(() => appStore.books[idx].events.get())`                  |
+| Read array (find)        | `appStore.books[idx].events.get().find(e => e.id === id)` (raw object, no `.get()`) |
+| Get active book index    | `useActiveBookIdx()` — reactive hook returns index of current book     |
 | Local form state         | `useForm<FormType>()` + `reset()` from store on entity change             |
-| Persist to store on save | `handleSubmit(onSubmit)` => per-field `.set()` calls                      |
+| Persist to store on save | `handleSubmit(onSubmit)` => per-field `.set()` calls on active book      |
 | MUI Field/Sel in form    | `useWatch({ control, name })` for value, `setValue(name, v)` for change   |
 | React Compiler safety    | Prefer `useWatch` over `watch()`; extract sub-components for array items  |
 | Native input in form     | `{...register("field")}`                                                |
@@ -692,3 +722,5 @@ When generating Legend State code:
 - Use MUI icons via `src/components/ui/icons.tsx` (named imports, tree-shakeable)
 - Pass icon + text as `ReactNode` to `Section.title` and `Field.label`
 - Size icons with `sx={{ fontSize: N }}`; theme colors via CSS variables; no transition on SVG paths to prevent theme-toggle flicker
+- **Multi-book**: All world state lives inside `appStore.books[]`. Use `useActiveBookIdx()` hook to get the active book's index, then access `appStore.books[idx].fieldName` for reads/writes. The `appStore.activeBookId` is synced from the URL param `:bookId` in `App.tsx`.
+- **Book-manager page** at `/` (`BookListPage`) handles creating, listing, and deleting books. Each book is a completely independent world with no shared references.

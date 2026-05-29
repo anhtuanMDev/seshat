@@ -1,5 +1,5 @@
-import { worldStore } from "../store/worldStore";
-import { useEvents } from "../hooks/useWorldStore";
+import { appStore } from "../store/appStore";
+import { useEvents, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, mkEvent } from "../lib/utils";
 import { Field, Sel, Section, EntryBlock } from "../components/ui";
 import { TimelineIcon, AddIcon } from "../components/ui/icons";
@@ -12,24 +12,28 @@ type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
 
 export default function TimelinePage() {
   const events = useEvents();
+  const bookIdx = useActiveBookIdx();
   const ref = useAnimateIn();
 
   const add = useCallback(() => {
+    if (bookIdx < 0) return;
     const maxT = events.reduce((m: number, e: Event) => Math.max(m, e.time), 0);
     const e = { ...mkEvent(), time: maxT + 1 };
-    worldStore.events.push(e);
-  }, [events]);
+    appStore.books[bookIdx].events.push(e);
+  }, [events, bookIdx]);
 
   const del = useCallback((id: string) => {
-    worldStore.events.set((prev: Event[]) =>
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].events.set((prev: Event[]) =>
       prev.filter((x) => x.id !== id),
     );
-  }, []);
+  }, [bookIdx]);
 
   const update = useCallback(<K extends keyof Event>(id: string, key: K, v: Event[K]) => {
-    const idx = worldStore.events.get().findIndex((x) => x.id === id);
-    if (idx >= 0) (worldStore.events[idx] as ObservableOf<Event>)[key].set(v);
-  }, []);
+    if (bookIdx < 0) return;
+    const idx = appStore.books[bookIdx].events.get().findIndex((x) => x.id === id);
+    if (idx >= 0) (appStore.books[bookIdx].events[idx] as ObservableOf<Event>)[key].set(v);
+  }, [bookIdx]);
 
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
 

@@ -1,5 +1,5 @@
 import type { Control, FieldValues } from "react-hook-form";
-import type { Nation, Technique, Ingredient, Monster, Treasure } from "../../store/worldStore";
+import type { Nation, Technique, Ingredient, Monster, Treasure } from "../../store/appStore";
 
 export interface WorldForm {
   title: string;

@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
-import { worldStore } from "../store/worldStore";
-import { useCharacters } from "../hooks/useWorldStore";
+import { appStore } from "../store/appStore";
+import { useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field } from "../components/ui";
 import { CharacterAttrsBlock } from "../components/event/CharacterAttrsBlock";
@@ -28,13 +28,16 @@ interface EventForm {
 export default function EventPage() {
   const { id } = useParams();
   const characters = useCharacters();
+  const bookIdx = useActiveBookIdx();
 
-  const event = useSelector(() =>
-    worldStore.events.get().find((e) => e.id === id),
-  );
-  const eventIdx = useSelector(() =>
-    worldStore.events.get().findIndex((e) => e.id === id),
-  );
+  const event = useSelector(() => {
+    if (bookIdx < 0) return undefined;
+    return appStore.books[bookIdx].events.get().find((e) => e.id === id);
+  });
+  const eventIdx = useSelector(() => {
+    if (bookIdx < 0) return -1;
+    return appStore.books[bookIdx].events.get().findIndex((e) => e.id === id);
+  });
 
   const [charAttrs, setCharAttrs] = useState<Record<string, EventAttributes>>(
     {},
@@ -45,7 +48,7 @@ export default function EventPage() {
       title: "",
       time: 1,
       type: "Story",
-      chapter: "",
+      chapters: "",
       startDate: "",
       endDate: "",
       setting: "",
@@ -70,14 +73,16 @@ export default function EventPage() {
         characters: event.characters || [],
       });
       const attrs: Record<string, EventAttributes> = {};
-      worldStore.characters.get().forEach((c) => {
-        if (c.attributes?.[event.id]) {
-          attrs[c.id] = { ...c.attributes[event.id] };
-        }
-      });
+      if (bookIdx >= 0) {
+        appStore.books[bookIdx].characters.get().forEach((c) => {
+          if (c.attributes?.[event.id]) {
+            attrs[c.id] = { ...c.attributes[event.id] };
+          }
+        });
+      }
       setCharAttrs(attrs);
     }
-  }, [event?.id, reset]);
+  }, [event?.id, reset, bookIdx]);
 
   const ref = useAnimateIn();
 
@@ -104,7 +109,8 @@ export default function EventPage() {
   }, []);
 
   const onSubmit = (data: EventForm) => {
-    const ev = worldStore.events[eventIdx];
+    if (bookIdx < 0) return;
+    const ev = appStore.books[bookIdx].events[eventIdx];
     ev.title.set(data.title);
     ev.time.set(data.time);
     ev.type.set(data.type as EventType);
@@ -116,12 +122,12 @@ export default function EventPage() {
     ev.consequence.set(data.consequence);
     ev.characters.set(data.characters);
     Object.entries(charAttrs).forEach(([cid, attrs]) => {
-      const cIdx = worldStore.characters.get().findIndex(
+      const cIdx = appStore.books[bookIdx].characters.get().findIndex(
         (c) => c.id === cid,
       );
       if (cIdx >= 0) {
-        const current = worldStore.characters[cIdx].attributes.get();
-        worldStore.characters[cIdx].attributes.set({
+        const current = appStore.books[bookIdx].characters[cIdx].attributes.get();
+        appStore.books[bookIdx].characters[cIdx].attributes.set({
           ...current,
           [event.id]: attrs,
         });

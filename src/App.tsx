@@ -1,13 +1,13 @@
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { worldStore } from "./store/worldStore";
+import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
+import { appStore } from "./store/appStore";
 import {
-  useWorldTitle,
   useEvents,
   useCharacters,
   useChapters,
+  useWorldTitle,
+  useActiveBookIdx,
 } from "./hooks/useWorldStore";
-import { S, mkChar, mkEvent } from "./lib/utils";
-import { mkChapter } from "./lib/mkChapter";
+import { S, mkChar, mkEvent, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
 import {
   PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
@@ -19,27 +19,38 @@ import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useThemeHook";
 import type { Character, Event } from "./lib/types";
-import type { Chapter } from "./store/worldStore";
+import type { Chapter } from "./store/appStore";
 
 export default function App() {
-  const title = useWorldTitle();
-  const events = useEvents();
-  const characters = useCharacters();
-  const chapters = useChapters();
+  const { bookId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
 
+  useEffect(() => {
+    appStore.activeBookId.set(bookId || null);
+  }, [bookId]);
+
+  const bookIdx = useActiveBookIdx();
+  const isInsideBook = bookIdx >= 0;
+
+  const title = useWorldTitle();
+  const events = useEvents();
+  const characters = useCharacters();
+  const chapters = useChapters();
+
   const addChar = () => {
+    if (bookIdx < 0) return;
     const c = mkChar(`Character ${characters.length + 1}`, "#c0392b");
-    worldStore.characters.push(c);
-    navigate(`/characters/${c.id}`);
+    appStore.books[bookIdx].characters.push(c);
+    navigate(`/book/${bookId}/characters/${c.id}`);
   };
   const delChar = (id: string) => {
-    worldStore.characters.set((prev: Character[]) =>
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].characters.set((prev: Character[]) =>
       prev.filter((c) => c.id !== id),
     );
-    worldStore.events.set((prev: Event[]) =>
+    appStore.books[bookIdx].events.set((prev: Event[]) =>
       prev.map((e) => ({
         ...e,
         characters: (e.characters || []).filter((x: string) => x !== id),
@@ -47,38 +58,51 @@ export default function App() {
     );
   };
   const addEvent = () => {
+    if (bookIdx < 0) return;
     const maxT = events.reduce((m: number, e: Event) => Math.max(m, e.time), 0);
     const e = { ...mkEvent(), time: maxT + 1 };
-    worldStore.events.push(e);
-    navigate(`/events/${e.id}`);
+    appStore.books[bookIdx].events.push(e);
+    navigate(`/book/${bookId}/events/${e.id}`);
   };
   const delEvent = (id: string) => {
-    worldStore.events.set((prev: Event[]) => prev.filter((e) => e.id !== id));
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].events.set((prev: Event[]) => prev.filter((e) => e.id !== id));
   };
 
   const addChapter = () => {
+    if (bookIdx < 0) return;
     const order = (chapters?.length || 0) + 1;
-    const ch = mkChapter(order);
-    worldStore.chapters.push(ch);
-    navigate(`/chapters/${ch.id}`);
+    const ch: Chapter = {
+      id: uid(),
+      number: `Ch. ${order}`,
+      title: "",
+      timeRef: "",
+      synopsis: "",
+      body: "",
+      notes: "",
+      order,
+    };
+    appStore.books[bookIdx].chapters.push(ch);
+    navigate(`/book/${bookId}/chapters/${ch.id}`);
   };
   const delChapter = (id: string) => {
-    worldStore.chapters.set((prev: Chapter[]) =>
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].chapters.set((prev: Chapter[]) =>
       prev.filter((c) => c.id !== id),
     );
   };
 
   const selEvent =
-    (location.pathname.startsWith("/events/") &&
-      location.pathname.split("/")[2]) ||
+    (location.pathname.startsWith(`/book/${bookId}/events/`) &&
+      location.pathname.split("/")[4]) ||
     null;
   const selChar =
-    (location.pathname.startsWith("/characters/") &&
-      location.pathname.split("/")[2]) ||
+    (location.pathname.startsWith(`/book/${bookId}/characters/`) &&
+      location.pathname.split("/")[4]) ||
     null;
   const selChapter =
-    (location.pathname.startsWith("/chapters/") &&
-      location.pathname.split("/")[2]) ||
+    (location.pathname.startsWith(`/book/${bookId}/chapters/`) &&
+      location.pathname.split("/")[4]) ||
     null;
 
   const sortedEvt = [...events].sort((a, b) => a.time - b.time);
@@ -86,27 +110,32 @@ export default function App() {
     (a, b) => a.order - b.order,
   );
 
-  const worldCount =
-    (worldStore.nations.get()?.length || 0) +
-    (worldStore.techniques.get()?.length || 0) +
-    (worldStore.ingredients.get()?.length || 0) +
-    (worldStore.monsters.get()?.length || 0) +
-    (worldStore.treasures.get()?.length || 0);
-
   const [showExport, setShowExport] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const worldNations = bookIdx >= 0 ? appStore.books[bookIdx].nations.get() : [];
+  const worldTechniques = bookIdx >= 0 ? appStore.books[bookIdx].techniques.get() : [];
+  const worldIngredients = bookIdx >= 0 ? appStore.books[bookIdx].ingredients.get() : [];
+  const worldMonsters = bookIdx >= 0 ? appStore.books[bookIdx].monsters.get() : [];
+  const worldTreasures = bookIdx >= 0 ? appStore.books[bookIdx].treasures.get() : [];
+  const worldCount =
+    (worldNations?.length || 0) +
+    (worldTechniques?.length || 0) +
+    (worldIngredients?.length || 0) +
+    (worldMonsters?.length || 0) +
+    (worldTreasures?.length || 0);
+
   const text = buildExport({
-    title,
-    synopsis: worldStore.synopsis.get(),
-    setting: worldStore.setting.get(),
-    themes: worldStore.themes.get(),
-    rules: worldStore.rules.get(),
-    nations: worldStore.nations.get(),
-    techniques: worldStore.techniques.get(),
-    ingredients: worldStore.ingredients.get(),
-    monsters: worldStore.monsters.get(),
-    treasures: worldStore.treasures.get(),
+    title: bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "",
+    synopsis: bookIdx >= 0 ? appStore.books[bookIdx].synopsis.get() : "",
+    setting: bookIdx >= 0 ? appStore.books[bookIdx].setting.get() : "",
+    themes: bookIdx >= 0 ? appStore.books[bookIdx].themes.get() : "",
+    rules: bookIdx >= 0 ? appStore.books[bookIdx].rules.get() : "",
+    nations: worldNations || [],
+    techniques: worldTechniques || [],
+    ingredients: worldIngredients || [],
+    monsters: worldMonsters || [],
+    treasures: worldTreasures || [],
     events,
     characters,
   });
@@ -132,20 +161,23 @@ export default function App() {
     fontFamily: "'Georgia', serif",
   });
 
-  // total word count across all chapters
   const totalWords = (chapters || []).reduce((sum: number, ch: Chapter) => {
     const body = ch.body || "";
     return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
   }, 0);
 
+  if (!isInsideBook) {
+    return <Outlet />;
+  }
+
   return (
     <div style={S.app}>
       {/* ── Top bar ── */}
       <div style={S.top}>
-        <span style={S.logo}>Seshat</span>
+        <span style={{ ...S.logo, cursor: "pointer" }} onClick={() => navigate("/")}>Seshat</span>
         <input
           value={title}
-          onChange={(e) => worldStore.title.set(e.target.value)}
+          onChange={(e) => bookIdx >= 0 && appStore.books[bookIdx].title.set(e.target.value)}
           style={{
             ...S.input,
             width: 240,
@@ -165,7 +197,7 @@ export default function App() {
             Export for AI
           </button>
           <button
-            onClick={() => navigate("/fight")}
+            onClick={() => navigate(`/book/${bookId}/fight`)}
             style={{
               ...S.ghost,
               letterSpacing: 2,
@@ -174,11 +206,11 @@ export default function App() {
               alignItems: "center",
               gap: 4,
               color:
-                location.pathname === "/fight"
+                location.pathname === `/book/${bookId}/fight`
                   ? "var(--color-red)"
                   : "var(--text-secondary)",
               borderBottom:
-                location.pathname === "/fight"
+                location.pathname === `/book/${bookId}/fight`
                   ? "1px solid var(--color-red)"
                   : "none",
             }}
@@ -186,7 +218,6 @@ export default function App() {
             <SportsKabaddiIcon sx={{ fontSize: 14 }} />
             Fight
           </button>
-          {/* ── Theme toggle ── */}
           <button
             onClick={toggle}
             title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
@@ -212,12 +243,11 @@ export default function App() {
         <div style={S.side}>
           <div style={{ padding: "0 24px 10px" }}>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate(`/book/${bookId}/world`)}
               style={{ ...navBtnStyle(
-                location.pathname === "/" &&
-                  !selChar &&
-                  !selEvent &&
-                  !selChapter,
+                location.pathname === `/book/${bookId}/world` ||
+                (location.pathname === `/book/${bookId}` &&
+                  !selChar && !selEvent && !selChapter),
               ), display: "flex", alignItems: "center", gap: 6 }}
             >
               <PublicIcon sx={{ fontSize: 14 }} />
@@ -243,8 +273,8 @@ export default function App() {
             }}
           >
             <button
-              onClick={() => navigate("/chapters")}
-              style={{ ...navBtnStyle(location.pathname.startsWith("/chapters")), display: "flex", alignItems: "center", gap: 6 }}
+              onClick={() => navigate(`/book/${bookId}/chapters`)}
+              style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/chapters`)), display: "flex", alignItems: "center", gap: 6 }}
             >
               <AutoStoriesIcon sx={{ fontSize: 14 }} />
               {totalWords > 0
@@ -264,7 +294,7 @@ export default function App() {
                 [ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined
               }
               active={selChapter === ch.id}
-              onClick={() => navigate(`/chapters/${ch.id}`)}
+              onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
               onDelete={() => delChapter(ch.id)}
             />
           ))}
@@ -300,8 +330,8 @@ export default function App() {
             }}
           >
             <button
-              onClick={() => navigate("/events")}
-              style={{ ...navBtnStyle(location.pathname.startsWith("/events")), display: "flex", alignItems: "center", gap: 6 }}
+              onClick={() => navigate(`/book/${bookId}/events`)}
+              style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/events`)), display: "flex", alignItems: "center", gap: 6 }}
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Timeline
@@ -325,7 +355,7 @@ export default function App() {
                 label={e.title}
                 sub={`T${e.time}${tag ? ` · ${tag}` : ""}${e.type ? ` · ${e.type}` : ""}`}
                 active={selEvent === e.id}
-                onClick={() => navigate(`/events/${e.id}`)}
+                onClick={() => navigate(`/book/${bookId}/events/${e.id}`)}
                 onDelete={() => delEvent(e.id)}
               />
             );
@@ -349,8 +379,8 @@ export default function App() {
             }}
           >
             <button
-              onClick={() => navigate("/characters")}
-              style={{ ...navBtnStyle(location.pathname.startsWith("/characters")), display: "flex", alignItems: "center", gap: 6 }}
+              onClick={() => navigate(`/book/${bookId}/characters`)}
+              style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/characters`)), display: "flex", alignItems: "center", gap: 6 }}
             >
               <PeopleIcon sx={{ fontSize: 14 }} />
               Characters
@@ -369,7 +399,7 @@ export default function App() {
               }
               color={c.color}
               active={selChar === c.id}
-              onClick={() => navigate(`/characters/${c.id}`)}
+              onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
               onDelete={() => delChar(c.id)}
             />
           ))}

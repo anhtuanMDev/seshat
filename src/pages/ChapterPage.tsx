@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
-import { worldStore } from "../store/worldStore";
-import { useEvents, useCharacters } from "../hooks/useWorldStore";
+import { appStore } from "../store/appStore";
+import { useEvents, useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { NotesIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
@@ -22,28 +22,28 @@ interface ChapterForm {
   notes: string;
 }
 
-/* ── word / char count ───────────────────────────────────────────────────── */
 function countWords(text: string) {
   return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
 }
 
-/* ── main page ───────────────────────────────────────────────────────────── */
 export default function ChapterPage() {
   const { id } = useParams();
   const events = useEvents();
   const characters = useCharacters();
+  const bookIdx = useActiveBookIdx();
 
-  const chapter = useSelector(() =>
-    worldStore.chapters?.get()?.find(
+  const chapter = useSelector(() => {
+    if (bookIdx < 0) return undefined;
+    return appStore.books[bookIdx].chapters?.get()?.find(
       (c) => c.id === id,
-    ),
-  );
-  const chapterIdx = useSelector(
-    () =>
-      worldStore.chapters?.get()?.findIndex(
-        (c) => c.id === id,
-      ) ?? -1,
-  );
+    );
+  });
+  const chapterIdx = useSelector(() => {
+    if (bookIdx < 0) return -1;
+    return appStore.books[bookIdx].chapters?.get()?.findIndex(
+      (c) => c.id === id,
+    ) ?? -1;
+  });
 
   const { register, handleSubmit, control, reset, setValue } = useForm<ChapterForm>({
     defaultValues: {
@@ -72,18 +72,15 @@ export default function ChapterPage() {
   const ref = useAnimateIn();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // panel state
   const [showPanel, setShowPanel] = useState(true);
   const [panelTab, setPanelTab] = useState<"chars" | "events" | "world">(
     "chars",
   );
   const [focusMode, setFocusMode] = useState(false);
 
-  // pinned chars/events for this chapter
   const [pinnedChars, setPinnedChars] = useState<string[]>([]);
   const [pinnedEvents, setPinnedEvents] = useState<string[]>([]);
 
-  // auto-grow textarea
   const autoGrow = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -107,7 +104,8 @@ export default function ChapterPage() {
   }
 
   const onSubmit = (data: ChapterForm) => {
-    const ch = worldStore.chapters[chapterIdx];
+    if (bookIdx < 0) return;
+    const ch = appStore.books[bookIdx].chapters[chapterIdx];
     ch.number.set(data.number);
     ch.title.set(data.title);
     ch.timeRef.set(data.timeRef);
@@ -127,10 +125,10 @@ export default function ChapterPage() {
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
 
   const worldData = {
-    synopsis: worldStore.synopsis.get(),
-    setting: worldStore.setting.get(),
-    themes: worldStore.themes.get(),
-    rules: worldStore.rules.get(),
+    synopsis: bookIdx >= 0 ? appStore.books[bookIdx].synopsis.get() : "",
+    setting: bookIdx >= 0 ? appStore.books[bookIdx].setting.get() : "",
+    themes: bookIdx >= 0 ? appStore.books[bookIdx].themes.get() : "",
+    rules: bookIdx >= 0 ? appStore.books[bookIdx].rules.get() : "",
   };
 
   return (
@@ -143,7 +141,6 @@ export default function ChapterPage() {
         position: "relative",
       }}
     >
-      {/* ── Writing area ── */}
       <div
         style={{
           flex: 1,
@@ -152,7 +149,6 @@ export default function ChapterPage() {
           transition: "padding 0.2s",
         }}
       >
-        {/* Header row */}
         <div
           style={{
             display: "flex",
@@ -163,7 +159,6 @@ export default function ChapterPage() {
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Chapter label */}
             <div
               style={{
                 display: "flex",
@@ -202,7 +197,6 @@ export default function ChapterPage() {
                 }}
               />
             </div>
-            {/* Title */}
             <input
               {...register("title")}
               placeholder="Chapter title…"
@@ -228,7 +222,6 @@ export default function ChapterPage() {
           />
         </div>
 
-        {/* Scene note / synopsis */}
         <textarea
           {...register("synopsis")}
           placeholder="Scene note or synopsis for this chapter (not part of the prose)…"
@@ -257,7 +250,6 @@ export default function ChapterPage() {
           />
         )}
 
-        {/* Main prose - textarea or rich editor */}
         {!focusMode && (
           <textarea
             {...bodyRegister}
@@ -290,7 +282,6 @@ export default function ChapterPage() {
           />
         )}
 
-        {/* Notes / scratchpad */}
         {!focusMode && (
           <>
             <hr style={S.rule} />
@@ -317,7 +308,6 @@ export default function ChapterPage() {
         )}
       </div>
 
-      {/* ── Reference panel ── */}
       {showPanel && !focusMode && (
         <ReferencePanel
           panelTab={panelTab}

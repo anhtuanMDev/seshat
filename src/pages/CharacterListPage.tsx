@@ -1,5 +1,5 @@
-import { worldStore } from "../store/worldStore";
-import { useCharacters } from "../hooks/useWorldStore";
+import { appStore } from "../store/appStore";
+import { useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, mkChar } from "../lib/utils";
 import { Field, Section, EntryBlock } from "../components/ui";
 import { PeopleIcon, AddIcon } from "../components/ui/icons";
@@ -12,23 +12,27 @@ type ObservableOf<T> = { [K in keyof T]: { set(v: T[K]): void } };
 
 export default function CharacterListPage() {
   const characters = useCharacters();
+  const bookIdx = useActiveBookIdx();
   const ref = useAnimateIn();
 
   const add = useCallback(() => {
+    if (bookIdx < 0) return;
     const c = mkChar(`Character ${characters.length + 1}`, CHAR_COLORS[characters.length % CHAR_COLORS.length]);
-    worldStore.characters.push(c);
-  }, [characters.length]);
+    appStore.books[bookIdx].characters.push(c);
+  }, [characters.length, bookIdx]);
 
   const del = useCallback((id: string) => {
-    worldStore.characters.set((prev: Character[]) =>
+    if (bookIdx < 0) return;
+    appStore.books[bookIdx].characters.set((prev: Character[]) =>
       prev.filter((x) => x.id !== id),
     );
-  }, []);
+  }, [bookIdx]);
 
   const update = useCallback(<K extends keyof Character>(id: string, key: K, v: Character[K]) => {
-    const idx = worldStore.characters.get().findIndex((x) => x.id === id);
-    if (idx >= 0) (worldStore.characters[idx] as ObservableOf<Character>)[key].set(v);
-  }, []);
+    if (bookIdx < 0) return;
+    const idx = appStore.books[bookIdx].characters.get().findIndex((x) => x.id === id);
+    if (idx >= 0) (appStore.books[bookIdx].characters[idx] as ObservableOf<Character>)[key].set(v);
+  }, [bookIdx]);
 
   return (
     <div ref={ref}>
