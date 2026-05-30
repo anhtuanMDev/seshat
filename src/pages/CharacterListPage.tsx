@@ -40,7 +40,7 @@ export default function CharacterListPage() {
           <PeopleIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
-              fontSize: 11,
+              fontSize: 13,
               letterSpacing: 3,
               textTransform: "uppercase",
               color: "var(--text-secondary)",

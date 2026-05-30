@@ -32,7 +32,7 @@ export function EventRef({ event }: EventRefProps) {
           textAlign: "left",
         }}
       >
-        <span style={{ fontSize: 9, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
           {open ? "▾" : "▸"}
         </span>
         <span style={{ color: "var(--text-muted)", fontSize: 11 }}>

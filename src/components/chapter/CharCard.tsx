@@ -38,7 +38,7 @@ export function CharCard({ char, events }: CharCardProps) {
           textAlign: "left",
         }}
       >
-        <span style={{ fontSize: 9, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
           {open ? "▾" : "▸"}
         </span>
         {char.name}

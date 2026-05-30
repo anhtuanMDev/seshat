@@ -55,7 +55,7 @@ export default function TimelinePage() {
           <TimelineIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
-              fontSize: 11,
+              fontSize: 13,
               letterSpacing: 3,
               textTransform: "uppercase",
               color: "var(--text-secondary)",
@@ -191,7 +191,7 @@ function EventCard({
       >
         <span
           style={{
-            fontSize: 10,
+              fontSize: 13,
             color: typeColor,
             fontWeight: 400,
             letterSpacing: 0.5,
@@ -232,7 +232,7 @@ function EventCard({
           </span>
           <span
             style={{
-              fontSize: 10,
+            fontSize: 13,
               letterSpacing: 2,
               textTransform: "uppercase",
               color: typeColor,

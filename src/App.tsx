@@ -154,7 +154,7 @@ export default function App() {
 
   const navBtnStyle = (active: boolean) => ({
     ...S.ghost,
-    fontSize: 11,
+                 fontSize: 14,
     letterSpacing: 2,
     textTransform: "uppercase" as const,
     color: active ? "var(--text-primary)" : "var(--text-secondary)",
@@ -183,16 +183,16 @@ export default function App() {
             width: 240,
             textAlign: "center",
             border: "none",
-            fontSize: 13,
+fontSize: 15,
             color: "var(--text-secondary)",
             letterSpacing: 1,
           }}
         />
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <button
-            onClick={() => setShowExport(true)}
-            style={{ ...S.ghost, letterSpacing: 2, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}
-          >
+            <button
+              onClick={() => setShowExport(true)}
+              style={{ ...S.ghost, letterSpacing: 2, fontSize: 15, display: "flex", alignItems: "center", gap: 4 }}
+            >
             <FileDownloadIcon sx={{ fontSize: 14 }} />
             Export for AI
           </button>
@@ -201,7 +201,7 @@ export default function App() {
             style={{
               ...S.ghost,
               letterSpacing: 2,
-              fontSize: 12,
+              fontSize: 15,
               display: "flex",
               alignItems: "center",
               gap: 4,
@@ -303,7 +303,7 @@ export default function App() {
             <p
               style={{
                 ...S.dim,
-                fontSize: 11,
+    fontSize: 14,
                 padding: "2px 24px 10px",
                 fontStyle: "italic",
               }}
@@ -479,7 +479,7 @@ export default function App() {
                 height: 460,
                 resize: "none",
                 fontFamily: "monospace",
-                fontSize: 12,
+fontSize: 15,
                 lineHeight: 1.7,
               }}
             />

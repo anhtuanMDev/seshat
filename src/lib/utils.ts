@@ -276,7 +276,7 @@ const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties
     background: "var(--bg-main)",
   },
   h2: {
-    fontSize: 11,
+    fontSize: 13,
     letterSpacing: 3,
     textTransform: "uppercase",
     color: "var(--text-secondary)",
@@ -286,7 +286,7 @@ const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties
   dim: { color: "var(--text-dim)", fontSize: 12 },
   label: {
     display: "block",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
     color: "var(--text-secondary)",
@@ -302,7 +302,7 @@ const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties
     color: "var(--select-color)",
   },
   pill: {
-    fontSize: 11,
+    fontSize: 12,
     padding: "4px 10px",
     borderRadius: 4,
     border: "1px solid var(--border)",

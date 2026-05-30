@@ -52,19 +52,19 @@ export function CharStatusPanel({
         borderLeft: `3px solid ${color}`,
       }}
     >
-      <p
-        style={{
-          fontSize: 11,
-          letterSpacing: 3,
-          textTransform: "uppercase",
-          margin: "0 0 10px",
-          fontWeight: 400,
-          color,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-        }}
-      >
+<p
+          style={{
+            fontSize: 13,
+            letterSpacing: 3,
+            textTransform: "uppercase",
+            margin: "0 0 10px",
+            fontWeight: 400,
+            color,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
         <TimelineIcon sx={{ fontSize: 12 }} />Status Timeline
       </p>
 
