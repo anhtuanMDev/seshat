@@ -47,7 +47,7 @@ function getPopup(): HTMLElement {
   return popupEl;
 }
 
-function hidePopup() {
+export function hidePopup() {
   const el = getPopup();
   el.style.display = "none";
   el.innerHTML = "";
@@ -282,6 +282,23 @@ export const Mention = Extension.create<MentionOptions, {}>({
         handleClick(): boolean {
           hidePopup();
           return false;
+        },
+        handleDOMEvents: {
+          blur(view) {
+            hidePopup();
+            const state = suggestionKey.getState(view.state) as SuggestionState;
+            if (state.active) {
+              view.dispatch(
+                view.state.tr.setMeta(suggestionKey, {
+                  active: false,
+                  query: "",
+                  from: 0,
+                  to: 0,
+                })
+              );
+            }
+            return false;
+          },
         },
       },
 
