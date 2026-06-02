@@ -1,5 +1,8 @@
 import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
+import { Snackbar, Alert } from "@mui/material";
+import { useSelector } from "@legendapp/state/react";
 import { appStore } from "./store/appStore";
+import { toastStore, hideToast, showToast } from "./store/toastStore";
 import {
   useEvents,
   useCharacters,
@@ -27,6 +30,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
+  const toast = useSelector(() => toastStore.get());
 
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
@@ -119,9 +123,9 @@ export default function App() {
     try {
       setIsSyncing(true);
       await syncToGitHub(token);
-      alert("Synced successfully to your secure branch!");
+      showToast("Synced successfully to your secure branch!", "success");
     } catch (err) {
-      alert("Sync failed: " + (err as Error).message);
+      showToast("Sync failed: " + (err as Error).message, "error");
       if ((err as Error).message.includes("Unauthorized") || (err as Error).message.includes("expired")) {
         localStorage.removeItem("seshat-auth-token");
         sessionStorage.removeItem("seshat-auth-token");
@@ -531,6 +535,17 @@ fontSize: 15,
           </div>
         </div>
       )}
+      {/* Toast Notification */}
+      <Snackbar 
+        open={toast.open} 
+        autoHideDuration={6000} 
+        onClose={hideToast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={hideToast} severity={toast.severity} sx={{ width: '100%' }}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

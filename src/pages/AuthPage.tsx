@@ -5,6 +5,7 @@ import { Field, GhostButton } from "../components/ui";
 import { VisibilityIcon, VisibilityOffIcon } from "../components/ui/icons";
 import { InputAdornment, IconButton } from "@mui/material";
 import { registerToGitHub, loginToGitHub } from "../lib/githubSync";
+import { showToast } from "../store/toastStore";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -42,12 +43,12 @@ export default function AuthPage() {
       setIsLoading(true);
       if (isRegisterMode) {
         if (!loginEmail.trim()) {
-          alert("Please provide an email address for password recovery.");
+          showToast("Please provide an email address for password recovery.", "error");
           setIsLoading(false);
           return;
         }
         await registerToGitHub(u, loginEmail.trim(), c);
-        alert(`Registered successfully! Welcome ${u}.`);
+        showToast(`Registration successful! Welcome to Seshat, ${u}.`, "success");
       }
       
       const token = await loginToGitHub(u, c);
@@ -60,9 +61,13 @@ export default function AuthPage() {
         localStorage.removeItem("seshat-auth-token");
       }
 
+      if (!isRegisterMode) {
+        showToast(`Welcome back, ${u}!`, "success");
+      }
+
       navigate("/");
     } catch (err) {
-      alert("Authentication failed: " + (err as Error).message);
+      showToast("Authentication failed: " + (err as Error).message, "error");
     } finally {
       setIsLoading(false);
     }
