@@ -2,19 +2,8 @@ import { useState } from "react";
 
 export default function MentionHelpButton() {
   const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!open) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + 8,
-        left: Math.min(rect.left, window.innerWidth - 320),
-      });
-      setOpen(true);
-    } else {
-      setOpen(false);
-    }
+  const handleClick = () => {
+    setOpen(!open);
   };
 
   return (
@@ -55,21 +44,26 @@ export default function MentionHelpButton() {
               position: "fixed",
               inset: 0,
               zIndex: 199,
+              background: "rgba(0,0,0,0.4)",
             }}
             onClick={() => setOpen(false)}
           />
           <div
             style={{
               position: "fixed",
-              top: coords.top,
-              left: coords.left,
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
               background: "var(--bg-main)",
               border: "1px solid var(--border)",
-              borderRadius: 4,
-              width: 320,
-              padding: "20px",
+              borderRadius: 6,
+              width: 760,
+              maxWidth: "90vw",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              padding: "24px 32px",
               fontFamily: "Georgia, serif",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
               zIndex: 200,
             }}
           >
@@ -124,9 +118,9 @@ export default function MentionHelpButton() {
 
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "24px 32px",
                   marginBottom: 24,
                 }}
               >
@@ -160,11 +154,13 @@ export default function MentionHelpButton() {
                   title="Mention Treasures"
                   body="Type $ to reference mythical artifacts and relics."
                 />
-                <Tip
-                  symbol="◌"
-                  title="Interactive Previews (Characters)"
-                  body="Hover over any @character mention to see their status resolved to this chapter's timeline. Click to navigate. (Interactive previews for other world entities are not yet available.)"
-                />
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Tip
+                    symbol="◌"
+                    title="Interactive Previews (Characters)"
+                    body="Hover over any @character mention to see their status resolved to this chapter's timeline. Click to navigate. (Interactive previews for other world entities are not yet available.)"
+                  />
+                </div>
               </div>
 
               <div
