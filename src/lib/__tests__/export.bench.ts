@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { bench, describe } from "vitest";
 import { buildExport } from "../export";
 import type { Character, Event } from "../types";
@@ -56,7 +57,7 @@ const big = (() => {
 
   const events: Event[] = Array.from({ length: 100 }, (_, i) => ({
     id: `e${i}`, time: i + 1, title: `Event ${i}`, type: "Story" as const,
-    chapter: `${(i % 10) + 1}`, startDate: `2024-01-${(i % 28) + 1}`,
+    chapters: [`${(i % 10) + 1}`], startDate: `2024-01-${(i % 28) + 1}`,
     endDate: "", setting: "forest", description: "desc", consequence: "consequence",
     characters: Array.from({ length: 3 }, (_, ci) => `c${(i + ci) % 50}`),
   }));

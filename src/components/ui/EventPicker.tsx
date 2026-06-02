@@ -1,7 +1,7 @@
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useController } from "react-hook-form";
-import type { Control, FieldValues } from "react-hook-form";
+import type { Control, FieldValues, Path } from "react-hook-form";
 
 const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
@@ -37,10 +37,12 @@ interface EventPickerProps<T extends FieldValues = FieldValues> {
   onChange?: (v: string) => void;
   events: Array<{ id: string; time: number; title: string }>;
   control?: Control<T>;
-  name?: string;
+  name?: Path<T>;
 }
 
-function EventPickerInner({ label, value, onChange, events }: EventPickerProps) {
+type EventPickerInnerProps = Omit<EventPickerProps<FieldValues>, "control" | "name">;
+
+function EventPickerInner({ label, value, onChange, events }: EventPickerInnerProps) {
   return (
     <StyledFormControl variant="standard">
       {label && <InputLabel>{label}</InputLabel>}
@@ -89,14 +91,17 @@ function EventPickerInner({ label, value, onChange, events }: EventPickerProps) 
   );
 }
 
-function ControlledEventPicker<T extends FieldValues>({ control, name, ...props }: EventPickerProps<T>) {
+function ControlledEventPicker<T extends FieldValues>({ control, name, ...rest }: EventPickerProps<T>) {
   const { field } = useController({ control: control!, name: name! });
-  return <EventPickerInner {...props} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
+  return <EventPickerInner {...rest} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
 }
 
 export function EventPicker<T extends FieldValues = FieldValues>(props: EventPickerProps<T>) {
   if (props.control && props.name) {
-    return <ControlledEventPicker<T> {...(props as EventPickerProps<T>)} />;
+    return <ControlledEventPicker<T> {...props} />;
   }
-  return <EventPickerInner {...props} />;
+  const { control, name, ...rest } = props;
+  void control;
+  void name;
+  return <EventPickerInner {...rest} />;
 }

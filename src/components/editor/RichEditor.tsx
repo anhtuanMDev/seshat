@@ -1,88 +1,233 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import Highlight from '@tiptap/extension-highlight';
-import TextAlign from '@tiptap/extension-text-align';
-import Typography from '@tiptap/extension-typography';
-import Placeholder from '@tiptap/extension-placeholder';
-import { useController } from 'react-hook-form';
-import type { Control } from 'react-hook-form';
-import { useCallback } from 'react';
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Highlight from "@tiptap/extension-highlight";
+import TextAlign from "@tiptap/extension-text-align";
+import Typography from "@tiptap/extension-typography";
+import Placeholder from "@tiptap/extension-placeholder";
+import { useController } from "react-hook-form";
+import type { Control, FieldValues, Path } from "react-hook-form";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { Character, Event } from "../../lib/types";
+import type { Editor } from "@tiptap/core";
+import CharMentionTooltip from "./CharMentionTooltip";
+import UnsavedGuard from "./UnsavedGuard";
+import MentionHelpButton from "./MentionHelpButton";
+import { buildMentionExtension } from "./MentionExtension";
+import type { MentionItem } from "./MentionList";
 
-interface RichEditorProps {
+interface RichEditorProps<T extends FieldValues = FieldValues> {
   content?: string;
   onChange?: (html: string) => void;
   placeholder?: string;
-  control?: Control<any>;
-  name?: string;
+  control?: Control<T>;
+  name?: Path<T>;
+  characters?: Character[];
+  events?: Event[];
+  // Pinned events from the chapter's reference panel — drives time context
+  pinnedEvents?: Event[];
+  // Pinned character IDs — scopes the @ mention list
+  pinnedCharIds?: string[];
+  isDirty?: boolean;
+  onSave?: () => void;
+  bookId?: string;
 }
 
-function MenuBar({ editor }: { editor: any }) {
-  const btn = useCallback((label: string, action: () => void, active?: boolean) => (
-    <button
-      type="button"
-      onClick={action}
-      style={{
-        background: active ? 'var(--bg-active)' : 'transparent',
-        border: 'none',
-        borderRadius: 2,
-        cursor: 'pointer',
-        fontSize: 12,
-        padding: '2px 6px',
-        color: 'var(--text-secondary)',
-        fontFamily: "'Georgia',serif",
-        lineHeight: '20px',
-      }}
-    >
-      {label}
-    </button>
-  ), []);
+// ── MenuBar ───────────────────────────────────────────────────────────────────
+function MenuBar({
+  editor,
+  showMentionHelp,
+}: {
+  editor: Editor;
+  showMentionHelp: boolean;
+}) {
+  const btn = useCallback(
+    (label: string, action: () => void, active?: boolean) => (
+      <button
+        type="button"
+        onClick={action}
+        style={{
+          background: active ? "var(--bg-active)" : "transparent",
+          border: "none",
+          borderRadius: 2,
+          cursor: "pointer",
+          fontSize: 12,
+          padding: "2px 6px",
+          color: "var(--text-secondary)",
+          fontFamily: "'Georgia',serif",
+          lineHeight: "20px",
+        }}
+      >
+        {label}
+      </button>
+    ),
+    [],
+  );
 
   return (
     <div
       style={{
-        display: 'flex',
+        display: "flex",
         gap: 1,
-        padding: '6px 0',
-        borderBottom: '1px solid var(--border)',
+        padding: "6px 0",
+        borderBottom: "1px solid var(--border)",
         marginBottom: 12,
-        flexWrap: 'wrap',
+        flexWrap: "wrap",
+        alignItems: "center",
       }}
     >
-      {btn('B', () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'))}
-      {btn('I', () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'))}
-      {btn('U', () => editor.chain().focus().toggleUnderline().run(), editor.isActive('underline'))}
-      {btn('S', () => editor.chain().focus().toggleStrike().run(), editor.isActive('strike'))}
-      <span style={{ width: 1, background: 'var(--border)', margin: '0 4px' }} />
-      {btn('H1', () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive('heading', { level: 1 }))}
-      {btn('H2', () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }))}
-      {btn('H3', () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }))}
-      <span style={{ width: 1, background: 'var(--border)', margin: '0 4px' }} />
-      {btn('•', () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'))}
-      {btn('1.', () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'))}
-      {btn('❝', () => editor.chain().focus().toggleBlockquote().run(), editor.isActive('blockquote'))}
-      <span style={{ width: 1, background: 'var(--border)', margin: '0 4px' }} />
-      {btn('≡', () => editor.chain().focus().toggleCodeBlock().run(), editor.isActive('codeBlock'))}
-      {btn('🔗', () => {
-        const url = prompt('Link URL:');
-        if (url) editor.chain().focus().setLink({ href: url }).run();
-      }, editor.isActive('link'))}
-      {btn('⬜', () => editor.chain().focus().toggleHighlight().run(), editor.isActive('highlight'))}
+      {btn(
+        "B",
+        () => editor.chain().focus().toggleBold().run(),
+        editor.isActive("bold"),
+      )}
+      {btn(
+        "I",
+        () => editor.chain().focus().toggleItalic().run(),
+        editor.isActive("italic"),
+      )}
+      {btn(
+        "U",
+        () => editor.chain().focus().toggleUnderline().run(),
+        editor.isActive("underline"),
+      )}
+      {btn(
+        "S",
+        () => editor.chain().focus().toggleStrike().run(),
+        editor.isActive("strike"),
+      )}
+      <span
+        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
+      />
+      {btn(
+        "H1",
+        () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+        editor.isActive("heading", { level: 1 }),
+      )}
+      {btn(
+        "H2",
+        () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+        editor.isActive("heading", { level: 2 }),
+      )}
+      {btn(
+        "H3",
+        () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+        editor.isActive("heading", { level: 3 }),
+      )}
+      <span
+        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
+      />
+      {btn(
+        "•",
+        () => editor.chain().focus().toggleBulletList().run(),
+        editor.isActive("bulletList"),
+      )}
+      {btn(
+        "1.",
+        () => editor.chain().focus().toggleOrderedList().run(),
+        editor.isActive("orderedList"),
+      )}
+      {btn(
+        "❝",
+        () => editor.chain().focus().toggleBlockquote().run(),
+        editor.isActive("blockquote"),
+      )}
+      <span
+        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
+      />
+      {btn(
+        "≡",
+        () => editor.chain().focus().toggleCodeBlock().run(),
+        editor.isActive("codeBlock"),
+      )}
+      {btn(
+        "🔗",
+        () => {
+          const url = prompt("Link URL:");
+          if (url) editor.chain().focus().setLink({ href: url }).run();
+        },
+        editor.isActive("link"),
+      )}
+      {btn(
+        "⬜",
+        () => editor.chain().focus().toggleHighlight().run(),
+        editor.isActive("highlight"),
+      )}
+
+      {showMentionHelp && (
+        <>
+          <span
+            style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
+          />
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--color-purple)",
+              fontFamily: "Georgia, serif",
+              padding: "0 4px",
+              letterSpacing: 0.5,
+            }}
+          >
+            @
+          </span>
+          <MentionHelpButton />
+        </>
+      )}
     </div>
   );
 }
 
-function RichEditorInner({ content, onChange, placeholder }: RichEditorProps) {
+// ── Core ──────────────────────────────────────────────────────────────────────
+type RichEditorCoreProps = Omit<RichEditorProps<FieldValues>, "control" | "name">;
+
+function RichEditorCore({
+  content,
+  onChange,
+  placeholder,
+  characters = [],
+  events = [],
+  pinnedEvents = [],
+  pinnedCharIds = [],
+  isDirty = false,
+  onSave,
+  bookId,
+}: RichEditorCoreProps) {
+  const navigate = useNavigate();
+
+  const [tooltip, setTooltip] = useState<{
+    char: Character;
+    anchor: HTMLElement;
+  } | null>(null);
+  const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [guard, setGuard] = useState<{ char: Character } | null>(null);
+
+  // ── Mention list: pinned chars first, fall back to all ────────────────────
+  const mentionItems: MentionItem[] = (() => {
+    // If the chapter has pinned characters, only offer those in @
+    const pinned =
+      pinnedCharIds.length > 0
+        ? characters.filter((c) => pinnedCharIds.includes(c.id))
+        : characters;
+    return pinned.map((c) => ({
+      id: c.id,
+      name: c.name,
+      color: c.color,
+      role: c.role,
+    }));
+  })();
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
       Link.configure({ openOnClick: false }),
       Highlight,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
       Typography,
-      Placeholder.configure({ placeholder: placeholder || 'Write here…' }),
+      Placeholder.configure({ placeholder: placeholder || "Write here…" }),
+      buildMentionExtension(mentionItems),
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -90,30 +235,125 @@ function RichEditorInner({ content, onChange, placeholder }: RichEditorProps) {
     },
   });
 
+  // ── Hover + click on mention spans ────────────────────────────────────────
+  useEffect(() => {
+    if (!editor) return;
+    const el = editor.view.dom as HTMLElement;
+
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest(
+        ".char-mention",
+      ) as HTMLElement | null;
+      if (!target) return;
+      const id = target.getAttribute("data-id");
+      const char = characters.find((c) => c.id === id);
+      if (!char) return;
+      if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+      tooltipTimeout.current = setTimeout(() => {
+        setTooltip({ char, anchor: target });
+      }, 120);
+    };
+
+    const handleMouseOut = (e: MouseEvent) => {
+      const related = e.relatedTarget as HTMLElement | null;
+      if (related?.closest?.(".char-mention-tooltip")) return;
+      if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+      tooltipTimeout.current = setTimeout(() => setTooltip(null), 180);
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest(
+        ".char-mention",
+      ) as HTMLElement | null;
+      if (!target) return;
+      e.preventDefault();
+      const id = target.getAttribute("data-id");
+      const char = characters.find((c) => c.id === id);
+      if (!char || !bookId) return;
+      setTooltip(null);
+      if (isDirty) {
+        setGuard({ char });
+      } else {
+        navigate(`/book/${bookId}/characters/${char.id}`);
+      }
+    };
+
+    el.addEventListener("mouseover", handleMouseOver);
+    el.addEventListener("mouseout", handleMouseOut);
+    el.addEventListener("click", handleClick);
+    return () => {
+      el.removeEventListener("mouseover", handleMouseOver);
+      el.removeEventListener("mouseout", handleMouseOut);
+      el.removeEventListener("click", handleClick);
+      if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+    };
+  }, [editor, characters, isDirty, bookId, navigate]);
+
   if (!editor) return null;
 
   return (
-    <div>
-      <MenuBar editor={editor} />
+    <>
+      <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
       <EditorContent editor={editor} />
-    </div>
+
+      {tooltip && (
+        <div
+          className="char-mention-tooltip"
+          onMouseEnter={() => {
+            if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+          }}
+          onMouseLeave={() => {
+            tooltipTimeout.current = setTimeout(() => setTooltip(null), 120);
+          }}
+        >
+          <CharMentionTooltip
+            char={tooltip.char}
+            events={events}
+            pinnedEvents={pinnedEvents}
+            anchorEl={tooltip.anchor}
+            onClose={() => setTooltip(null)}
+          />
+        </div>
+      )}
+
+      {guard && (
+        <UnsavedGuard
+          characterName={guard.char.name}
+          onCancel={() => setGuard(null)}
+          onDiscard={() => {
+            const char = guard.char;
+            setGuard(null);
+            navigate(`/book/${bookId}/characters/${char.id}`);
+          }}
+          onSaveFirst={() => {
+            const char = guard.char;
+            setGuard(null);
+            onSave?.();
+            setTimeout(() => {
+              navigate(`/book/${bookId}/characters/${char.id}`);
+            }, 80);
+          }}
+        />
+      )}
+    </>
   );
 }
 
-function ControlledRichEditor({ control, name, ...props }: RichEditorProps) {
+// ── Controlled wrapper ────────────────────────────────────────────────────────
+function ControlledRichEditor<T extends FieldValues>({ control, name, ...props }: RichEditorProps<T>) {
   const { field } = useController({ control: control!, name: name! });
   return (
-    <RichEditorInner
+    <RichEditorCore
       {...props}
-      content={field.value ?? ''}
+      content={field.value ?? ""}
       onChange={(html: string) => field.onChange(html)}
     />
   );
 }
 
-export default function RichEditor(props: RichEditorProps) {
-  if (props.control && props.name) {
-    return <ControlledRichEditor {...props} />;
+export default function RichEditor<T extends FieldValues = FieldValues>({ control, name, ...props }: RichEditorProps<T>) {
+  if (control && name) {
+    return <ControlledRichEditor<T> control={control} name={name} {...props} />;
   }
-  return <RichEditorInner {...props} />;
+  return <RichEditorCore {...props} />;
 }

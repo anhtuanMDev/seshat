@@ -1,4 +1,4 @@
-import type { Character, Event, Equipment, Condition } from "./types";
+import type { Character, Event, Equipment, Condition, EventAttributes } from "./types";
 
 export interface Note {
   label: string;
@@ -24,7 +24,7 @@ const ARC_MOD: Record<string, number> = {
 export interface ScoreResult {
   score: number;
   notes: Note[];
-  attr: Record<string, string | undefined>;
+  attr: EventAttributes;
   resolveEvent: Event | undefined;
 }
 

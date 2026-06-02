@@ -33,7 +33,7 @@ const baseEvent = (overrides: Partial<Event> = {}): Event => ({
   time: 1,
   title: "Battle",
   type: "Conflict",
-  chapter: "",
+  chapters: [],
   startDate: "",
   endDate: "",
   setting: "",
@@ -213,7 +213,7 @@ describe("buildExport", () => {
   it("nations section included when nations present", () => {
     const out = buildExport({
       title: "T", synopsis: "", setting: "", themes: "", rules: "",
-      nations: [{ id: "n1", name: "Avalon", type: "Kingdom", capital: "Camelot", ruler: "Arthur", population: "", geography: "", culture: "", military: "", economy: "", allies: "", enemies: "", secrets: "", lore: "" }],
+      nations: [{ id: "n1", name: "Avalon", type: "Kingdom", capital: "Camelot", ruler: "Arthur", population: "", geography: "", culture: "", military: "", economy: "", periodActive: "", connections: [], allianceLogic: "", secrets: "", lore: "" }],
       techniques: [], ingredients: [], monsters: [], treasures: [],
       events: [],
       characters: [],

@@ -20,7 +20,7 @@ const sampleEvent: Event = {
   time: 5,
   title: "The Duel",
   type: "Conflict",
-  chapter: "",
+  chapters: [],
   startDate: "",
   endDate: "",
   setting: "",

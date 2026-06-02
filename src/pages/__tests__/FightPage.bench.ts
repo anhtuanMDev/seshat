@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { bench, describe } from "vitest";
 import { scoreFighter } from "../../lib/scoreFighter";
 import type { Character, Event } from "../../lib/types";
@@ -23,7 +24,7 @@ const makeChar = (id: string): Character => ({
 });
 
 const makeEvent = (id: string, time: number): Event => ({
-  id, time, title: `Event ${time}`, type: "Story", chapter: "",
+    id, time, title: `Event ${time}`, type: "Story", chapters: [],
   startDate: "", endDate: "", setting: "", description: "",
   consequence: "", characters: [id],
 });

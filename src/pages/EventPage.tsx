@@ -80,18 +80,12 @@ export default function EventPage() {
           }
         });
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCharAttrs(attrs);
     }
-  }, [event?.id, reset, bookIdx]);
+  }, [event, event?.id, reset, bookIdx]);
 
   const ref = useAnimateIn();
-
-  if (!event)
-    return (
-      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
-        Event not found.
-      </div>
-    );
 
   const toggleChar = useCallback((cid: string) => {
     const current = getValues("characters");
@@ -107,6 +101,17 @@ export default function EventPage() {
       [cid]: { ...prev[cid], [f]: v },
     }));
   }, []);
+
+  const formChars = useWatch({ control, name: "characters" }) || [];
+
+  if (!event)
+    return (
+      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
+        Event not found.
+      </div>
+    );
+
+
 
   const onSubmit = (data: EventForm) => {
     if (bookIdx < 0) return;
@@ -135,7 +140,7 @@ export default function EventPage() {
     });
   };
 
-  const formChars = useWatch({ control, name: "characters" }) || [];
+
 
   return (
     <div ref={ref}>

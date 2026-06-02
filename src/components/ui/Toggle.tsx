@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useController } from "react-hook-form";
-import type { Control, FieldValues } from "react-hook-form";
+import type { Control, FieldValues, Path } from "react-hook-form";
 
 const StyledButton = styled(Button)(() => ({
   fontFamily: "Georgia, serif",
@@ -19,10 +19,12 @@ interface ToggleProps<T extends FieldValues = FieldValues> {
   value?: boolean;
   onChange?: (v: boolean) => void;
   control?: Control<T>;
-  name?: string;
+  name?: Path<T>;
 }
 
-function ToggleInner({ label, value, onChange }: ToggleProps) {
+type ToggleInnerProps = Omit<ToggleProps<FieldValues>, "control" | "name">;
+
+function ToggleInner({ label, value, onChange }: ToggleInnerProps) {
   return (
     <div style={{ marginBottom: 16 }}>
       {label && (
@@ -57,14 +59,17 @@ function ToggleInner({ label, value, onChange }: ToggleProps) {
   );
 }
 
-function ControlledToggle<T extends FieldValues>({ control, name, ...props }: ToggleProps<T>) {
+function ControlledToggle<T extends FieldValues>({ control, name, ...rest }: ToggleProps<T>) {
   const { field } = useController({ control: control!, name: name! });
-  return <ToggleInner {...props} value={field.value ?? false} onChange={(v: boolean) => field.onChange(v)} />;
+  return <ToggleInner {...rest} value={field.value ?? false} onChange={(v: boolean) => field.onChange(v)} />;
 }
 
 export function Toggle<T extends FieldValues = FieldValues>(props: ToggleProps<T>) {
   if (props.control && props.name) {
-    return <ControlledToggle<T> {...(props as ToggleProps<T>)} />;
+    return <ControlledToggle<T> {...props} />;
   }
-  return <ToggleInner {...props} />;
+  const { control, name, ...rest } = props;
+  void control;
+  void name;
+  return <ToggleInner {...rest} />;
 }

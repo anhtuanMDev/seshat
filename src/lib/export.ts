@@ -41,8 +41,14 @@ export function buildExport(state: ExportState): string {
       if (n.culture) L.push(`  Culture: ${n.culture}`);
       if (n.military) L.push(`  Military: ${n.military}`);
       if (n.economy) L.push(`  Economy: ${n.economy}`);
-      if (n.allies) L.push(`  Allies: ${n.allies}`);
-      if (n.enemies) L.push(`  Enemies: ${n.enemies}`);
+      if (n.connections?.length) {
+        L.push(`  Connections:`);
+        for (const conn of n.connections) {
+           const other = state.nations.find((x) => x.id === conn.withNation);
+           L.push(`    - ${other?.name || conn.withNation}: ${conn.relation}${conn.since ? ` (since ${conn.since})` : ""}${conn.notes ? ` — ${conn.notes}` : ""}`);
+        }
+      }
+      if (n.allianceLogic) L.push(`  Diplomacy logic: ${n.allianceLogic}`);
       if (n.secrets) L.push(`  Secrets: ${n.secrets}`);
       if (n.lore) L.push(`  Lore: ${n.lore}`);
     }

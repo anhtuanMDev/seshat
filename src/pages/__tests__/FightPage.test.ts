@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from "vitest";
 import { scoreFighter } from "../../lib/scoreFighter";
 import type { Character, Event } from "../../lib/types";
@@ -14,7 +15,7 @@ const makeChar = (overrides: Partial<Character> = {}): Character => ({
 
 const makeEvent = (overrides: Partial<Event> = {}): Event => ({
   id: "e1", time: 1, title: "Event", type: "Story",
-  chapter: "", startDate: "", endDate: "", setting: "",
+  chapters: [], startDate: "", endDate: "", setting: "",
   description: "", consequence: "", characters: [],
   ...overrides,
 });
