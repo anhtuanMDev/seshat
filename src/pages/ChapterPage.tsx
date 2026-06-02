@@ -9,7 +9,7 @@ import {
 import { S } from "../lib/utils";
 import { NotesIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { Character, Event } from "../lib/types";
 import RichEditor from "../components/editor/RichEditor";
@@ -31,7 +31,7 @@ function countWords(text: string) {
 }
 
 export default function ChapterPage() {
-  const { id } = useParams();
+  const { id, bookId } = useParams();
   const events = useEvents();
   const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
@@ -48,16 +48,17 @@ export default function ChapterPage() {
     );
   });
 
-  const { register, handleSubmit, control, reset } = useForm<ChapterForm>({
-    defaultValues: {
-      number: "",
-      title: "",
-      timeRef: "",
-      synopsis: "",
-      body: "",
-      notes: "",
-    },
-  });
+  const { register, handleSubmit, control, reset, formState } =
+    useForm<ChapterForm>({
+      defaultValues: {
+        number: "",
+        title: "",
+        timeRef: "",
+        synopsis: "",
+        body: "",
+        notes: "",
+      },
+    });
 
   useEffect(() => {
     if (chapter) {
@@ -81,9 +82,26 @@ export default function ChapterPage() {
   );
 
   const [pinnedChars, setPinnedChars] = useState<string[]>([]);
-  const [pinnedEvents, setPinnedEvents] = useState<string[]>([]);
+  const [pinnedEventIds, setPinnedEventIds] = useState<string[]>([]);
 
   const body = useWatch({ control, name: "body" });
+
+  const onSubmit = handleSubmit((data: ChapterForm) => {
+    if (bookIdx < 0) return;
+    const ch = appStore.books[bookIdx].chapters[chapterIdx];
+    ch.number.set(data.number);
+    ch.title.set(data.title);
+    ch.timeRef.set(data.timeRef);
+    ch.synopsis.set(data.synopsis);
+    ch.body.set(data.body);
+    ch.notes.set(data.notes);
+  });
+
+  // Keep a stable ref for save so RichEditor's onSave doesn't go stale
+  const saveRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    saveRef.current = onSubmit;
+  }, [onSubmit]);
 
   if (!chapter) {
     return (
@@ -93,22 +111,13 @@ export default function ChapterPage() {
     );
   }
 
-  const onSubmit = (data: ChapterForm) => {
-    if (bookIdx < 0) return;
-    const ch = appStore.books[bookIdx].chapters[chapterIdx];
-    ch.number.set(data.number);
-    ch.title.set(data.title);
-    ch.timeRef.set(data.timeRef);
-    ch.synopsis.set(data.synopsis);
-    ch.body.set(data.body);
-    ch.notes.set(data.notes);
-  };
   const words = countWords(body || "");
+
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedChars.includes(c.id),
   );
   const pinnedEventObjs = events
-    .filter((e: Event) => pinnedEvents.includes(e.id))
+    .filter((e: Event) => pinnedEventIds.includes(e.id))
     .sort((a: Event, b: Event) => a.time - b.time);
 
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
@@ -130,6 +139,7 @@ export default function ChapterPage() {
         position: "relative",
       }}
     >
+      {/* ── Prose column ── */}
       <div
         style={{
           flex: 1,
@@ -205,7 +215,7 @@ export default function ChapterPage() {
             words={words}
             showPanel={showPanel}
             onTogglePanel={() => setShowPanel((s) => !s)}
-            onSave={handleSubmit(onSubmit)}
+            onSave={() => saveRef.current()}
           />
         </div>
 
@@ -237,7 +247,19 @@ export default function ChapterPage() {
           />
         )}
 
-        <RichEditor control={control} name="body" placeholder="Begin writing the chapter here. The story lives in this space…" />
+        {/* ── Rich editor — all context props wired ── */}
+        <RichEditor
+          control={control}
+          name="body"
+          placeholder="Begin writing the chapter here. The story lives in this space…"
+          characters={characters}
+          events={events}
+          pinnedEvents={pinnedEventObjs}
+          pinnedCharIds={pinnedChars}
+          isDirty={formState.isDirty}
+          onSave={() => saveRef.current()}
+          bookId={bookId}
+        />
 
         <hr style={S.rule} />
         <p
@@ -272,6 +294,7 @@ export default function ChapterPage() {
         />
       </div>
 
+      {/* ── Reference panel ── */}
       {showPanel && (
         <ReferencePanel
           panelTab={panelTab}
@@ -279,15 +302,19 @@ export default function ChapterPage() {
           characters={characters}
           sortedEvents={sortedEvents}
           pinnedCharIds={pinnedChars}
-          pinnedEventIds={pinnedEvents}
-          onTogglePinChar={(id) =>
+          pinnedEventIds={pinnedEventIds}
+          onTogglePinChar={(charId) =>
             setPinnedChars((prev) =>
-              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+              prev.includes(charId)
+                ? prev.filter((x) => x !== charId)
+                : [...prev, charId],
             )
           }
-          onTogglePinEvent={(id) =>
-            setPinnedEvents((prev) =>
-              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+          onTogglePinEvent={(eventId) =>
+            setPinnedEventIds((prev) =>
+              prev.includes(eventId)
+                ? prev.filter((x) => x !== eventId)
+                : [...prev, eventId],
             )
           }
           worldData={worldData}

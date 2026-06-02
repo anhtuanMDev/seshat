@@ -26,9 +26,7 @@ interface RichEditorProps<T extends FieldValues = FieldValues> {
   name?: Path<T>;
   characters?: Character[];
   events?: Event[];
-  // Pinned events from the chapter's reference panel — drives time context
   pinnedEvents?: Event[];
-  // Pinned character IDs — scopes the @ mention list
   pinnedCharIds?: string[];
   isDirty?: boolean;
   onSave?: () => void;
@@ -156,22 +154,12 @@ function MenuBar({
         editor.isActive("highlight"),
       )}
 
+      {/* @ mention help button — always shown when characters exist */}
       {showMentionHelp && (
         <>
           <span
             style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
           />
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--color-purple)",
-              fontFamily: "Georgia, serif",
-              padding: "0 4px",
-              letterSpacing: 0.5,
-            }}
-          >
-            @
-          </span>
           <MentionHelpButton />
         </>
       )}
@@ -180,7 +168,10 @@ function MenuBar({
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
-type RichEditorCoreProps = Omit<RichEditorProps<FieldValues>, "control" | "name">;
+type RichEditorCoreProps = Omit<
+  RichEditorProps<FieldValues>,
+  "control" | "name"
+>;
 
 function RichEditorCore({
   content,
@@ -199,13 +190,15 @@ function RichEditorCore({
   const [tooltip, setTooltip] = useState<{
     char: Character;
     anchor: HTMLElement;
+    x: number;
+    y: number;
   } | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
 
   // ── Mention list: pinned chars first, fall back to all ────────────────────
   const mentionItems: MentionItem[] = (() => {
-    // If the chapter has pinned characters, only offer those in @
+    // Only offer pinned characters in @ if any are pinned, else all
     const pinned =
       pinnedCharIds.length > 0
         ? characters.filter((c) => pinnedCharIds.includes(c.id))
@@ -250,7 +243,8 @@ function RichEditorCore({
       if (!char) return;
       if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
       tooltipTimeout.current = setTimeout(() => {
-        setTooltip({ char, anchor: target });
+        const rect = target.getBoundingClientRect();
+        setTooltip({ char, anchor: target, x: rect.left, y: rect.bottom + 4 });
       }, 120);
     };
 
@@ -299,6 +293,12 @@ function RichEditorCore({
       {tooltip && (
         <div
           className="char-mention-tooltip"
+          style={{
+            position: "fixed",
+            top: tooltip.y,
+            left: Math.min(tooltip.x, window.innerWidth - 300),
+            zIndex: 1000,
+          }}
           onMouseEnter={() => {
             if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
           }}
@@ -340,7 +340,11 @@ function RichEditorCore({
 }
 
 // ── Controlled wrapper ────────────────────────────────────────────────────────
-function ControlledRichEditor<T extends FieldValues>({ control, name, ...props }: RichEditorProps<T>) {
+function ControlledRichEditor<T extends FieldValues>({
+  control,
+  name,
+  ...props
+}: RichEditorProps<T>) {
   const { field } = useController({ control: control!, name: name! });
   return (
     <RichEditorCore
@@ -351,7 +355,11 @@ function ControlledRichEditor<T extends FieldValues>({ control, name, ...props }
   );
 }
 
-export default function RichEditor<T extends FieldValues = FieldValues>({ control, name, ...props }: RichEditorProps<T>) {
+export default function RichEditor<T extends FieldValues = FieldValues>({
+  control,
+  name,
+  ...props
+}: RichEditorProps<T>) {
   if (control && name) {
     return <ControlledRichEditor<T> control={control} name={name} {...props} />;
   }
