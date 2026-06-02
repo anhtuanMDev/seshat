@@ -55,8 +55,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         console.error("Failed to parse users.json", e);
       }
     } else if (getRes.status !== 404) {
+      const errText = await getRes.text();
       return new Response(
-        JSON.stringify({ error: "Failed to access user database." }),
+        JSON.stringify({ error: `Failed to access user database. Status: ${getRes.status}, Error: ${errText}` }),
         { status: 500 },
       ) as unknown as CloudflareResponse;
     }
