@@ -307,6 +307,7 @@ const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties
     borderRadius: 4,
     border: "1px solid var(--border)",
     background: "transparent",
+    color: "var(--text-primary)",
     cursor: "pointer",
   },
   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 32px" },

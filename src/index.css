@@ -131,11 +131,17 @@ html {
   background: var(--text-muted);
 }
 
-/* ── Input / textarea reset ────────────────────────────────────────────── */
+/* ── Input / textarea / button reset ─────────────────────────────────────── */
 input,
 textarea,
-select {
+select,
+button {
   color-scheme: light dark;
+  font-family: inherit;
+}
+
+button {
+  color: inherit;
 }
 
 [data-theme="dark"] input,
