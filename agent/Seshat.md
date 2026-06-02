@@ -19,6 +19,7 @@
 11. [Migration to TypeScript](#11-migration-to-typescript)
 12. [Legend State Patterns & Gotchas](#12-legend-state-patterns--gotchas)
 13. [Testing](#13-testing)
+14. [Authentication & Cloud Sync](#14-authentication--cloud-sync)
 
 ---
 
@@ -795,3 +796,22 @@ When generating Legend State code:
 - Size icons with `sx={{ fontSize: N }}`; theme colors via CSS variables; no transition on SVG paths to prevent theme-toggle flicker
 - **Multi-book**: All world state lives inside `appStore.books[]`. Use `useActiveBookIdx()` hook to get the active book's index, then access `appStore.books[idx].fieldName` for reads/writes. The `appStore.activeBookId` is synced from the URL param `:bookId` in `App.tsx`.
 - **Book-manager page** at `/` (`BookListPage`) handles creating, listing, and deleting books. Each book is a completely independent world with no shared references.
+
+---
+
+## 14. Authentication & Cloud Sync
+
+Seshat uses a completely serverless authentication and cloud synchronization model backed by **Cloudflare Workers** and the **GitHub API**.
+
+### JWT Authentication
+
+- **Cloudflare Worker Backend:** Endpoints (`/api/github/login`, `/api/github/register`, `/api/github/sync`) run on Cloudflare Workers. 
+- **Token Generation:** The user registers/logs in with a `username` (branch name) and `accessCode` (secret password). The backend verifies this against `users.json` on the main GitHub branch, and generates a **JWT-like token** signed via the Web Crypto API using an `AUTH_SECRET` environment variable (HMAC-SHA256).
+- **Client Storage:** The frontend *never* stores the raw `accessCode`. It saves the signed token to `localStorage`/`sessionStorage` as `seshat-auth-token`.
+- **AuthGuard (`src/components/AuthGuard.tsx`):** A wrapper component that intercepts rendering for protected routes. It synchronously decodes the token's payload in the browser to check the `exp` (expiration timestamp). If the token is missing or expired, it redirects to the `/auth` route natively without needing to make network requests.
+- **Performant Syncing:** Since the JWT contains the cryptographically signed `username`, the `sync.ts` backend worker bypasses fetching and parsing `users.json` for every sync request, resulting in significantly faster syncing and drastically reduced GitHub API rate-limit usage.
+
+### Cloud Syncing Architecture
+
+- Uses `src/lib/githubSync.ts` to trigger REST API requests to the Cloudflare Worker.
+- Converts the entire `appStore.get()` (all books, characters, chapters, events) into a flattened filesystem tree (JSON blobs) and directly hits the **GitHub Git Database API** (Trees, Commits, Refs) to safely persist the user's data to a unique branch per user (`user-username`).

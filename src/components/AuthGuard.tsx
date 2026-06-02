@@ -1,25 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+
+function checkTokenValidity(): boolean {
+  const savedToken = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+  if (!savedToken) return false;
+
+  try {
+    const payloadStr = atob(savedToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(decodeURIComponent(escape(payloadStr)));
+    return Date.now() < payload.exp;
+  } catch {
+    return false;
+  }
+}
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
+  const isValid = checkTokenValidity();
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("seshat-github-user") || sessionStorage.getItem("seshat-github-user");
-    const savedCode = localStorage.getItem("seshat-github-code") || sessionStorage.getItem("seshat-github-code");
-    
-    if (!savedUser || !savedCode) {
-      if (location.pathname !== "/auth") {
-        navigate("/auth", { replace: true });
-      }
+    if (!isValid && location.pathname !== "/auth") {
+      navigate("/auth", { replace: true });
     }
-    setIsChecking(false);
-  }, [navigate, location.pathname]);
+  }, [isValid, navigate, location.pathname]);
 
-  if (isChecking) {
-    return null; // Or a loading spinner
+  if (!isValid) {
+    return null;
   }
 
   return <>{children}</>;

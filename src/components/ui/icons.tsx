@@ -34,3 +34,5 @@ export { default as ScheduleIcon } from "@mui/icons-material/Schedule";
 export { default as ScienceIcon } from "@mui/icons-material/Science";
 export { default as SportsKabaddiIcon } from "@mui/icons-material/SportsKabaddi";
 export { default as TimelineIcon } from "@mui/icons-material/Timeline";
+export { default as VisibilityIcon } from "@mui/icons-material/Visibility";
+export { default as VisibilityOffIcon } from "@mui/icons-material/VisibilityOff";

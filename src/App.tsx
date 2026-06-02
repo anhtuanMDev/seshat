@@ -115,18 +115,16 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   
-  const triggerSync = async (user: string, code: string) => {
+  const triggerSync = async (token: string) => {
     try {
       setIsSyncing(true);
-      await syncToGitHub(user, code);
+      await syncToGitHub(token);
       alert("Synced successfully to your secure branch!");
     } catch (err) {
       alert("Sync failed: " + (err as Error).message);
-      if ((err as Error).message.includes("Unauthorized")) {
-        localStorage.removeItem("seshat-github-user");
-        localStorage.removeItem("seshat-github-code");
-        sessionStorage.removeItem("seshat-github-user");
-        sessionStorage.removeItem("seshat-github-code");
+      if ((err as Error).message.includes("Unauthorized") || (err as Error).message.includes("expired")) {
+        localStorage.removeItem("seshat-auth-token");
+        sessionStorage.removeItem("seshat-auth-token");
         navigate("/auth");
       }
     } finally {
@@ -135,13 +133,12 @@ export default function App() {
   };
 
   const handleSync = () => {
-    const savedUser = localStorage.getItem("seshat-github-user") || sessionStorage.getItem("seshat-github-user");
-    const savedCode = localStorage.getItem("seshat-github-code") || sessionStorage.getItem("seshat-github-code");
+    const savedToken = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
     
-    if (!savedUser || !savedCode) {
+    if (!savedToken) {
       navigate("/auth");
     } else {
-      triggerSync(savedUser, savedCode);
+      triggerSync(savedToken);
     }
   };
 

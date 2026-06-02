@@ -4,6 +4,7 @@ export interface Env {
   GITHUB_TOKEN: string;
   GITHUB_OWNER: string;
   GITHUB_REPO: string;
+  AUTH_SECRET: string;
 }
 
 interface BookPayload {
@@ -24,46 +25,39 @@ interface BookPayload {
 }
 
 interface RequestPayload {
-  username?: string;
-  accessCode?: string;
+  token?: string;
   data?: {
     books?: BookPayload[];
   };
 }
 
+import { verifyToken } from "./authUtils";
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    const { username, accessCode, data } = await context.request.json() as RequestPayload;
-    const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO } = context.env;
+    const { token, data } = await context.request.json() as RequestPayload;
+    const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, AUTH_SECRET } = context.env;
 
-    if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
+    if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO || !AUTH_SECRET) {
       return new Response(JSON.stringify({ error: "Missing environment variables." }), { status: 500 }) as unknown as CloudflareResponse;
     }
-    if (!username || !accessCode || !data || !data.books) {
-      return new Response(JSON.stringify({ error: "Missing authentication or books data." }), { status: 400 }) as unknown as CloudflareResponse;
+    if (!token || !data || !data.books) {
+      return new Response(JSON.stringify({ error: "Missing authentication token or books data." }), { status: 400 }) as unknown as CloudflareResponse;
     }
 
-    const branchName = `user-${username.replace(/[^a-z0-9_-]/gi, '-').toLowerCase()}`;
+    const payload = await verifyToken(token, AUTH_SECRET);
+    if (!payload) {
+      return new Response(JSON.stringify({ error: "Unauthorized. Session expired or invalid token." }), { status: 401 }) as unknown as CloudflareResponse;
+    }
+
+    const username = payload.username;
+    const branchName = `user-${username}`;
     const headers = {
       "Authorization": `Bearer ${GITHUB_TOKEN}`,
       "Accept": "application/vnd.github.v3+json",
       "User-Agent": "Seshat-Cloudflare-Worker"
     };
     const baseUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
-
-    // Verify User from users.json on main branch
-    const usersUrl = `${baseUrl}/contents/users.json`;
-    const usersRes = await fetch(usersUrl, { headers });
-    if (!usersRes.ok) {
-      return new Response(JSON.stringify({ error: "User database not found. Please register first." }), { status: 401 }) as unknown as CloudflareResponse;
-    }
-    const getJson = await usersRes.json() as { content: string };
-    const decodedContent = decodeURIComponent(escape(atob(getJson.content)));
-    const validUsers = JSON.parse(decodedContent);
-
-    if (validUsers[branchName.replace("user-", "")] !== accessCode) {
-      return new Response(JSON.stringify({ error: "Unauthorized. Invalid Username or Access Code." }), { status: 401 }) as unknown as CloudflareResponse;
-    }
 
     // 1. Get default branch (to fallback to if user branch doesn't exist)
     const repoRes = await fetch(baseUrl, { headers });

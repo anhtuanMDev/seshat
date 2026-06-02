@@ -42,6 +42,7 @@ interface FieldProps<T extends FieldValues = FieldValues> extends Omit<
   name?: Path<T>;
   multi?: boolean;
   rows?: number;
+  InputProps?: Partial<import("@mui/material").InputProps>;
 }
 
 type FieldInnerProps = Omit<FieldProps<FieldValues>, "control" | "name">;

@@ -6,8 +6,9 @@ import type { Env } from "./sync";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    const { username, accessCode } = (await context.request.json()) as {
+    const { username, email, accessCode } = (await context.request.json()) as {
       username?: string;
+      email?: string;
       accessCode?: string;
     };
     const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO } = context.env;
@@ -36,7 +37,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const usersUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/users.json`;
 
     // 1. Fetch current users.json from main branch
-    let usersData: Record<string, string> = {};
+    let usersData: Record<string, string | { accessCode: string; email: string }> = {};
     let currentSha: string | undefined;
 
     const getRes = await fetch(usersUrl, { headers });
@@ -70,7 +71,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     // 3. Add new user
-    usersData[cleanUsername] = accessCode;
+    usersData[cleanUsername] = { accessCode, email: email || "" };
     const newContent = JSON.stringify(usersData, null, 2);
     const base64Content = btoa(unescape(encodeURIComponent(newContent)));
 

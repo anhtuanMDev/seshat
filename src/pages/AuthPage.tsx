@@ -2,23 +2,34 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { S } from "../lib/utils";
 import { Field, GhostButton } from "../components/ui";
-import { registerToGitHub } from "../lib/githubSync";
+import { VisibilityIcon, VisibilityOffIcon } from "../components/ui/icons";
+import { InputAdornment, IconButton } from "@mui/material";
+import { registerToGitHub, loginToGitHub } from "../lib/githubSync";
 
 export default function AuthPage() {
   const navigate = useNavigate();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [loginUser, setLoginUser] = useState("");
   const [loginCode, setLoginCode] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("seshat-github-user") || sessionStorage.getItem("seshat-github-user");
-    const savedCode = localStorage.getItem("seshat-github-code") || sessionStorage.getItem("seshat-github-code");
+    const savedToken = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
     
-    if (savedUser && savedCode) {
-      // Already authenticated
-      navigate("/");
+    if (savedToken) {
+      try {
+        const payloadStr = atob(savedToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"));
+        const payload = JSON.parse(decodeURIComponent(escape(payloadStr)));
+        if (Date.now() < payload.exp) {
+          navigate("/");
+          return;
+        }
+      } catch {
+        // Invalid token
+      }
     }
   }, [navigate]);
 
@@ -30,23 +41,23 @@ export default function AuthPage() {
     try {
       setIsLoading(true);
       if (isRegisterMode) {
-        await registerToGitHub(u, c);
+        if (!loginEmail.trim()) {
+          alert("Please provide an email address for password recovery.");
+          setIsLoading(false);
+          return;
+        }
+        await registerToGitHub(u, loginEmail.trim(), c);
         alert(`Registered successfully! Welcome ${u}.`);
-      } else {
-        // Validate login by attempting a sync or just checking if they have valid code
-        // For now, since there isn't a dedicated login check endpoint without syncing,
-        // we will assume valid and sync later, or do a dry run if needed.
-        // The instructions said "store their token".
       }
+      
+      const token = await loginToGitHub(u, c);
 
       const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem("seshat-github-user", u);
-      storage.setItem("seshat-github-code", c);
+      storage.setItem("seshat-auth-token", token);
       
       // If remember me is unchecked, clean up local storage just in case
       if (!rememberMe) {
-        localStorage.removeItem("seshat-github-user");
-        localStorage.removeItem("seshat-github-code");
+        localStorage.removeItem("seshat-auth-token");
       }
 
       navigate("/");
@@ -89,12 +100,35 @@ export default function AuthPage() {
             onChange={setLoginUser}
             placeholder="e.g. alex"
           />
+          {isRegisterMode && (
+            <Field
+              label="Email Address"
+              value={loginEmail}
+              onChange={setLoginEmail}
+              placeholder="For password recovery"
+              type="email"
+            />
+          )}
           <Field
             label="Access Code"
             value={loginCode}
             onChange={setLoginCode}
             placeholder="Enter secret code"
-            type="password"
+            type={showPassword ? "text" : "password"}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    edge="end" 
+                    size="small" 
+                    style={{ color: "var(--text-secondary)", marginRight: -8 }}
+                  >
+                    {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
           
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "var(--text-secondary)", fontSize: 14 }}>
