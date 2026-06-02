@@ -83,6 +83,8 @@ export default function ChapterPage() {
   const [pinnedChars, setPinnedChars] = useState<string[]>([]);
   const [pinnedEvents, setPinnedEvents] = useState<string[]>([]);
 
+  const body = useWatch({ control, name: "body" });
+
   if (!chapter) {
     return (
       <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
@@ -101,8 +103,6 @@ export default function ChapterPage() {
     ch.body.set(data.body);
     ch.notes.set(data.notes);
   };
-
-  const body = useWatch({ control, name: "body" });
   const words = countWords(body || "");
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedChars.includes(c.id),
