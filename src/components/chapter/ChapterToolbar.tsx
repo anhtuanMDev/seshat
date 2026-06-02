@@ -1,11 +1,12 @@
 import { S } from "../../lib/utils";
-import { SaveIcon, ArticleIcon } from "../ui/icons";
+import { SaveIcon, ArticleIcon, FileDownloadIcon } from "../ui/icons";
 
 interface ChapterToolbarProps {
   words: number;
   showPanel: boolean;
   onTogglePanel: () => void;
   onSave: () => void;
+  onExport: () => void;
 }
 
 export function ChapterToolbar({
@@ -13,6 +14,7 @@ export function ChapterToolbar({
   showPanel,
   onTogglePanel,
   onSave,
+  onExport,
 }: ChapterToolbarProps) {
   return (
     <div
@@ -64,6 +66,22 @@ export function ChapterToolbar({
       >
         <ArticleIcon sx={{ fontSize: 12 }} />
         refs
+      </button>
+      <button
+        onClick={onExport}
+        title="Export to plain text DOCX"
+        style={{
+          ...S.ghost,
+          fontSize: 11,
+          letterSpacing: 1,
+          color: "var(--text-muted)",
+          display: "flex",
+          alignItems: "center",
+          gap: 3,
+        }}
+      >
+        <FileDownloadIcon sx={{ fontSize: 12 }} />
+        export
       </button>
     </div>
   );

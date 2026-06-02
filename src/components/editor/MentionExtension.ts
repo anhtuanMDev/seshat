@@ -388,14 +388,17 @@ export const Mention = Extension.create<MentionOptions, {}>({
 
 function insertMention(view: EditorView, item: MentionItem, range: Range, trigger: string) {
   const { state, dispatch } = view;
-  const mentionText = `${trigger}${item.name}`;
   const tr = state.tr.replaceWith(
     range.from,
     range.to,
-    state.schema.text(mentionText),
+    state.schema.nodes.entityMention.create({
+      id: item.id,
+      trigger: trigger,
+      label: item.name
+    })
   );
   // Insert a space after the mention
-  const insertPos = range.from + mentionText.length;
+  const insertPos = range.from + 1; // Since node size is 1
   tr.insertText(" ", insertPos);
   dispatch(tr);
   hidePopup();

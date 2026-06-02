@@ -1,4 +1,6 @@
 import { useParams } from "react-router-dom";
+import { Document, Packer, Paragraph, TextRun } from "docx";
+import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import {
@@ -113,6 +115,72 @@ export default function ChapterPage() {
 
   const words = countWords(body || "");
 
+  const handleExport = () => {
+    if (!chapter) return;
+    
+    // Convert HTML to plain text paragraphs
+    const temp = document.createElement("div");
+    temp.innerHTML = body || "";
+    
+    // Refresh mention names before export
+    const mentionSpans = temp.querySelectorAll("span[data-mention-id]");
+    if (mentionSpans.length > 0 && bookIdx >= 0) {
+      const book = appStore.books[bookIdx].get();
+      mentionSpans.forEach(span => {
+        const id = span.getAttribute("data-mention-id");
+        const trigger = span.getAttribute("data-trigger");
+        let entity = null;
+        switch (trigger) {
+          case "@": entity = book.characters?.find(c => c.id === id); break;
+          case "#": entity = book.nations?.find(c => c.id === id); break;
+          case "%": entity = book.monsters?.find(c => c.id === id); break;
+          case "~": entity = book.ingredients?.find(c => c.id === id); break;
+          case "^": entity = book.techniques?.find(c => c.id === id); break;
+          case "$": entity = book.treasures?.find(c => c.id === id); break;
+        }
+        if (entity) {
+          span.textContent = `${trigger}${entity.name}`;
+        }
+      });
+    }
+
+    // Get text and split by newlines (block elements like <p> will have newlines if we use innerText, or we can just split by \n)
+    // Actually, Tiptap uses <p> tags. We can select all paragraphs.
+    const paragraphs = Array.from(temp.querySelectorAll("p")).map(p => p.textContent || "");
+    // If no <p> tags were found, fallback to innerText split
+    const lines = paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: chapter.title || "Untitled Chapter",
+                  bold: true,
+                  size: 32, // 16pt
+                }),
+              ],
+              spacing: { after: 400 },
+            }),
+            ...lines
+              .filter(line => line.trim().length > 0)
+              .map(line => new Paragraph({ 
+                text: line,
+                spacing: { after: 200 }
+              })),
+          ],
+        },
+      ],
+    });
+
+    Packer.toBlob(doc).then((blob) => {
+      saveAs(blob, `${chapter.title || "chapter"}.docx`);
+    });
+  };
+
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedChars.includes(c.id),
   );
@@ -216,6 +284,7 @@ export default function ChapterPage() {
             showPanel={showPanel}
             onTogglePanel={() => setShowPanel((s) => !s)}
             onSave={() => saveRef.current()}
+            onExport={handleExport}
           />
         </div>
 

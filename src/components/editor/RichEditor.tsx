@@ -16,11 +16,11 @@ import { appStore } from "../../store/appStore";
 import { useActiveBookIdx } from "../../hooks/useWorldStore";
 import type { Character, Event } from "../../lib/types";
 import type { Editor } from "@tiptap/core";
+import { buildMentionExtension, type MentionItem } from "./MentionExtension";
+import { EntityMention } from "./EntityMentionNode";
 import CharMentionTooltip from "./CharMentionTooltip";
 import UnsavedGuard from "./UnsavedGuard";
 import MentionHelpButton from "./MentionHelpButton";
-import { buildMentionExtension } from "./MentionExtension";
-import type { MentionItem } from "./MentionList";
 
 interface RichEditorProps<T extends FieldValues = FieldValues> {
   content?: string;
@@ -262,9 +262,13 @@ function RichEditorCore({
       Highlight,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Typography,
-      Placeholder.configure({ placeholder: placeholder || "Write here…" }),
+      Placeholder.configure({
+        placeholder: placeholder || "Write here…",
+        emptyEditorClass: "is-editor-empty",
+      }),
       // eslint-disable-next-line react-hooks/refs
       buildMentionExtension(getMentionItems),
+      EntityMention,
     ],
     content,
     onUpdate: ({ editor }) => {
