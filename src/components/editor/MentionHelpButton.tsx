@@ -2,15 +2,29 @@ import { useState } from "react";
 
 export default function MentionHelpButton() {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!open) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 8,
+        left: Math.min(rect.left, window.innerWidth - 320),
+      });
+      setOpen(true);
+    } else {
+      setOpen(false);
+    }
+  };
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        title="How to mention characters"
+        onClick={handleClick}
+        title="How to use mentions"
         style={{
-          background: "transparent",
+          background: open ? "var(--bg-active)" : "transparent",
           border: "1px solid var(--color-purple)",
           borderRadius: 3,
           cursor: "pointer",
@@ -24,39 +38,39 @@ export default function MentionHelpButton() {
           gap: 4,
           transition: "background 0.12s",
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.background = "var(--bg-hover)")
-        }
-        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+        onMouseEnter={(e) => {
+          if (!open) e.currentTarget.style.background = "var(--bg-hover)";
+        }}
+        onMouseLeave={(e) => {
+          if (!open) e.currentTarget.style.background = "transparent";
+        }}
       >
-        @ mentions
+        @ Mentions Help
       </button>
 
       {open && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            backdropFilter: "blur(3px)",
-            zIndex: 200,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
+        <>
           <div
             style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 199,
+            }}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
               background: "var(--bg-main)",
               border: "1px solid var(--border)",
               borderRadius: 4,
-              width: "min(520px, 100%)",
-              padding: "32px 36px",
+              width: 320,
+              padding: "20px",
               fontFamily: "Georgia, serif",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+              zIndex: 200,
             }}
           >
             {/* Header */}
@@ -203,7 +217,7 @@ export default function MentionHelpButton() {
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );

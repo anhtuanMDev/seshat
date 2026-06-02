@@ -510,7 +510,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |
 | Export           | `App.tsx` modal | `buildExport()`                                                  |
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
-| @mentions        | `RichEditor`    | Inline character linking using Tiptap Mention extension          |
+| @mentions        | `RichEditor`    | Multi-trigger Tiptap Mention extension (@, #, %, ~, ^, $)        |
 | Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
 
 ---

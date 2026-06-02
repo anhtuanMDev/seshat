@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from "@tiptap/react";
+import { createPortal } from "react-dom";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -333,7 +334,7 @@ function RichEditorCore({
       <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
       <EditorContent editor={editor} />
 
-      {tooltip && (
+      {tooltip && createPortal(
         <div
           className="char-mention-tooltip"
           style={{
@@ -356,7 +357,8 @@ function RichEditorCore({
             anchorEl={tooltip.anchor}
             onClose={() => setTooltip(null)}
           />
-        </div>
+        </div>,
+        document.body
       )}
 
       {guard && (

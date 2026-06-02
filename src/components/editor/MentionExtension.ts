@@ -241,7 +241,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
             selectedIdx = (selectedIdx + 1) % currentItems.length;
             showPopup(
               currentItems,
-              view.coordsAtPos(state.from),
+              view.coordsAtPos(state.to),
               (item) => insertMention(view, item, currentRange!, currentTrigger),
               selectedIdx,
             );
@@ -252,7 +252,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
               (selectedIdx - 1 + currentItems.length) % currentItems.length;
             showPopup(
               currentItems,
-              view.coordsAtPos(state.from),
+              view.coordsAtPos(state.to),
               (item) => insertMention(view, item, currentRange!, currentTrigger),
               selectedIdx,
             );
@@ -314,7 +314,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
               currentItems = filtered;
               selectedIdx = 0;
 
-              const coords = view.coordsAtPos(from);
+              const coords = view.coordsAtPos(to);
               showPopup(
                 filtered,
                 coords,
