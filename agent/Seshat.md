@@ -29,6 +29,8 @@
 | Framework   | React 19 + Vite 8            | Fast HMR, modern JSX transform, ES2023 target                 |
 | Routing     | React Router v7              | Nested routes with layout persistence                         |
 | State       | Legend State                 | Fine-grained reactivity, built-in persistence, no boilerplate |
+| Data Fetch  | React Query + Axios          | Async state, caching (configured via queryClient.ts)          |
+| Validation  | Zod                          | Runtime schema validation                                     |
 | Forms       | react-hook-form              | Performant local form state, minimal re-renders               |
 | UI/Icons    | MUI (Material UI) v9 + @mui/icons-material | Consistent, accessible components; centralized icon exports via `src/components/ui/icons.tsx` |
 | Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
@@ -49,6 +51,8 @@ seshat/
 │   │   ├── export.ts           # buildExport() — world → plaintext
 │   │   ├── scoreFighter.ts     # scoreFighter() — combat scoring logic + Note/ScoreResult types
 │   │   ├── types.ts            # Shared TypeScript interfaces for entities
+│   │   ├── queryClient.ts      # React Query client configuration
+│   │   ├── mkChapter.ts        # Factory for generating new chapters
 │   │   └── __tests__/          # Unit tests for lib utilities
 │   │       ├── utils.test.ts   #   10 tests
 │   │       ├── export.test.ts  #   12 tests
@@ -85,7 +89,11 @@ seshat/
 │   │   │       └── EventPicker.test.tsx
 │   │   │
 │   │   ├── editor/
-│   │   │   └── RichEditor.tsx # Tiptap-based rich text editor with formatting toolbar (bold, italic, underline, headings, lists, blockquote, code, link, highlight)
+│   │   │   ├── RichEditor.tsx         # Tiptap-based rich text editor with formatting toolbar
+│   │   │   ├── MentionExtension.ts    # Tiptap @mention character linking extension
+│   │   │   ├── CharMentionTooltip.tsx # Tooltip for hovering mentioned characters
+│   │   │   ├── MentionHelpButton.tsx  # Help popover for mention syntax
+│   │   │   └── UnsavedGuard.tsx       # Route transition guard for unsaved editor changes
 │   │   │
 │   │   ├── fight/             # FightPage sub-components
 │   │   │   ├── FighterPicker.tsx  # Character + event dropdown
@@ -466,7 +474,7 @@ Icons are imported from `@mui/icons-material` via `src/components/ui/icons.tsx` 
 
 ### RichEditor (`src/components/editor/RichEditor.tsx`)
 
-Tiptap-based rich text editor with inline `MenuBar` toolbar. Always shown for the chapter body field. Supports both controlled (via `react-hook-form` `Control` + `name`) and uncontrolled (`content` + `onChange`) usage. Tiptap extensions enabled: `StarterKit` (bold, italic, strike, heading, lists, blockquote, code), `Underline`, `Link` (prompt-based URL), `Highlight`, `TextAlign`, `Typography`, `Placeholder`. ProseMirror styling in `index.css` for headings, lists, blockquote, code, links, and placeholder.
+Tiptap-based rich text editor with inline `MenuBar` toolbar. Always shown for the chapter body field. Supports both controlled (via `react-hook-form` `Control` + `name`) and uncontrolled (`content` + `onChange`) usage. Tiptap extensions enabled: `StarterKit` (bold, italic, strike, heading, lists, blockquote, code), `Underline`, `Link` (prompt-based URL), `Highlight`, `TextAlign`, `Typography`, `Placeholder`, and custom **`MentionExtension`** (allows `@CharacterName` linking). ProseMirror styling in `index.css` for headings, lists, blockquote, code, links, mentions, and placeholder. Includes `UnsavedGuard` logic to prevent accidental navigation away from dirty forms.
 
 ### Domain-specific components
 
@@ -502,6 +510,8 @@ Each domain directory mirrors a page and contains components that are only used 
 | Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |
 | Export           | `App.tsx` modal | `buildExport()`                                                  |
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
+| @mentions        | `RichEditor`    | Inline character linking using Tiptap Mention extension          |
+| Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
 
 ---
 
@@ -772,9 +782,11 @@ When generating Legend State code:
 - Use per-field `.set()` in `onSubmit` (no dynamic property access, no `any` casts)
 - Prefer react-hook-form for form state; per-field `.set()` to store on save
 - For React Compiler safety: use `useWatch({ control, name })` instead of `watch()`
+- **Rules of Hooks**: Always call hooks (`useWatch`, `useState`, etc.) unconditionally before any early returns (e.g. `if (!entity) return;`).
 - Extract sub-components for array items (each calls `useWatch` with a static index)
-- For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data
+- For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data. Use `// eslint-disable-next-line react-hooks/set-state-in-effect` if you must derive state in an effect here.
 - `any` is banned — no `as any`, no `: any`, no eslint-disable for `no-explicit-any`
+- When extracting generic properties like `control` or `name` to pass the rest of the props down, use `void control; void name;` to safely bypass `@typescript-eslint/no-unused-vars` warnings without disabling the rule.
 - Pure display leaf components (primitives-only props) should be wrapped in `React.memo`
 - `scoreFighter` is in `src/lib/scoreFighter.ts` — import it directly; do not replicate the logic in tests
 - Use MUI icons via `src/components/ui/icons.tsx` (named imports, tree-shakeable)
