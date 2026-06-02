@@ -542,7 +542,7 @@ fontSize: 15,
         onClose={hideToast}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert onClose={hideToast} severity={toast.severity} sx={{ width: '100%' }}>
+        <Alert onClose={hideToast} severity={toast.severity} variant="filled" sx={{ width: '100%', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
           {toast.message}
         </Alert>
       </Snackbar>

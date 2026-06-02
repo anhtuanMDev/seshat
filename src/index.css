@@ -66,12 +66,26 @@ html {
   color: var(--text-secondary) !important;
 }
 
-.MuiPaper-root,
+.MuiPaper-root:not(.MuiAlert-root),
 .MuiMenu-paper,
 .MuiPopover-paper {
   background: var(--bg-side) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border) !important;
+}
+
+.MuiAlert-root {
+  color: #fff !important;
+  border-radius: 8px !important;
+  font-family: "Georgia", serif !important;
+}
+
+.MuiAlert-filledSuccess {
+  background: var(--color-green) !important;
+}
+
+.MuiAlert-filledError {
+  background: var(--color-red) !important;
 }
 
 .MuiMenuItem-root {
