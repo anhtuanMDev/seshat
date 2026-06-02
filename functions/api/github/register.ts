@@ -32,6 +32,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       Accept: "application/vnd.github.v3+json",
       "User-Agent": "Seshat-Cloudflare-Worker",
+      "Content-Type": "application/json",
     };
 
     const usersUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/users.json`;
