@@ -8,8 +8,7 @@ import {
   useActiveBookIdx,
 } from "./hooks/useWorldStore";
 import { S, mkChar, mkEvent, uid } from "./lib/utils";
-import { SideItem, Field, GhostButton } from "./components/ui";
-import { Modal } from "./components/ui/Modal";
+import { SideItem } from "./components/ui";
 import {
   PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
   SportsKabaddiIcon, FileDownloadIcon, LightModeIcon,
@@ -19,7 +18,7 @@ import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useThemeHook";
-import { syncToGitHub, registerToGitHub } from "./lib/githubSync";
+import { syncToGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
 import type { Chapter } from "./store/appStore";
 
@@ -116,24 +115,19 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   
-  // Login / Register Modal State
-  const [showLogin, setShowLogin] = useState(false);
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [loginUser, setLoginUser] = useState("");
-  const [loginCode, setLoginCode] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
-
   const triggerSync = async (user: string, code: string) => {
     try {
       setIsSyncing(true);
       await syncToGitHub(user, code);
       alert("Synced successfully to your secure branch!");
-      setShowLogin(false);
     } catch (err) {
       alert("Sync failed: " + (err as Error).message);
       if ((err as Error).message.includes("Unauthorized")) {
+        localStorage.removeItem("seshat-github-user");
         localStorage.removeItem("seshat-github-code");
-        setShowLogin(true); // Re-show login on auth failure
+        sessionStorage.removeItem("seshat-github-user");
+        sessionStorage.removeItem("seshat-github-code");
+        navigate("/auth");
       }
     } finally {
       setIsSyncing(false);
@@ -141,41 +135,13 @@ export default function App() {
   };
 
   const handleSync = () => {
-    const savedUser = localStorage.getItem("seshat-github-user");
-    const savedCode = localStorage.getItem("seshat-github-code");
+    const savedUser = localStorage.getItem("seshat-github-user") || sessionStorage.getItem("seshat-github-user");
+    const savedCode = localStorage.getItem("seshat-github-code") || sessionStorage.getItem("seshat-github-code");
     
     if (!savedUser || !savedCode) {
-      setLoginUser(savedUser || "");
-      setLoginCode("");
-      setShowLogin(true);
+      navigate("/auth");
     } else {
       triggerSync(savedUser, savedCode);
-    }
-  };
-
-  const submitAuth = async () => {
-    const u = loginUser.trim();
-    const c = loginCode.trim();
-    if (!u || !c) return;
-
-    if (isRegisterMode) {
-      try {
-        setIsRegistering(true);
-        await registerToGitHub(u, c);
-        alert(`Registered successfully! Welcome ${u}. Now syncing your data...`);
-        localStorage.setItem("seshat-github-user", u);
-        localStorage.setItem("seshat-github-code", c);
-        setIsRegisterMode(false);
-        triggerSync(u, c);
-      } catch (err) {
-        alert("Registration failed: " + (err as Error).message);
-      } finally {
-        setIsRegistering(false);
-      }
-    } else {
-      localStorage.setItem("seshat-github-user", u);
-      localStorage.setItem("seshat-github-code", c);
-      triggerSync(u, c);
     }
   };
 
@@ -567,44 +533,6 @@ fontSize: 15,
             />
           </div>
         </div>
-      )}
-      {/* ── Login/Register Modal ── */}
-      {showLogin && (
-        <Modal
-          title={isRegisterMode ? "Register New Account" : "Cloud Sync Login"}
-          onClose={() => { setShowLogin(false); setIsRegisterMode(false); }}
-          footer={
-            <>
-              <GhostButton onClick={() => setIsRegisterMode(!isRegisterMode)}>
-                {isRegisterMode ? "Switch to Login" : "Create Account"}
-              </GhostButton>
-              <GhostButton onClick={submitAuth} style={{ color: "var(--color-green)" }} disabled={isRegistering || isSyncing}>
-                {isRegisterMode ? (isRegistering ? "Registering..." : "Register") : "Login & Sync"}
-              </GhostButton>
-            </>
-          }
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <p style={{ ...S.dim, marginBottom: 16 }}>
-              {isRegisterMode 
-                ? "Choose a unique username and a secure password to create your account and start syncing your world."
-                : "Enter your unique username and the secret access code to sync your world data to the cloud."}
-            </p>
-            <Field
-              label="Username (Branch Name)"
-              value={loginUser}
-              onChange={setLoginUser}
-              placeholder="e.g. alex"
-            />
-            <Field
-              label="Access Code"
-              value={loginCode}
-              onChange={setLoginCode}
-              placeholder="Enter secret code"
-              type="password"
-            />
-          </div>
-        </Modal>
       )}
     </div>
   );

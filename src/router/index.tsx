@@ -1,5 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
+import AuthPage from "../pages/AuthPage";
+import AuthGuard from "../components/AuthGuard";
 import BookListPage from "../pages/BookListPage";
 import WorldPage from "../pages/WorldPage";
 import CharacterPage from "../pages/CharacterPage";
@@ -12,8 +14,16 @@ import ChapterListPage from "../pages/ChapterListPage";
 
 export const router = createBrowserRouter([
   {
+    path: "/auth",
+    element: <AuthPage />,
+  },
+  {
     path: "/",
-    element: <App />,
+    element: (
+      <AuthGuard>
+        <App />
+      </AuthGuard>
+    ),
     children: [
       { index: true, element: <BookListPage /> },
       {
