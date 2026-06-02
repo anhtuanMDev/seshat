@@ -120,7 +120,7 @@ function showPopup(
 
 // ── Extension ─────────────────────────────────────────────────────────────
 interface MentionOptions {
-  getMentionItems: () => MentionItem[];
+  getMentionItems: (trigger: string) => MentionItem[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -139,16 +139,14 @@ export const Mention = Extension.create<MentionOptions, {}>({
       props: {
         decorations: (state: EditorState) => {
           const decorations: Decoration[] = [];
-          const mentionItems = getMentionItems();
-
-          if (!mentionItems || mentionItems.length === 0) {
-            return DecorationSet.empty;
+          // Pre-fetch lists for each trigger so we can sort them once
+          const triggers = ["@", "#", "%", "~", "^", "$"];
+          const listsByTrigger: Record<string, MentionItem[]> = {};
+          
+          for (const t of triggers) {
+            const items = getMentionItems(t) || [];
+            listsByTrigger[t] = [...items].sort((a, b) => b.name.length - a.name.length);
           }
-
-          // Sort by length descending to match longest names first
-          const sortedItems = [...mentionItems].sort(
-            (a, b) => b.name.length - a.name.length
-          );
 
           state.doc.descendants((node, pos) => {
             if (node.type.name === "text" && node.text) {
@@ -157,8 +155,14 @@ export const Mention = Extension.create<MentionOptions, {}>({
               let searchIdx = 0;
 
               while (searchIdx < text.length) {
-                const atIdx = text.indexOf("@", searchIdx);
-                if (atIdx === -1) break;
+                // Find next trigger character
+                const subStr = text.slice(searchIdx);
+                const match = subStr.match(/([@#%~^$])/);
+                if (!match || match.index === undefined) break;
+
+                const atIdx = searchIdx + match.index;
+                const trigger = match[1];
+                const sortedItems = listsByTrigger[trigger];
 
                 let matchedItem: MentionItem | null = null;
                 
@@ -208,6 +212,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
     let selectedIdx = 0;
     let currentItems: MentionItem[] = [];
     let currentRange: Range | null = null;
+    let currentTrigger = "";
 
     const suggestionPlugin = new Plugin({
       key: suggestionKey,
@@ -237,7 +242,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
             showPopup(
               currentItems,
               view.coordsAtPos(state.from),
-              (item) => insertMention(view, item, currentRange!),
+              (item) => insertMention(view, item, currentRange!, currentTrigger),
               selectedIdx,
             );
             return true;
@@ -248,14 +253,14 @@ export const Mention = Extension.create<MentionOptions, {}>({
             showPopup(
               currentItems,
               view.coordsAtPos(state.from),
-              (item) => insertMention(view, item, currentRange!),
+              (item) => insertMention(view, item, currentRange!, currentTrigger),
               selectedIdx,
             );
             return true;
           }
           if (event.key === "Enter" || event.key === "Tab") {
             if (currentItems[selectedIdx]) {
-              insertMention(view, currentItems[selectedIdx], currentRange!);
+              insertMention(view, currentItems[selectedIdx], currentRange!, currentTrigger);
               return true;
             }
           }
@@ -287,20 +292,22 @@ export const Mention = Extension.create<MentionOptions, {}>({
             const { selection } = state;
             const { $from } = selection;
 
-            // Find @query before cursor
+            // Find trigger query before cursor
             const textBefore = $from.parent.textContent.slice(
               0,
               $from.parentOffset,
             );
-            const match = /@([\w ]*)$/.exec(textBefore);
+            const match = /([@#%~^$])([\w ]*)$/.exec(textBefore);
 
             if (match) {
-              const query = match[1].toLowerCase();
+              const trigger = match[1];
+              const query = match[2].toLowerCase();
               const from = $from.pos - match[0].length;
               const to = $from.pos;
               currentRange = { from, to };
+              currentTrigger = trigger;
 
-              const mentionItems = getMentionItems();
+              const mentionItems = getMentionItems(trigger);
               const filtered = mentionItems.filter((x) =>
                 x.name.toLowerCase().startsWith(query),
               );
@@ -311,7 +318,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
               showPopup(
                 filtered,
                 coords,
-                (item) => insertMention(view, item, { from, to }),
+                (item) => insertMention(view, item, { from, to }, trigger),
                 selectedIdx,
               );
 
@@ -339,6 +346,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
               if (pluginState.active) {
                 hidePopup();
                 currentRange = null;
+                currentTrigger = "";
                 view.dispatch(
                   view.state.tr.setMeta(suggestionKey, {
                     active: false,
@@ -361,9 +369,9 @@ export const Mention = Extension.create<MentionOptions, {}>({
   },
 });
 
-function insertMention(view: EditorView, item: MentionItem, range: Range) {
+function insertMention(view: EditorView, item: MentionItem, range: Range, trigger: string) {
   const { state, dispatch } = view;
-  const mentionText = `@${item.name}`;
+  const mentionText = `${trigger}${item.name}`;
   const tr = state.tr.replaceWith(
     range.from,
     range.to,
@@ -377,6 +385,6 @@ function insertMention(view: EditorView, item: MentionItem, range: Range) {
   view.focus();
 }
 
-export function buildMentionExtension(getMentionItems: () => MentionItem[]) {
+export function buildMentionExtension(getMentionItems: (trigger: string) => MentionItem[]) {
   return Mention.configure({ getMentionItems });
 }

@@ -10,6 +10,9 @@ import { useController } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "@legendapp/state/react";
+import { appStore } from "../../store/appStore";
+import { useActiveBookIdx } from "../../hooks/useWorldStore";
 import type { Character, Event } from "../../lib/types";
 import type { Editor } from "@tiptap/core";
 import CharMentionTooltip from "./CharMentionTooltip";
@@ -196,29 +199,59 @@ function RichEditorCore({
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
 
-  // ── Mention list: pinned chars first, fall back to all ────────────────────
-  const mentionItems: MentionItem[] = (() => {
-    // Only offer pinned characters in @ if any are pinned, else all
-    const pinned =
-      pinnedCharIds.length > 0
-        ? characters.filter((c) => pinnedCharIds.includes(c.id))
-        : characters;
-    return pinned.map((c) => ({
-      id: c.id,
-      name: c.name,
-      color: c.color,
-      role: c.role,
-    }));
-  })();
+  const bookIdx = useActiveBookIdx();
+  const extraEntities = useSelector(() => {
+    if (bookIdx < 0)
+      return {
+        nations: [],
+        monsters: [],
+        ingredients: [],
+        techniques: [],
+        treasures: [],
+      };
+    const b = appStore.books[bookIdx];
+    return {
+      nations: b.nations?.get() || [],
+      monsters: b.monsters?.get() || [],
+      ingredients: b.ingredients?.get() || [],
+      techniques: b.techniques?.get() || [],
+      treasures: b.treasures?.get() || [],
+    };
+  });
 
-  // Keep a stable ref to the latest mentionItems so the extension can query it
-  // without needing to be re-initialized by Tiptap
-  const mentionItemsRef = useRef(mentionItems);
+  // Keep a stable ref to the latest dependencies so the mention getter
+  // doesn't suffer from stale closures (since Tiptap only configures it once)
+  const mentionDepsRef = useRef({ characters, pinnedCharIds, extraEntities });
   useEffect(() => {
-    mentionItemsRef.current = mentionItems;
-  }, [mentionItems]);
+    mentionDepsRef.current = { characters, pinnedCharIds, extraEntities };
+  }, [characters, pinnedCharIds, extraEntities]);
 
-  const getMentionItems = useCallback(() => mentionItemsRef.current, []);
+  // ── Mention list builder based on trigger ─────────────────────────────────
+  const getMentionItems = useCallback((trigger: string): MentionItem[] => {
+    const { characters, pinnedCharIds, extraEntities } = mentionDepsRef.current;
+    const items: MentionItem[] = [];
+
+    if (trigger === "@") {
+      // Original logic: Only offer pinned characters if any are pinned, else all
+      const pinned =
+        pinnedCharIds.length > 0
+          ? characters.filter((c) => pinnedCharIds.includes(c.id))
+          : characters;
+      pinned.forEach((c) => items.push({ id: c.id, name: c.name, color: c.color, role: c.role || "Character" }));
+    } else if (trigger === "#") {
+      extraEntities.nations.forEach((n) => items.push({ id: n.id, name: n.name, color: "#5e35b1", role: "Nation" }));
+    } else if (trigger === "%") {
+      extraEntities.monsters.forEach((m) => items.push({ id: m.id, name: m.name, color: "#d32f2f", role: "Monster" }));
+    } else if (trigger === "~") {
+      extraEntities.ingredients.forEach((i) => items.push({ id: i.id, name: i.name, color: "#388e3c", role: "Ingredient" }));
+    } else if (trigger === "^") {
+      extraEntities.techniques.forEach((t) => items.push({ id: t.id, name: t.name, color: "#0288d1", role: "Technique" }));
+    } else if (trigger === "$") {
+      extraEntities.treasures.forEach((t) => items.push({ id: t.id, name: t.name, color: "#fbc02d", role: "Treasure" }));
+    }
+
+    return items;
+  }, []);
 
   const editor = useEditor({
     extensions: [

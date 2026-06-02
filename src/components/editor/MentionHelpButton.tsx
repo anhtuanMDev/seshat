@@ -78,7 +78,7 @@ export default function MentionHelpButton() {
                   color: "var(--text-secondary)",
                 }}
               >
-                Character Mentions
+                World Mentions
               </span>
               <button
                 onClick={() => setOpen(false)}
@@ -105,8 +105,7 @@ export default function MentionHelpButton() {
                   marginBottom: 20,
                 }}
               >
-                Link characters directly inside your prose. Their names become
-                interactive — hover to inspect, click to navigate.
+                Link characters and world entities directly inside your prose. Using these triggers automatically generates interactive text.
               </p>
 
               <div
@@ -119,28 +118,38 @@ export default function MentionHelpButton() {
               >
                 <Tip
                   symbol="@"
-                  title="Type @ to summon"
-                  body="While writing, type @ followed by a character's name. A filtered list appears — use arrow keys or click to select."
+                  title="Mention Characters"
+                  body="Type @ to mention a character. The list is filtered to only show characters you've pinned in the reference panel (or all characters if none are pinned)."
                 />
                 <Tip
-                  symbol="◉"
-                  title="Filtered by pinned characters"
-                  body="The @ list shows only characters you've pinned in the reference panel. Pin them in the Characters tab on the right."
+                  symbol="#"
+                  title="Mention Nations & Locations"
+                  body="Type # to summon a list of nations, empires, hidden ruins, and tribes."
+                />
+                <Tip
+                  symbol="%"
+                  title="Mention Monsters"
+                  body="Type % to link terrifying beasts and world threats."
+                />
+                <Tip
+                  symbol="~"
+                  title="Mention Ingredients"
+                  body="Type ~ to reference rare herbs, metals, and alchemical items."
+                />
+                <Tip
+                  symbol="^"
+                  title="Mention Techniques"
+                  body="Type ^ to cite martial arts, spells, or forgotten lore."
+                />
+                <Tip
+                  symbol="$"
+                  title="Mention Treasures"
+                  body="Type $ to reference mythical artifacts and relics."
                 />
                 <Tip
                   symbol="◌"
-                  title="Hover to preview"
-                  body="Hover over any @mention in your prose to see that character's status — power tier, emotional state, wound — resolved to the chapter's current timeline position."
-                />
-                <Tip
-                  symbol="→"
-                  title="Click to navigate"
-                  body="Click an @mention to open the character's full sheet. If you have unsaved changes, you'll be asked whether to save first or discard."
-                />
-                <Tip
-                  symbol="⌚"
-                  title="Time-aware status"
-                  body="The tooltip shows the character's most recent status entry that falls within the chapter's pinned event timeframe — not necessarily their latest entry."
+                  title="Interactive Previews (Characters)"
+                  body="Hover over any @character mention to see their status resolved to this chapter's timeline. Click to navigate. (Interactive previews for other world entities are not yet available.)"
                 />
               </div>
 
@@ -160,7 +169,7 @@ export default function MentionHelpButton() {
                   }}
                 >
                   <strong>Tip:</strong> Pin the events this chapter covers first
-                  (Events tab → click to toggle). The tooltip will then show
+                  (Events tab → click to toggle). The character tooltip will then show
                   each character exactly as they were at that moment in the
                   story.
                 </p>
