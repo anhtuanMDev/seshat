@@ -9,6 +9,7 @@ export { default as CameraAltIcon } from "@mui/icons-material/CameraAlt";
 export { default as CenterFocusStrongIcon } from "@mui/icons-material/CenterFocusStrong";
 export { default as ChevronRightIcon } from "@mui/icons-material/ChevronRight";
 export { default as CloseIcon } from "@mui/icons-material/Close";
+export { default as CloudSyncIcon } from "@mui/icons-material/CloudSync";
 export { default as CrisisAlertIcon } from "@mui/icons-material/CrisisAlert";
 export { default as DarkModeIcon } from "@mui/icons-material/DarkMode";
 export { default as DeleteIcon } from "@mui/icons-material/Delete";

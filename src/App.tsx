@@ -8,16 +8,18 @@ import {
   useActiveBookIdx,
 } from "./hooks/useWorldStore";
 import { S, mkChar, mkEvent, uid } from "./lib/utils";
-import { SideItem } from "./components/ui";
+import { SideItem, Field, GhostButton } from "./components/ui";
+import { Modal } from "./components/ui/Modal";
 import {
   PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
   SportsKabaddiIcon, FileDownloadIcon, LightModeIcon,
-  DarkModeIcon, AddIcon,
+  DarkModeIcon, AddIcon, CloudSyncIcon
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useThemeHook";
+import { syncToGitHub, registerToGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
 import type { Chapter } from "./store/appStore";
 
@@ -112,6 +114,70 @@ export default function App() {
 
   const [showExport, setShowExport] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Login / Register Modal State
+  const [showLogin, setShowLogin] = useState(false);
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [loginUser, setLoginUser] = useState("");
+  const [loginCode, setLoginCode] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  const triggerSync = async (user: string, code: string) => {
+    try {
+      setIsSyncing(true);
+      await syncToGitHub(user, code);
+      alert("Synced successfully to your secure branch!");
+      setShowLogin(false);
+    } catch (err) {
+      alert("Sync failed: " + (err as Error).message);
+      if ((err as Error).message.includes("Unauthorized")) {
+        localStorage.removeItem("seshat-github-code");
+        setShowLogin(true); // Re-show login on auth failure
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSync = () => {
+    const savedUser = localStorage.getItem("seshat-github-user");
+    const savedCode = localStorage.getItem("seshat-github-code");
+    
+    if (!savedUser || !savedCode) {
+      setLoginUser(savedUser || "");
+      setLoginCode("");
+      setShowLogin(true);
+    } else {
+      triggerSync(savedUser, savedCode);
+    }
+  };
+
+  const submitAuth = async () => {
+    const u = loginUser.trim();
+    const c = loginCode.trim();
+    if (!u || !c) return;
+
+    if (isRegisterMode) {
+      try {
+        setIsRegistering(true);
+        await registerToGitHub(u, c);
+        alert(`Registered successfully! Welcome ${u}. Now syncing your data...`);
+        localStorage.setItem("seshat-github-user", u);
+        localStorage.setItem("seshat-github-code", c);
+        setIsRegisterMode(false);
+        triggerSync(u, c);
+      } catch (err) {
+        alert("Registration failed: " + (err as Error).message);
+      } finally {
+        setIsRegistering(false);
+      }
+    } else {
+      localStorage.setItem("seshat-github-user", u);
+      localStorage.setItem("seshat-github-code", c);
+      triggerSync(u, c);
+    }
+  };
 
   const worldNations = bookIdx >= 0 ? appStore.books[bookIdx].nations.get() : [];
   const worldTechniques = bookIdx >= 0 ? appStore.books[bookIdx].techniques.get() : [];
@@ -189,10 +255,26 @@ fontSize: 15,
           }}
         />
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <button
-              onClick={() => setShowExport(true)}
-              style={{ ...S.ghost, letterSpacing: 2, fontSize: 15, display: "flex", alignItems: "center", gap: 4 }}
-            >
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            style={{
+              ...S.ghost,
+              letterSpacing: 2,
+              fontSize: 15,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              opacity: isSyncing ? 0.5 : 1,
+            }}
+          >
+            <CloudSyncIcon sx={{ fontSize: 14 }} />
+            {isSyncing ? "Syncing..." : "Sync"}
+          </button>
+          <button
+            onClick={() => setShowExport(true)}
+            style={{ ...S.ghost, letterSpacing: 2, fontSize: 15, display: "flex", alignItems: "center", gap: 4 }}
+          >
             <FileDownloadIcon sx={{ fontSize: 14 }} />
             Export for AI
           </button>
@@ -485,6 +567,44 @@ fontSize: 15,
             />
           </div>
         </div>
+      )}
+      {/* ── Login/Register Modal ── */}
+      {showLogin && (
+        <Modal
+          title={isRegisterMode ? "Register New Account" : "Cloud Sync Login"}
+          onClose={() => { setShowLogin(false); setIsRegisterMode(false); }}
+          footer={
+            <>
+              <GhostButton onClick={() => setIsRegisterMode(!isRegisterMode)}>
+                {isRegisterMode ? "Switch to Login" : "Create Account"}
+              </GhostButton>
+              <GhostButton onClick={submitAuth} style={{ color: "var(--color-green)" }} disabled={isRegistering || isSyncing}>
+                {isRegisterMode ? (isRegistering ? "Registering..." : "Register") : "Login & Sync"}
+              </GhostButton>
+            </>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+            <p style={{ ...S.dim, marginBottom: 16 }}>
+              {isRegisterMode 
+                ? "Choose a unique username and a secure password to create your account and start syncing your world."
+                : "Enter your unique username and the secret access code to sync your world data to the cloud."}
+            </p>
+            <Field
+              label="Username (Branch Name)"
+              value={loginUser}
+              onChange={setLoginUser}
+              placeholder="e.g. alex"
+            />
+            <Field
+              label="Access Code"
+              value={loginCode}
+              onChange={setLoginCode}
+              placeholder="Enter secret code"
+              type="password"
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );
