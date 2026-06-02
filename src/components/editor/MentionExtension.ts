@@ -120,7 +120,7 @@ function showPopup(
 
 // ── Extension ─────────────────────────────────────────────────────────────
 interface MentionOptions {
-  mentionItems: MentionItem[];
+  getMentionItems: () => MentionItem[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -128,69 +128,77 @@ export const Mention = Extension.create<MentionOptions, {}>({
   name: "mention",
 
   addOptions() {
-    return { mentionItems: [] };
+    return { getMentionItems: () => [] };
   },
 
   addProseMirrorPlugins() {
-    const { mentionItems } = this.options;
+    const { getMentionItems } = this.options;
 
     // ── Decoration plugin (renders @Name spans) ───────────────────────────
     const decorationPlugin = new Plugin({
       props: {
-        decorations(state: EditorState) {
+        decorations: (state: EditorState) => {
           const decorations: Decoration[] = [];
+          const mentionItems = getMentionItems();
+
+          if (!mentionItems || mentionItems.length === 0) {
+            return DecorationSet.empty;
+          }
+
+          // Sort by length descending to match longest names first
+          const sortedItems = [...mentionItems].sort(
+            (a, b) => b.name.length - a.name.length
+          );
+
           state.doc.descendants((node, pos) => {
             if (node.type.name === "text" && node.text) {
               const text = node.text;
-              const re = /@(\w[\w\s]*?)(?=\s|$|[^a-zA-Z0-9_ ])/g;
-              let m: RegExpExecArray | null;
-              while ((m = re.exec(text)) !== null) {
-                const matched = m[0];
-                const item = mentionItems.find(
-                  (x) =>
-                    x.name.toLowerCase() === m![1].toLowerCase() ||
-                    matched.slice(1).toLowerCase() === x.name.toLowerCase(),
-                );
-                if (item) {
-                  decorations.push(
-                    Decoration.inline(
-                      pos + m.index,
-                      pos + m.index + matched.length,
-                      {
-                        class: "char-mention",
-                        "data-id": item.id,
-                        style: `color: ${item.color}; cursor: pointer;`,
-                      },
-                    ),
-                  );
+              const textLower = text.toLowerCase();
+              let searchIdx = 0;
+
+              while (searchIdx < text.length) {
+                const atIdx = text.indexOf("@", searchIdx);
+                if (atIdx === -1) break;
+
+                let matchedItem: MentionItem | null = null;
+                
+                for (const item of sortedItems) {
+                  const nameLen = item.name.length;
+                  const candidate = textLower.slice(atIdx + 1, atIdx + 1 + nameLen);
+                  
+                  if (candidate === item.name.toLowerCase()) {
+                    // Ensure it matches a boundary at the end (e.g. @Ali doesn't match @Alice)
+                    const nextChar = text[atIdx + 1 + nameLen];
+                    const isBoundary = !nextChar || /[^\w]/.test(nextChar);
+                    
+                    if (isBoundary) {
+                      matchedItem = item;
+                      break;
+                    }
+                  }
                 }
-              }
-              // Also match exact names with spaces
-              for (const item of mentionItems) {
-                const escaped = item.name.replace(
-                  /[.*+?^${}()|[\]\\]/g,
-                  "\\$&",
-                );
-                const nameRe = new RegExp(`@${escaped}`, "gi");
-                let nm: RegExpExecArray | null;
-                while ((nm = nameRe.exec(text)) !== null) {
-                  // Avoid double-decorating (already covered by simple \w+ match)
-                  if (!item.name.includes(" ")) continue;
+
+                if (matchedItem) {
+                  const matchLen = 1 + matchedItem.name.length;
                   decorations.push(
                     Decoration.inline(
-                      pos + nm.index,
-                      pos + nm.index + nm[0].length,
+                      pos + atIdx,
+                      pos + atIdx + matchLen,
                       {
                         class: "char-mention",
-                        "data-id": item.id,
-                        style: `color: ${item.color}; cursor: pointer;`,
-                      },
-                    ),
+                        "data-id": matchedItem.id,
+                        style: `color: ${matchedItem.color}; cursor: pointer;`,
+                      }
+                    )
                   );
+                  searchIdx = atIdx + matchLen;
+                } else {
+                  searchIdx = atIdx + 1;
                 }
               }
             }
           });
+          
           return DecorationSet.create(state.doc, decorations);
         },
       },
@@ -284,7 +292,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
               0,
               $from.parentOffset,
             );
-            const match = /@(\w[\w ]*)$/.exec(textBefore);
+            const match = /@([\w ]*)$/.exec(textBefore);
 
             if (match) {
               const query = match[1].toLowerCase();
@@ -292,6 +300,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
               const to = $from.pos;
               currentRange = { from, to };
 
+              const mentionItems = getMentionItems();
               const filtered = mentionItems.filter((x) =>
                 x.name.toLowerCase().startsWith(query),
               );
@@ -306,14 +315,23 @@ export const Mention = Extension.create<MentionOptions, {}>({
                 selectedIdx,
               );
 
-              view.dispatch(
-                state.tr.setMeta(suggestionKey, {
-                  active: true,
-                  query,
-                  from,
-                  to,
-                }),
-              );
+              const pluginState = suggestionKey.getState(view.state) as SuggestionState;
+              const needsUpdate = 
+                !pluginState.active || 
+                pluginState.query !== query || 
+                pluginState.from !== from || 
+                pluginState.to !== to;
+
+              if (needsUpdate) {
+                view.dispatch(
+                  state.tr.setMeta(suggestionKey, {
+                    active: true,
+                    query,
+                    from,
+                    to,
+                  }),
+                );
+              }
             } else {
               const pluginState = suggestionKey.getState(
                 view.state,
@@ -359,6 +377,6 @@ function insertMention(view: EditorView, item: MentionItem, range: Range) {
   view.focus();
 }
 
-export function buildMentionExtension(mentionItems: MentionItem[]) {
-  return Mention.configure({ mentionItems });
+export function buildMentionExtension(getMentionItems: () => MentionItem[]) {
+  return Mention.configure({ getMentionItems });
 }

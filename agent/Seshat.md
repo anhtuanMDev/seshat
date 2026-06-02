@@ -783,6 +783,7 @@ When generating Legend State code:
 - Prefer react-hook-form for form state; per-field `.set()` to store on save
 - For React Compiler safety: use `useWatch({ control, name })` instead of `watch()`
 - **Rules of Hooks**: Always call hooks (`useWatch`, `useState`, etc.) unconditionally before any early returns (e.g. `if (!entity) return;`).
+- **Ref Assignments**: Never mutate a `useRef`'s `.current` value directly during the component render phase. Always assign refs inside a `useEffect` or `useLayoutEffect` to prevent React Compiler errors (`Cannot update ref during render`).
 - Extract sub-components for array items (each calls `useWatch` with a static index)
 - For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data. Use `// eslint-disable-next-line react-hooks/set-state-in-effect` if you must derive state in an effect here.
 - `any` is banned — no `as any`, no `: any`, no eslint-disable for `no-explicit-any`

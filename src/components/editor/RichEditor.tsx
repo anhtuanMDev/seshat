@@ -211,6 +211,15 @@ function RichEditorCore({
     }));
   })();
 
+  // Keep a stable ref to the latest mentionItems so the extension can query it
+  // without needing to be re-initialized by Tiptap
+  const mentionItemsRef = useRef(mentionItems);
+  useEffect(() => {
+    mentionItemsRef.current = mentionItems;
+  }, [mentionItems]);
+
+  const getMentionItems = useCallback(() => mentionItemsRef.current, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -220,7 +229,8 @@ function RichEditorCore({
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Typography,
       Placeholder.configure({ placeholder: placeholder || "Write here…" }),
-      buildMentionExtension(mentionItems),
+      // eslint-disable-next-line react-hooks/refs
+      buildMentionExtension(getMentionItems),
     ],
     content,
     onUpdate: ({ editor }) => {
