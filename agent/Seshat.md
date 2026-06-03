@@ -620,21 +620,21 @@ TypeError: appStore.books[idx].events.get(...).find(...)?.get is not a function
 **Incorrect:**
 ```ts
 const event = useSelector(() =>
-  (appStore.books[idx].events.get() as any[]).find((e) => e.id === id)?.get(), // BUG
+  appStore.books[idx].events.get().find((e) => e.id === id)?.get(), // BUG
 );
 ```
 
 **Correct (for read-only access):**
 ```ts
 const event = useSelector(() =>
-  (appStore.books[idx].events.get() as any[]).find((e) => e.id === id),
+  appStore.books[idx].events.get().find((e) => e.id === id),
 );
 ```
 
 **Correct (for updates via save, get index too):**
 ```ts
 const event = useSelector(() =>
-  (appStore.books[idx].events.get() as any[]).find((e) => e.id === id),
+  appStore.books[idx].events.get().find((e) => e.id === id),
 );
 const eventIdx = useSelector(() =>
   appStore.books[idx].events.get().findIndex((e) => e.id === id),
@@ -788,6 +788,7 @@ When generating Legend State code:
 - Extract sub-components for array items (each calls `useWatch` with a static index)
 - For character attributes in EventPage, keep a separate `useState<Record<string, EventAttributes>>` and write on save alongside form data. Use `// eslint-disable-next-line react-hooks/set-state-in-effect` if you must derive state in an effect here.
 - `any` is banned — no `as any`, no `: any`, no eslint-disable for `no-explicit-any`
+- **Error Handling**: When catching an error (e.g. from an API call), you MUST `console.error` it to aid in debugging AND show a user-friendly toast via `showToast("...", "error")` to inform the client.
 - When extracting generic properties like `control` or `name` to pass the rest of the props down, use `void control; void name;` to safely bypass `@typescript-eslint/no-unused-vars` warnings without disabling the rule.
 - Pure display leaf components (primitives-only props) should be wrapped in `React.memo`
 - `scoreFighter` is in `src/lib/scoreFighter.ts` — import it directly; do not replicate the logic in tests

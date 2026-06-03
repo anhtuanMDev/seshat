@@ -1,4 +1,4 @@
-import { appStore } from "../store/appStore";
+import { appStore, type BookData } from "../store/appStore";
 
 export const syncToGitHub = async (token: string): Promise<void> => {
   try {
@@ -66,6 +66,21 @@ export const loginToGitHub = async (username: string, accessCode: string): Promi
     return resData.token;
   } catch (error) {
     console.error("Failed to login:", error);
+    throw error;
+  }
+};
+
+export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
+  try {
+    const response = await fetch(`/api/github/load?token=${encodeURIComponent(token)}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json() as { books: BookData[] };
+    return data.books;
+  } catch (error) {
+    console.error("Failed to load from GitHub:", error);
     throw error;
   }
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { appStore, mkBook } from "../store/appStore";
 import { S } from "../lib/utils";
@@ -6,7 +6,7 @@ import { AutoStoriesIcon, AddIcon, LightModeIcon, DarkModeIcon, CloseIcon } from
 import { Modal } from "../components/ui/Modal";
 import { useTheme } from "../hooks/useThemeHook";
 import { useBooks, useActiveBookId } from "../hooks/useWorldStore";
-import { syncToGitHub } from "../lib/githubSync";
+import { syncToGitHub, loadFromGitHub } from "../lib/githubSync";
 import { showToast } from "../store/toastStore";
 import { CircularProgress } from "@mui/material";
 
@@ -21,9 +21,40 @@ export default function BookListPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newBookTitle, setNewBookTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isLoadingBooks, setIsLoadingBooks] = useState(false);
+
+  useEffect(() => {
+    const loadBooks = async () => {
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (token && books.length === 0) {
+        setIsLoadingBooks(true);
+        try {
+          const cloudBooks = await loadFromGitHub(token);
+          if (cloudBooks && cloudBooks.length > 0) {
+            appStore.books.set(cloudBooks);
+            showToast("Books loaded from cloud.", "success");
+          }
+        } catch (error) {
+          console.error("Failed to load books from cloud:", error);
+          showToast("Failed to load books from cloud.", "error");
+        } finally {
+          setIsLoadingBooks(false);
+        }
+      }
+    };
+    loadBooks();
+  }, [books.length]); // Only run once on mount or if books length is zero initially
 
   const confirmCreateBook = async () => {
-    if (!newBookTitle.trim()) return;
+    const title = newBookTitle.trim();
+    if (!title) return;
+
+    // Check for uniqueness
+    if (books.some(b => b.title.toLowerCase() === title.toLowerCase())) {
+      showToast("A book with this name already exists.", "error");
+      return;
+    }
+
     try {
       setIsCreating(true);
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
@@ -32,7 +63,7 @@ export default function BookListPage() {
         navigate("/auth");
         return;
       }
-      const book = mkBook(newBookTitle.trim());
+      const book = mkBook(title);
       appStore.books.push(book);
       
       // Initialize the book directory in GitHub instantly
@@ -43,18 +74,30 @@ export default function BookListPage() {
       setNewBookTitle("");
       navigate(`/book/${book.id}/world`);
     } catch (error) {
+      console.error("Failed to initialize book in cloud:", error);
       showToast("Failed to initialize book in cloud: " + (error as Error).message, "error");
     } finally {
       setIsCreating(false);
     }
   };
 
-  const deleteBook = (bookId: string) => {
+  const deleteBook = async (bookId: string) => {
     if (bookId === activeBookId) {
       appStore.activeBookId.set(null);
     }
     appStore.books.set((prev) => prev.filter((b) => b.id !== bookId));
     setConfirmDelete(null);
+
+    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    if (token) {
+      try {
+        await syncToGitHub(token);
+        showToast("Book deleted from cloud.", "success");
+      } catch (error) {
+        console.error("Failed to sync deletion:", error);
+        showToast("Failed to sync deletion: " + (error as Error).message, "error");
+      }
+    }
   };
 
   const startRename = (book: { id: string; title: string }) => {
@@ -62,15 +105,38 @@ export default function BookListPage() {
     setEditValue(book.title);
   };
 
-  const commitRename = () => {
-    if (editingId && editValue.trim()) {
+  const commitRename = async () => {
+    const newTitle = editValue.trim();
+    let didRename = false;
+    if (editingId && newTitle) {
       const idx = books.findIndex((b) => b.id === editingId);
       if (idx >= 0) {
-        appStore.books[idx].title.set(editValue.trim());
+        const currentTitle = books[idx].title;
+        if (currentTitle !== newTitle) {
+          if (books.some(b => b.id !== editingId && b.title.toLowerCase() === newTitle.toLowerCase())) {
+            showToast("A book with this name already exists.", "error");
+            return;
+          }
+          appStore.books[idx].title.set(newTitle);
+          didRename = true;
+        }
       }
     }
     setEditingId(null);
     setEditValue("");
+
+    if (didRename) {
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (token) {
+        try {
+          await syncToGitHub(token);
+          showToast("Book renamed in cloud.", "success");
+        } catch (error) {
+          console.error("Failed to sync rename:", error);
+          showToast("Failed to sync rename: " + (error as Error).message, "error");
+        }
+      }
+    }
   };
 
   return (
@@ -99,7 +165,12 @@ export default function BookListPage() {
       <h1 style={{ fontSize: 18, letterSpacing: 6, textTransform: "uppercase", color: "var(--text-logo)", margin: "0 0 4px", fontWeight: 400 }}>Seshat</h1>
       <p style={{ ...S.dim, marginBottom: 32 }}>World-building for writers and game designers</p>
 
-      {books.length === 0 ? (
+      {isLoadingBooks ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 24 }}>
+          <CircularProgress size={24} sx={{ color: "var(--text-secondary)" }} />
+          <p style={{ ...S.dim }}>Loading books from cloud...</p>
+        </div>
+      ) : books.length === 0 ? (
         <div style={{ textAlign: "center" }}>
           <p style={{ ...S.dim, fontStyle: "italic", marginBottom: 20 }}>No books yet. Create one to get started.</p>
           <button onClick={() => setShowCreateModal(true)} style={{ ...S.pill, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "8px 20px" }}>
