@@ -3,6 +3,8 @@ import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
+import { showToast } from "../store/toastStore";
+import { updateFileOnGitHub } from "../lib/githubSync";
 import {
   useEvents,
   useCharacters,
@@ -50,7 +52,7 @@ export default function ChapterPage() {
     );
   });
 
-  const { register, handleSubmit, control, reset, formState } =
+  const { register, control, reset, formState, getValues } =
     useForm<ChapterForm>({
       defaultValues: {
         number: "",
@@ -88,8 +90,9 @@ export default function ChapterPage() {
 
   const body = useWatch({ control, name: "body" });
 
-  const onSubmit = handleSubmit((data: ChapterForm) => {
-    if (bookIdx < 0) return;
+  const onSubmit = async () => {
+    const data = getValues();
+    if (bookIdx < 0 || !bookId || !id || chapterIdx < 0) return;
     const ch = appStore.books[bookIdx].chapters[chapterIdx];
     ch.number.set(data.number);
     ch.title.set(data.title);
@@ -97,7 +100,29 @@ export default function ChapterPage() {
     ch.synopsis.set(data.synopsis);
     ch.body.set(data.body);
     ch.notes.set(data.notes);
-  });
+    
+    // Background delta sync
+    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    if (token) {
+      try {
+        const payload = {
+          id: id,
+          order: ch.order.get(),
+          number: data.number,
+          title: data.title,
+          timeRef: data.timeRef,
+          synopsis: data.synopsis,
+          body: data.body,
+          notes: data.notes,
+        };
+        await updateFileOnGitHub(token, bookId, `chapters/chapter_${id}.json`, JSON.stringify(payload, null, 2));
+        showToast("Chapter synced to cloud", "success");
+      } catch (err: any) {
+        console.error(err);
+        showToast("Failed to sync chapter to cloud", "error");
+      }
+    }
+  };
 
   // Keep a stable ref for save so RichEditor's onSave doesn't go stale
   const saveRef = useRef<() => void>(() => {});

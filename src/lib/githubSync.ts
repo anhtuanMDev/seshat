@@ -92,10 +92,52 @@ export const loadBookFromGitHub = async (token: string, bookId: string): Promise
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    const data = await response.json() as any;
-    return data.book || (data.books && data.books[0]);
+    const data = (await response.json()) as { book?: BookData; books?: BookData[] };
+    const bookData = data.book || (data.books && data.books[0]);
+    if (!bookData) throw new Error("No book data found in response");
+    return bookData;
   } catch (error) {
     console.error("Failed to load book from GitHub:", error);
+    throw error;
+  }
+};
+
+export const updateFileOnGitHub = async (token: string, bookId: string, path: string, content: string): Promise<void> => {
+  try {
+    const response = await fetch("/api/github/updateFile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token, bookId, path, content }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Failed to update ${path} on GitHub:`, error);
+    throw error;
+  }
+};
+
+export const updateFilesOnGitHub = async (token: string, bookId: string, files: { path: string; content: string }[]): Promise<void> => {
+  try {
+    const response = await fetch("/api/github/updateFiles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token, bookId, files }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Failed to update files on GitHub:`, error);
     throw error;
   }
 };

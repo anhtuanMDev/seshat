@@ -35,6 +35,8 @@ import {
   mkTrauma,
 } from "../lib/utils";
 import { appStore } from "../store/appStore";
+import { showToast } from "../store/toastStore";
+import { updateFileOnGitHub } from "../lib/githubSync";
 
 // ── Modal state type ──────────────────────────────────────────────────────
 type ModalKind =
@@ -61,7 +63,7 @@ export default function CharacterPage() {
       .findIndex((c) => c.id === id);
   });
 
-  const { register, handleSubmit, control, reset, setValue, getValues } =
+  const { register, control, reset, setValue, getValues } =
     useForm<CharacterForm>({
       defaultValues: {
         name: "",
@@ -121,8 +123,9 @@ export default function CharacterPage() {
     );
   }
 
-  const onSubmit = (data: CharacterForm) => {
-    if (bookIdx < 0) return;
+  const onSubmit = async () => {
+    const data = getValues();
+    if (bookIdx < 0 || idx < 0) return;
     const c = appStore.books[bookIdx].characters[idx];
     c.name.set(data.name);
     c.role.set(data.role);
@@ -139,6 +142,37 @@ export default function CharacterPage() {
     c.conditions.set(data.conditions);
     c.achievements.set(data.achievements);
     c.losses.set(data.losses);
+
+    // API delta sync
+    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    const bookId = appStore.activeBookId.get();
+    if (token && id && bookId) {
+      try {
+        const payload = {
+          id: id,
+          color: char.color,
+          name: data.name,
+          role: data.role,
+          archetype: data.archetype,
+          coreWound: data.coreWound,
+          coreFear: data.coreFear,
+          coreDesire: data.coreDesire,
+          philosophy: data.philosophy,
+          secrets: data.secrets,
+          arcStart: data.arcStart,
+          arcEnd: data.arcEnd,
+          statusTimeline: data.statusTimeline,
+          traumas: data.traumas,
+          conditions: data.conditions,
+          achievements: data.achievements,
+          losses: data.losses,
+        };
+        await updateFileOnGitHub(token, bookId, `characters/char_${id}.json`, JSON.stringify(payload, null, 2));
+        showToast("Character synced to cloud", "success");
+      } catch {
+        showToast("Failed to sync character to cloud", "error");
+      }
+    }
   };
 
   // ── Array helpers ─────────────────────────────────────────────────────
@@ -187,7 +221,7 @@ export default function CharacterPage() {
 
   const closeModal = () => {
     setModal(null);
-    handleSubmit(onSubmit)();
+    onSubmit();
   };
 
   return (
@@ -229,7 +263,7 @@ export default function CharacterPage() {
           />
         </div>
         <button
-          onClick={handleSubmit(onSubmit)}
+          onClick={onSubmit}
           style={{
             ...S.ghost,
             fontSize: 11,

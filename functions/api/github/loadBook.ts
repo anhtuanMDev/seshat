@@ -1,4 +1,4 @@
-import { verifyToken } from "./sync";
+import { verifyToken } from "./authUtils";
 
 export async function onRequestGet({ request, env }: { request: Request; env: Record<string, string> }) {
   const url = new URL(request.url);
@@ -20,8 +20,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
 
   try {
     const payload = await verifyToken(token, env.AUTH_SECRET);
-    if (!payload || !payload.u) return new Response("Invalid token", { status: 401 });
-    const username = payload.u as string;
+    if (!payload || !payload.username) return new Response("Invalid token", { status: 401 });
+    const username = payload.username as string;
     const branchName = `user-${username}`;
 
     const branchRes = await fetch(`${baseUrl}/git/refs/heads/${branchName}`, { headers });

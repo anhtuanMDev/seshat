@@ -1,6 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
+import { showToast } from "../store/toastStore";
+import { updateFileOnGitHub } from "../lib/githubSync";
 import { useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field } from "../components/ui";
@@ -43,7 +45,7 @@ export default function EventPage() {
     {},
   );
 
-  const { register, handleSubmit, control, reset, setValue, getValues } = useForm<EventForm>({
+  const { register, control, reset, setValue, getValues } = useForm<EventForm>({
     defaultValues: {
       title: "",
       time: 1,
@@ -113,8 +115,9 @@ export default function EventPage() {
 
 
 
-  const onSubmit = (data: EventForm) => {
-    if (bookIdx < 0) return;
+  const onSubmit = async () => {
+    const data = getValues();
+    if (bookIdx < 0 || eventIdx < 0) return;
     const ev = appStore.books[bookIdx].events[eventIdx];
     ev.title.set(data.title);
     ev.time.set(data.time);
@@ -138,6 +141,31 @@ export default function EventPage() {
         });
       }
     });
+
+    // API delta sync
+    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    const bookId = appStore.activeBookId.get();
+    if (token && id && bookId) {
+      try {
+        const payload = {
+          id: id,
+          title: data.title,
+          time: data.time,
+          type: data.type,
+          chapters: data.chapters.split("\n").map((s: string) => s.trim()).filter(Boolean),
+          startDate: data.startDate,
+          endDate: data.endDate,
+          setting: data.setting,
+          description: data.description,
+          consequence: data.consequence,
+          characters: data.characters,
+        };
+        await updateFileOnGitHub(token, bookId, `events/event_${id}.json`, JSON.stringify(payload, null, 2));
+        showToast("Event synced to cloud", "success");
+      } catch {
+        showToast("Failed to sync event to cloud", "error");
+      }
+    }
   };
 
 
@@ -165,7 +193,7 @@ export default function EventPage() {
           }}
         />
         <button
-          onClick={handleSubmit(onSubmit)}
+          onClick={onSubmit}
           title="Save changes"
           style={{
             ...S.ghost,

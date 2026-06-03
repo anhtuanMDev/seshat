@@ -849,3 +849,31 @@ If you visit the Vite port directly, your API calls will fail with 404s because 
 
 ### Secret Management
 For local testing, backend secrets (like `GITHUB_TOKEN`, `AUTH_SECRET`) must be placed in a `.dev.vars` file in the project root. Cloudflare Workers do *not* read standard `.env` files for backend execution.
+
+## 14. Authentication & Cloud Sync
+
+The application uses Cloudflare Pages Functions to proxy communication with a GitHub repository, enabling a multi-user database architecture.
+
+### User Isolation (Branching)
+Instead of storing all data in a single repository `main` branch, every user gets their own dedicated Git branch (e.g., `user-{username}`).
+- Login generates a secure JWT token containing the username (expires in 7 days).
+- All `/api/github/*` routes require this token.
+- The Cloudflare Worker verifies the token and dynamically reads/writes to `user-{username}`, strictly isolating each user's data.
+
+### Granular File Structure
+Data inside the Git repository is broken down into modular JSON files rather than a single monolithic JSON file.
+- `books/book_{id}/book.json` (metadata)
+- `books/book_{id}/index.json` (manifest mapping IDs to titles)
+- `books/book_{id}/characters/char_{id}.json`
+- `books/book_{id}/events/event_{id}.json`
+- `books/book_{id}/chapters/chapter_{id}.json`
+- `books/book_{id}/world/world.json` (and subdirectories for nations, monsters, etc.)
+
+### Delta Syncing
+The save logic strictly adheres to delta syncing to preserve API rate limits and minimize network payloads:
+- **`updateFile`**: Targets a single granular JSON file (e.g. `chapters/chapter_{id}.json`) and creates a commit. Used by Chapter, Character, and Event pages.
+- **`updateFiles`**: Bundles multiple files together into a single atomic commit. Used by the World page (which updates `world.json` and associated entities simultaneously).
+- Saves bypass `react-hook-form`'s built-in `handleSubmit` to prevent blocking; they use `getValues()` directly to retrieve the form data and POST to the Cloudflare Functions.
+
+### Loading Book (`loadBook`)
+Fetches all blobs recursively via the GitHub Tree API for the specified `books/book_{id}/` directory and stitches them together into a complete LegendState object before rendering.

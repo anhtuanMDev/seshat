@@ -1,4 +1,6 @@
 import { appStore } from "../store/appStore";
+import { showToast } from "../store/toastStore";
+import { updateFilesOnGitHub } from "../lib/githubSync";
 import { useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, mkNation, mkNationConnection, mkMonster, mkTechnique, mkIngredient, mkTreasure } from "../lib/utils";
 import { Field, Section, GhostButton } from "../components/ui";
@@ -18,7 +20,7 @@ import type { NationConnection } from "../lib/types";
 export default function WorldPage() {
   const bookIdx = useActiveBookIdx();
 
-  const { register, handleSubmit, control, reset, setValue, getValues } = useForm<WorldForm>({
+  const { register, control, reset, setValue, getValues } = useForm<WorldForm>({
     defaultValues: {
       title: "", synopsis: "", setting: "", themes: "", rules: "",
       nations: [], techniques: [], ingredients: [], monsters: [], treasures: [],
@@ -49,18 +51,56 @@ export default function WorldPage() {
   const monsters = useWatch({ control, name: "monsters" }) || [];
   const treasures = useWatch({ control, name: "treasures" }) || [];
 
-  const onSubmit = (data: WorldForm) => {
-    if (bookIdx < 0) return;
-    appStore.books[bookIdx].title.set(data.title);
-    appStore.books[bookIdx].synopsis.set(data.synopsis);
-    appStore.books[bookIdx].setting.set(data.setting);
-    appStore.books[bookIdx].themes.set(data.themes);
-    appStore.books[bookIdx].rules.set(data.rules);
-    appStore.books[bookIdx].nations.set(data.nations);
-    appStore.books[bookIdx].techniques.set(data.techniques);
-    appStore.books[bookIdx].ingredients.set(data.ingredients);
-    appStore.books[bookIdx].monsters.set(data.monsters);
-    appStore.books[bookIdx].treasures.set(data.treasures);
+  const onSubmit = async (data: WorldForm) => {
+    try {
+      if (bookIdx < 0) return;
+      appStore.books[bookIdx].title.set(data.title || "");
+      appStore.books[bookIdx].synopsis.set(data.synopsis || "");
+      appStore.books[bookIdx].setting.set(data.setting || "");
+      appStore.books[bookIdx].themes.set(data.themes || "");
+      appStore.books[bookIdx].rules.set(data.rules || "");
+      appStore.books[bookIdx].nations.set(data.nations || []);
+      appStore.books[bookIdx].techniques.set(data.techniques || []);
+      appStore.books[bookIdx].ingredients.set(data.ingredients || []);
+      appStore.books[bookIdx].monsters.set(data.monsters || []);
+      appStore.books[bookIdx].treasures.set(data.treasures || []);
+
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      const bookId = appStore.activeBookId.get();
+      if (token && bookId) {
+        const files: { path: string; content: string }[] = [];
+        
+        files.push({
+          path: "book.json",
+          content: JSON.stringify({
+            id: bookId,
+            title: data.title || "",
+            synopsis: data.synopsis || "",
+            setting: data.setting || "",
+            themes: data.themes || "",
+            rules: data.rules || "",
+          }, null, 2)
+        });
+        
+        files.push({
+          path: "world/world.json",
+          content: JSON.stringify({ id: bookId, title: data.title || "" }, null, 2)
+        });
+
+        (data.nations || []).forEach(n => files.push({ path: `world/nations/nation_${n.id}.json`, content: JSON.stringify(n, null, 2) }));
+        (data.techniques || []).forEach(t => files.push({ path: `world/techniques/technique_${t.id}.json`, content: JSON.stringify(t, null, 2) }));
+        (data.ingredients || []).forEach(i => files.push({ path: `world/ingredients/ingredient_${i.id}.json`, content: JSON.stringify(i, null, 2) }));
+        (data.monsters || []).forEach(m => files.push({ path: `world/monsters/monster_${m.id}.json`, content: JSON.stringify(m, null, 2) }));
+        (data.treasures || []).forEach(tr => files.push({ path: `world/treasures/treasure_${tr.id}.json`, content: JSON.stringify(tr, null, 2) }));
+
+        await updateFilesOnGitHub(token, bookId, files);
+        showToast("World synced to cloud", "success");
+      }
+    } catch (err) {
+      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      showToast("Error saving world: " + errorMessage, "error");
+    }
   };
 
   const addItem = (field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures", mk: () => Nation | Technique | Ingredient | Monster | Treasure) => {
@@ -91,7 +131,7 @@ export default function WorldPage() {
     <div ref={ref}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
         <input {...register("title")} style={{ ...S.input, fontSize: 22, border: "none", padding: 0, flex: 1, color: "var(--text-primary)" }} />
-        <button onClick={handleSubmit(onSubmit)} title="Save changes" style={{ ...S.ghost, fontSize: 11, letterSpacing: 1, color: "var(--color-green)", flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}><SaveIcon sx={{ fontSize: 12 }} />save</button>
+        <button onClick={() => onSubmit(getValues())} title="Save changes" style={{ ...S.ghost, fontSize: 11, letterSpacing: 1, color: "var(--color-green)", flexShrink: 0, display: "flex", alignItems: "center", gap: 3 }}><SaveIcon sx={{ fontSize: 12 }} />save</button>
       </div>
 
       <Field label="Synopsis / premise" name="synopsis" control={control} multi rows={4} placeholder="What is this world? What is the central tension?" />

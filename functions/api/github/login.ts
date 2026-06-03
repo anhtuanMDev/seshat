@@ -35,7 +35,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     const getJson = await usersRes.json() as { content: string };
-    const decodedContent = decodeURIComponent(escape(atob(getJson.content)));
+    const decodedContent = decodeURIComponent(escape(atob(getJson.content.replace(/\n/g, ""))));
     const validUsers = JSON.parse(decodedContent);
 
     const userEntry = validUsers[cleanUsername];
