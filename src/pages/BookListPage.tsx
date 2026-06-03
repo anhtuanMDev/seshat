@@ -26,24 +26,47 @@ export default function BookListPage() {
   useEffect(() => {
     const loadBooks = async () => {
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
-      if (token && books.length === 0) {
-        setIsLoadingBooks(true);
+      if (token) {
+        const isFirstLoad = books.length === 0;
+        if (isFirstLoad) {
+          setIsLoadingBooks(true);
+        }
         try {
           const cloudBooks = await loadFromGitHub(token);
           if (cloudBooks && cloudBooks.length > 0) {
-            appStore.books.set(cloudBooks);
-            showToast("Books loaded from cloud.", "success");
+            appStore.books.set((prevBooks) => {
+              const newBooks = [...(prevBooks || [])].filter(Boolean); // Filter out any corrupt undefined/null items
+              for (const cb of cloudBooks) {
+                const existingIdx = newBooks.findIndex(b => b && b.id === cb.id);
+                if (existingIdx >= 0) {
+                  // Merge basic metadata, keep local characters/events/etc
+                  newBooks[existingIdx] = { 
+                    ...newBooks[existingIdx], 
+                    title: cb.title
+                  };
+                } else {
+                  // Initialize a complete BookData structure, but mark it as NOT fully loaded
+                  newBooks.push({ 
+                    ...mkBook(cb.title), 
+                    id: cb.id,
+                    isFullyLoaded: false
+                  });
+                }
+              }
+              return newBooks;
+            });
+            if (isFirstLoad) showToast("Books loaded from cloud.", "success");
           }
         } catch (error) {
-          console.error("Failed to load books from cloud:", error);
-          showToast("Failed to load books from cloud.", "error");
+          console.error("Failed to sync books from cloud:", error);
+          if (isFirstLoad) showToast("Failed to load books from cloud.", "error");
         } finally {
-          setIsLoadingBooks(false);
+          if (isFirstLoad) setIsLoadingBooks(false);
         }
       }
     };
     loadBooks();
-  }, [books.length]); // Only run once on mount or if books length is zero initially
+  }, []); // Only run exactly once when BookListPage mounts
 
   const confirmCreateBook = async () => {
     const title = newBookTitle.trim();
@@ -188,7 +211,9 @@ export default function BookListPage() {
             </button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {books.map((book: { id: string; title: string }) => (
+            {books.map((book: { id: string; title: string }) => {
+              if (!book) return null;
+              return (
               <div key={book.id}>
                 <div
                   onClick={() => {
@@ -280,7 +305,8 @@ export default function BookListPage() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

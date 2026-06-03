@@ -84,3 +84,18 @@ export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
     throw error;
   }
 };
+
+export const loadBookFromGitHub = async (token: string, bookId: string): Promise<BookData> => {
+  try {
+    const response = await fetch(`/api/github/loadBook?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json() as any;
+    return data.book || (data.books && data.books[0]);
+  } catch (error) {
+    console.error("Failed to load book from GitHub:", error);
+    throw error;
+  }
+};

@@ -109,6 +109,7 @@ export interface BookData {
   events: Event[];
   characters: Character[];
   chapters: Chapter[];
+  isFullyLoaded?: boolean;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 8);
@@ -116,6 +117,7 @@ const uid = () => Math.random().toString(36).slice(2, 8);
 export const mkBook = (title: string): BookData => ({
   id: uid(),
   title,
+  isFullyLoaded: true,
   synopsis: "",
   setting: "",
   themes: "",

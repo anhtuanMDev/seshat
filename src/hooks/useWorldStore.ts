@@ -3,12 +3,12 @@ import { appStore } from "../store/appStore";
 
 export const useActiveBookIdx = () => useSelector(() => {
   const activeId = appStore.activeBookId.get();
-  return appStore.books.get().findIndex(b => b.id === activeId);
+  return (appStore.books.get() || []).findIndex(b => b && b.id === activeId);
 });
 
 export const useActiveBookId = () => useSelector(() => appStore.activeBookId.get());
 
-export const useBooks = () => useSelector(() => appStore.books.get());
+export const useBooks = () => useSelector(() => (appStore.books.get() || []).filter(Boolean));
 
 export const useWorldTitle = () => {
   const idx = useActiveBookIdx();

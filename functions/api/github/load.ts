@@ -45,9 +45,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const treeData = await treeRes.json() as { tree: { path: string; sha: string; type: string }[] };
 
     // 3. Reconstruct books
-    // We will only download what we need. For a full sync, we fetch all blob files in books/...
-    const blobs = treeData.tree.filter(f => f.type === "blob" && f.path.startsWith("books/"));
-    
+    // To save bandwidth and time, we ONLY download the basic book metadata (book.json) for the list view.
+    // The individual book details will be loaded on demand.
+    const blobs = treeData.tree.filter(f => f.type === "blob" && f.path.startsWith("books/") && f.path.endsWith("/book.json"));
     // Cloudflare Workers can fetch up to 50 concurrent requests easily, let's do it in chunks of 10 to be safe.
     const fileContents: Record<string, string> = {};
     for (let i = 0; i < blobs.length; i += 10) {
@@ -79,9 +79,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       
       if (!booksMap[bookId]) {
         booksMap[bookId] = {
-          id: bookId, title: "Unknown", synopsis: "", setting: "", themes: "", rules: "",
-          nations: [], techniques: [], ingredients: [], monsters: [], treasures: [],
-          characters: [], chapters: [], events: []
+          id: bookId, title: "Unknown"
         };
       }
       
@@ -95,26 +93,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
       if (path.endsWith("book.json")) {
         book.title = data.title;
-        book.synopsis = data.synopsis || "";
-        book.setting = data.setting || "";
-        book.themes = data.themes || "";
-        book.rules = data.rules || "";
-      } else if (path.includes("/world/nations/")) {
-        (book.nations as unknown[]).push(data);
-      } else if (path.includes("/world/monsters/")) {
-        (book.monsters as unknown[]).push(data);
-      } else if (path.includes("/world/treasures/")) {
-        (book.treasures as unknown[]).push(data);
-      } else if (path.includes("/world/techniques/")) {
-        (book.techniques as unknown[]).push(data);
-      } else if (path.includes("/world/ingredients/")) {
-        (book.ingredients as unknown[]).push(data);
-      } else if (path.includes("/characters/")) {
-        (book.characters as unknown[]).push(data);
-      } else if (path.includes("/chapters/")) {
-        (book.chapters as unknown[]).push(data);
-      } else if (path.includes("/events/")) {
-        (book.events as unknown[]).push(data);
       }
     }
 

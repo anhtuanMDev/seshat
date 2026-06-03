@@ -1,8 +1,6 @@
 import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
-import { Snackbar, Alert } from "@mui/material";
-import { useSelector } from "@legendapp/state/react";
 import { appStore } from "./store/appStore";
-import { toastStore, hideToast, showToast } from "./store/toastStore";
+import { showToast } from "./store/toastStore";
 import {
   useEvents,
   useCharacters,
@@ -21,7 +19,7 @@ import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useThemeHook";
-import { syncToGitHub } from "./lib/githubSync";
+import { syncToGitHub, loadBookFromGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
 import type { Chapter } from "./store/appStore";
 
@@ -30,7 +28,6 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
-  const toast = useSelector(() => toastStore.get());
 
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
@@ -38,6 +35,33 @@ export default function App() {
 
   const bookIdx = useActiveBookIdx();
   const isInsideBook = bookIdx >= 0;
+  
+  // Lazy-load the specific book data if it's only a lightweight reference from the cloud list
+  useEffect(() => {
+    const loadSpecificBook = async () => {
+      if (bookIdx >= 0 && bookId) {
+        const currentBook = appStore.books[bookIdx].get();
+        if (!currentBook.isFullyLoaded) {
+          const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+          if (token) {
+            try {
+              const fullBook = await loadBookFromGitHub(token, bookId);
+              if (fullBook && fullBook.id) {
+                appStore.books[bookIdx].set(fullBook);
+                showToast(`Loaded ${fullBook.title}`, "success");
+              } else {
+                throw new Error("Invalid book data received from cloud");
+              }
+            } catch (err) {
+              console.error("Failed to load specific book", err);
+              showToast("Failed to fetch full book data from cloud", "error");
+            }
+          }
+        }
+      }
+    };
+    loadSpecificBook();
+  }, [bookIdx, bookId]);
 
   const title = useWorldTitle();
   const events = useEvents();
@@ -535,17 +559,6 @@ fontSize: 15,
           </div>
         </div>
       )}
-      {/* Toast Notification */}
-      <Snackbar 
-        open={toast.open} 
-        autoHideDuration={6000} 
-        onClose={hideToast}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={hideToast} severity={toast.severity} variant="filled" sx={{ width: '100%', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-          {toast.message}
-        </Alert>
-      </Snackbar>
     </div>
   );
 }

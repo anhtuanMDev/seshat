@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import { queryClient } from "./lib/queryClient";
 import { router } from "./router";
 import { ThemeProvider } from "./hooks/useTheme";
+import { GlobalToast } from "./components/GlobalToast";
 
 import "./index.css";
 import "./styles/base.css";
@@ -14,6 +15,7 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
+        <GlobalToast />
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

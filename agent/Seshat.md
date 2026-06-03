@@ -816,3 +816,36 @@ Seshat uses a completely serverless authentication and cloud synchronization mod
 
 - Uses `src/lib/githubSync.ts` to trigger REST API requests to the Cloudflare Worker.
 - Converts the entire `appStore.get()` (all books, characters, chapters, events) into a flattened filesystem tree (JSON blobs) and directly hits the **GitHub Git Database API** (Trees, Commits, Refs) to safely persist the user's data to a unique branch per user (`user-username`).
+
+---
+
+## 15. Local Development & Hosting Architecture
+
+Seshat uses a hybrid local development environment to provide a seamless full-stack developer experience.
+
+### Architecture Overview
+- **Frontend Host**: React powered by **Vite**. The frontend dev server provides ultra-fast Hot Module Replacement (HMR) and typically runs on `http://localhost:5173`.
+- **Backend Host**: Serverless API powered by **Cloudflare Pages / Wrangler**. The backend worker runs locally via Wrangler to simulate the production Cloudflare edge environment, executing the endpoints found in the `functions/api/` directory.
+
+### How to Connect & Run (The Proxy Strategy)
+To run both the frontend and backend simultaneously while retaining HMR, you must use Wrangler's built-in proxy feature.
+
+**Command:**
+```bash
+npx wrangler pages dev -- npm run dev
+```
+*(Alternatively, if configured in `package.json`, use `npm run wrangler`)*
+
+**What this command does:**
+1. Wrangler spins up the backend worker environment on a local port (usually `http://localhost:8788`).
+2. It simultaneously executes `npm run dev` to start the Vite frontend.
+3. Wrangler acts as a reverse proxy: 
+   - **Frontend Traffic:** Any standard page request is forwarded directly to Vite, maintaining instant HMR for UI changes.
+   - **API Traffic:** Any request matching `/api/*` is intercepted by Wrangler and routed directly to the `functions/api/` handlers.
+
+### Accessing the App Locally
+**CRITICAL:** When developing locally, you **MUST** open the browser to the Wrangler proxy port (`http://localhost:8788`), **NOT** the Vite port (`5173`). 
+If you visit the Vite port directly, your API calls will fail with 404s because Vite does not know how to execute Cloudflare Worker functions.
+
+### Secret Management
+For local testing, backend secrets (like `GITHUB_TOKEN`, `AUTH_SECRET`) must be placed in a `.dev.vars` file in the project root. Cloudflare Workers do *not* read standard `.env` files for backend execution.
