@@ -1,4 +1,5 @@
 import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
+import { useSelector } from "@legendapp/state/react";
 import { appStore } from "./store/appStore";
 import { showToast } from "./store/toastStore";
 import {
@@ -231,8 +232,18 @@ export default function App() {
     return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
   }, 0);
 
+  const isFullyLoaded = useSelector(() => bookIdx >= 0 ? !!appStore.books[bookIdx].isFullyLoaded.get() : false);
+
   if (!isInsideBook) {
     return <Outlet />;
+  }
+
+  if (!isFullyLoaded) {
+    return (
+      <div style={{ ...S.app, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", letterSpacing: 2, fontSize: 13, textTransform: "uppercase" }}>
+        Loading universe...
+      </div>
+    );
   }
 
   return (
