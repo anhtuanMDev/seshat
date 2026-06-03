@@ -122,7 +122,7 @@ export default function FightPage() {
                 nameB={charB!.name}
               />
 
-              <div style={{ ...S.grid2, marginBottom: 20 }}>
+              <div style={{ ...S.grid2,  marginBottom: 20  }} className="seshat-grid2">
                 <SnapshotCard
                   color={colA}
                   event={resultA!.resolveEvent}
@@ -135,7 +135,7 @@ export default function FightPage() {
                 />
               </div>
 
-              <div style={S.grid2}>
+              <div style={S.grid2} className="seshat-grid2">
                 <ScoreBreakdown
                   name={charA!.name}
                   color={colA}

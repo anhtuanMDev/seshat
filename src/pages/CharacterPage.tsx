@@ -288,7 +288,7 @@ export default function CharacterPage() {
           </>
         }
       >
-        <div style={S.grid2}>
+        <div style={S.grid2} className="seshat-grid2">
           <Field
             label="Role in story"
             name="role"
@@ -321,7 +321,7 @@ export default function CharacterPage() {
           rows={2}
           placeholder="The formative trauma that shaped everything."
         />
-        <div style={S.grid2}>
+        <div style={S.grid2} className="seshat-grid2">
           <Field
             label="Core fear"
             name="coreFear"
@@ -428,7 +428,7 @@ export default function CharacterPage() {
           Where they begin and where they end. The transformation the story puts
           them through.
         </p>
-        <div style={S.grid2}>
+        <div style={S.grid2} className="seshat-grid2">
           <Field
             label="Arc start — who they are"
             name="arcStart"

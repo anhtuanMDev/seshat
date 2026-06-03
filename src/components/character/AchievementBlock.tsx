@@ -10,7 +10,7 @@ interface AchievementBlockProps extends BlockProps {
 export function AchievementBlock({ control, index, onDelete, events }: AchievementBlockProps) {
   return (
     <EntryBlock color="var(--color-green)" onDelete={onDelete}>
-      <div style={S.grid2}>
+      <div style={S.grid2} className="seshat-grid2">
         <Field
           label="Title"
           name={`achievements.${index}.title` as const}

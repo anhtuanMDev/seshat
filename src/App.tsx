@@ -13,7 +13,7 @@ import { SideItem } from "./components/ui";
 import {
   PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
   SportsKabaddiIcon, FileDownloadIcon, LightModeIcon,
-  DarkModeIcon, AddIcon, CloudSyncIcon
+  DarkModeIcon, AddIcon, CloudSyncIcon, MenuIcon
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
@@ -134,7 +134,7 @@ export default function App() {
       location.pathname.split("/")[4]) ||
     null;
 
-  const sortedEvt = [...events].sort((a, b) => a.time - b.time);
+  const sortedEvt = [...(events || [])].sort((a, b) => a.time - b.time);
   const sortedChapters = [...(chapters || [])].sort(
     (a, b) => a.order - b.order,
   );
@@ -142,7 +142,15 @@ export default function App() {
   const [showExport, setShowExport] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [prevPath, setPrevPath] = useState(location.pathname);
+
+  // Auto-close sidebar on navigation (React recommended pattern)
+  if (location.pathname !== prevPath) {
+    setPrevPath(location.pathname);
+    if (showSidebar) setShowSidebar(false);
+  }
+
   const triggerSync = async (token: string) => {
     try {
       setIsSyncing(true);
@@ -193,8 +201,8 @@ export default function App() {
     ingredients: worldIngredients || [],
     monsters: worldMonsters || [],
     treasures: worldTreasures || [],
-    events,
-    characters,
+    events: events || [],
+    characters: characters || [],
   });
 
   const mainRef = useRef<HTMLDivElement>(null);
@@ -211,7 +219,7 @@ export default function App() {
 
   const navBtnStyle = (active: boolean) => ({
     ...S.ghost,
-                 fontSize: 14,
+    fontSize: 14,
     letterSpacing: 2,
     textTransform: "uppercase" as const,
     color: active ? "var(--text-primary)" : "var(--text-secondary)",
@@ -228,24 +236,34 @@ export default function App() {
   }
 
   return (
-    <div style={S.app}>
+    <div style={S.app} className="seshat-app">
       {/* ── Top bar ── */}
-      <div style={S.top}>
-        <span style={{ ...S.logo, cursor: "pointer" }} onClick={() => navigate("/")}>Seshat</span>
+      <div style={S.top} className="seshat-top">
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button 
+            className="seshat-mobile-only" 
+            onClick={() => setShowSidebar(!showSidebar)}
+            style={{ ...S.ghost, padding: 0 }}
+          >
+            <MenuIcon />
+          </button>
+          <span style={{ ...S.logo, cursor: "pointer" }} className="seshat-desktop-only" onClick={() => navigate("/")}>Seshat</span>
+        </div>
         <input
           value={title}
           onChange={(e) => bookIdx >= 0 && appStore.books[bookIdx].title.set(e.target.value)}
+          className="seshat-top-title-input"
           style={{
             ...S.input,
             width: 240,
             textAlign: "center",
             border: "none",
-fontSize: 15,
+            fontSize: 15,
             color: "var(--text-secondary)",
             letterSpacing: 1,
           }}
         />
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div className="seshat-top-actions" style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <button
             onClick={handleSync}
             disabled={isSyncing}
@@ -260,14 +278,14 @@ fontSize: 15,
             }}
           >
             <CloudSyncIcon sx={{ fontSize: 14 }} />
-            {isSyncing ? "Syncing..." : "Sync"}
+            <span className="seshat-desktop-only">{isSyncing ? "Syncing..." : "Sync"}</span>
           </button>
           <button
             onClick={() => setShowExport(true)}
             style={{ ...S.ghost, letterSpacing: 2, fontSize: 15, display: "flex", alignItems: "center", gap: 4 }}
           >
             <FileDownloadIcon sx={{ fontSize: 14 }} />
-            Export for AI
+            <span className="seshat-desktop-only">Export for AI</span>
           </button>
           <button
             onClick={() => navigate(`/book/${bookId}/fight`)}
@@ -289,7 +307,7 @@ fontSize: 15,
             }}
           >
             <SportsKabaddiIcon sx={{ fontSize: 14 }} />
-            Fight
+            <span className="seshat-desktop-only">Fight</span>
           </button>
           <button
             onClick={toggle}
@@ -311,9 +329,15 @@ fontSize: 15,
         </div>
       </div>
 
-      <div style={S.row}>
+      <div style={S.row} className="seshat-row">
+        {/* ── Sidebar Overlay (Mobile) ── */}
+        <div 
+          className={`seshat-sidebar-overlay ${showSidebar ? "open" : ""}`}
+          onClick={() => setShowSidebar(false)}
+        />
+        
         {/* ── Sidebar ── */}
-        <div style={S.side}>
+        <div style={S.side} className={`seshat-side ${showSidebar ? "open" : ""}`}>
           <div style={{ padding: "0 24px 10px" }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
@@ -479,7 +503,7 @@ fontSize: 15,
         </div>
 
         {/* ── Main content ── */}
-        <div style={S.main} ref={mainRef}>
+        <div style={S.main} className="seshat-main" ref={mainRef}>
           <Outlet />
         </div>
       </div>

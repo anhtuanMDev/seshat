@@ -90,7 +90,7 @@ export function CharacterAttrsBlock({
               />
               {c.name}
             </p>
-            <div style={S.grid3}>
+            <div style={S.grid3} className="seshat-grid3">
               <Sel
                 label="Power tier"
                 value={a.power || ""}
@@ -128,7 +128,7 @@ export function CharacterAttrsBlock({
                 placeholder="What they want right now"
               />
             </div>
-            <div style={S.grid2}>
+            <div style={S.grid2} className="seshat-grid2">
               <Field
                 label="Knowledge held"
                 value={a.knowledge || ""}
@@ -154,7 +154,7 @@ export function CharacterAttrsBlock({
                 placeholder="Which wound is active?"
               />
             </div>
-            <div style={S.grid2}>
+            <div style={S.grid2} className="seshat-grid2">
               <Field
                 label="Before this event"
                 value={a.arcBefore || ""}

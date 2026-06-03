@@ -6,7 +6,7 @@ import type { BlockProps } from "./types";
 export function TraumaBlock({ control, index, color, onDelete }: BlockProps & { color: string }) {
   return (
     <EntryBlock color={color} onDelete={onDelete}>
-      <div style={S.grid2}>
+      <div style={S.grid2} className="seshat-grid2">
         <Field
           label="Trauma name"
           name={`traumas.${index}.title` as const}
@@ -27,7 +27,7 @@ export function TraumaBlock({ control, index, color, onDelete }: BlockProps & { 
         multi
         rows={2}
       />
-      <div style={S.grid2}>
+      <div style={S.grid2} className="seshat-grid2">
         <Field
           label="Triggered by"
           name={`traumas.${index}.trigger` as const}

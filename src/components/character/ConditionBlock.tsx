@@ -12,7 +12,7 @@ interface ConditionBlockProps extends BlockProps {
 export function ConditionBlock({ control, index, color, onDelete, events }: ConditionBlockProps) {
   return (
     <EntryBlock color={color} onDelete={onDelete}>
-      <div style={S.grid3}>
+      <div style={S.grid3} className="seshat-grid3">
         <Sel
           label="Type"
           name={`conditions.${index}.type` as const}
@@ -31,7 +31,7 @@ export function ConditionBlock({ control, index, color, onDelete, events }: Cond
           control={control}
         />
       </div>
-      <div style={S.grid2}>
+      <div style={S.grid2} className="seshat-grid2">
         <Field
           label="At time (T#)"
           name={`conditions.${index}.atTime` as const}

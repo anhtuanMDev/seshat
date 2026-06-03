@@ -6,12 +6,12 @@ import type { BlockProps } from "./types";
 export function IngredientBlock({ control, index, onDelete }: BlockProps) {
   return (
     <EntryBlock color="var(--color-brown)" onDelete={onDelete}>
-      <div style={S.grid3}>
+      <div style={S.grid3} className="seshat-grid3">
         <Field label="Name" name={`ingredients.${index}.name` as const} control={control} placeholder="Void iron, Moonpetal…" />
         <Sel label="Rarity" name={`ingredients.${index}.rarity` as const} control={control} opts={RARITY} />
         <Field label="Found at / habitat" name={`ingredients.${index}.location` as const} control={control} placeholder="Deep rift mines, only in eclipse season…" />
       </div>
-      <div style={S.grid2}>
+      <div style={S.grid2} className="seshat-grid2">
         <Field label="Appearance" name={`ingredients.${index}.appearance` as const} control={control} placeholder="Black ore with crimson veins that pulse…" />
         <Field label="Properties / nature" name={`ingredients.${index}.properties` as const} control={control} placeholder="Absorbs light, conducts soul energy…" />
       </div>

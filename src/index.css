@@ -304,3 +304,97 @@ svg circle {
   height: 0;
   font-style: italic;
 }
+
+/* ── Responsive Layout Overrides ────────────────────────────────────────── */
+
+/* Show on mobile, hide on desktop */
+.seshat-mobile-only {
+  display: none !important;
+}
+.seshat-desktop-only {
+  display: flex !important;
+}
+
+/* Sidebar Drawer overlay */
+.seshat-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+}
+
+@media (max-width: 1024px) {
+  .seshat-main {
+    padding: 24px 28px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .seshat-mobile-only {
+    display: flex !important;
+  }
+  
+  .seshat-desktop-only {
+    display: none !important;
+  }
+
+  .seshat-top {
+    padding: 0 16px !important;
+  }
+  
+  .seshat-top-title-input {
+    width: 160px !important;
+    font-size: 14px !important;
+  }
+
+  .seshat-sidebar-overlay.open {
+    display: block;
+  }
+
+  .seshat-side {
+    position: fixed;
+    top: 48px; /* Below top bar */
+    left: -280px;
+    bottom: 0;
+    width: 280px !important;
+    background: var(--bg-side) !important;
+    z-index: 50;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+  }
+
+  .seshat-side.open {
+    left: 0;
+  }
+
+  .seshat-main {
+    padding: 16px !important;
+  }
+
+  .seshat-top-actions {
+    gap: 8px !important;
+  }
+
+  .seshat-grid2, .seshat-grid3, .seshat-grid4 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .seshat-top {
+    padding: 0 8px !important;
+  }
+  .seshat-top-title-input {
+    width: 60px !important;
+    font-size: 13px !important;
+  }
+  .seshat-top-actions {
+    gap: 4px !important;
+  }
+  .seshat-top-actions button {
+    padding: 0 2px !important;
+  }
+}

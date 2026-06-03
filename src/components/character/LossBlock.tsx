@@ -10,7 +10,7 @@ interface LossBlockProps extends BlockProps {
 export function LossBlock({ control, index, onDelete, events }: LossBlockProps) {
   return (
     <EntryBlock color="var(--color-red)" onDelete={onDelete}>
-      <div style={S.grid2}>
+      <div style={S.grid2} className="seshat-grid2">
         <Field
           label="What was lost"
           name={`losses.${index}.title` as const}
