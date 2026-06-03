@@ -877,3 +877,8 @@ The save logic strictly adheres to delta syncing to preserve API rate limits and
 
 ### Loading Book (`loadBook`)
 Fetches all blobs recursively via the GitHub Tree API for the specified `books/book_{id}/` directory and stitches them together into a complete LegendState object before rendering.
+
+### Async Workflow UI Requirements
+Any component that triggers an asynchronous workflow (API calls for load, sync, create, read, update, delete) MUST explicitly handle and display two visual states:
+1. **Normal State**: The default interactive state.
+2. **Pending State**: Displayed while the promise is resolving. The element should provide visual feedback (e.g., text changes to "Saving...", "Syncing...", opacity reduces) and be `disabled` to prevent duplicate submissions.

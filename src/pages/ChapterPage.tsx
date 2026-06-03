@@ -13,7 +13,7 @@ import {
 import { S } from "../lib/utils";
 import { NotesIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { Character, Event } from "../lib/types";
 import RichEditor from "../components/editor/RichEditor";
@@ -30,9 +30,7 @@ interface ChapterForm {
   notes: string;
 }
 
-function countWords(text: string) {
-  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-}
+
 
 export default function ChapterPage() {
   const { id, bookId } = useParams();
@@ -65,18 +63,42 @@ export default function ChapterPage() {
     });
 
   useEffect(() => {
-    if (chapter) {
-      reset({
-        number: chapter.number || "",
-        title: chapter.title || "",
-        timeRef: chapter.timeRef || "",
-        synopsis: chapter.synopsis || "",
-        body: chapter.body || "",
-        notes: chapter.notes || "",
-      });
-    }
+    const loadChapterData = async () => {
+      if (chapter && chapterIdx >= 0) {
+        if (chapter.body !== undefined) {
+          // If we have the body, populate the form
+          if (!formState.isDirty) {
+            reset({
+              number: chapter.number || "",
+              title: chapter.title || "",
+              timeRef: chapter.timeRef || "",
+              synopsis: chapter.synopsis || "",
+              body: chapter.body || "",
+              notes: chapter.notes || "",
+            });
+          }
+        } else {
+          // Body is missing (stripped by loadBook.ts to save RAM), fetch it lazily
+          const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+          if (token && bookId) {
+            try {
+              const { loadFileFromGitHub } = await import("../lib/githubSync");
+              const fullChapter = await loadFileFromGitHub(token, bookId, `chapters/chapter_${chapter.id}.json`);
+              // Update appStore with the missing massive text fields
+              appStore.books[bookIdx].chapters[chapterIdx].body.set((fullChapter.body as string) || "");
+              // Also sync notes if they were somehow stripped
+              if (fullChapter.notes) appStore.books[bookIdx].chapters[chapterIdx].notes.set(fullChapter.notes as string);
+            } catch (err) {
+              console.error("Failed to lazy load chapter body:", err);
+            }
+          }
+        }
+      }
+    };
+    loadChapterData();
+    // We intentionally don't include formState.isDirty
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapter?.id, reset]);
+  }, [chapter?.id, chapter?.body, chapterIdx, bookId, bookIdx, reset]);
 
   const ref = useAnimateIn();
 
@@ -87,10 +109,11 @@ export default function ChapterPage() {
 
   const [pinnedChars, setPinnedChars] = useState<string[]>([]);
   const [pinnedEventIds, setPinnedEventIds] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const body = useWatch({ control, name: "body" });
 
-  const onSubmit = async () => {
+  const onSubmit = useCallback(async () => {
     const data = getValues();
     if (bookIdx < 0 || !bookId || !id || chapterIdx < 0) return;
     const ch = appStore.books[bookIdx].chapters[chapterIdx];
@@ -105,6 +128,7 @@ export default function ChapterPage() {
     const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
     if (token) {
       try {
+        setIsSaving(true);
         const payload = {
           id: id,
           order: ch.order.get(),
@@ -117,16 +141,19 @@ export default function ChapterPage() {
         };
         await updateFileOnGitHub(token, bookId, `chapters/chapter_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Chapter synced to cloud", "success");
-      } catch (err: any) {
+        reset(data);
+      } catch (err) {
         console.error(err);
         showToast("Failed to sync chapter to cloud", "error");
+      } finally {
+        setIsSaving(false);
       }
     }
-  };
+  }, [bookIdx, bookId, id, chapterIdx, getValues, reset]);
 
   // Keep a stable ref for save so RichEditor's onSave doesn't go stale
   const saveRef = useRef<() => void>(() => {});
-  useEffect(() => {
+  useLayoutEffect(() => {
     saveRef.current = onSubmit;
   }, [onSubmit]);
 
@@ -138,7 +165,7 @@ export default function ChapterPage() {
     );
   }
 
-  const words = countWords(body || "");
+
 
   const handleExport = () => {
     if (!chapter) return;
@@ -305,11 +332,12 @@ export default function ChapterPage() {
           </div>
 
           <ChapterToolbar
-            words={words}
             showPanel={showPanel}
             onTogglePanel={() => setShowPanel((s) => !s)}
             onSave={() => saveRef.current()}
             onExport={handleExport}
+            isSaving={isSaving}
+            isDirty={formState.isDirty}
           />
         </div>
 

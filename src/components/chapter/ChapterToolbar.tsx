@@ -2,19 +2,21 @@ import { S } from "../../lib/utils";
 import { SaveIcon, ArticleIcon, FileDownloadIcon } from "../ui/icons";
 
 interface ChapterToolbarProps {
-  words: number;
   showPanel: boolean;
   onTogglePanel: () => void;
   onSave: () => void;
   onExport: () => void;
+  isSaving?: boolean;
+  isDirty?: boolean;
 }
 
 export function ChapterToolbar({
-  words,
   showPanel,
   onTogglePanel,
   onSave,
   onExport,
+  isSaving,
+  isDirty,
 }: ChapterToolbarProps) {
   return (
     <div
@@ -26,18 +28,10 @@ export function ChapterToolbar({
         paddingTop: 28,
       }}
     >
-      <span
-        style={{
-          fontSize: 11,
-          color: "var(--text-muted)",
-          letterSpacing: 1,
-        }}
-      >
-        {words.toLocaleString()} w
-      </span>
       <button
         onClick={onSave}
         title="Save changes"
+        disabled={!isDirty || isSaving}
         style={{
           ...S.ghost,
           fontSize: 11,
@@ -46,10 +40,12 @@ export function ChapterToolbar({
           display: "flex",
           alignItems: "center",
           gap: 3,
+          opacity: (!isDirty || isSaving) ? 0.5 : 1,
+          cursor: (!isDirty || isSaving) ? "default" : "pointer",
         }}
       >
         <SaveIcon sx={{ fontSize: 12 }} />
-        save
+        {isSaving ? "saving..." : "save"}
       </button>
       <button
         onClick={onTogglePanel}

@@ -1,12 +1,5 @@
 import { observable } from "@legendapp/state";
-import {
-  configureObservablePersistence,
-  persistObservable,
-} from "@legendapp/state/persist";
-import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/local-storage";
 import type { Character, Event } from "../lib/types";
-
-configureObservablePersistence({ pluginLocal: ObservablePersistLocalStorage });
 
 export type { Character, Event } from "../lib/types";
 
@@ -150,5 +143,3 @@ export const appStore = observable({
   activeBookId: null as string | null,
   books: [] as BookData[],
 });
-
-persistObservable(appStore, { local: "seshat-app" });

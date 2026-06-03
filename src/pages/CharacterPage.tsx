@@ -51,6 +51,7 @@ export default function CharacterPage() {
   const events = useEvents();
   const bookIdx = useActiveBookIdx();
   const [modal, setModal] = useState<ModalKind>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const char = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -63,7 +64,7 @@ export default function CharacterPage() {
       .findIndex((c) => c.id === id);
   });
 
-  const { register, control, reset, setValue, getValues } =
+  const { register, control, reset, setValue, getValues, formState: { isDirty } } =
     useForm<CharacterForm>({
       defaultValues: {
         name: "",
@@ -148,6 +149,7 @@ export default function CharacterPage() {
     const bookId = appStore.activeBookId.get();
     if (token && id && bookId) {
       try {
+        setIsSaving(true);
         const payload = {
           id: id,
           color: char.color,
@@ -169,8 +171,11 @@ export default function CharacterPage() {
         };
         await updateFileOnGitHub(token, bookId, `characters/char_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Character synced to cloud", "success");
+        reset(data);
       } catch {
         showToast("Failed to sync character to cloud", "error");
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -264,6 +269,7 @@ export default function CharacterPage() {
         </div>
         <button
           onClick={onSubmit}
+          disabled={!isDirty || isSaving}
           style={{
             ...S.ghost,
             fontSize: 11,
@@ -273,10 +279,12 @@ export default function CharacterPage() {
             display: "flex",
             alignItems: "center",
             gap: 3,
+            opacity: (!isDirty || isSaving) ? 0.5 : 1,
+            cursor: (!isDirty || isSaving) ? "default" : "pointer",
           }}
         >
           <SaveIcon sx={{ fontSize: 12 }} />
-          save
+          {isSaving ? "saving..." : "save"}
         </button>
       </div>
 

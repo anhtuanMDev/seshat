@@ -44,8 +44,12 @@ export default function EventPage() {
   const [charAttrs, setCharAttrs] = useState<Record<string, EventAttributes>>(
     {},
   );
+  const [initialCharAttrs, setInitialCharAttrs] = useState<Record<string, EventAttributes>>(
+    {},
+  );
+  const [isSaving, setIsSaving] = useState(false);
 
-  const { register, control, reset, setValue, getValues } = useForm<EventForm>({
+  const { register, control, reset, setValue, getValues, formState: { isDirty } } = useForm<EventForm>({
     defaultValues: {
       title: "",
       time: 1,
@@ -84,6 +88,7 @@ export default function EventPage() {
       }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCharAttrs(attrs);
+      setInitialCharAttrs(attrs);
     }
   }, [event, event?.id, reset, bookIdx]);
 
@@ -147,6 +152,7 @@ export default function EventPage() {
     const bookId = appStore.activeBookId.get();
     if (token && id && bookId) {
       try {
+        setIsSaving(true);
         const payload = {
           id: id,
           title: data.title,
@@ -162,8 +168,12 @@ export default function EventPage() {
         };
         await updateFileOnGitHub(token, bookId, `events/event_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Event synced to cloud", "success");
+        reset(data);
+        setInitialCharAttrs(charAttrs);
       } catch {
         showToast("Failed to sync event to cloud", "error");
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -195,6 +205,7 @@ export default function EventPage() {
         <button
           onClick={onSubmit}
           title="Save changes"
+          disabled={(!isDirty && JSON.stringify(charAttrs) === JSON.stringify(initialCharAttrs)) || isSaving}
           style={{
             ...S.ghost,
             fontSize: 11,
@@ -204,9 +215,11 @@ export default function EventPage() {
             display: "flex",
             alignItems: "center",
             gap: 3,
+            opacity: ((!isDirty && JSON.stringify(charAttrs) === JSON.stringify(initialCharAttrs)) || isSaving) ? 0.5 : 1,
+            cursor: ((!isDirty && JSON.stringify(charAttrs) === JSON.stringify(initialCharAttrs)) || isSaving) ? "default" : "pointer",
           }}
         >
-          <SaveIcon sx={{ fontSize: 12 }} />save
+          <SaveIcon sx={{ fontSize: 12 }} />{isSaving ? "saving..." : "save"}
         </button>
       </div>
 

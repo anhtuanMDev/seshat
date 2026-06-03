@@ -141,3 +141,17 @@ export const updateFilesOnGitHub = async (token: string, bookId: string, files: 
     throw error;
   }
 };
+
+export const loadFileFromGitHub = async (token: string, bookId: string, path: string): Promise<Record<string, unknown>> => {
+  try {
+    const response = await fetch(`/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(path)}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to load file ${path} from GitHub:`, error);
+    throw error;
+  }
+};

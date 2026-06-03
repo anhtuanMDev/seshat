@@ -167,6 +167,19 @@ function MenuBar({
           <MentionHelpButton />
         </>
       )}
+
+      <div style={{ flex: 1 }} />
+      <span
+        style={{
+          fontSize: 11,
+          color: "var(--text-muted)",
+          letterSpacing: 1,
+          paddingRight: 4,
+          fontFamily: "'Georgia',serif",
+        }}
+      >
+        {editor.getText().trim() === "" ? 0 : editor.getText().trim().split(/\s+/).length.toLocaleString()} w
+      </span>
     </div>
   );
 }
@@ -275,6 +288,19 @@ function RichEditorCore({
       onChange?.(editor.getHTML());
     },
   });
+
+  // Sync external content changes (e.g. from lazy load or form reset) into the editor
+  useEffect(() => {
+    if (editor && content !== undefined) {
+      const currentHTML = editor.getHTML();
+      const isBlank = (html: string) => !html || html === "<p></p>";
+      // Only set content if the external content differs from what the editor currently has.
+      // This prevents caret jumps during normal typing.
+      if (content !== currentHTML && !(isBlank(content) && isBlank(currentHTML))) {
+        editor.commands.setContent(content, false);
+      }
+    }
+  }, [editor, content]);
 
   // ── Hover + click on mention spans ────────────────────────────────────────
   useEffect(() => {

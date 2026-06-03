@@ -37,18 +37,23 @@ export default function App() {
   const bookIdx = useActiveBookIdx();
   const isInsideBook = bookIdx >= 0;
   
-  // Lazy-load the specific book data if it's only a lightweight reference from the cloud list
+  // Lazy-load the specific book data if it's only a lightweight reference from the cloud list,
+  // OR if the user navigates directly to a book URL and memory is empty.
   useEffect(() => {
     const loadSpecificBook = async () => {
-      if (bookIdx >= 0 && bookId) {
-        const currentBook = appStore.books[bookIdx].get();
-        if (!currentBook.isFullyLoaded) {
+      if (bookId) {
+        const currentBook = bookIdx >= 0 ? appStore.books[bookIdx].get() : null;
+        if (!currentBook || !currentBook.isFullyLoaded) {
           const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
           if (token) {
             try {
               const fullBook = await loadBookFromGitHub(token, bookId);
               if (fullBook && fullBook.id) {
-                appStore.books[bookIdx].set(fullBook);
+                if (bookIdx >= 0) {
+                  appStore.books[bookIdx].set(fullBook);
+                } else {
+                  appStore.books.push(fullBook);
+                }
                 showToast(`Loaded ${fullBook.title}`, "success");
               } else {
                 throw new Error("Invalid book data received from cloud");
@@ -227,18 +232,17 @@ export default function App() {
     fontFamily: "'Georgia', serif",
   });
 
-  const totalWords = (chapters || []).reduce((sum: number, ch: Chapter) => {
-    const body = ch.body || "";
-    return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
-  }, 0);
+
 
   const isFullyLoaded = useSelector(() => bookIdx >= 0 ? !!appStore.books[bookIdx].isFullyLoaded.get() : false);
 
-  if (!isInsideBook) {
+  // If there's no bookId in the URL, we're likely on the root path (BookListPage)
+  if (!bookId) {
     return <Outlet />;
   }
 
-  if (!isFullyLoaded) {
+  // If we have a bookId but it's not fully loaded yet (or not even in memory), show loading
+  if (!isFullyLoaded || !isInsideBook) {
     return (
       <div style={{ ...S.app, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", letterSpacing: 2, fontSize: 13, textTransform: "uppercase" }}>
         Loading universe...
@@ -385,9 +389,7 @@ export default function App() {
               style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/chapters`)), display: "flex", alignItems: "center", gap: 6 }}
             >
               <AutoStoriesIcon sx={{ fontSize: 14 }} />
-              {totalWords > 0
-                ? `Chapters (${sortedChapters.length}) · ${totalWords >= 1000 ? `${(totalWords / 1000).toFixed(1)}k` : totalWords}w`
-                : `Chapters (${sortedChapters.length})`}
+              Chapters ({sortedChapters.length})
             </button>
             <button onClick={addChapter} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
               <AddIcon sx={{ fontSize: 16 }} />

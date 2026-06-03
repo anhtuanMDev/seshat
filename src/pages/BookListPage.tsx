@@ -22,12 +22,14 @@ export default function BookListPage() {
   const [newBookTitle, setNewBookTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isLoadingBooks, setIsLoadingBooks] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const loadBooks = async () => {
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
       if (token) {
-        const isFirstLoad = books.length === 0;
+        const currentBooks = appStore.books.get();
+        const isFirstLoad = !currentBooks || currentBooks.length === 0;
         if (isFirstLoad) {
           setIsLoadingBooks(true);
         }
@@ -113,12 +115,15 @@ export default function BookListPage() {
 
     const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
     if (token) {
+      setIsSyncing(true);
       try {
         await syncToGitHub(token);
         showToast("Book deleted from cloud.", "success");
       } catch (error) {
         console.error("Failed to sync deletion:", error);
         showToast("Failed to sync deletion: " + (error as Error).message, "error");
+      } finally {
+        setIsSyncing(false);
       }
     }
   };
@@ -151,12 +156,15 @@ export default function BookListPage() {
     if (didRename) {
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
       if (token) {
+        setIsSyncing(true);
         try {
           await syncToGitHub(token);
           showToast("Book renamed in cloud.", "success");
         } catch (error) {
           console.error("Failed to sync rename:", error);
           showToast("Failed to sync rename: " + (error as Error).message, "error");
+        } finally {
+          setIsSyncing(false);
         }
       }
     }
@@ -245,6 +253,7 @@ export default function BookListPage() {
                         if (e.key === "Escape") setEditingId(null);
                       }}
                       autoFocus
+                      disabled={isSyncing}
                       onClick={(e) => e.stopPropagation()}
                       style={{
                         ...S.input,
@@ -292,9 +301,10 @@ export default function BookListPage() {
                     <span>Delete "{book.title}"? This cannot be undone.</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteBook(book.id); }}
-                      style={{ ...S.pill, fontSize: 12, padding: "4px 12px", background: "#d32f2f", color: "#fff", border: "none" }}
+                      disabled={isSyncing}
+                      style={{ ...S.pill, fontSize: 12, padding: "4px 12px", background: "#d32f2f", color: "#fff", border: "none", opacity: isSyncing ? 0.5 : 1, cursor: isSyncing ? "default" : "pointer" }}
                     >
-                      Delete
+                      {isSyncing ? "Deleting..." : "Delete"}
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}

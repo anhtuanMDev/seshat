@@ -54,7 +54,7 @@ function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "",
       value={value ?? ""}
       onChange={(e) => onChange?.(e.target.value)}
       multiline={multi}
-      rows={multi ? rows : undefined}
+      minRows={multi ? rows : undefined}
       placeholder={placeholder}
       variant="standard"
       fullWidth
