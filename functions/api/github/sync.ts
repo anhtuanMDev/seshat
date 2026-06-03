@@ -14,11 +14,11 @@ interface BookPayload {
   setting?: string;
   themes?: string;
   rules?: string;
-  nations?: unknown[];
-  techniques?: unknown[];
-  ingredients?: unknown[];
-  monsters?: unknown[];
-  treasures?: unknown[];
+  nations?: Array<{ id: string; [key: string]: unknown }>;
+  techniques?: Array<{ id: string; [key: string]: unknown }>;
+  ingredients?: Array<{ id: string; [key: string]: unknown }>;
+  monsters?: Array<{ id: string; [key: string]: unknown }>;
+  treasures?: Array<{ id: string; [key: string]: unknown }>;
   characters?: Array<{ id: string; name: string; [key: string]: unknown }>;
   chapters?: Array<{ id: string; title: string; [key: string]: unknown }>;
   events?: Array<{ id: string; title: string; [key: string]: unknown }>;
@@ -99,32 +99,70 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const treeFiles: { path: string; mode: "100644"; type: "blob"; content: string }[] = [];
     
     for (const book of data.books) {
-      const bTitle = book.title.replace(/[^a-z0-9_-]/gi, '_') || book.id;
+      const bDir = `books/book_${book.id}`;
       
-      const worldData = {
-        title: book.title, synopsis: book.synopsis, setting: book.setting,
-        themes: book.themes, rules: book.rules, nations: book.nations,
-        techniques: book.techniques, ingredients: book.ingredients,
-        monsters: book.monsters, treasures: book.treasures,
-      };
+      // 1. book.json
       treeFiles.push({
-        path: `${bTitle}/world.json`, mode: "100644", type: "blob",
-        content: JSON.stringify(worldData, null, 2)
+        path: `${bDir}/book.json`,
+        mode: "100644", type: "blob",
+        content: JSON.stringify({ id: book.id, title: book.title, synopsis: book.synopsis, setting: book.setting, themes: book.themes, rules: book.rules }, null, 2)
       });
 
+      // 2. world/world.json (just the basics)
+      treeFiles.push({
+        path: `${bDir}/world/world.json`,
+        mode: "100644", type: "blob",
+        content: JSON.stringify({ id: book.id, title: book.title }, null, 2)
+      });
+
+      // 3. world sub-collections
+      type WorldItem = { id: string; [key: string]: unknown };
+      
+      book.nations?.forEach((n: WorldItem) => {
+        treeFiles.push({ path: `${bDir}/world/nations/nation_${n.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(n, null, 2) });
+      });
+      book.monsters?.forEach((m: WorldItem) => {
+        treeFiles.push({ path: `${bDir}/world/monsters/monster_${m.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(m, null, 2) });
+      });
+      book.treasures?.forEach((t: WorldItem) => {
+        treeFiles.push({ path: `${bDir}/world/treasures/treasure_${t.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(t, null, 2) });
+      });
+      book.techniques?.forEach((t: WorldItem) => {
+        treeFiles.push({ path: `${bDir}/world/techniques/technique_${t.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(t, null, 2) });
+      });
+      book.ingredients?.forEach((i: WorldItem) => {
+        treeFiles.push({ path: `${bDir}/world/ingredients/ingredient_${i.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(i, null, 2) });
+      });
+
+      // 4. Core entities
+      const indexCharacters: { id: string; name: string }[] = [];
+      const indexEvents: { id: string; title: string }[] = [];
+      const indexChapters: { id: string; title: string }[] = [];
+
       book.characters?.forEach((c) => {
-        const cName = c.name.replace(/[^a-z0-9_-]/gi, '_') || c.id;
-        treeFiles.push({ path: `${bTitle}/characters/${cName}_${c.id.slice(0,4)}.json`, mode: "100644", type: "blob", content: JSON.stringify(c, null, 2) });
+        indexCharacters.push({ id: c.id, name: c.name });
+        treeFiles.push({ path: `${bDir}/characters/char_${c.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(c, null, 2) });
       });
 
       book.chapters?.forEach((c) => {
-        const cTitle = c.title.replace(/[^a-z0-9_-]/gi, '_') || c.id;
-        treeFiles.push({ path: `${bTitle}/chapters/${cTitle}_${c.id.slice(0,4)}.json`, mode: "100644", type: "blob", content: JSON.stringify(c, null, 2) });
+        indexChapters.push({ id: c.id, title: c.title });
+        treeFiles.push({ path: `${bDir}/chapters/chapter_${c.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(c, null, 2) });
       });
 
       book.events?.forEach((e) => {
-        const eTitle = e.title.replace(/[^a-z0-9_-]/gi, '_') || e.id;
-        treeFiles.push({ path: `${bTitle}/events/${eTitle}_${e.id.slice(0,4)}.json`, mode: "100644", type: "blob", content: JSON.stringify(e, null, 2) });
+        indexEvents.push({ id: e.id, title: e.title });
+        treeFiles.push({ path: `${bDir}/events/event_${e.id}.json`, mode: "100644", type: "blob", content: JSON.stringify(e, null, 2) });
+      });
+
+      // 5. index.json for fast loading
+      treeFiles.push({
+        path: `${bDir}/index.json`,
+        mode: "100644", type: "blob",
+        content: JSON.stringify({
+          characters: indexCharacters,
+          events: indexEvents,
+          chapters: indexChapters
+        }, null, 2)
       });
     }
 

@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { appStore, mkBook } from "../store/appStore";
 import { S } from "../lib/utils";
 import { AutoStoriesIcon, AddIcon, LightModeIcon, DarkModeIcon, CloseIcon } from "../components/ui/icons";
+import { Modal } from "../components/ui/Modal";
 import { useTheme } from "../hooks/useThemeHook";
 import { useBooks, useActiveBookId } from "../hooks/useWorldStore";
+import { syncToGitHub } from "../lib/githubSync";
+import { showToast } from "../store/toastStore";
+import { CircularProgress } from "@mui/material";
 
 export default function BookListPage() {
   const navigate = useNavigate();
@@ -14,11 +18,35 @@ export default function BookListPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newBookTitle, setNewBookTitle] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
-  const createBook = () => {
-    const book = mkBook("Untitled book");
-    appStore.books.push(book);
-    navigate(`/book/${book.id}/world`);
+  const confirmCreateBook = async () => {
+    if (!newBookTitle.trim()) return;
+    try {
+      setIsCreating(true);
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (!token) {
+        showToast("Please log in to create a book.", "error");
+        navigate("/auth");
+        return;
+      }
+      const book = mkBook(newBookTitle.trim());
+      appStore.books.push(book);
+      
+      // Initialize the book directory in GitHub instantly
+      await syncToGitHub(token);
+      showToast("Book initialized securely in the cloud!", "success");
+      
+      setShowCreateModal(false);
+      setNewBookTitle("");
+      navigate(`/book/${book.id}/world`);
+    } catch (error) {
+      showToast("Failed to initialize book in cloud: " + (error as Error).message, "error");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const deleteBook = (bookId: string) => {
@@ -74,7 +102,7 @@ export default function BookListPage() {
       {books.length === 0 ? (
         <div style={{ textAlign: "center" }}>
           <p style={{ ...S.dim, fontStyle: "italic", marginBottom: 20 }}>No books yet. Create one to get started.</p>
-          <button onClick={createBook} style={{ ...S.pill, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "8px 20px" }}>
+          <button onClick={() => setShowCreateModal(true)} style={{ ...S.pill, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "8px 20px" }}>
             <AddIcon sx={{ fontSize: 16 }} />
             New book
           </button>
@@ -83,7 +111,7 @@ export default function BookListPage() {
         <div style={{ width: "100%", maxWidth: 480 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <p style={{ ...S.h2, margin: 0 }}>My books</p>
-            <button onClick={createBook} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+            <button onClick={() => setShowCreateModal(true)} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
               <AddIcon sx={{ fontSize: 14 }} />
               New book
             </button>
@@ -184,6 +212,44 @@ export default function BookListPage() {
             ))}
           </div>
         </div>
+      )}
+
+      {showCreateModal && (
+        <Modal title="Create New Book" onClose={() => !isCreating && setShowCreateModal(false)}>
+          <div style={{ padding: "0 24px 24px" }}>
+            <p style={{ ...S.dim, marginBottom: 16 }}>
+              Enter a name for your new world. This will initialize a dedicated folder in your cloud backup.
+            </p>
+            <input
+              autoFocus
+              value={newBookTitle}
+              onChange={(e) => setNewBookTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isCreating) confirmCreateBook();
+              }}
+              placeholder="e.g. The Lord of the Rings"
+              disabled={isCreating}
+              style={{ ...S.input, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, marginBottom: 24 }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button 
+                onClick={() => setShowCreateModal(false)} 
+                disabled={isCreating}
+                style={{ ...S.ghost, padding: "6px 16px" }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmCreateBook}
+                disabled={!newBookTitle.trim() || isCreating}
+                style={{ ...S.pill, padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}
+              >
+                {isCreating ? <CircularProgress size={14} color="inherit" /> : null}
+                {isCreating ? "Initializing..." : "Create"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
