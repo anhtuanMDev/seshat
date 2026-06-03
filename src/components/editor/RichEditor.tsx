@@ -7,7 +7,7 @@ import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import Placeholder from "@tiptap/extension-placeholder";
-import { useController } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -178,7 +178,10 @@ function MenuBar({
           fontFamily: "'Georgia',serif",
         }}
       >
-        {editor.getText().trim() === "" ? 0 : editor.getText().trim().split(/\s+/).length.toLocaleString()} w
+        {editor.getText().trim() === ""
+          ? 0
+          : editor.getText().trim().split(/\s+/).length.toLocaleString()}{" "}
+        w
       </span>
     </div>
   );
@@ -251,17 +254,59 @@ function RichEditorCore({
         pinnedCharIds.length > 0
           ? characters.filter((c) => pinnedCharIds.includes(c.id))
           : characters;
-      pinned.forEach((c) => items.push({ id: c.id, name: c.name, color: c.color, role: c.role || "Character" }));
+      pinned.forEach((c) =>
+        items.push({
+          id: c.id,
+          name: c.name,
+          color: c.color,
+          role: c.role || "Character",
+        }),
+      );
     } else if (trigger === "#") {
-      extraEntities.nations.forEach((n) => items.push({ id: n.id, name: n.name, color: "#5e35b1", role: "Nation" }));
+      extraEntities.nations.forEach((n) =>
+        items.push({
+          id: n.id,
+          name: n.name,
+          color: "#5e35b1",
+          role: "Nation",
+        }),
+      );
     } else if (trigger === "%") {
-      extraEntities.monsters.forEach((m) => items.push({ id: m.id, name: m.name, color: "#d32f2f", role: "Monster" }));
+      extraEntities.monsters.forEach((m) =>
+        items.push({
+          id: m.id,
+          name: m.name,
+          color: "#d32f2f",
+          role: "Monster",
+        }),
+      );
     } else if (trigger === "~") {
-      extraEntities.ingredients.forEach((i) => items.push({ id: i.id, name: i.name, color: "#388e3c", role: "Ingredient" }));
+      extraEntities.ingredients.forEach((i) =>
+        items.push({
+          id: i.id,
+          name: i.name,
+          color: "#388e3c",
+          role: "Ingredient",
+        }),
+      );
     } else if (trigger === "^") {
-      extraEntities.techniques.forEach((t) => items.push({ id: t.id, name: t.name, color: "#0288d1", role: "Technique" }));
+      extraEntities.techniques.forEach((t) =>
+        items.push({
+          id: t.id,
+          name: t.name,
+          color: "#0288d1",
+          role: "Technique",
+        }),
+      );
     } else if (trigger === "$") {
-      extraEntities.treasures.forEach((t) => items.push({ id: t.id, name: t.name, color: "#fbc02d", role: "Treasure" }));
+      extraEntities.treasures.forEach((t) =>
+        items.push({
+          id: t.id,
+          name: t.name,
+          color: "#fbc02d",
+          role: "Treasure",
+        }),
+      );
     }
 
     return items;
@@ -292,12 +337,9 @@ function RichEditorCore({
   // Sync external content changes (e.g. from lazy load or form reset) into the editor
   useEffect(() => {
     if (editor && content !== undefined) {
-      const currentHTML = editor.getHTML();
-      const isBlank = (html: string) => !html || html === "<p></p>";
-      // Only set content if the external content differs from what the editor currently has.
-      // This prevents caret jumps during normal typing.
-      if (content !== currentHTML && !(isBlank(content) && isBlank(currentHTML))) {
-        editor.commands.setContent(content, false);
+      const current = editor.getHTML();
+      if (current !== content && !(current === "<p></p>" && content === "")) {
+        editor.commands.setContent(content, { emitUpdate: false });
       }
     }
   }, [editor, content]);
@@ -364,32 +406,33 @@ function RichEditorCore({
       <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
       <EditorContent editor={editor} />
 
-      {tooltip && createPortal(
-        <div
-          className="char-mention-tooltip"
-          style={{
-            position: "fixed",
-            top: tooltip.y,
-            left: Math.min(tooltip.x, window.innerWidth - 300),
-            zIndex: 1000,
-          }}
-          onMouseEnter={() => {
-            if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
-          }}
-          onMouseLeave={() => {
-            tooltipTimeout.current = setTimeout(() => setTooltip(null), 120);
-          }}
-        >
-          <CharMentionTooltip
-            char={tooltip.char}
-            events={events}
-            pinnedEvents={pinnedEvents}
-            anchorEl={tooltip.anchor}
-            onClose={() => setTooltip(null)}
-          />
-        </div>,
-        document.body
-      )}
+      {tooltip &&
+        createPortal(
+          <div
+            className="char-mention-tooltip"
+            style={{
+              position: "fixed",
+              top: tooltip.y,
+              left: Math.min(tooltip.x, window.innerWidth - 300),
+              zIndex: 1000,
+            }}
+            onMouseEnter={() => {
+              if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
+            }}
+            onMouseLeave={() => {
+              tooltipTimeout.current = setTimeout(() => setTooltip(null), 120);
+            }}
+          >
+            <CharMentionTooltip
+              char={tooltip.char}
+              events={events}
+              pinnedEvents={pinnedEvents}
+              anchorEl={tooltip.anchor}
+              onClose={() => setTooltip(null)}
+            />
+          </div>,
+          document.body,
+        )}
 
       {guard && (
         <UnsavedGuard
@@ -420,12 +463,17 @@ function ControlledRichEditor<T extends FieldValues>({
   name,
   ...props
 }: RichEditorProps<T>) {
-  const { field } = useController({ control: control!, name: name! });
   return (
-    <RichEditorCore
-      {...props}
-      content={field.value ?? ""}
-      onChange={(html: string) => field.onChange(html)}
+    <Controller
+      control={control}
+      name={name!}
+      render={({ field }) => (
+        <RichEditorCore
+          {...props}
+          content={field.value ?? ""}
+          onChange={(html: string) => field.onChange(html)}
+        />
+      )}
     />
   );
 }

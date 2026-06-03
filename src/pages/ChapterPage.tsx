@@ -84,10 +84,23 @@ export default function ChapterPage() {
             try {
               const { loadFileFromGitHub } = await import("../lib/githubSync");
               const fullChapter = await loadFileFromGitHub(token, bookId, `chapters/chapter_${chapter.id}.json`);
+              const fetchedBody = (fullChapter.body as string) || "";
+              const fetchedNotes = (fullChapter.notes as string) || "";
+
               // Update appStore with the missing massive text fields
-              appStore.books[bookIdx].chapters[chapterIdx].body.set((fullChapter.body as string) || "");
+              appStore.books[bookIdx].chapters[chapterIdx].body.set(fetchedBody);
               // Also sync notes if they were somehow stripped
-              if (fullChapter.notes) appStore.books[bookIdx].chapters[chapterIdx].notes.set(fullChapter.notes as string);
+              if (fullChapter.notes) appStore.books[bookIdx].chapters[chapterIdx].notes.set(fetchedNotes);
+
+              // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
+              reset({
+                number: chapter.number || "",
+                title: chapter.title || "",
+                timeRef: chapter.timeRef || "",
+                synopsis: chapter.synopsis || "",
+                body: fetchedBody,
+                notes: fullChapter.notes ? fetchedNotes : (chapter.notes || ""),
+              });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
             }

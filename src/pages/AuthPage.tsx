@@ -125,6 +125,7 @@ export default function AuthPage() {
                 <InputAdornment position="end">
                   <IconButton 
                     onClick={() => setShowPassword(!showPassword)} 
+                    onMouseDown={(e) => e.preventDefault()}
                     edge="end" 
                     size="small" 
                     style={{ color: "var(--text-secondary)", marginRight: -8 }}
