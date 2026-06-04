@@ -114,8 +114,23 @@ export default function ChapterPage() {
   }, [chapter?.id, chapter?.body, chapterIdx, bookId, bookIdx, reset]);
 
   const ref = useAnimateIn();
+  const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
 
-  const [showPanel, setShowPanel] = useState(true);
+  useEffect(() => {
+    const handleBodyClass = () => {
+      if (showPanel && window.innerWidth <= 1024) {
+        document.body.classList.add("panel-open-mobile");
+      } else {
+        document.body.classList.remove("panel-open-mobile");
+      }
+    };
+    handleBodyClass();
+    window.addEventListener("resize", handleBodyClass);
+    return () => {
+      window.removeEventListener("resize", handleBodyClass);
+      document.body.classList.remove("panel-open-mobile");
+    };
+  }, [showPanel]);
   const [panelTab, setPanelTab] = useState<"chars" | "events" | "world">(
     "chars",
   );
@@ -265,31 +280,11 @@ export default function ChapterPage() {
   return (
     <div
       ref={ref}
-      style={{
-        display: "flex",
-        gap: 0,
-        minHeight: "100%",
-        position: "relative",
-      }}
+      className="seshat-chapter-layout"
     >
       {/* ── Prose column ── */}
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0,
-          paddingRight: showPanel ? 24 : 0,
-          transition: "padding 0.2s",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            marginBottom: 20,
-            gap: 16,
-          }}
-        >
+      <div className={`seshat-chapter-prose ${showPanel ? 'panel-open' : ''}`}>
+        <div className="seshat-chapter-header">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{
@@ -431,30 +426,33 @@ export default function ChapterPage() {
 
       {/* ── Reference panel ── */}
       {showPanel && (
-        <ReferencePanel
-          panelTab={panelTab}
-          onTabChange={setPanelTab}
-          characters={characters}
-          sortedEvents={sortedEvents}
-          pinnedCharIds={pinnedChars}
-          pinnedEventIds={pinnedEventIds}
-          onTogglePinChar={(charId) =>
-            setPinnedChars((prev) =>
-              prev.includes(charId)
-                ? prev.filter((x) => x !== charId)
-                : [...prev, charId],
-            )
-          }
-          onTogglePinEvent={(eventId) =>
-            setPinnedEventIds((prev) =>
-              prev.includes(eventId)
-                ? prev.filter((x) => x !== eventId)
-                : [...prev, eventId],
-            )
-          }
-          worldData={worldData}
-          events={events}
-        />
+        <>
+          <div className="seshat-chapter-panel-overlay" onClick={() => setShowPanel(false)} />
+          <ReferencePanel
+            panelTab={panelTab}
+            onTabChange={setPanelTab}
+            characters={characters}
+            sortedEvents={sortedEvents}
+            pinnedCharIds={pinnedChars}
+            pinnedEventIds={pinnedEventIds}
+            onTogglePinChar={(charId) =>
+              setPinnedChars((prev) =>
+                prev.includes(charId)
+                  ? prev.filter((x) => x !== charId)
+                  : [...prev, charId],
+              )
+            }
+            onTogglePinEvent={(eventId) =>
+              setPinnedEventIds((prev) =>
+                prev.includes(eventId)
+                  ? prev.filter((x) => x !== eventId)
+                  : [...prev, eventId],
+              )
+            }
+            worldData={worldData}
+            events={events}
+          />
+        </>
       )}
     </div>
   );

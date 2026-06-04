@@ -44,15 +44,7 @@ export function ReferencePanel({
     .sort((a: Event, b: Event) => a.time - b.time);
 
   return (
-    <div
-      style={{
-        width: 256,
-        flexShrink: 0,
-        borderLeft: "1px solid var(--border)",
-        paddingLeft: 20,
-        fontSize: 12,
-      }}
-    >
+    <div className="seshat-chapter-panel">
       <div
         style={{
           display: "flex",

@@ -19,15 +19,7 @@ export function ChapterToolbar({
   isDirty,
 }: ChapterToolbarProps) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        flexShrink: 0,
-        paddingTop: 28,
-      }}
-    >
+    <div className="seshat-chapter-toolbar">
       <button
         onClick={onSave}
         title="Save changes"
