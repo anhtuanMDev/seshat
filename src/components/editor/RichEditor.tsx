@@ -169,21 +169,39 @@ function MenuBar({
       )}
 
       <div style={{ flex: 1 }} />
-      <span
-        style={{
-          fontSize: 11,
-          color: "var(--text-muted)",
-          letterSpacing: 1,
-          paddingRight: 4,
-          fontFamily: "'Georgia',serif",
-        }}
-      >
-        {editor.getText().trim() === ""
-          ? 0
-          : editor.getText().trim().split(/\s+/).length.toLocaleString()}{" "}
-        w
-      </span>
+      <WordCountDisplay editor={editor} />
     </div>
+  );
+}
+
+// ── Word Count ────────────────────────────────────────────────────────────────
+
+function WordCountDisplay({ editor }: { editor: Editor }) {
+  const [, forceUpdate] = useState({});
+
+  useEffect(() => {
+    const handleUpdate = () => forceUpdate({});
+    editor.on("update", handleUpdate);
+    return () => {
+      editor.off("update", handleUpdate);
+    };
+  }, [editor]);
+
+  const text = editor.getText().trim();
+  const wordCount = text === "" ? 0 : text.split(/\s+/).length;
+
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        color: "var(--text-muted)",
+        letterSpacing: 1,
+        paddingRight: 4,
+        fontFamily: "'Georgia',serif",
+      }}
+    >
+      {wordCount.toLocaleString()} w
+    </span>
   );
 }
 
