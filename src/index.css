@@ -374,7 +374,20 @@ svg circle {
   }
 
   .seshat-top-actions {
-    gap: 8px !important;
+    gap: 16px !important;
+  }
+
+  .seshat-top-actions button svg {
+    font-size: 24px !important;
+  }
+
+  .seshat-chapter-toolbar button {
+    font-size: 14px !important;
+    padding: 4px 8px !important;
+  }
+  
+  .seshat-chapter-toolbar button svg {
+    font-size: 18px !important;
   }
 
   .seshat-grid2, .seshat-grid3, .seshat-grid4 {
@@ -392,7 +405,7 @@ svg circle {
     font-size: 13px !important;
   }
   .seshat-top-actions {
-    gap: 4px !important;
+    gap: 10px !important;
   }
   .seshat-top-actions button {
     padding: 0 2px !important;

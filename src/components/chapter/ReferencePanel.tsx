@@ -3,12 +3,12 @@ import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
-import { PeopleIcon, EventNoteIcon, PublicIcon } from "../ui/icons";
+import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon } from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
-  panelTab: "chars" | "events" | "world";
-  onTabChange: (tab: "chars" | "events" | "world") => void;
+  panelTab: "chars" | "events" | "world" | "notes";
+  onTabChange: (tab: "chars" | "events" | "world" | "notes") => void;
   characters: Character[];
   sortedEvents: Event[];
   pinnedCharIds: string[];
@@ -22,6 +22,7 @@ interface ReferencePanelProps {
     rules: string;
   };
   events: Event[];
+  notesNode?: React.ReactNode;
 }
 
 export function ReferencePanel({
@@ -35,6 +36,7 @@ export function ReferencePanel({
   onTogglePinEvent,
   worldData,
   events,
+  notesNode,
 }: ReferencePanelProps) {
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedCharIds.includes(c.id),
@@ -52,12 +54,24 @@ export function ReferencePanel({
           marginBottom: 16,
           borderBottom: "1px solid var(--border)",
           paddingBottom: 8,
+          overflowX: "auto",
+          scrollbarWidth: "none", // For Firefox
+          msOverflowStyle: "none", // For IE/Edge
         }}
+        className="no-scrollbar" // Assuming we might have a utility class, but inline works for basics
       >
-        {(["chars", "events", "world"] as const).map((tab) => {
+        <style>
+          {`
+            .no-scrollbar::-webkit-scrollbar {
+              display: none;
+            }
+          `}
+        </style>
+        {(["chars", "events", "world", "notes"] as const).map((tab) => {
           const icon = tab === "chars" ? <PeopleIcon sx={{ fontSize: 12 }} />
             : tab === "events" ? <EventNoteIcon sx={{ fontSize: 12 }} />
-            : <PublicIcon sx={{ fontSize: 12 }} />;
+            : tab === "world" ? <PublicIcon sx={{ fontSize: 12 }} />
+            : <NotesIcon sx={{ fontSize: 12 }} />;
           return (
             <button
               key={tab}
@@ -77,6 +91,8 @@ export function ReferencePanel({
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
+                flexShrink: 0,
+                whiteSpace: "nowrap",
               }}
             >
               {icon}
@@ -152,6 +168,15 @@ export function ReferencePanel({
           setting={worldData.setting}
           rules={worldData.rules}
         />
+      )}
+
+      {panelTab === "notes" && (
+        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <p style={{ ...S.dim, marginBottom: 10 }}>
+            Private notes, research, and threads to pull later...
+          </p>
+          {notesNode}
+        </div>
       )}
     </div>
   );

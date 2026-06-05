@@ -11,7 +11,7 @@ import {
   useActiveBookIdx,
 } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
-import { NotesIcon } from "../components/ui/icons";
+
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
@@ -54,7 +54,7 @@ export default function ChapterPage() {
   });
 
   const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
-  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world">("chars");
+  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes">("chars");
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, control, reset, formState, getValues, setValue } =
@@ -405,38 +405,6 @@ export default function ChapterPage() {
           onSave={() => saveRef.current()}
           bookId={bookId}
         />
-
-        <hr style={S.rule} />
-        <p
-          style={{
-            ...S.h2,
-            marginBottom: 8,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
-          <NotesIcon sx={{ fontSize: 12 }} />
-          Chapter notes
-        </p>
-        <textarea
-          {...register("notes")}
-          placeholder="Private notes, research, threads to pull later, things you want to remember…"
-          rows={4}
-          style={{
-            width: "100%",
-            fontFamily: "Georgia, serif",
-            fontSize: 13,
-            color: "var(--text-secondary)",
-            background: "transparent",
-            border: "none",
-            borderBottom: "1px solid var(--border)",
-            outline: "none",
-            resize: "vertical",
-            lineHeight: 1.7,
-            padding: "4px 0",
-          }}
-        />
       </div>
 
       {/* ── Reference panel ── */}
@@ -466,6 +434,25 @@ export default function ChapterPage() {
             }}
             worldData={worldData}
             events={events}
+            notesNode={
+              <textarea
+                {...register("notes")}
+                placeholder="Write your notes here..."
+                style={{
+                  width: "100%",
+                  flex: 1,
+                  fontFamily: "Georgia, serif",
+                  fontSize: 13,
+                  color: "var(--text-secondary)",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  resize: "none",
+                  lineHeight: 1.7,
+                  padding: "4px 0",
+                }}
+              />
+            }
           />
         </>
       )}
