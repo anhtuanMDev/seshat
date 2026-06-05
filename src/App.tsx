@@ -37,20 +37,31 @@ export default function App() {
   const bookIdx = useActiveBookIdx();
   const isInsideBook = bookIdx >= 0;
   
+  const fetchingRef = useRef<string | null>(null);
+
   // Lazy-load the specific book data if it's only a lightweight reference from the cloud list,
   // OR if the user navigates directly to a book URL and memory is empty.
   useEffect(() => {
     const loadSpecificBook = async () => {
       if (bookId) {
-        const currentBook = bookIdx >= 0 ? appStore.books[bookIdx].get() : null;
-        if (!currentBook || !currentBook.isFullyLoaded) {
+        // Find index freshly so we don't rely on stale closure if activeId hasn't updated yet
+        const currentBooks = appStore.books.get() || [];
+        const freshIdx = currentBooks.findIndex(b => b && b.id === bookId);
+        const currentBook = freshIdx >= 0 ? currentBooks[freshIdx] : null;
+
+        if ((!currentBook || !currentBook.isFullyLoaded) && fetchingRef.current !== bookId) {
           const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
           if (token) {
+            fetchingRef.current = bookId;
             try {
               const fullBook = await loadBookFromGitHub(token, bookId);
               if (fullBook && fullBook.id) {
-                if (bookIdx >= 0) {
-                  appStore.books[bookIdx].set(fullBook);
+                // Find index AGAIN in case it changed during the await
+                const latestBooks = appStore.books.get() || [];
+                const finalIdx = latestBooks.findIndex(b => b && b.id === bookId);
+                
+                if (finalIdx >= 0) {
+                  appStore.books[finalIdx].set(fullBook);
                 } else {
                   appStore.books.push(fullBook);
                 }
@@ -61,13 +72,15 @@ export default function App() {
             } catch (err) {
               console.error("Failed to load specific book", err);
               showToast("Failed to fetch full book data from cloud", "error");
+            } finally {
+              fetchingRef.current = null;
             }
           }
         }
       }
     };
     loadSpecificBook();
-  }, [bookIdx, bookId]);
+  }, [bookId, bookIdx]);
 
   const title = useWorldTitle();
   const events = useEvents();
@@ -353,6 +366,15 @@ export default function App() {
         
         {/* ── Sidebar ── */}
         <div style={S.side} className={`seshat-side ${showSidebar ? "open" : ""}`}>
+          <div className="seshat-mobile-only" style={{ padding: "10px 24px 14px" }}>
+            <button
+              onClick={() => navigate("/")}
+              style={{ ...navBtnStyle(false), color: "var(--color-purple)", display: "flex", alignItems: "center", gap: 6 }}
+            >
+              ← Back to Books
+            </button>
+          </div>
+
           <div style={{ padding: "0 24px 10px" }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}

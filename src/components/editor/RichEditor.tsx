@@ -215,6 +215,7 @@ function RichEditorCore({
   } | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
+  const isSyncingRef = useRef(false);
 
   const bookIdx = useActiveBookIdx();
   const extraEntities = useSelector(() => {
@@ -330,6 +331,7 @@ function RichEditorCore({
     ],
     content,
     onUpdate: ({ editor }) => {
+      if (isSyncingRef.current) return;
       onChange?.(editor.getHTML());
     },
   });
@@ -339,7 +341,9 @@ function RichEditorCore({
     if (editor && content !== undefined) {
       const current = editor.getHTML();
       if (current !== content && !(current === "<p></p>" && content === "")) {
-        editor.commands.setContent(content, { emitUpdate: false });
+        isSyncingRef.current = true;
+        editor.commands.setContent(content, { emitUpdate: true });
+        isSyncingRef.current = false;
       }
     }
   }, [editor, content]);
