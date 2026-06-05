@@ -20,6 +20,8 @@
 12. [Legend State Patterns & Gotchas](#12-legend-state-patterns--gotchas)
 13. [Testing](#13-testing)
 14. [Authentication & Cloud Sync](#14-authentication--cloud-sync)
+15. [Local Development & Hosting Architecture](#15-local-development--hosting-architecture)
+16. [Cloud Database Architecture](#16-cloud-database-architecture)
 
 ---
 
@@ -857,7 +859,7 @@ If you visit the Vite port directly, your API calls will fail with 404s because 
 ### Secret Management
 For local testing, backend secrets (like `GITHUB_TOKEN`, `AUTH_SECRET`) must be placed in a `.dev.vars` file in the project root. Cloudflare Workers do *not* read standard `.env` files for backend execution.
 
-## 14. Authentication & Cloud Sync
+## 16. Cloud Database Architecture
 
 The application uses Cloudflare Pages Functions to proxy communication with a GitHub repository, enabling a multi-user database architecture.
 
