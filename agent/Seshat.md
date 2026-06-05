@@ -817,6 +817,13 @@ Seshat uses a completely serverless authentication and cloud synchronization mod
 - Uses `src/lib/githubSync.ts` to trigger REST API requests to the Cloudflare Worker.
 - Converts the entire `appStore.get()` (all books, characters, chapters, events) into a flattened filesystem tree (JSON blobs) and directly hits the **GitHub Git Database API** (Trees, Commits, Refs) to safely persist the user's data to a unique branch per user (`user-username`).
 
+> [!CAUTION]
+> **CRITICAL: GitHub Tree Syncing & Memory Constraints**
+> 
+> 1. **Memory Preservation (Stubs):** `loadBook.ts` intentionally deletes the massive `body` field of chapters before sending them to the frontend to prevent RAM exhaustion. These chapters sit in local state as "stubs" (`body === undefined`) until a user explicitly visits the chapter page (which lazy-loads the body).
+> 2. **Data Loss via Stubs:** Because `JSON.stringify` drops `undefined` properties, a full sync (`sync.ts`) would blindly overwrite chapters in GitHub with bodiless files. To prevent this, `sync.ts` MUST fetch the existing recursive Git tree and use the old blob `sha` instead of `content` for any chapter where `body === undefined`.
+> 3. **The `base_tree` Bug:** When updating files via the GitHub API (`updateFile.ts`, `updateFiles.ts`), you **MUST** extract the **Tree SHA** from the latest commit and pass it as `base_tree`. If you mistakenly pass a **Commit SHA**, GitHub will silently ignore the `base_tree` entirely and create a new root tree containing ONLY the files you updated, completely deleting the rest of the repository!
+
 ---
 
 ## 15. Local Development & Hosting Architecture
