@@ -1,16 +1,21 @@
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, useMediaQuery } from "@mui/material";
 import { useSelector } from "@legendapp/state/react";
 import { toastStore, hideToast } from "../store/toastStore";
 
 export function GlobalToast() {
   const toast = useSelector(() => toastStore.get());
+  const isMobile = useMediaQuery("(max-width:768px)");
 
   return (
     <Snackbar 
       open={toast.open} 
       autoHideDuration={6000} 
       onClose={hideToast}
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      anchorOrigin={
+        isMobile 
+          ? { vertical: 'bottom', horizontal: 'center' } 
+          : { vertical: 'top', horizontal: 'right' }
+      }
     >
       <Alert 
         onClose={hideToast} 
