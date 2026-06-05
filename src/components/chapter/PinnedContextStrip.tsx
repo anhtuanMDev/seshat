@@ -1,13 +1,18 @@
 import type { Character, Event } from "../../lib/types";
+import { CloseIcon } from "../ui/icons";
 
 interface PinnedContextStripProps {
   pinnedCharObjs: Character[];
   pinnedEventObjs: Event[];
+  onRemoveChar: (id: string) => void;
+  onRemoveEvent: (id: string) => void;
 }
 
 export function PinnedContextStrip({
   pinnedCharObjs,
   pinnedEventObjs,
+  onRemoveChar,
+  onRemoveEvent,
 }: PinnedContextStripProps) {
   return (
     <div
@@ -21,13 +26,17 @@ export function PinnedContextStrip({
       }}
     >
       {pinnedCharObjs.map((c: Character) => (
-        <span
+        <button
           key={c.id}
+          onClick={() => onRemoveChar(c.id)}
           style={{
             fontSize: 11,
-            padding: "2px 8px",
+            fontFamily: "inherit",
+            padding: "2px 6px 2px 8px",
             border: `1px solid ${c.color}`,
             color: c.color,
+            background: "transparent",
+            cursor: "pointer",
             borderRadius: 3,
             display: "flex",
             alignItems: "center",
@@ -44,21 +53,30 @@ export function PinnedContextStrip({
             }}
           />
           {c.name}
-        </span>
+          <CloseIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+        </button>
       ))}
       {pinnedEventObjs.map((e: Event) => (
-        <span
+        <button
           key={e.id}
+          onClick={() => onRemoveEvent(e.id)}
           style={{
             fontSize: 11,
-            padding: "2px 8px",
+            fontFamily: "inherit",
+            padding: "2px 6px 2px 8px",
             border: "1px solid var(--border-field)",
             color: "var(--text-secondary)",
+            background: "transparent",
+            cursor: "pointer",
             borderRadius: 3,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
           }}
         >
           T{e.time} · {e.title}
-        </span>
+          <CloseIcon sx={{ fontSize: 12, opacity: 0.6 }} />
+        </button>
       ))}
     </div>
   );

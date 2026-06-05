@@ -33,23 +33,33 @@ const StyledFormControl = styled(FormControl)(() => ({
 
 interface EventPickerProps<T extends FieldValues = FieldValues> {
   label?: string;
+  placeholder?: string;
   value?: string;
   onChange?: (v: string) => void;
   events: Array<{ id: string; time: number; title: string }>;
   control?: Control<T>;
   name?: Path<T>;
+  sx?: any;
 }
 
 type EventPickerInnerProps = Omit<EventPickerProps<FieldValues>, "control" | "name">;
 
-function EventPickerInner({ label, value, onChange, events }: EventPickerInnerProps) {
+function EventPickerInner({ label, placeholder, value, onChange, events, sx }: EventPickerInnerProps) {
   return (
-    <StyledFormControl variant="standard">
+    <StyledFormControl variant="standard" sx={sx}>
       {label && <InputLabel>{label}</InputLabel>}
       <Select
         value={value ?? ""}
+        displayEmpty
         onChange={(e) => onChange?.(e.target.value as string)}
         label={label}
+        renderValue={(selected) => {
+          if (!selected) {
+            return <span style={{ color: "var(--text-muted)" }}>{placeholder || "— none —"}</span>;
+          }
+          const event = events.find((e) => e.id === selected);
+          return event ? `T${event.time} · ${event.title}` : (selected as string);
+        }}
         MenuProps={{
           slotProps: {
             paper: {
@@ -77,7 +87,7 @@ function EventPickerInner({ label, value, onChange, events }: EventPickerInnerPr
             color: "var(--text-secondary)",
           }}
         >
-          — none —
+          {placeholder || "— none —"}
         </MenuItem>
         {[...events]
           .sort((a, b) => a.time - b.time)

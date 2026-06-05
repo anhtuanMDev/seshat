@@ -20,6 +20,7 @@ import RichEditor from "../components/editor/RichEditor";
 import { ReferencePanel } from "../components/chapter/ReferencePanel";
 import { PinnedContextStrip } from "../components/chapter/PinnedContextStrip";
 import { ChapterToolbar } from "../components/chapter/ChapterToolbar";
+import { EventPicker } from "../components/ui/EventPicker";
 
 interface ChapterForm {
   number: string;
@@ -28,6 +29,8 @@ interface ChapterForm {
   synopsis: string;
   body: string;
   notes: string;
+  pinnedChars: string[];
+  pinnedEventIds: string[];
 }
 
 
@@ -50,7 +53,11 @@ export default function ChapterPage() {
     );
   });
 
-  const { register, control, reset, formState, getValues } =
+  const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
+  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world">("chars");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { register, control, reset, formState, getValues, setValue } =
     useForm<ChapterForm>({
       defaultValues: {
         number: "",
@@ -59,6 +66,8 @@ export default function ChapterPage() {
         synopsis: "",
         body: "",
         notes: "",
+        pinnedChars: [],
+        pinnedEventIds: [],
       },
     });
 
@@ -75,6 +84,8 @@ export default function ChapterPage() {
               synopsis: chapter.synopsis || "",
               body: chapter.body || "",
               notes: chapter.notes || "",
+              pinnedChars: chapter.pinnedChars || [],
+              pinnedEventIds: chapter.pinnedEventIds || [],
             });
           }
         } else {
@@ -100,6 +111,8 @@ export default function ChapterPage() {
                 synopsis: chapter.synopsis || "",
                 body: fetchedBody,
                 notes: fullChapter.notes ? fetchedNotes : (chapter.notes || ""),
+                pinnedChars: chapter.pinnedChars || [],
+                pinnedEventIds: chapter.pinnedEventIds || [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -114,7 +127,6 @@ export default function ChapterPage() {
   }, [chapter?.id, chapter?.body, chapterIdx, bookId, bookIdx, reset]);
 
   const ref = useAnimateIn();
-  const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
 
   useEffect(() => {
     const handleBodyClass = () => {
@@ -131,15 +143,10 @@ export default function ChapterPage() {
       document.body.classList.remove("panel-open-mobile");
     };
   }, [showPanel]);
-  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world">(
-    "chars",
-  );
-
-  const [pinnedChars, setPinnedChars] = useState<string[]>([]);
-  const [pinnedEventIds, setPinnedEventIds] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
 
   const body = useWatch({ control, name: "body" });
+  const pinnedChars = useWatch({ control, name: "pinnedChars" }) || [];
+  const pinnedEventIds = useWatch({ control, name: "pinnedEventIds" }) || [];
 
   const onSubmit = useCallback(async () => {
     const data = getValues();
@@ -151,6 +158,8 @@ export default function ChapterPage() {
     ch.synopsis.set(data.synopsis);
     ch.body.set(data.body);
     ch.notes.set(data.notes);
+    ch.pinnedChars.set(data.pinnedChars);
+    ch.pinnedEventIds.set(data.pinnedEventIds);
     
     // Background delta sync
     const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
@@ -166,9 +175,12 @@ export default function ChapterPage() {
           synopsis: data.synopsis,
           body: data.body,
           notes: data.notes,
+          pinnedChars: data.pinnedChars,
+          pinnedEventIds: data.pinnedEventIds,
         };
         await updateFileOnGitHub(token, bookId, `chapters/chapter_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Chapter synced to cloud", "success");
+        // Reset the form with the saved data to clear the dirty state
         reset(data);
       } catch (err) {
         console.error(err);
@@ -289,7 +301,7 @@ export default function ChapterPage() {
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: "flex-end",
                 gap: 12,
                 marginBottom: 8,
               }}
@@ -309,20 +321,15 @@ export default function ChapterPage() {
                   padding: "2px 0",
                 }}
               />
-              <input
-                {...register("timeRef")}
-                placeholder="Timeline ref (e.g. T3–T4)"
-                style={{
-                  ...S.input,
-                  width: 160,
-                  fontSize: 11,
-                  letterSpacing: 1,
-                  color: "var(--text-muted)",
-                  border: "none",
-                  borderBottom: "1px solid var(--border)",
-                  padding: "2px 0",
-                }}
-              />
+              <div style={{ width: 240 }}>
+                <EventPicker 
+                  control={control} 
+                  name="timeRef" 
+                  events={events} 
+                  placeholder="When did this chapter take place ?"
+                  sx={{ marginBottom: 0 }}
+                />
+              </div>
             </div>
             <input
               {...register("title")}
@@ -374,6 +381,14 @@ export default function ChapterPage() {
           <PinnedContextStrip
             pinnedCharObjs={pinnedCharObjs}
             pinnedEventObjs={pinnedEventObjs}
+            onRemoveChar={(charId) => {
+              const current = getValues("pinnedChars") || [];
+              setValue("pinnedChars", current.filter((x) => x !== charId), { shouldDirty: true });
+            }}
+            onRemoveEvent={(eventId) => {
+              const current = getValues("pinnedEventIds") || [];
+              setValue("pinnedEventIds", current.filter((x) => x !== eventId), { shouldDirty: true });
+            }}
           />
         )}
 
@@ -435,20 +450,20 @@ export default function ChapterPage() {
             sortedEvents={sortedEvents}
             pinnedCharIds={pinnedChars}
             pinnedEventIds={pinnedEventIds}
-            onTogglePinChar={(charId) =>
-              setPinnedChars((prev) =>
-                prev.includes(charId)
-                  ? prev.filter((x) => x !== charId)
-                  : [...prev, charId],
-              )
-            }
-            onTogglePinEvent={(eventId) =>
-              setPinnedEventIds((prev) =>
-                prev.includes(eventId)
-                  ? prev.filter((x) => x !== eventId)
-                  : [...prev, eventId],
-              )
-            }
+            onTogglePinChar={(charId) => {
+              const current = getValues("pinnedChars") || [];
+              const next = current.includes(charId)
+                ? current.filter((x) => x !== charId)
+                : [...current, charId];
+              setValue("pinnedChars", next, { shouldDirty: true });
+            }}
+            onTogglePinEvent={(eventId) => {
+              const current = getValues("pinnedEventIds") || [];
+              const next = current.includes(eventId)
+                ? current.filter((x) => x !== eventId)
+                : [...current, eventId];
+              setValue("pinnedEventIds", next, { shouldDirty: true });
+            }}
             worldData={worldData}
             events={events}
           />

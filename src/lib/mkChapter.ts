@@ -10,4 +10,6 @@ export const mkChapter = (order: number) => ({
   body: "",
   notes: "",
   order,
+  pinnedChars: [],
+  pinnedEventIds: [],
 });

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 export default function MentionHelpButton() {
   const [open, setOpen] = useState(false);
@@ -37,7 +38,7 @@ export default function MentionHelpButton() {
         @ Mentions Help
       </button>
 
-      {open && (
+      {open && createPortal(
         <>
           <div
             style={{
@@ -213,7 +214,8 @@ export default function MentionHelpButton() {
               </button>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </>
   );

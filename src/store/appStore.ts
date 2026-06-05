@@ -85,6 +85,8 @@ export interface Chapter {
   body: string;
   notes: string;
   order: number;
+  pinnedChars?: string[];
+  pinnedEventIds?: string[];
 }
 
 export interface BookData {
