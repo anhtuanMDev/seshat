@@ -117,11 +117,29 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     // 3. Build the new tree payload
+    
+    // Fetch existing tree recursively so we can reuse SHAs for stub chapters
+    const commitRes = await fetch(`${baseUrl}/git/commits/${branchSha}`, { headers });
+    const commitData = (await commitRes.json()) as { tree: { sha: string } };
+    const baseTreeSha = commitData.tree.sha;
+
+    const treeRes = await fetch(`${baseUrl}/git/trees/${baseTreeSha}?recursive=1`, { headers });
+    const oldTreeData = (await treeRes.json()) as { tree: { path: string; type: string; sha: string }[] };
+    const existingFiles = new Map<string, string>();
+    if (oldTreeData.tree) {
+      oldTreeData.tree.forEach(item => {
+        if (item.type === "blob") {
+          existingFiles.set(item.path, item.sha);
+        }
+      });
+    }
+
     const treeFiles: {
       path: string;
       mode: "100644";
       type: "blob";
-      content: string;
+      content?: string;
+      sha?: string;
     }[] = [];
 
     for (const book of data.books) {
@@ -215,8 +233,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
       book.chapters?.forEach((c) => {
         indexChapters.push({ id: c.id, title: c.title });
+        const filePath = `${bDir}/chapters/chapter_${c.id}.json`;
+
+        if (c.body === undefined) {
+          const oldSha = existingFiles.get(filePath);
+          if (oldSha) {
+            treeFiles.push({
+              path: filePath,
+              mode: "100644",
+              type: "blob",
+              sha: oldSha,
+            });
+            return;
+          }
+        }
+
         treeFiles.push({
-          path: `${bDir}/chapters/chapter_${c.id}.json`,
+          path: filePath,
           mode: "100644",
           type: "blob",
           content: JSON.stringify(c, null, 2),
