@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useDeferredValue } from "react";
 import {
   ReactFlow,
   Controls,
@@ -68,6 +68,7 @@ export default function LoreWebPage() {
   
   const [currentTimeRaw, setCurrentTimeRaw] = useState(maxEventTime);
   const currentTime = Math.min(currentTimeRaw, maxEventTime);
+  const deferredTime = useDeferredValue(currentTime);
   const setCurrentTime = setCurrentTimeRaw;
 
   const initialElements = useMemo(() => {
@@ -123,8 +124,8 @@ export default function LoreWebPage() {
 
       // Relationships
       c.relationships?.forEach((r) => {
-        // Find the latest timeline entry that is <= currentTime
-        const validEntries = (r.timeline || []).filter(t => t.time <= currentTime).sort((a, b) => b.time - a.time);
+        // Find the latest timeline entry that is <= deferredTime
+        const validEntries = (r.timeline || []).filter(t => t.time <= deferredTime).sort((a, b) => b.time - a.time);
         
         let dynamicLabel = r.feel || "Connected";
         if (validEntries.length > 0) {
@@ -147,7 +148,7 @@ export default function LoreWebPage() {
       // Events character participated in
       Object.keys(c.attributes || {}).forEach((eventId) => {
         const ev = events.find(e => e.id === eventId);
-        if (ev && ev.time <= currentTime) {
+        if (ev && ev.time <= deferredTime) {
           rawEdges.push({
             id: `e_ev_${c.id}_${eventId}`,
             source: `char_${c.id}`,
@@ -158,8 +159,8 @@ export default function LoreWebPage() {
       });
     });
 
-    // EVENTS (Only events <= currentTime)
-    events.filter(e => e.time <= currentTime).forEach((e) => {
+    // EVENTS (Only events <= deferredTime)
+    events.filter(e => e.time <= deferredTime).forEach((e) => {
       rawNodes.push({
         id: `event_${e.id}`,
         data: { label: `T${e.time}: ${e.title}` },
@@ -208,7 +209,7 @@ export default function LoreWebPage() {
     });
 
     return getLayoutedElements(rawNodes, rawEdges);
-  }, [characters, events, nations, treasures, currentTime]);
+  }, [characters, events, nations, treasures, deferredTime]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialElements.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialElements.edges);

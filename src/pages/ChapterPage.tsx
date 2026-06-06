@@ -198,6 +198,9 @@ export default function ChapterPage() {
       } finally {
         setIsSaving(false);
       }
+    } else {
+      reset(data);
+      showToast("Chapter saved locally", "success");
     }
   }, [bookIdx, bookId, id, chapterIdx, getValues, reset]);
 

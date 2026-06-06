@@ -25,6 +25,7 @@ export default function BookListPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const loadBooks = async () => {
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
       if (token) {
@@ -57,17 +58,19 @@ export default function BookListPage() {
               }
               return newBooks;
             });
-            if (isFirstLoad) showToast("Books loaded from cloud.", "success");
+            if (isFirstLoad && !cancelled) showToast("Books loaded from cloud.", "success");
           }
         } catch (error) {
+          if (cancelled) return;
           console.error("Failed to sync books from cloud:", error);
           if (isFirstLoad) showToast("Failed to load books from cloud.", "error");
         } finally {
-          if (isFirstLoad) setIsLoadingBooks(false);
+          if (isFirstLoad && !cancelled) setIsLoadingBooks(false);
         }
       }
     };
     loadBooks();
+    return () => { cancelled = true; };
   }, []); // Only run exactly once when BookListPage mounts
 
   const confirmCreateBook = async () => {

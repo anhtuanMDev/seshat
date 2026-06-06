@@ -1,7 +1,13 @@
 import { observable } from "@legendapp/state";
-import type { Character, Event } from "../lib/types";
+import { configureObservablePersistence, persistObservable } from "@legendapp/state/persist";
+import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/local-storage";
+import type { Character, Event, Chapter } from "../lib/types";
 
-export type { Character, Event } from "../lib/types";
+export type { Character, Event, Chapter } from "../lib/types";
+
+configureObservablePersistence({
+  pluginLocal: ObservablePersistLocalStorage
+});
 
 export interface Nation {
   id: string;
@@ -76,20 +82,7 @@ export interface Treasure {
   ingredients: string;
 }
 
-export interface Chapter {
-  id: string;
-  number: string;
-  title: string;
-  timeRef: string;
-  synopsis: string;
-  body: string;
-  notes: string;
-  order: number;
-  pinnedChars?: string[];
-  pinnedEventIds?: string[];
-  scenes?: import("../lib/types").SceneCard[];
-  drafts?: import("../lib/types").Draft[];
-}
+
 
 export interface BookData {
   id: string;
@@ -149,3 +142,5 @@ export const appStore = observable({
   activeBookId: null as string | null,
   books: [] as BookData[],
 });
+
+persistObservable(appStore, { local: "seshat-app" });

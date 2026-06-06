@@ -23,7 +23,7 @@ const big = (() => {
     })),
     relationships: Array.from({ length: 4 }, (_, ri) => ({
       id: `r${i}_${ri}`, withId: `c${(i + ri + 1) % 50}`,
-      dynamic: "ally", feel: "trust", history: "long",
+      dynamic: "ally", feel: "trust", history: "long", timeline: [],
     })),
     branch: [],
     attributes: {},

@@ -125,5 +125,5 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
     notes.push({ label: "Emotional state", value: attr.emotionalState, pts: Math.round(emoScore * 10) / 10, positive: emoScore > 0 });
   }
 
-  return { score, notes, attr, resolveEvent };
+  return { score: Math.max(0.1, score), notes, attr, resolveEvent };
 }

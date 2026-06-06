@@ -23,7 +23,7 @@ export default function AuthPage() {
     if (savedToken) {
       try {
         const payloadStr = atob(savedToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"));
-        const payload = JSON.parse(decodeURIComponent(escape(payloadStr)));
+        const payload = JSON.parse(decodeURIComponent(payloadStr.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
         if (Date.now() < payload.exp) {
           navigate("/");
           return;

@@ -48,9 +48,7 @@ export default function EventPage() {
   const [charAttrs, setCharAttrs] = useState<Record<string, EventAttributes>>(
     {},
   );
-  const [initialCharAttrs, setInitialCharAttrs] = useState<Record<string, EventAttributes>>(
-    {},
-  );
+  const [isAttrsDirty, setIsAttrsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, control, reset, setValue, getValues, formState: { isDirty } } = useForm<EventForm>({
@@ -94,7 +92,7 @@ export default function EventPage() {
       }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCharAttrs(attrs);
-      setInitialCharAttrs(attrs);
+      setIsAttrsDirty(false);
     }
   }, [event, event?.id, reset, bookIdx]);
 
@@ -113,6 +111,7 @@ export default function EventPage() {
       ...prev,
       [cid]: { ...prev[cid], [f]: v },
     }));
+    setIsAttrsDirty(true);
   }, []);
 
   const formChars = useWatch({ control, name: "characters" }) || [];
@@ -177,7 +176,7 @@ export default function EventPage() {
         await updateFileOnGitHub(token, bookId, `events/event_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Event synced to cloud", "success");
         reset(data);
-        setInitialCharAttrs(charAttrs);
+        setIsAttrsDirty(false);
       } catch {
         showToast("Failed to sync event to cloud", "error");
       } finally {
@@ -213,7 +212,7 @@ export default function EventPage() {
         <button
           onClick={onSubmit}
           title="Save changes"
-          disabled={(!isDirty && JSON.stringify(charAttrs) === JSON.stringify(initialCharAttrs)) || isSaving}
+          disabled={(!isDirty && !isAttrsDirty) || isSaving}
           style={{
             ...S.ghost,
             fontSize: 11,
@@ -223,8 +222,8 @@ export default function EventPage() {
             display: "flex",
             alignItems: "center",
             gap: 3,
-            opacity: ((!isDirty && JSON.stringify(charAttrs) === JSON.stringify(initialCharAttrs)) || isSaving) ? 0.5 : 1,
-            cursor: ((!isDirty && JSON.stringify(charAttrs) === JSON.stringify(initialCharAttrs)) || isSaving) ? "default" : "pointer",
+            opacity: ((!isDirty && !isAttrsDirty) || isSaving) ? 0.5 : 1,
+            cursor: ((!isDirty && !isAttrsDirty) || isSaving) ? "default" : "pointer",
           }}
         >
           <SaveIcon sx={{ fontSize: 12 }} />{isSaving ? "saving..." : "save"}
@@ -295,6 +294,7 @@ export default function EventPage() {
             {...register("endDate")}
             style={{ ...S.input, width: "100%", fontSize: 12 }}
           />
+        </div>
         <div>
           <label style={S.label}>Subplot</label>
           <input

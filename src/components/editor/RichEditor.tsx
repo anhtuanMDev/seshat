@@ -387,9 +387,7 @@ function RichEditorCore({
     if (editor && content !== undefined) {
       const current = editor.getHTML();
       if (current !== content && !(current === "<p></p>" && content === "")) {
-        isSyncingRef.current = true;
-        editor.commands.setContent(content, { emitUpdate: true });
-        isSyncingRef.current = false;
+        editor.commands.setContent(content, { emitUpdate: false });
       }
     }
   }, [editor, content]);

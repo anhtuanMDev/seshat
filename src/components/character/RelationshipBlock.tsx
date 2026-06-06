@@ -1,4 +1,4 @@
-import { useFieldArray, useWatch } from "react-hook-form";
+import { useFieldArray } from "react-hook-form";
 import { S, mkRelTimelineEntry } from "../../lib/utils";
 import { Field, Sel, EntryBlock } from "../ui";
 import { AddIcon, DeleteIcon } from "../ui/icons";

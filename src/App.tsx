@@ -18,12 +18,14 @@ import {
   DarkModeIcon, AddIcon, CloudSyncIcon, MenuIcon, SearchIcon
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useThemeHook";
 import { syncToGitHub, loadBookFromGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
 import type { Chapter } from "./store/appStore";
+
+const EMPTY_ARR: never[] = [];
 
 export default function App() {
   const { bookId } = useParams();
@@ -45,6 +47,7 @@ export default function App() {
   // Lazy-load the specific book data if it's only a lightweight reference from the cloud list,
   // OR if the user navigates directly to a book URL and memory is empty.
   useEffect(() => {
+    let cancelled = false;
     const loadSpecificBook = async () => {
       if (bookId) {
         // Find index freshly so we don't rely on stale closure if activeId hasn't updated yet
@@ -58,6 +61,7 @@ export default function App() {
             fetchingRef.current = bookId;
             try {
               const fullBook = await loadBookFromGitHub(token, bookId);
+              if (cancelled) return;
               if (fullBook && fullBook.id) {
                 // Find index AGAIN in case it changed during the await
                 const latestBooks = appStore.books.get() || [];
@@ -73,16 +77,20 @@ export default function App() {
                 throw new Error("Invalid book data received from cloud");
               }
             } catch (err) {
+              if (cancelled) return;
               console.error("Failed to load specific book", err);
               showToast("Failed to fetch full book data from cloud", "error");
             } finally {
-              fetchingRef.current = null;
+              if (!cancelled) fetchingRef.current = null;
             }
           }
         }
       }
     };
     loadSpecificBook();
+    return () => {
+      cancelled = true;
+    };
   }, [bookId, bookIdx]);
 
   const title = useWorldTitle();
@@ -200,19 +208,20 @@ export default function App() {
     }
   };
 
-  const worldNations = bookIdx >= 0 ? appStore.books[bookIdx].nations.get() : [];
-  const worldTechniques = bookIdx >= 0 ? appStore.books[bookIdx].techniques.get() : [];
-  const worldIngredients = bookIdx >= 0 ? appStore.books[bookIdx].ingredients.get() : [];
-  const worldMonsters = bookIdx >= 0 ? appStore.books[bookIdx].monsters.get() : [];
-  const worldTreasures = bookIdx >= 0 ? appStore.books[bookIdx].treasures.get() : [];
-  const worldCount =
+  const worldNations = bookIdx >= 0 ? appStore.books[bookIdx].nations.get() || EMPTY_ARR : EMPTY_ARR;
+  const worldTechniques = bookIdx >= 0 ? appStore.books[bookIdx].techniques.get() || EMPTY_ARR : EMPTY_ARR;
+  const worldIngredients = bookIdx >= 0 ? appStore.books[bookIdx].ingredients.get() || EMPTY_ARR : EMPTY_ARR;
+  const worldMonsters = bookIdx >= 0 ? appStore.books[bookIdx].monsters.get() || EMPTY_ARR : EMPTY_ARR;
+  const worldTreasures = bookIdx >= 0 ? appStore.books[bookIdx].treasures.get() || EMPTY_ARR : EMPTY_ARR;
+  const worldCount = useMemo(() =>
     (worldNations?.length || 0) +
     (worldTechniques?.length || 0) +
     (worldIngredients?.length || 0) +
     (worldMonsters?.length || 0) +
-    (worldTreasures?.length || 0);
+    (worldTreasures?.length || 0)
+  , [worldNations?.length, worldTechniques?.length, worldIngredients?.length, worldMonsters?.length, worldTreasures?.length]);
 
-  const text = buildExport({
+  const text = useMemo(() => buildExport({
     title: bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "",
     synopsis: bookIdx >= 0 ? appStore.books[bookIdx].synopsis.get() : "",
     setting: bookIdx >= 0 ? appStore.books[bookIdx].setting.get() : "",
@@ -225,7 +234,7 @@ export default function App() {
     treasures: worldTreasures || [],
     events: events || [],
     characters: characters || [],
-  });
+  }), [bookIdx, worldNations, worldTechniques, worldIngredients, worldMonsters, worldTreasures, events, characters]);
 
   const mainRef = useRef<HTMLDivElement>(null);
   useEffect(() => {

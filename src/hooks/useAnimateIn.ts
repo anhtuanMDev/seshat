@@ -12,6 +12,7 @@ export function useAnimateIn() {
       duration: 260,
       easing: "easeOutQuad",
     });
+    // Intentionally empty deps to run only once on mount
   }, []);
 
   return ref;

@@ -74,9 +74,9 @@ Be extremely concise. Use bullet points. If there are no errors, just say "No co
 
       const data = await res.json();
       setResult(data.choices[0].message.content);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setResult(`Error: ${e.message}`);
+      setResult(`Error: ${(e as Error).message}`);
     } finally {
       setIsChecking(false);
     }
@@ -129,7 +129,7 @@ Be extremely concise. Use bullet points. If there are no errors, just say "No co
         <button
           onClick={runCheck}
           disabled={isChecking || !apiKey}
-          style={{ ...S.btn, background: "var(--color-purple)", width: "100%" }}
+          style={{ ...S.pill, background: "var(--color-purple)", color: "white", border: "none", width: "100%" }}
         >
           {isChecking ? "Analyzing..." : "Analyze Chapter"}
         </button>
