@@ -515,7 +515,8 @@ Each domain directory mirrors a page and contains components that are only used 
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
 | @mentions        | `RichEditor`    | Multi-trigger Tiptap Mention extension (@, #, %, ~, ^, $)        |
 | Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
-
+| Global Search    | `App.tsx` topbar| `GlobalSearchModal` component with safe recursive deep regex replacement |
+| Lore Web         | `LoreWebPage`   | `@xyflow/react` + `dagre` directed node graph mapping connections |
 ---
 
 ## 9. Theme & Style Architecture

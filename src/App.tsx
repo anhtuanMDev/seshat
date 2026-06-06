@@ -11,10 +11,11 @@ import {
 } from "./hooks/useWorldStore";
 import { S, mkChar, mkEvent, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
+import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import {
   PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
   SportsKabaddiIcon, FileDownloadIcon, LightModeIcon,
-  DarkModeIcon, AddIcon, CloudSyncIcon, MenuIcon
+  DarkModeIcon, AddIcon, CloudSyncIcon, MenuIcon, SearchIcon
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +30,8 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
+  
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
@@ -265,6 +268,7 @@ export default function App() {
 
   return (
     <div style={S.app} className="seshat-app">
+
       {/* ── Top bar ── */}
       <div style={S.top} className="seshat-top">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -292,6 +296,13 @@ export default function App() {
           }}
         />
         <div className="seshat-top-actions" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <button
+            onClick={() => setShowSearch(true)}
+            style={{ ...S.ghost, padding: 8, color: "var(--text-secondary)" }}
+            title="Global Search & Replace"
+          >
+            <SearchIcon sx={{ fontSize: 20 }} />
+          </button>
           <button
             onClick={handleSync}
             disabled={isSyncing}
@@ -386,6 +397,13 @@ export default function App() {
             >
               <PublicIcon sx={{ fontSize: 14 }} />
               {worldCount > 0 ? `World (${worldCount})` : "World"}
+            </button>
+            <button
+              onClick={() => navigate(`/book/${bookId}/lore-web`)}
+              style={{ ...navBtnStyle(location.pathname === `/book/${bookId}/lore-web`), display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}
+            >
+              <TimelineIcon sx={{ fontSize: 14 }} />
+              Lore Web
             </button>
           </div>
 
@@ -618,6 +636,12 @@ fontSize: 15,
           </div>
         </div>
       )}
+      
+      <GlobalSearchModal 
+        open={showSearch} 
+        onClose={() => setShowSearch(false)} 
+        bookId={bookId || ""} 
+      />
     </div>
   );
 }

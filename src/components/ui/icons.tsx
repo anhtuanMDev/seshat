@@ -28,6 +28,7 @@ export { default as PeopleIcon } from "@mui/icons-material/People";
 export { default as PeopleAltIcon } from "@mui/icons-material/PeopleAlt";
 export { default as PsychologyIcon } from "@mui/icons-material/Psychology";
 export { default as PublicIcon } from "@mui/icons-material/Public";
+export { default as SearchIcon } from "@mui/icons-material/Search";
 export { default as RouteIcon } from "@mui/icons-material/Route";
 export { default as SaveIcon } from "@mui/icons-material/Save";
 export { default as ScheduleIcon } from "@mui/icons-material/Schedule";

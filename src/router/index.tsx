@@ -11,6 +11,7 @@ import TimelinePage from "../pages/TimelinePage";
 import FightPage from "../pages/FightPage";
 import ChapterPage from "../pages/ChapterPage";
 import ChapterListPage from "../pages/ChapterListPage";
+import LoreWebPage from "../pages/LoreWebPage";
 
 export const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
           { path: "fight", element: <FightPage /> },
           { path: "chapters", element: <ChapterListPage /> },
           { path: "chapters/:id", element: <ChapterPage /> },
+          { path: "lore-web", element: <LoreWebPage /> },
         ],
       },
     ],
