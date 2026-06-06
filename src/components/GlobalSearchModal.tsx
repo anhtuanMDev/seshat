@@ -120,8 +120,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
           const newObj: Record<string, unknown> = {};
           const objRecord = obj as Record<string, unknown>;
           for (const key in objRecord) {
-            // Never mutate IDs, dates, or boolean/number fields
-            if (key === 'id' || key.endsWith('Id') || typeof objRecord[key] !== 'string' && typeof objRecord[key] !== 'object') {
+            if (key === 'id' || key.endsWith('Id') || key === 'time' || key.includes('Date')) {
               newObj[key] = objRecord[key];
             } else {
               newObj[key] = deepReplace(objRecord[key]);
@@ -137,7 +136,19 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       // 3. Set the new book data back into the store
       appStore.books[bookIdx].set(newBookData);
       
-      showToast(`Replaced all occurrences in loaded data!`, "success");
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (token) {
+        import("../lib/githubSync").then(({ syncToGitHub }) => {
+          syncToGitHub(token).then(() => {
+            showToast("Replaced and synced to cloud successfully!", "success");
+          }).catch((err) => {
+            console.error(err);
+            showToast("Replaced locally, but failed to sync to cloud.", "error");
+          });
+        });
+      } else {
+        showToast("Replaced all occurrences in loaded data! (Not synced to cloud)", "success");
+      }
       onClose();
     } catch {
       showToast("Error replacing text. See console.", "error");
@@ -179,7 +190,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <button style={S.ghost} onClick={onClose}>Cancel</button>
           <button 
-            style={{ ...S.btn, background: "var(--color-red)" }} 
+            style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} 
             onClick={handleReplaceAll}
             disabled={!query || !replaceStr || isReplacing}
           >

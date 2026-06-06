@@ -23,14 +23,13 @@ export function CharStatusPanel({
     return (evA?.time ?? 0) - (evB?.time ?? 0) || a.id.localeCompare(b.id);
   });
 
-  const patch = (i: number, f: keyof StatusEntry, v: StatusEntry[keyof StatusEntry]) => {
-    const next = [...statusTimeline];
-    next[i] = { ...next[i], [f]: v };
+  const patch = (id: string, f: keyof StatusEntry, v: StatusEntry[keyof StatusEntry]) => {
+    const next = statusTimeline.map(entry => entry.id === id ? { ...entry, [f]: v } : entry);
     onChange(next);
   };
 
-  const remove = (i: number) => {
-    onChange(statusTimeline.filter((_, idx) => idx !== i));
+  const remove = (id: string) => {
+    onChange(statusTimeline.filter((entry) => entry.id !== id));
   };
 
   const cell = { marginBottom: 10 };
@@ -68,7 +67,7 @@ export function CharStatusPanel({
         <TimelineIcon sx={{ fontSize: 12 }} />Status Timeline
       </p>
 
-      {sorted.map((entry, i) => {
+      {sorted.map((entry) => {
         const ev = events.find((e) => e.id === entry.eventId);
         const evStart = ev?.startDate || "";
         const evEnd = ev?.endDate || "";
@@ -96,7 +95,7 @@ export function CharStatusPanel({
               <EventPicker
                 label="Event"
                 value={entry.eventId}
-                onChange={(v) => patch(i, "eventId", v)}
+                onChange={(v) => patch(entry.id, "eventId", v)}
                 events={events}
               />
               {ev && (
@@ -114,7 +113,7 @@ export function CharStatusPanel({
                 </span>
               )}
               <button
-                onClick={() => remove(i)}
+                onClick={() => remove(entry.id)}
                 style={{
                   ...S.ghost,
                   fontSize: 11,
@@ -145,7 +144,7 @@ export function CharStatusPanel({
                   value={entry.startDate || ""}
                   min={evStart || undefined}
                   max={evEnd || undefined}
-                  onChange={(e) => patch(i, "startDate", e.target.value)}
+                  onChange={(e) => patch(entry.id, "startDate", e.target.value)}
                   style={dateInputStyle}
                 />
               </div>
@@ -156,7 +155,7 @@ export function CharStatusPanel({
                   value={entry.endDate || ""}
                   min={evStart || undefined}
                   max={evEnd || undefined}
-                  onChange={(e) => patch(i, "endDate", e.target.value)}
+                  onChange={(e) => patch(entry.id, "endDate", e.target.value)}
                   style={dateInputStyle}
                 />
               </div>
@@ -175,7 +174,7 @@ export function CharStatusPanel({
                 <label style={S.label}>Power tier</label>
                 <select
                   value={entry.power}
-                  onChange={(e) => patch(i, "power", e.target.value)}
+                  onChange={(e) => patch(entry.id, "power", e.target.value)}
                   style={S.select}
                 >
                   <option value="">—</option>
@@ -188,7 +187,7 @@ export function CharStatusPanel({
                 <label style={S.label}>Arc stage</label>
                 <select
                   value={entry.arcStage}
-                  onChange={(e) => patch(i, "arcStage", e.target.value)}
+                  onChange={(e) => patch(entry.id, "arcStage", e.target.value)}
                   style={S.select}
                 >
                   <option value="">—</option>
@@ -201,7 +200,7 @@ export function CharStatusPanel({
                 <label style={S.label}>Emotional state</label>
                 <input
                   value={entry.emotionalState}
-                  onChange={(e) => patch(i, "emotionalState", e.target.value)}
+                  onChange={(e) => patch(entry.id, "emotionalState", e.target.value)}
                   placeholder="Grief, resolute…"
                   style={S.input}
                 />
@@ -210,7 +209,7 @@ export function CharStatusPanel({
                 <label style={S.label}>Physical state</label>
                 <input
                   value={entry.physicalState}
-                  onChange={(e) => patch(i, "physicalState", e.target.value)}
+                  onChange={(e) => patch(entry.id, "physicalState", e.target.value)}
                   placeholder="Injured, peak…"
                   style={S.input}
                 />
@@ -219,7 +218,7 @@ export function CharStatusPanel({
 
             <textarea
               value={entry.note}
-              onChange={(e) => patch(i, "note", e.target.value)}
+              onChange={(e) => patch(entry.id, "note", e.target.value)}
               placeholder="How are they doing in this period? What's driving them?"
               rows={2}
               style={{

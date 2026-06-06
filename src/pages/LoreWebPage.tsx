@@ -1,15 +1,14 @@
-import { useCallback, useMemo, useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
   Background,
   useNodesState,
   useEdgesState,
-  Edge,
-  Node,
   MarkerType,
+  Position,
 } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
   useCharacters,
@@ -40,8 +39,8 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 
   nodes.forEach((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    node.targetPosition = "left" as any;
-    node.sourcePosition = "right" as any;
+    node.targetPosition = Position.Left;
+    node.sourcePosition = Position.Right;
     // We are shifting the dagre node position (anchor=center center) to the top left
     // so it matches the React Flow node anchor point (top left).
     node.position = {
@@ -54,23 +53,22 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   return { nodes, edges };
 };
 
+const EMPTY_ARR: never[] = [];
+
 export default function LoreWebPage() {
-  const { bookId } = useParams();
-  const characters = useCharacters() || [];
-  const events = useEvents() || [];
-  const nations = useNations() || [];
-  const treasures = useTreasures() || [];
+  const characters = useCharacters() || EMPTY_ARR;
+  const events = useEvents() || EMPTY_ARR;
+  const nations = useNations() || EMPTY_ARR;
+  const treasures = useTreasures() || EMPTY_ARR;
   const ref = useAnimateIn();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   const maxEventTime = useMemo(() => events.length > 0 ? Math.max(...events.map(e => e.time)) : 10, [events]);
-  const [currentTime, setCurrentTime] = useState(maxEventTime);
-
-  // Keep slider updated if new events are added
-  useEffect(() => {
-    if (currentTime > maxEventTime) setCurrentTime(maxEventTime);
-  }, [maxEventTime, currentTime]);
+  
+  const [currentTimeRaw, setCurrentTimeRaw] = useState(maxEventTime);
+  const currentTime = Math.min(currentTimeRaw, maxEventTime);
+  const setCurrentTime = setCurrentTimeRaw;
 
   const initialElements = useMemo(() => {
     const rawNodes: Node[] = [];
@@ -83,7 +81,7 @@ export default function LoreWebPage() {
         data: { label: n.name },
         position: { x: 0, y: 0 },
         style: {
-          background: "var(--bg-panel)",
+          background: "var(--bg-main)",
           color: "var(--color-green)",
           border: "2px solid var(--color-green)",
           borderRadius: 8,
@@ -93,15 +91,18 @@ export default function LoreWebPage() {
 
       // Nation connections
       n.connections?.forEach((conn) => {
-        rawEdges.push({
-          id: `e_nat_${n.id}_${conn.withNation}`,
-          source: `nation_${n.id}`,
-          target: `nation_${conn.withNation}`,
-          label: conn.relation,
-          animated: true,
-          style: { stroke: "var(--color-green)", strokeWidth: 1.5 },
-          markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-green)" },
-        });
+        const targetNation = nations.find(x => x.name.toLowerCase() === conn.withNation.toLowerCase());
+        if (targetNation) {
+          rawEdges.push({
+            id: `e_nat_${n.id}_${targetNation.id}`,
+            source: `nation_${n.id}`,
+            target: `nation_${targetNation.id}`,
+            label: conn.relation,
+            animated: true,
+            style: { stroke: "var(--color-green)", strokeWidth: 1.5 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-green)" },
+          });
+        }
       });
     });
 
@@ -112,7 +113,7 @@ export default function LoreWebPage() {
         data: { label: c.name },
         position: { x: 0, y: 0 },
         style: {
-          background: "var(--bg-panel)",
+          background: "var(--bg-main)",
           color: c.color || "var(--color-purple)",
           border: `2px solid ${c.color || "var(--color-purple)"}`,
           borderRadius: 20, // circle-ish
@@ -164,7 +165,7 @@ export default function LoreWebPage() {
         data: { label: `T${e.time}: ${e.title}` },
         position: { x: 0, y: 0 },
         style: {
-          background: "var(--bg-panel)",
+          background: "var(--bg-main)",
           color: "var(--color-blue)",
           border: "1px dashed var(--color-blue)",
           borderRadius: 4,
@@ -180,7 +181,7 @@ export default function LoreWebPage() {
         data: { label: t.name },
         position: { x: 0, y: 0 },
         style: {
-          background: "var(--bg-panel)",
+          background: "var(--bg-main)",
           color: "var(--color-orange)",
           border: "2px solid var(--color-orange)",
           borderRadius: 4,
@@ -244,7 +245,7 @@ export default function LoreWebPage() {
         </button>
       </div>
 
-      <div style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--bg-panel)" }}>
+      <div style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--bg-main)" }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}

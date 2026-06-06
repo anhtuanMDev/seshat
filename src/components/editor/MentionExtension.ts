@@ -314,49 +314,61 @@ export const Mention = Extension.create<MentionOptions, {}>({
               0,
               $from.parentOffset,
             );
-            const match = /([@#%~^$])([\w ]*)$/.exec(textBefore);
+            let match = /([@#%~^$])([\w ]*)$/.exec(textBefore);
 
             if (match) {
               const trigger = match[1];
               const query = match[2].toLowerCase();
-              const from = $from.pos - match[0].length;
-              const to = $from.pos;
-              currentRange = { from, to };
-              currentTrigger = trigger;
-
+              
               const mentionItems = getMentionItems(trigger);
               const filtered = mentionItems.filter((x) =>
                 x.name.toLowerCase().startsWith(query),
               );
-              currentItems = filtered;
-              selectedIdx = 0;
 
-              const coords = view.coordsAtPos(to);
-              showPopup(
-                filtered,
-                coords,
-                (item) => insertMention(view, item, { from, to }, trigger),
-                selectedIdx,
-              );
-
-              const pluginState = suggestionKey.getState(view.state) as SuggestionState;
-              const needsUpdate = 
-                !pluginState.active || 
-                pluginState.query !== query || 
-                pluginState.from !== from || 
-                pluginState.to !== to;
-
-              if (needsUpdate) {
-                view.dispatch(
-                  state.tr.setMeta(suggestionKey, {
-                    active: true,
-                    query,
-                    from,
-                    to,
-                  }),
-                );
+              // If there are no matches and the query ends with a space, it means the user 
+              // is just typing a normal sentence after a valid or invalid mention. Close the popup.
+              if (filtered.length === 0 && query.includes(" ")) {
+                match = null;
               }
-            } else {
+              
+              if (match) {
+                const from = $from.pos - match[0].length;
+                const to = $from.pos;
+                currentRange = { from, to };
+                currentTrigger = trigger;
+
+                currentItems = filtered;
+                selectedIdx = 0;
+
+                const coords = view.coordsAtPos(to);
+                showPopup(
+                  filtered,
+                  coords,
+                  (item) => insertMention(view, item, { from, to }, trigger),
+                  selectedIdx,
+                );
+
+                const pluginState = suggestionKey.getState(view.state) as SuggestionState;
+                const needsUpdate = 
+                  !pluginState.active || 
+                  pluginState.query !== query || 
+                  pluginState.from !== from || 
+                  pluginState.to !== to;
+
+                if (needsUpdate) {
+                  view.dispatch(
+                    state.tr.setMeta(suggestionKey, {
+                      active: true,
+                      query,
+                      from,
+                      to,
+                    }),
+                  );
+                }
+              }
+            } 
+            
+            if (!match) {
               const pluginState = suggestionKey.getState(
                 view.state,
               ) as SuggestionState;

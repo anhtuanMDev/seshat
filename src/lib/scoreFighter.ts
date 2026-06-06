@@ -65,7 +65,7 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   const cursedEquipped = equippedItems.filter(
     (eq: Equipment) => eq.curses && eq.curses.trim(),
   );
-  const equipPts = equippedItems.length * 1.0 - cursedEquipped.length * 0.5;
+  const equipPts = equippedItems.length * 1.0 - cursedEquipped.length * 1.5;
   if (equippedItems.length) {
     score += equipPts;
     notes.push({
@@ -108,17 +108,22 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
     notes.push({ label: "Arc stage", value: attr.arcStage, pts: arcMod, positive: true });
   }
 
+  let emoScore = 0;
   const emo = (attr.emotionalState || "").toLowerCase();
   if (emo.includes("grief") || emo.includes("broken") || emo.includes("despair")) {
-    score -= 1;
-    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: -1, positive: false });
-  } else if (emo.includes("resolute") || emo.includes("focused") || emo.includes("calm")) {
-    score += 0.5;
-    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: 0.5, positive: true });
-  } else if (emo.includes("rage") || emo.includes("fury")) {
-    score += 0.3;
-    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: 0.3, positive: true });
+    emoScore -= 1;
+  }
+  if (emo.includes("resolute") || emo.includes("focused") || emo.includes("calm")) {
+    emoScore += 0.5;
+  }
+  if (emo.includes("rage") || emo.includes("fury")) {
+    emoScore += 0.3;
   }
 
-  return { score: Math.max(0.1, score), notes, attr, resolveEvent };
+  if (emoScore !== 0) {
+    score += emoScore;
+    notes.push({ label: "Emotional state", value: attr.emotionalState, pts: Math.round(emoScore * 10) / 10, positive: emoScore > 0 });
+  }
+
+  return { score, notes, attr, resolveEvent };
 }

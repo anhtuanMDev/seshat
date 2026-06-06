@@ -24,8 +24,13 @@ export default function FightPage() {
   const resultA = ready ? scoreFighter(charA, events, aEventId) : null;
   const resultB = ready ? scoreFighter(charB, events, bEventId) : null;
 
-  const total = ready ? resultA!.score + resultB!.score : 1;
-  const pctA = ready ? Math.round((resultA!.score / total) * 100) : 50;
+  const rawA = ready ? resultA!.score : 0;
+  const rawB = ready ? resultB!.score : 0;
+  const minScore = Math.min(rawA, rawB);
+  const shift = minScore <= 0 ? Math.abs(minScore) + 0.1 : 0;
+  
+  const total = ready ? (rawA + shift) + (rawB + shift) : 1;
+  const pctA = ready ? Math.round(((rawA + shift) / total) * 100) : 50;
   const pctB = ready ? 100 - pctA : 50;
 
   const colA = charA?.color || "var(--color-blue)";
