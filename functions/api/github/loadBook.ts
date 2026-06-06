@@ -86,6 +86,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
       } else if (path.includes("/chapters/")) {
         const chapterData = { ...data };
         delete chapterData.body;
+        delete chapterData.drafts;
         (book.chapters as Record<string, unknown>[]).push(chapterData);
       } else if (path.includes("/events/")) {
         (book.events as Record<string, unknown>[]).push(data);

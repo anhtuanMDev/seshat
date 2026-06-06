@@ -88,6 +88,7 @@ export interface Chapter {
   pinnedChars?: string[];
   pinnedEventIds?: string[];
   scenes?: import("../lib/types").SceneCard[];
+  drafts?: import("../lib/types").Draft[];
 }
 
 export interface BookData {

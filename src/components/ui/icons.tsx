@@ -39,3 +39,4 @@ export { default as TimelineIcon } from "@mui/icons-material/Timeline";
 export { default as VisibilityIcon } from "@mui/icons-material/Visibility";
 export { default as VisibilityOffIcon } from "@mui/icons-material/VisibilityOff";
 export { default as MenuIcon } from "@mui/icons-material/Menu";
+export { default as HistoryIcon } from "@mui/icons-material/History";

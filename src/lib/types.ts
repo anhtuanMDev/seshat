@@ -352,6 +352,13 @@ export interface SceneCard {
   outcome: string;
 }
 
+export interface Draft {
+  id: string;
+  name: string;
+  body: string;
+  createdAt: number;
+}
+
 export interface Chapter {
   id: string;
   number: string;
@@ -364,6 +371,7 @@ export interface Chapter {
   pinnedChars?: string[];
   pinnedEventIds?: string[];
   scenes?: SceneCard[];
+  drafts?: Draft[];
 }
 
 export interface Treasure {

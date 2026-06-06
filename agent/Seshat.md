@@ -521,10 +521,11 @@ Each domain directory mirrors a page and contains components that are only used 
 | Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
 | Scene Outlining  | `ChapterPage`   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome) |
 | Cloud Sync       | `lib/githubSync`| Multi-user GitHub-as-DB syncing with branch isolation & Auth tokens |
-| Lazy Loading     | `lib/loadBook`  | Strips massive chapter bodies from RAM and dynamically fetches them into React Hook Form |
+| Lazy Loading     | `lib/loadBook`  | Strips massive chapter bodies AND historical drafts payloads from RAM; dynamically fetches them into ChapterPage |
 | Mobile Overlay   | `ChapterPage`   | Drawer-style overlay backdrop for ReferencePanel on small screens |
 | Dynamic Mentions | `MentionExtension`| Tiptap custom nodes dynamically resolve entity names from store state during render/export |
 | Bi-Di Linking    | `EventPage`     | Inverse timeline querying mapping pinned events back to Chapters |
+| Draft Versioning | `ChapterPage`   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts |
 ---
 
 ## 9. Theme & Style Architecture

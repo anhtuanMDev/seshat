@@ -3,12 +3,12 @@ import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
-import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon } from "../ui/icons";
+import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon, HistoryIcon } from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
-  panelTab: "chars" | "events" | "world" | "notes";
-  onTabChange: (tab: "chars" | "events" | "world" | "notes") => void;
+  panelTab: "chars" | "events" | "world" | "notes" | "drafts";
+  onTabChange: (tab: "chars" | "events" | "world" | "notes" | "drafts") => void;
   characters: Character[];
   sortedEvents: Event[];
   pinnedCharIds: string[];
@@ -23,6 +23,7 @@ interface ReferencePanelProps {
   };
   events: Event[];
   notesNode?: React.ReactNode;
+  draftsNode?: React.ReactNode;
 }
 
 export function ReferencePanel({
@@ -37,6 +38,7 @@ export function ReferencePanel({
   worldData,
   events,
   notesNode,
+  draftsNode,
 }: ReferencePanelProps) {
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedCharIds.includes(c.id),
@@ -67,10 +69,11 @@ export function ReferencePanel({
             }
           `}
         </style>
-        {(["chars", "events", "world", "notes"] as const).map((tab) => {
+        {(["chars", "events", "world", "notes", "drafts"] as const).map((tab) => {
           const icon = tab === "chars" ? <PeopleIcon sx={{ fontSize: 12 }} />
             : tab === "events" ? <EventNoteIcon sx={{ fontSize: 12 }} />
             : tab === "world" ? <PublicIcon sx={{ fontSize: 12 }} />
+            : tab === "drafts" ? <HistoryIcon sx={{ fontSize: 12 }} />
             : <NotesIcon sx={{ fontSize: 12 }} />;
           return (
             <button
@@ -176,6 +179,12 @@ export function ReferencePanel({
             Private notes, research, and threads to pull later...
           </p>
           {notesNode}
+        </div>
+      )}
+
+      {panelTab === "drafts" && (
+        <div style={{ paddingTop: 12 }}>
+          {draftsNode}
         </div>
       )}
     </div>

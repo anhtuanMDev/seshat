@@ -21,7 +21,9 @@ import { ReferencePanel } from "../components/chapter/ReferencePanel";
 import { PinnedContextStrip } from "../components/chapter/PinnedContextStrip";
 import { ChapterToolbar } from "../components/chapter/ChapterToolbar";
 import { SceneOutlinePanel } from "../components/chapter/SceneOutlinePanel";
+import { DraftsPanel } from "../components/chapter/DraftsPanel";
 import { EventPicker } from "../components/ui/EventPicker";
+import type { Draft } from "../lib/types";
 
 export interface ChapterForm {
   number: string;
@@ -54,7 +56,7 @@ export default function ChapterPage() {
   });
 
   const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
-  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes">("chars");
+  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes" | "drafts">("chars");
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, control, reset, formState, getValues, setValue } =
@@ -104,6 +106,7 @@ export default function ChapterPage() {
               appStore.books[bookIdx].chapters[chapterIdx].body.set(fetchedBody);
               // Also sync notes if they were somehow stripped
               if (fullChapter.notes) appStore.books[bookIdx].chapters[chapterIdx].notes.set(fetchedNotes);
+              if (fullChapter.drafts) appStore.books[bookIdx].chapters[chapterIdx].drafts.set(fullChapter.drafts as import("../lib/types").Draft[]);
 
               // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
               reset({
@@ -115,7 +118,7 @@ export default function ChapterPage() {
                 notes: fullChapter.notes ? fetchedNotes : (chapter.notes || ""),
                 pinnedChars: chapter.pinnedChars || [],
                 pinnedEventIds: chapter.pinnedEventIds || [],
-                scenes: fullChapter.scenes || chapter.scenes || [],
+                scenes: (fullChapter.scenes as import("../lib/types").SceneCard[]) || chapter.scenes || [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -182,6 +185,7 @@ export default function ChapterPage() {
           pinnedChars: data.pinnedChars,
           pinnedEventIds: data.pinnedEventIds,
           scenes: data.scenes,
+          drafts: ch.drafts.get() || [],
         };
         await updateFileOnGitHub(token, bookId, `chapters/chapter_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Chapter synced to cloud", "success");
@@ -201,6 +205,24 @@ export default function ChapterPage() {
   useLayoutEffect(() => {
     saveRef.current = onSubmit;
   }, [onSubmit]);
+
+  const handleSaveAsDraft = useCallback((name: string) => {
+    if (bookIdx < 0 || chapterIdx < 0) return;
+    const ch = appStore.books[bookIdx].chapters[chapterIdx];
+    const currentDrafts = ch.drafts.get() || [];
+    const newDraft: Draft = {
+      id: crypto.randomUUID(),
+      name,
+      body: getValues("body"),
+      createdAt: Date.now(),
+    };
+    ch.drafts.set([...currentDrafts, newDraft]);
+    saveRef.current();
+  }, [bookIdx, chapterIdx, getValues]);
+
+  const handleRestoreDraft = useCallback((draft: Draft) => {
+    setValue("body", draft.body, { shouldDirty: true });
+  }, [setValue]);
 
   if (!chapter) {
     return (
@@ -459,6 +481,13 @@ export default function ChapterPage() {
                   lineHeight: 1.7,
                   padding: "4px 0",
                 }}
+              />
+            }
+            draftsNode={
+              <DraftsPanel
+                drafts={chapter?.drafts || []}
+                onSaveAsDraft={handleSaveAsDraft}
+                onRestoreDraft={handleRestoreDraft}
               />
             }
           />
