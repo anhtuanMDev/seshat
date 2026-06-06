@@ -58,7 +58,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
     const book: Record<string, unknown> = {
       id: bookId, title: "Unknown", synopsis: "", setting: "", themes: "", rules: "",
       nations: [], techniques: [], ingredients: [], monsters: [], treasures: [],
-      characters: [], chapters: [], events: [], isFullyLoaded: true
+      characters: [], chapters: [], events: [], foreshadows: [], isFullyLoaded: true
     };
     
     for (const [path, content] of Object.entries(fileContents)) {
@@ -90,6 +90,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
         (book.chapters as Record<string, unknown>[]).push(chapterData);
       } else if (path.includes("/events/")) {
         (book.events as Record<string, unknown>[]).push(data);
+      } else if (path.endsWith("foreshadows.json")) {
+        book.foreshadows = Array.isArray(data) ? data : data.foreshadows || [];
       }
     }
 

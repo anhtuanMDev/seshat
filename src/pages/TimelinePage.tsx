@@ -9,7 +9,7 @@ import { S, mkEvent } from "../lib/utils";
 import { TimelineIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import type { Event, Character } from "../lib/types";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
   Story: "var(--color-blue)",
@@ -38,7 +38,12 @@ export default function TimelinePage() {
     navigate(`/book/${bookId}/events/${e.id}`);
   }, [events, bookIdx, bookId, navigate]);
 
+  const [subplotFilter, setSubplotFilter] = useState<string | null>(null);
+
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
+  const filteredEvents = subplotFilter ? sortedEvents.filter(e => e.subplot === subplotFilter) : sortedEvents;
+  
+  const uniqueSubplots = Array.from(new Set(events.map(e => e.subplot).filter(Boolean))) as string[];
 
   return (
     <div ref={ref}>
@@ -80,6 +85,39 @@ export default function TimelinePage() {
         </button>
       </div>
 
+      {uniqueSubplots.length > 0 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1 }}>Subplots:</span>
+          <button 
+            onClick={() => setSubplotFilter(null)}
+            style={{ 
+              ...S.ghost, 
+              fontSize: 12, 
+              padding: "2px 8px", 
+              background: subplotFilter === null ? "var(--bg-hover)" : "transparent",
+              color: subplotFilter === null ? "var(--text-primary)" : "var(--text-secondary)"
+            }}
+          >
+            All
+          </button>
+          {uniqueSubplots.map(sp => (
+            <button 
+              key={sp}
+              onClick={() => setSubplotFilter(sp)}
+              style={{ 
+                ...S.ghost, 
+                fontSize: 12, 
+                padding: "2px 8px", 
+                background: subplotFilter === sp ? "var(--bg-hover)" : "transparent",
+                color: subplotFilter === sp ? "var(--text-primary)" : "var(--text-secondary)"
+              }}
+            >
+              {sp}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Timeline */}
       <div style={{ position: "relative" }}>
         {/* Vertical line */}
@@ -97,7 +135,7 @@ export default function TimelinePage() {
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {sortedEvents.map((e: Event) => (
+          {filteredEvents.map((e: Event) => (
             <EventCard
               key={e.id}
               event={e}
@@ -253,6 +291,14 @@ function EventCard({
             </span>
           )}
         </div>
+
+        {e.subplot && (
+          <div style={{ marginBottom: 6 }}>
+            <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "var(--bg-hover)", color: "var(--text-secondary)", letterSpacing: 0.5 }}>
+              Plot: {e.subplot}
+            </span>
+          </div>
+        )}
 
         {e.description && (
           <p

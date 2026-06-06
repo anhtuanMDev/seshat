@@ -526,6 +526,9 @@ Each domain directory mirrors a page and contains components that are only used 
 | Dynamic Mentions | `MentionExtension`| Tiptap custom nodes dynamically resolve entity names from store state during render/export |
 | Bi-Di Linking    | `EventPage`     | Inverse timeline querying mapping pinned events back to Chapters |
 | Draft Versioning | `ChapterPage`   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts |
+| Foreshadow Tracker| `ChapterPage`  | `ForeshadowPanel` tracking planted ideas to payoff chapters (`appStore.books[i].foreshadows[]`) |
+| Subplot Tracking | `TimelinePage`  | `Event` filtering and tagging by `subplot` property |
+| Global Glossary  | `App.tsx`       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures |
 ---
 
 ## 9. Theme & Style Architecture

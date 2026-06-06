@@ -3,12 +3,12 @@ import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
-import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon, HistoryIcon } from "../ui/icons";
+import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon, HistoryIcon, AutoFixHighIcon } from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
-  panelTab: "chars" | "events" | "world" | "notes" | "drafts";
-  onTabChange: (tab: "chars" | "events" | "world" | "notes" | "drafts") => void;
+  panelTab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows";
+  onTabChange: (tab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows") => void;
   characters: Character[];
   sortedEvents: Event[];
   pinnedCharIds: string[];
@@ -24,6 +24,7 @@ interface ReferencePanelProps {
   events: Event[];
   notesNode?: React.ReactNode;
   draftsNode?: React.ReactNode;
+  foreshadowsNode?: React.ReactNode;
 }
 
 export function ReferencePanel({
@@ -39,6 +40,7 @@ export function ReferencePanel({
   events,
   notesNode,
   draftsNode,
+  foreshadowsNode,
 }: ReferencePanelProps) {
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedCharIds.includes(c.id),
@@ -69,11 +71,12 @@ export function ReferencePanel({
             }
           `}
         </style>
-        {(["chars", "events", "world", "notes", "drafts"] as const).map((tab) => {
+        {(["chars", "events", "world", "notes", "drafts", "foreshadows"] as const).map((tab) => {
           const icon = tab === "chars" ? <PeopleIcon sx={{ fontSize: 12 }} />
             : tab === "events" ? <EventNoteIcon sx={{ fontSize: 12 }} />
             : tab === "world" ? <PublicIcon sx={{ fontSize: 12 }} />
             : tab === "drafts" ? <HistoryIcon sx={{ fontSize: 12 }} />
+            : tab === "foreshadows" ? <AutoFixHighIcon sx={{ fontSize: 12 }} />
             : <NotesIcon sx={{ fontSize: 12 }} />;
           return (
             <button
@@ -185,6 +188,12 @@ export function ReferencePanel({
       {panelTab === "drafts" && (
         <div style={{ paddingTop: 12 }}>
           {draftsNode}
+        </div>
+      )}
+
+      {panelTab === "foreshadows" && (
+        <div style={{ paddingTop: 12 }}>
+          {foreshadowsNode}
         </div>
       )}
     </div>

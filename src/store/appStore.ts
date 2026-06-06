@@ -106,6 +106,7 @@ export interface BookData {
   events: Event[];
   characters: Character[];
   chapters: Chapter[];
+  foreshadows: import("../lib/types").Foreshadow[];
   isFullyLoaded?: boolean;
 }
 
@@ -141,6 +142,7 @@ export const mkBook = (title: string): BookData => ({
   ],
   characters: [],
   chapters: [],
+  foreshadows: [],
 });
 
 export const appStore = observable({

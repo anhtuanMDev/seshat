@@ -145,6 +145,7 @@ export interface Event {
   description: string;
   consequence: string;
   characters: string[];
+  subplot?: string;
 }
 
 export interface EventAttributes {
@@ -341,6 +342,7 @@ export interface BookData {
   events: Event[];
   characters: Character[];
   chapters: Chapter[];
+  foreshadows: Foreshadow[];
 }
 
 export interface SceneCard {
@@ -357,6 +359,14 @@ export interface Draft {
   name: string;
   body: string;
   createdAt: number;
+}
+
+export interface Foreshadow {
+  id: string;
+  plantChapterId: string;
+  payoffChapterId: string;
+  description: string;
+  status: "Planted" | "Payoffed" | "Abandoned";
 }
 
 export interface Chapter {

@@ -22,8 +22,9 @@ import { PinnedContextStrip } from "../components/chapter/PinnedContextStrip";
 import { ChapterToolbar } from "../components/chapter/ChapterToolbar";
 import { SceneOutlinePanel } from "../components/chapter/SceneOutlinePanel";
 import { DraftsPanel } from "../components/chapter/DraftsPanel";
+import { ForeshadowPanel } from "../components/chapter/ForeshadowPanel";
 import { EventPicker } from "../components/ui/EventPicker";
-import type { Draft } from "../lib/types";
+import type { Draft, Foreshadow } from "../lib/types";
 
 export interface ChapterForm {
   number: string;
@@ -56,7 +57,7 @@ export default function ChapterPage() {
   });
 
   const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
-  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes" | "drafts">("chars");
+  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes" | "drafts" | "foreshadows">("chars");
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, control, reset, formState, getValues, setValue } =
@@ -223,6 +224,9 @@ export default function ChapterPage() {
   const handleRestoreDraft = useCallback((draft: Draft) => {
     setValue("body", draft.body, { shouldDirty: true });
   }, [setValue]);
+
+  const allChapters = useSelector(() => bookIdx >= 0 ? appStore.books[bookIdx].chapters.get() : []);
+  const foreshadows = useSelector(() => bookIdx >= 0 ? appStore.books[bookIdx].foreshadows.get() : []);
 
   if (!chapter) {
     return (
@@ -488,6 +492,43 @@ export default function ChapterPage() {
                 drafts={chapter?.drafts || []}
                 onSaveAsDraft={handleSaveAsDraft}
                 onRestoreDraft={handleRestoreDraft}
+              />
+            }
+            foreshadowsNode={
+              <ForeshadowPanel
+                foreshadows={foreshadows || []}
+                chapters={allChapters}
+                currentChapterId={id || ""}
+                onAddForeshadow={(f) => {
+                  if (bookIdx >= 0 && bookId) {
+                    appStore.books[bookIdx].foreshadows.push(f);
+                    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+                    if (token) {
+                      updateFileOnGitHub(token, bookId, "foreshadows.json", JSON.stringify(appStore.books[bookIdx].foreshadows.get(), null, 2)).catch(console.error);
+                    }
+                  }
+                }}
+                onUpdateForeshadow={(f) => {
+                  if (bookIdx >= 0 && bookId) {
+                    const idx = appStore.books[bookIdx].foreshadows.get().findIndex(x => x.id === f.id);
+                    if (idx >= 0) {
+                      appStore.books[bookIdx].foreshadows[idx].set(f);
+                      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+                      if (token) {
+                        updateFileOnGitHub(token, bookId, "foreshadows.json", JSON.stringify(appStore.books[bookIdx].foreshadows.get(), null, 2)).catch(console.error);
+                      }
+                    }
+                  }
+                }}
+                onDeleteForeshadow={(fid) => {
+                  if (bookIdx >= 0 && bookId) {
+                    appStore.books[bookIdx].foreshadows.set((prev: Foreshadow[]) => prev.filter(x => x.id !== fid));
+                    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+                    if (token) {
+                      updateFileOnGitHub(token, bookId, "foreshadows.json", JSON.stringify(appStore.books[bookIdx].foreshadows.get(), null, 2)).catch(console.error);
+                    }
+                  }
+                }}
               />
             }
           />

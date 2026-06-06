@@ -25,6 +25,7 @@ interface EventForm {
   description: string;
   consequence: string;
   characters: string[];
+  subplot: string;
 }
 
 export default function EventPage() {
@@ -64,6 +65,7 @@ export default function EventPage() {
       description: "",
       consequence: "",
       characters: [],
+      subplot: "",
     },
   });
 
@@ -80,6 +82,7 @@ export default function EventPage() {
         description: event.description || "",
         consequence: event.consequence || "",
         characters: event.characters || [],
+        subplot: event.subplot || "",
       });
       const attrs: Record<string, EventAttributes> = {};
       if (bookIdx >= 0) {
@@ -137,6 +140,7 @@ export default function EventPage() {
     ev.description.set(data.description);
     ev.consequence.set(data.consequence);
     ev.characters.set(data.characters);
+    ev.subplot.set(data.subplot);
     Object.entries(charAttrs).forEach(([cid, attrs]) => {
       const cIdx = appStore.books[bookIdx].characters.get().findIndex(
         (c) => c.id === cid,
@@ -168,6 +172,7 @@ export default function EventPage() {
           description: data.description,
           consequence: data.consequence,
           characters: data.characters,
+          subplot: data.subplot,
         };
         await updateFileOnGitHub(token, bookId, `events/event_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Event synced to cloud", "success");
@@ -229,7 +234,7 @@ export default function EventPage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "56px auto 1fr 1fr 1fr",
+          gridTemplateColumns: "56px auto 1fr 1fr 1fr 1fr",
           gap: "0 24px",
           marginBottom: 16,
           alignItems: "end",
@@ -288,6 +293,13 @@ export default function EventPage() {
           <input
             type="datetime-local"
             {...register("endDate")}
+            style={{ ...S.input, width: "100%", fontSize: 12 }}
+          />
+        <div>
+          <label style={S.label}>Subplot</label>
+          <input
+            {...register("subplot")}
+            placeholder="e.g. A-Plot, B-Plot"
             style={{ ...S.input, width: "100%", fontSize: 12 }}
           />
         </div>

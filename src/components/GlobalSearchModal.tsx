@@ -32,7 +32,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
   const events = rawEvents || (EMPTY_ARR as Event[]);
   const chapters = rawChapters || (EMPTY_ARR as Chapter[]);
   const bookIdx = useActiveBookIdx();
-
+  
   // Find how many chapters are unloaded
   const unloadedCount = chapters.filter((c) => c.body === undefined).length;
 
@@ -43,6 +43,12 @@ export function GlobalSearchModal({ open, onClose }: Props) {
     
     const term = query.toLowerCase();
     const hits: { type: string; name: string; snippet: string }[] = [];
+
+    const nations = bookIdx >= 0 ? appStore.books[bookIdx].nations.get() || [] : [];
+    const techniques = bookIdx >= 0 ? appStore.books[bookIdx].techniques.get() || [] : [];
+    const ingredients = bookIdx >= 0 ? appStore.books[bookIdx].ingredients.get() || [] : [];
+    const monsters = bookIdx >= 0 ? appStore.books[bookIdx].monsters.get() || [] : [];
+    const treasures = bookIdx >= 0 ? appStore.books[bookIdx].treasures.get() || [] : [];
 
     // Search Characters
     characters.forEach(c => {
@@ -75,8 +81,25 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       }
     });
 
+    // Search Glossary (World)
+    nations.forEach(n => {
+      if (JSON.stringify(n).toLowerCase().includes(term)) hits.push({ type: "Nation", name: n.name, snippet: n.culture || n.geography || "(Matched in lore)" });
+    });
+    techniques.forEach(t => {
+      if (JSON.stringify(t).toLowerCase().includes(term)) hits.push({ type: "Technique", name: t.name, snippet: t.effect || t.description || "(Matched in lore)" });
+    });
+    ingredients.forEach(i => {
+      if (JSON.stringify(i).toLowerCase().includes(term)) hits.push({ type: "Ingredient", name: i.name, snippet: i.properties || i.uses || "(Matched in lore)" });
+    });
+    monsters.forEach(m => {
+      if (JSON.stringify(m).toLowerCase().includes(term)) hits.push({ type: "Monster", name: m.name, snippet: m.abilities || m.behavior || "(Matched in lore)" });
+    });
+    treasures.forEach(tr => {
+      if (JSON.stringify(tr).toLowerCase().includes(term)) hits.push({ type: "Treasure", name: tr.name, snippet: tr.description || tr.stats || "(Matched in lore)" });
+    });
+
     return hits;
-  }, [query, characters, events, chapters]);
+  }, [query, characters, events, chapters, bookIdx]);
 
   const handleReplaceAll = () => {
     if (!query || !replaceStr) return;
@@ -129,7 +152,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
     <Modal title="Global Search & Replace" onClose={onClose}>
       <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
         <p style={{ ...S.dim, margin: 0, fontSize: 13 }}>
-          Search across all loaded characters, events, items, and chapters. 
+          Search across all loaded characters, events, items, world glossary, and chapters. 
           {unloadedCount > 0 && (
             <span style={{ color: "var(--color-orange)", display: "block", marginTop: 8 }}>
               ⚠️ {unloadedCount} chapters are unloaded to save memory. Their body text will not be searched or replaced until they are visited.
