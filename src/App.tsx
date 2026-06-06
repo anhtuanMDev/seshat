@@ -81,7 +81,9 @@ export default function App() {
               console.error("Failed to load specific book", err);
               showToast("Failed to fetch full book data from cloud", "error");
             } finally {
-              if (!cancelled) fetchingRef.current = null;
+              if (fetchingRef.current === bookId) {
+                fetchingRef.current = null;
+              }
             }
           }
         }
@@ -91,7 +93,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [bookId, bookIdx]);
+  }, [bookId]);
 
   const title = useWorldTitle();
   const events = useEvents();
