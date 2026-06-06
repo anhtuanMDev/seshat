@@ -95,6 +95,7 @@ export const loadBookFromGitHub = async (token: string, bookId: string): Promise
     const data = (await response.json()) as { book?: BookData; books?: BookData[] };
     const bookData = data.book || (data.books && data.books[0]);
     if (!bookData) throw new Error("No book data found in response");
+    bookData.isFullyLoaded = true;
     return bookData;
   } catch (error) {
     console.error("Failed to load book from GitHub:", error);

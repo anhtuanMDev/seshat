@@ -259,7 +259,13 @@ export default function App() {
 
 
 
-  const isFullyLoaded = useSelector(() => bookIdx >= 0 ? !!appStore.books[bookIdx].isFullyLoaded.get() : false);
+  const isFullyLoaded = useSelector(() => {
+    const activeId = appStore.activeBookId.get();
+    if (!activeId) return false;
+    const books = appStore.books.get() || [];
+    const book = books.find(b => b && b.id === activeId);
+    return !!book?.isFullyLoaded;
+  });
 
   // If there's no bookId in the URL, we're likely on the root path (BookListPage)
   if (!bookId) {
