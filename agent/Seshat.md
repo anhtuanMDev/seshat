@@ -519,6 +519,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Lore Web         | `LoreWebPage`   | Interactive directed node graph with Temporal Timeline slider mapping connections |
 | Continuity AI    | `RichEditor`    | BYOK (Bring Your Own Key) local OpenAI API checker for Lore-consistency auditing |
 | Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
+| Scene Outlining  | `ChapterPage`   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome) |
 ---
 
 ## 9. Theme & Style Architecture

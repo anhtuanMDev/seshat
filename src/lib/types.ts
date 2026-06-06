@@ -343,6 +343,15 @@ export interface BookData {
   chapters: Chapter[];
 }
 
+export interface SceneCard {
+  id: string;
+  title: string;
+  pov: string;
+  goal: string;
+  conflict: string;
+  outcome: string;
+}
+
 export interface Chapter {
   id: string;
   number: string;
@@ -354,6 +363,7 @@ export interface Chapter {
   order: number;
   pinnedChars?: string[];
   pinnedEventIds?: string[];
+  scenes?: SceneCard[];
 }
 
 export interface Treasure {

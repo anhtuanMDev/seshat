@@ -20,9 +20,10 @@ import RichEditor from "../components/editor/RichEditor";
 import { ReferencePanel } from "../components/chapter/ReferencePanel";
 import { PinnedContextStrip } from "../components/chapter/PinnedContextStrip";
 import { ChapterToolbar } from "../components/chapter/ChapterToolbar";
+import { SceneOutlinePanel } from "../components/chapter/SceneOutlinePanel";
 import { EventPicker } from "../components/ui/EventPicker";
 
-interface ChapterForm {
+export interface ChapterForm {
   number: string;
   title: string;
   timeRef: string;
@@ -31,9 +32,8 @@ interface ChapterForm {
   notes: string;
   pinnedChars: string[];
   pinnedEventIds: string[];
+  scenes: import("../lib/types").SceneCard[];
 }
-
-
 
 export default function ChapterPage() {
   const { id, bookId } = useParams();
@@ -68,6 +68,7 @@ export default function ChapterPage() {
         notes: "",
         pinnedChars: [],
         pinnedEventIds: [],
+        scenes: [],
       },
     });
 
@@ -86,6 +87,7 @@ export default function ChapterPage() {
               notes: chapter.notes || "",
               pinnedChars: chapter.pinnedChars || [],
               pinnedEventIds: chapter.pinnedEventIds || [],
+              scenes: chapter.scenes || [],
             });
           }
         } else {
@@ -113,6 +115,7 @@ export default function ChapterPage() {
                 notes: fullChapter.notes ? fetchedNotes : (chapter.notes || ""),
                 pinnedChars: chapter.pinnedChars || [],
                 pinnedEventIds: chapter.pinnedEventIds || [],
+                scenes: fullChapter.scenes || chapter.scenes || [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -160,6 +163,7 @@ export default function ChapterPage() {
     ch.notes.set(data.notes);
     ch.pinnedChars.set(data.pinnedChars);
     ch.pinnedEventIds.set(data.pinnedEventIds);
+    ch.scenes.set(data.scenes);
     
     // Background delta sync
     const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
@@ -177,6 +181,7 @@ export default function ChapterPage() {
           notes: data.notes,
           pinnedChars: data.pinnedChars,
           pinnedEventIds: data.pinnedEventIds,
+          scenes: data.scenes,
         };
         await updateFileOnGitHub(token, bookId, `chapters/chapter_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Chapter synced to cloud", "success");
@@ -391,6 +396,9 @@ export default function ChapterPage() {
             }}
           />
         )}
+
+        {/* ── Scene Outline (Beat Sheet) ── */}
+        <SceneOutlinePanel control={control} />
 
         {/* ── Rich editor — all context props wired ── */}
         <RichEditor

@@ -55,6 +55,15 @@ export const mkStatusEntry = (): StatusEntry => ({
   note: "",
 });
 
+export const mkSceneCard = () => ({
+  id: uid(),
+  title: "",
+  pov: "",
+  goal: "",
+  conflict: "",
+  outcome: "",
+});
+
 export const mkEvent = (): Event => ({
   id: uid(),
   time: 1,

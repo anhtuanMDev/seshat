@@ -87,6 +87,7 @@ export interface Chapter {
   order: number;
   pinnedChars?: string[];
   pinnedEventIds?: string[];
+  scenes?: import("../lib/types").SceneCard[];
 }
 
 export interface BookData {

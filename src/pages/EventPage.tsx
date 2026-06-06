@@ -3,11 +3,11 @@ import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
 import { updateFileOnGitHub } from "../lib/githubSync";
-import { useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
+import { useCharacters, useActiveBookIdx, useChapters } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
 import { Field } from "../components/ui";
 import { CharacterAttrsBlock } from "../components/event/CharacterAttrsBlock";
-import { SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon } from "../components/ui/icons";
+import { SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon, AutoStoriesIcon } from "../components/ui/icons";
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { EventAttributes, EventType } from "../lib/types";
@@ -31,6 +31,9 @@ export default function EventPage() {
   const { id } = useParams();
   const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
+  const allChapters = useChapters();
+
+  const linkedChapters = allChapters.filter(c => c.pinnedEventIds?.includes(id!));
 
   const event = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -251,14 +254,27 @@ export default function EventPage() {
             ))}
           </select>
         </div>
-        <Field
-          label="Chapters (one per line)"
-          name="chapters"
-          control={control}
-          multi
-          rows={3}
-          placeholder="3&#10;Prologue&#10;7"
-        />
+        <div>
+          <label style={S.label}><AutoStoriesIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Chapters</label>
+          <div style={{ ...S.input, minHeight: 68, fontSize: 12, padding: "8px 12px", background: "transparent", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 4 }}>
+            {linkedChapters.length > 0 ? (
+              linkedChapters.map(c => (
+                <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--color-blue)" }}>
+                  <span style={{ fontSize: 11, fontWeight: "bold" }}>{c.number}</span>
+                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.title}</span>
+                </div>
+              ))
+            ) : (
+              <span style={{ color: "var(--text-muted)" }}>Not pinned to any chapters</span>
+            )}
+            
+            <input 
+              {...register("chapters")} 
+              placeholder="Or type manually..." 
+              style={{ ...S.input, border: "none", padding: "4px 0", marginTop: "auto", fontSize: 11, background: "transparent" }}
+            />
+          </div>
+        </div>
         <div>
           <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }} />Start</label>
           <input
