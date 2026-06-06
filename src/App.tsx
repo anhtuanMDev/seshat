@@ -61,7 +61,6 @@ export default function App() {
             fetchingRef.current = bookId;
             try {
               const fullBook = await loadBookFromGitHub(token, bookId);
-              if (cancelled) return;
               if (fullBook && fullBook.id) {
                 // Find index AGAIN in case it changed during the await
                 const latestBooks = appStore.books.get() || [];
@@ -72,14 +71,13 @@ export default function App() {
                 } else {
                   appStore.books.push(fullBook);
                 }
-                showToast(`Loaded ${fullBook.title}`, "success");
+                if (!cancelled) showToast(`Loaded ${fullBook.title}`, "success");
               } else {
                 throw new Error("Invalid book data received from cloud");
               }
             } catch (err) {
-              if (cancelled) return;
               console.error("Failed to load specific book", err);
-              showToast("Failed to fetch full book data from cloud", "error");
+              if (!cancelled) showToast("Failed to fetch full book data from cloud", "error");
             } finally {
               if (fetchingRef.current === bookId) {
                 fetchingRef.current = null;
