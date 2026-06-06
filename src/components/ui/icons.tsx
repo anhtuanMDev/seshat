@@ -1,5 +1,6 @@
 export { default as AddIcon } from "@mui/icons-material/Add";
 export { default as ArticleIcon } from "@mui/icons-material/Article";
+export { default as AutoFixHighIcon } from "@mui/icons-material/AutoFixHigh";
 export { default as AutoStoriesIcon } from "@mui/icons-material/AutoStories";
 export { default as BadgeIcon } from "@mui/icons-material/Badge";
 export { default as BugReportIcon } from "@mui/icons-material/BugReport";

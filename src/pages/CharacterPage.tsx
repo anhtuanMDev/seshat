@@ -6,6 +6,7 @@ import { AchievementBlock } from "../components/character/AchievementBlock";
 import { ConditionBlock } from "../components/character/ConditionBlock";
 import { LossBlock } from "../components/character/LossBlock";
 import { TraumaBlock } from "../components/character/TraumaBlock";
+import { RelationshipBlock } from "../components/character/RelationshipBlock";
 import type { CharacterForm } from "../components/character/types";
 import { Field, Section } from "../components/ui";
 import { CharStatusPanel } from "../components/ui/CharStatusPanel";
@@ -22,10 +23,11 @@ import {
   RouteIcon,
   SaveIcon,
   TimelineIcon,
+  PeopleIcon,
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useActiveBookIdx, useEvents } from "../hooks/useWorldStore";
-import type { Achievement, Condition, Loss, Trauma } from "../lib/types";
+import { useActiveBookIdx, useEvents, useCharacters } from "../hooks/useWorldStore";
+import type { Achievement, Condition, Loss, Trauma, Relationship } from "../lib/types";
 import {
   S,
   mkAchieve,
@@ -33,6 +35,7 @@ import {
   mkLoss,
   mkStatusEntry,
   mkTrauma,
+  mkRel,
 } from "../lib/utils";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
@@ -44,6 +47,7 @@ type ModalKind =
   | { type: "condition"; idx: number | null }
   | { type: "achievement"; idx: number | null }
   | { type: "loss"; idx: number | null }
+  | { type: "relationship"; idx: number | null }
   | null;
 
 export default function CharacterPage() {
@@ -82,6 +86,7 @@ export default function CharacterPage() {
         conditions: [],
         achievements: [],
         losses: [],
+        relationships: [],
       },
     });
 
@@ -103,6 +108,7 @@ export default function CharacterPage() {
         conditions: char.conditions || [],
         achievements: char.achievements || [],
         losses: char.losses || [],
+        relationships: char.relationships || [],
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,6 +121,8 @@ export default function CharacterPage() {
   const conditions = useWatch({ control, name: "conditions" }) || [];
   const achievements = useWatch({ control, name: "achievements" }) || [];
   const losses = useWatch({ control, name: "losses" }) || [];
+  const relationships = useWatch({ control, name: "relationships" }) || [];
+  const allCharacters = useCharacters() || [];
 
   if (!char) {
     return (
@@ -143,6 +151,7 @@ export default function CharacterPage() {
     c.conditions.set(data.conditions);
     c.achievements.set(data.achievements);
     c.losses.set(data.losses);
+    c.relationships.set(data.relationships);
 
     // API delta sync
     const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
@@ -168,6 +177,7 @@ export default function CharacterPage() {
           conditions: data.conditions,
           achievements: data.achievements,
           losses: data.losses,
+          relationships: data.relationships,
         };
         await updateFileOnGitHub(token, bookId, `characters/char_${id}.json`, JSON.stringify(payload, null, 2));
         showToast("Character synced to cloud", "success");
@@ -181,18 +191,20 @@ export default function CharacterPage() {
   };
 
   // ── Array helpers ─────────────────────────────────────────────────────
-  const openAdd = (type: "trauma" | "condition" | "achievement" | "loss") => {
+  const openAdd = (type: "trauma" | "condition" | "achievement" | "loss" | "relationship") => {
     const fieldMap = {
       trauma: "traumas" as const,
       condition: "conditions" as const,
       achievement: "achievements" as const,
       loss: "losses" as const,
+      relationship: "relationships" as const,
     };
     const mkMap = {
       trauma: mkTrauma,
       condition: mkCond,
       achievement: mkAchieve,
       loss: mkLoss,
+      relationship: mkRel,
     };
     const current = getValues(fieldMap[type]);
     setValue(fieldMap[type], [...current, mkMap[type]()] as never);
@@ -200,14 +212,14 @@ export default function CharacterPage() {
   };
 
   const openEdit = (
-    type: "trauma" | "condition" | "achievement" | "loss",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
     idx: number,
   ) => {
     setModal({ type, idx });
   };
 
   const delItem = (
-    type: "trauma" | "condition" | "achievement" | "loss",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
     itemIdx: number,
   ) => {
     const fieldMap = {
@@ -215,6 +227,7 @@ export default function CharacterPage() {
       condition: "conditions" as const,
       achievement: "achievements" as const,
       loss: "losses" as const,
+      relationship: "relationships" as const,
     };
     const current = getValues(fieldMap[type]);
     setValue(
@@ -660,6 +673,53 @@ export default function CharacterPage() {
         {!losses.length && <p style={S.dim}>No losses yet.</p>}
       </Section>
 
+      {/* ── Relationships ── */}
+      <Section
+        title={
+          <>
+            <PeopleIcon sx={{ fontSize: 12, marginRight: 4 }} />
+            Relationships ({relationships.length})
+          </>
+        }
+        action={
+          <button
+            onClick={() => openAdd("relationship")}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <AddIcon sx={{ fontSize: 13 }} />
+            add
+          </button>
+        }
+      >
+        <p style={{ ...S.dim, marginBottom: 14 }}>
+          How this character relates to others over time.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {relationships.map((rel: Relationship, i: number) => {
+            const otherChar = allCharacters.find(c => c.id === rel.withId);
+            const title = otherChar ? otherChar.name : "Unknown Character";
+            return (
+              <ArrayItemCard
+                key={rel.id}
+                color="var(--color-purple)"
+                title={title}
+                subtitle={rel.feel ? `[${rel.feel}]` : undefined}
+                body={rel.timeline?.length > 0 ? `Timeline: ${rel.timeline.map(t => `T${t.time} (${t.dynamic})`).join(" → ")}` : undefined}
+                onEdit={() => openEdit("relationship", i)}
+                onDelete={() => delItem("relationship", i)}
+              />
+            );
+          })}
+        </div>
+        {!relationships.length && <p style={S.dim}>No relationships defined.</p>}
+      </Section>
+
       {/* ── Modals ── */}
       {modal?.type === "trauma" && modal.idx !== null && (
         <Modal
@@ -782,6 +842,38 @@ export default function CharacterPage() {
             index={modal.idx}
             onDelete={() => delItem("loss", modal.idx!)}
             events={events}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "relationship" && modal.idx !== null && (
+        <Modal
+          title="Relationship"
+          onClose={closeModal}
+          footer={
+            <button
+              onClick={closeModal}
+              style={{
+                ...S.ghost,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: "var(--color-green)",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <SaveIcon sx={{ fontSize: 12 }} />
+              done
+            </button>
+          }
+        >
+          <RelationshipBlock
+            control={control}
+            index={modal.idx}
+            onDelete={() => delItem("relationship", modal.idx!)}
+            characters={allCharacters}
+            currentCharacterId={char.id}
           />
         </Modal>
       )}

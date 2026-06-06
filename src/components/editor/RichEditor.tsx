@@ -21,6 +21,8 @@ import { EntityMention } from "./EntityMentionNode";
 import CharMentionTooltip from "./CharMentionTooltip";
 import UnsavedGuard from "./UnsavedGuard";
 import MentionHelpButton from "./MentionHelpButton";
+import ContinuityChecker from "./ContinuityChecker";
+import { AutoFixHighIcon } from "../ui/icons";
 
 interface RichEditorProps<T extends FieldValues = FieldValues> {
   content?: string;
@@ -41,9 +43,11 @@ interface RichEditorProps<T extends FieldValues = FieldValues> {
 function MenuBar({
   editor,
   showMentionHelp,
+  onOpenContinuity,
 }: {
   editor: Editor;
   showMentionHelp: boolean;
+  onOpenContinuity: () => void;
 }) {
   const btn = useCallback(
     (label: string, action: () => void, active?: boolean) => (
@@ -168,6 +172,29 @@ function MenuBar({
         </>
       )}
 
+      <span
+        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
+      />
+      <button
+        type="button"
+        onClick={onOpenContinuity}
+        style={{
+          background: "transparent",
+          border: "1px solid var(--color-purple)",
+          borderRadius: 4,
+          cursor: "pointer",
+          fontSize: 11,
+          padding: "2px 6px",
+          color: "var(--color-purple)",
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+        }}
+        title="Check Continuity with AI"
+      >
+        <AutoFixHighIcon sx={{ fontSize: 14 }} /> AI Check
+      </button>
+
       <div style={{ flex: 1 }} />
       <WordCountDisplay editor={editor} />
     </div>
@@ -233,6 +260,7 @@ function RichEditorCore({
   } | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
+  const [showContinuity, setShowContinuity] = useState(false);
   const isSyncingRef = useRef(false);
 
   const bookIdx = useActiveBookIdx();
@@ -424,9 +452,21 @@ function RichEditorCore({
   if (!editor) return null;
 
   return (
-    <>
-      <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
+    <div style={{ position: "relative" }}>
+      <MenuBar 
+        editor={editor} 
+        showMentionHelp={characters.length > 0} 
+        onOpenContinuity={() => setShowContinuity(true)} 
+      />
       <EditorContent editor={editor} />
+
+      {showContinuity && (
+        <ContinuityChecker 
+          text={editor.getText()} 
+          characters={characters} 
+          onClose={() => setShowContinuity(false)} 
+        />
+      )}
 
       {tooltip &&
         createPortal(
@@ -475,7 +515,7 @@ function RichEditorCore({
           }}
         />
       )}
-    </>
+    </div>
   );
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   ReactFlow,
@@ -63,6 +63,14 @@ export default function LoreWebPage() {
   const ref = useAnimateIn();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  const maxEventTime = useMemo(() => events.length > 0 ? Math.max(...events.map(e => e.time)) : 10, [events]);
+  const [currentTime, setCurrentTime] = useState(maxEventTime);
+
+  // Keep slider updated if new events are added
+  useEffect(() => {
+    if (currentTime > maxEventTime) setCurrentTime(maxEventTime);
+  }, [maxEventTime, currentTime]);
 
   const initialElements = useMemo(() => {
     const rawNodes: Node[] = [];
@@ -114,12 +122,22 @@ export default function LoreWebPage() {
 
       // Relationships
       c.relationships?.forEach((r) => {
+        // Find the latest timeline entry that is <= currentTime
+        const validEntries = (r.timeline || []).filter(t => t.time <= currentTime).sort((a, b) => b.time - a.time);
+        
+        let dynamicLabel = r.feel || "Connected";
+        if (validEntries.length > 0) {
+          dynamicLabel = validEntries[0].dynamic;
+        } else if (r.timeline?.length > 0) {
+          return; // Relationship hasn't formed yet at this point in time
+        }
+
         rawEdges.push({
           id: `e_char_${c.id}_${r.withId}`,
           source: `char_${c.id}`,
           target: `char_${r.withId}`,
-          label: r.dynamic || r.feel,
-          animated: r.feel?.toLowerCase().includes("love") || r.feel?.toLowerCase().includes("hate"),
+          label: dynamicLabel,
+          animated: dynamicLabel.toLowerCase().includes("love") || dynamicLabel.toLowerCase().includes("hate") || dynamicLabel.toLowerCase().includes("rival"),
           style: { stroke: c.color || "var(--color-purple)", strokeWidth: 1.5 },
           markerEnd: { type: MarkerType.ArrowClosed, color: c.color || "var(--color-purple)" },
         });
@@ -127,17 +145,20 @@ export default function LoreWebPage() {
 
       // Events character participated in
       Object.keys(c.attributes || {}).forEach((eventId) => {
-        rawEdges.push({
-          id: `e_ev_${c.id}_${eventId}`,
-          source: `char_${c.id}`,
-          target: `event_${eventId}`,
-          style: { stroke: "var(--border)", strokeWidth: 1, opacity: 0.5 },
-        });
+        const ev = events.find(e => e.id === eventId);
+        if (ev && ev.time <= currentTime) {
+          rawEdges.push({
+            id: `e_ev_${c.id}_${eventId}`,
+            source: `char_${c.id}`,
+            target: `event_${eventId}`,
+            style: { stroke: "var(--border)", strokeWidth: 1, opacity: 0.5 },
+          });
+        }
       });
     });
 
-    // EVENTS
-    events.forEach((e) => {
+    // EVENTS (Only events <= currentTime)
+    events.filter(e => e.time <= currentTime).forEach((e) => {
       rawNodes.push({
         id: `event_${e.id}`,
         data: { label: `T${e.time}: ${e.title}` },
@@ -186,15 +207,35 @@ export default function LoreWebPage() {
     });
 
     return getLayoutedElements(rawNodes, rawEdges);
-  }, [characters, events, nations, treasures]);
+  }, [characters, events, nations, treasures, currentTime]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialElements.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialElements.edges);
+
+  // Sync nodes when time changes
+  useEffect(() => {
+    setNodes(initialElements.nodes);
+    setEdges(initialElements.edges);
+  }, [initialElements, setNodes, setEdges]);
 
   return (
     <div ref={ref} style={{ display: "flex", flexDirection: "column", height: isFullscreen ? "100vh" : "80vh", position: isFullscreen ? "fixed" : "relative", inset: 0, zIndex: isFullscreen ? 100 : 1, background: "var(--bg-body)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isFullscreen ? 0 : 20, padding: isFullscreen ? "10px 20px" : 0 }}>
         <h2 style={{ ...S.h2, margin: 0 }}>Lore & Relationship Web</h2>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, maxWidth: 400, marginLeft: 40 }}>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: "bold" }}>T{currentTime}</span>
+          <input 
+            type="range" 
+            min={0} 
+            max={maxEventTime} 
+            value={currentTime} 
+            onChange={(e) => setCurrentTime(parseInt(e.target.value))} 
+            style={{ flex: 1, cursor: "pointer", accentColor: "var(--color-purple)" }}
+            title="Slide to see relationships evolve over time"
+          />
+        </div>
+
         <button
           onClick={() => setIsFullscreen(!isFullscreen)}
           style={{ ...S.ghost, color: "var(--text-secondary)" }}

@@ -248,8 +248,11 @@ export function buildExport(state: ExportState): string {
         const other = state.characters.find((x) => x.id === r.withId);
         if (!other) continue;
         L.push(
-          `    → ${other.name}: ${r.dynamic}${r.feel ? ` | ${r.feel}` : ""}${r.history ? ` | ${r.history}` : ""}`,
+          `    → ${other.name}:${r.feel ? ` [${r.feel}]` : ""}`,
         );
+        for (const t of r.timeline || []) {
+          L.push(`      [T${t.time}] ${t.dynamic}`);
+        }
       }
     }
 

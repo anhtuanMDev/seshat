@@ -516,7 +516,9 @@ Each domain directory mirrors a page and contains components that are only used 
 | @mentions        | `RichEditor`    | Multi-trigger Tiptap Mention extension (@, #, %, ~, ^, $)        |
 | Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
 | Global Search    | `App.tsx` topbar| `GlobalSearchModal` component with safe recursive deep regex replacement |
-| Lore Web         | `LoreWebPage`   | `@xyflow/react` + `dagre` directed node graph mapping connections |
+| Lore Web         | `LoreWebPage`   | Interactive directed node graph with Temporal Timeline slider mapping connections |
+| Continuity AI    | `RichEditor`    | BYOK (Bring Your Own Key) local OpenAI API checker for Lore-consistency auditing |
+| Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
 ---
 
 ## 9. Theme & Style Architecture

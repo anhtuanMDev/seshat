@@ -36,14 +36,16 @@ interface SelProps<T extends FieldValues = FieldValues> {
   label?: string;
   value?: string;
   onChange?: (v: string) => void;
-  opts: string[];
+  opts?: string[];
+  options?: { label: string; value: string }[];
   control?: Control<T>;
   name?: Path<T>;
 }
 
 type SelInnerProps = Omit<SelProps<FieldValues>, "control" | "name">;
 
-function SelInner({ label, value, onChange, opts }: SelInnerProps) {
+function SelInner({ label, value, onChange, opts = [], options }: SelInnerProps) {
+  const finalOptions = options || opts.map((o) => ({ label: o, value: o }));
   return (
     <StyledFormControl variant="standard">
       {label && <InputLabel>{label}</InputLabel>}
@@ -80,9 +82,9 @@ function SelInner({ label, value, onChange, opts }: SelInnerProps) {
         >
           —
         </MenuItem>
-        {opts.map((o) => (
-          <MenuItem key={o} value={o}>
-            {o}
+        {finalOptions.map((o) => (
+          <MenuItem key={o.value} value={o.value}>
+            {o.label}
           </MenuItem>
         ))}
       </Select>

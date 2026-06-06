@@ -172,12 +172,17 @@ export interface Trauma {
   manifestation: string;
 }
 
+export interface RelTimelineEntry {
+  id: string;
+  time: number;
+  dynamic: string;
+}
+
 export interface Relationship {
   id: string;
   withId: string;
-  dynamic: string;
   feel: string;
-  history: string;
+  timeline: RelTimelineEntry[];
 }
 
 export interface Branch {

@@ -85,12 +85,17 @@ export const mkTrauma = () => ({
   trigger: "",
   manifestation: "",
 });
+export const mkRelTimelineEntry = () => ({
+  id: uid(),
+  time: 1,
+  dynamic: "",
+});
+
 export const mkRel = () => ({
   id: uid(),
   withId: "",
-  dynamic: "",
   feel: "",
-  history: "",
+  timeline: [],
 });
 export const mkCond = (): Condition => ({
   id: uid(),
