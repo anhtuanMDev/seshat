@@ -41,7 +41,7 @@ export default function ChapterListPage() {
   }, 0);
 
   return (
-    <div ref={ref}>
+    <div style={{ padding: "36px 16px 0px" }} ref={ref}>
       {/* Header */}
       <div
         style={{

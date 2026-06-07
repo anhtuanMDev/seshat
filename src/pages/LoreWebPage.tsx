@@ -63,9 +63,12 @@ export default function LoreWebPage() {
   const ref = useAnimateIn();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  const maxEventTime = useMemo(() => events.length > 0 ? Math.max(...events.map(e => e.time)) : 10, [events]);
-  
+
+  const maxEventTime = useMemo(
+    () => (events.length > 0 ? Math.max(...events.map((e) => e.time)) : 10),
+    [events],
+  );
+
   const [currentTimeRaw, setCurrentTimeRaw] = useState(maxEventTime);
   const currentTime = Math.min(currentTimeRaw, maxEventTime);
   const deferredTime = useDeferredValue(currentTime);
@@ -92,7 +95,9 @@ export default function LoreWebPage() {
 
       // Nation connections
       n.connections?.forEach((conn) => {
-        const targetNation = nations.find(x => x.name.toLowerCase() === conn.withNation.toLowerCase());
+        const targetNation = nations.find(
+          (x) => x.name.toLowerCase() === conn.withNation.toLowerCase(),
+        );
         if (targetNation) {
           rawEdges.push({
             id: `e_nat_${n.id}_${targetNation.id}`,
@@ -101,7 +106,10 @@ export default function LoreWebPage() {
             label: conn.relation,
             animated: true,
             style: { stroke: "var(--color-green)", strokeWidth: 1.5 },
-            markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-green)" },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: "var(--color-green)",
+            },
           });
         }
       });
@@ -125,8 +133,10 @@ export default function LoreWebPage() {
       // Relationships
       c.relationships?.forEach((r) => {
         // Find the latest timeline entry that is <= deferredTime
-        const validEntries = (r.timeline || []).filter(t => t.time <= deferredTime).sort((a, b) => b.time - a.time);
-        
+        const validEntries = (r.timeline || [])
+          .filter((t) => t.time <= deferredTime)
+          .sort((a, b) => b.time - a.time);
+
         let dynamicLabel = r.feel || "Connected";
         if (validEntries.length > 0) {
           dynamicLabel = validEntries[0].dynamic;
@@ -139,15 +149,21 @@ export default function LoreWebPage() {
           source: `char_${c.id}`,
           target: `char_${r.withId}`,
           label: dynamicLabel,
-          animated: dynamicLabel.toLowerCase().includes("love") || dynamicLabel.toLowerCase().includes("hate") || dynamicLabel.toLowerCase().includes("rival"),
+          animated:
+            dynamicLabel.toLowerCase().includes("love") ||
+            dynamicLabel.toLowerCase().includes("hate") ||
+            dynamicLabel.toLowerCase().includes("rival"),
           style: { stroke: c.color || "var(--color-purple)", strokeWidth: 1.5 },
-          markerEnd: { type: MarkerType.ArrowClosed, color: c.color || "var(--color-purple)" },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: c.color || "var(--color-purple)",
+          },
         });
       });
 
       // Events character participated in
       Object.keys(c.attributes || {}).forEach((eventId) => {
-        const ev = events.find(e => e.id === eventId);
+        const ev = events.find((e) => e.id === eventId);
         if (ev && ev.time <= deferredTime) {
           rawEdges.push({
             id: `e_ev_${c.id}_${eventId}`,
@@ -160,20 +176,22 @@ export default function LoreWebPage() {
     });
 
     // EVENTS (Only events <= deferredTime)
-    events.filter(e => e.time <= deferredTime).forEach((e) => {
-      rawNodes.push({
-        id: `event_${e.id}`,
-        data: { label: `T${e.time}: ${e.title}` },
-        position: { x: 0, y: 0 },
-        style: {
-          background: "var(--bg-main)",
-          color: "var(--color-blue)",
-          border: "1px dashed var(--color-blue)",
-          borderRadius: 4,
-          fontSize: 12,
-        },
+    events
+      .filter((e) => e.time <= deferredTime)
+      .forEach((e) => {
+        rawNodes.push({
+          id: `event_${e.id}`,
+          data: { label: `T${e.time}: ${e.title}` },
+          position: { x: 0, y: 0 },
+          style: {
+            background: "var(--bg-main)",
+            color: "var(--color-blue)",
+            border: "1px dashed var(--color-blue)",
+            borderRadius: 4,
+            fontSize: 12,
+          },
+        });
       });
-    });
 
     // TREASURES
     treasures.forEach((t) => {
@@ -186,7 +204,8 @@ export default function LoreWebPage() {
           color: "var(--color-orange)",
           border: "2px solid var(--color-orange)",
           borderRadius: 4,
-          clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", // Hexagon
+          clipPath:
+            "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", // Hexagon
           fontWeight: "bold",
           padding: "10px 5px",
         },
@@ -194,7 +213,9 @@ export default function LoreWebPage() {
 
       if (t.creator) {
         // If creator matches a character name (rough mapping)
-        const creatorChar = characters.find(c => c.name.toLowerCase() === t.creator.toLowerCase());
+        const creatorChar = characters.find(
+          (c) => c.name.toLowerCase() === t.creator.toLowerCase(),
+        );
         if (creatorChar) {
           rawEdges.push({
             id: `e_tr_${t.id}_${creatorChar.id}`,
@@ -202,7 +223,10 @@ export default function LoreWebPage() {
             target: `tr_${t.id}`,
             label: "Created",
             style: { stroke: "var(--color-orange)", strokeWidth: 1.5 },
-            markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-orange)" },
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+              color: "var(--color-orange)",
+            },
           });
         }
       }
@@ -221,19 +245,57 @@ export default function LoreWebPage() {
   }, [initialElements, setNodes, setEdges]);
 
   return (
-    <div ref={ref} style={{ display: "flex", flexDirection: "column", height: isFullscreen ? "100vh" : "80vh", position: isFullscreen ? "fixed" : "relative", inset: 0, zIndex: isFullscreen ? 100 : 1, background: "var(--bg-body)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isFullscreen ? 0 : 20, padding: isFullscreen ? "10px 20px" : 0 }}>
+    <div
+      ref={ref}
+      style={{
+        padding: "36px 16px",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        height: "100%",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: isFullscreen ? 0 : 20,
+          padding: isFullscreen ? "10px 20px" : 0,
+        }}
+      >
         <h2 style={{ ...S.h2, margin: 0 }}>Lore & Relationship Web</h2>
-        
-        <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, maxWidth: 400, marginLeft: 40 }}>
-          <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: "bold" }}>T{currentTime}</span>
-          <input 
-            type="range" 
-            min={0} 
-            max={maxEventTime} 
-            value={currentTime} 
-            onChange={(e) => setCurrentTime(parseInt(e.target.value))} 
-            style={{ flex: 1, cursor: "pointer", accentColor: "var(--color-purple)" }}
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            flex: 1,
+            maxWidth: 400,
+            marginLeft: 40,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: "var(--text-secondary)",
+              fontWeight: "bold",
+            }}
+          >
+            T{currentTime}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={maxEventTime}
+            value={currentTime}
+            onChange={(e) => setCurrentTime(parseInt(e.target.value))}
+            style={{
+              flex: 1,
+              cursor: "pointer",
+              accentColor: "var(--color-purple)",
+            }}
             title="Slide to see relationships evolve over time"
           />
         </div>
@@ -246,7 +308,15 @@ export default function LoreWebPage() {
         </button>
       </div>
 
-      <div style={{ flex: 1, border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", background: "var(--bg-main)" }}>
+      <div
+        style={{
+          flex: 1,
+          border: "1px solid var(--border)",
+          borderRadius: 8,
+          overflow: "hidden",
+          background: "var(--bg-main)",
+        }}
+      >
         <ReactFlow
           nodes={nodes}
           edges={edges}

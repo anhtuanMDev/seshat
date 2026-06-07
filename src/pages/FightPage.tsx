@@ -28,8 +28,8 @@ export default function FightPage() {
   const rawB = ready ? resultB!.score : 0;
   const minScore = Math.min(rawA, rawB);
   const shift = minScore <= 0 ? Math.abs(minScore) + 0.1 : 0;
-  
-  const total = ready ? (rawA + shift) + (rawB + shift) : 1;
+
+  const total = ready ? rawA + shift + (rawB + shift) : 1;
   const pctA = ready ? Math.round(((rawA + shift) / total) * 100) : 50;
   const pctB = ready ? 100 - pctA : 50;
 
@@ -39,7 +39,16 @@ export default function FightPage() {
   const ref = useAnimateIn();
 
   return (
-    <div ref={ref}>
+    <div
+      ref={ref}
+      style={{
+        padding: "36px 16px",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        height: "100%",
+      }}
+    >
       <div style={{ marginBottom: 24 }}>
         <p
           style={{
@@ -127,7 +136,10 @@ export default function FightPage() {
                 nameB={charB!.name}
               />
 
-              <div style={{ ...S.grid2,  marginBottom: 20  }} className="seshat-grid2">
+              <div
+                style={{ ...S.grid2, marginBottom: 20 }}
+                className="seshat-grid2"
+              >
                 <SnapshotCard
                   color={colA}
                   event={resultA!.resolveEvent}

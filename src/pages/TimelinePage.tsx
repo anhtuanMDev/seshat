@@ -41,9 +41,13 @@ export default function TimelinePage() {
   const [subplotFilter, setSubplotFilter] = useState<string | null>(null);
 
   const sortedEvents = [...events].sort((a, b) => a.time - b.time);
-  const filteredEvents = subplotFilter ? sortedEvents.filter(e => e.subplot === subplotFilter) : sortedEvents;
-  
-  const uniqueSubplots = Array.from(new Set(events.map(e => e.subplot).filter(Boolean))) as string[];
+  const filteredEvents = subplotFilter
+    ? sortedEvents.filter((e) => e.subplot === subplotFilter)
+    : sortedEvents;
+
+  const uniqueSubplots = Array.from(
+    new Set(events.map((e) => e.subplot).filter(Boolean)),
+  ) as string[];
 
   return (
     <div ref={ref}>
@@ -86,30 +90,55 @@ export default function TimelinePage() {
       </div>
 
       {uniqueSubplots.length > 0 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1 }}>Subplots:</span>
-          <button 
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: 20,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              color: "var(--text-muted)",
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}
+          >
+            Subplots:
+          </span>
+          <button
             onClick={() => setSubplotFilter(null)}
-            style={{ 
-              ...S.ghost, 
-              fontSize: 12, 
-              padding: "2px 8px", 
-              background: subplotFilter === null ? "var(--bg-hover)" : "transparent",
-              color: subplotFilter === null ? "var(--text-primary)" : "var(--text-secondary)"
+            style={{
+              ...S.ghost,
+              fontSize: 12,
+              padding: "2px 8px",
+              background:
+                subplotFilter === null ? "var(--bg-hover)" : "transparent",
+              color:
+                subplotFilter === null
+                  ? "var(--text-primary)"
+                  : "var(--text-secondary)",
             }}
           >
             All
           </button>
-          {uniqueSubplots.map(sp => (
-            <button 
+          {uniqueSubplots.map((sp) => (
+            <button
               key={sp}
               onClick={() => setSubplotFilter(sp)}
-              style={{ 
-                ...S.ghost, 
-                fontSize: 12, 
-                padding: "2px 8px", 
-                background: subplotFilter === sp ? "var(--bg-hover)" : "transparent",
-                color: subplotFilter === sp ? "var(--text-primary)" : "var(--text-secondary)"
+              style={{
+                ...S.ghost,
+                fontSize: 12,
+                padding: "2px 8px",
+                background:
+                  subplotFilter === sp ? "var(--bg-hover)" : "transparent",
+                color:
+                  subplotFilter === sp
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)",
               }}
             >
               {sp}
@@ -229,7 +258,7 @@ function EventCard({
       >
         <span
           style={{
-              fontSize: 13,
+            fontSize: 13,
             color: typeColor,
             fontWeight: 400,
             letterSpacing: 0.5,
@@ -270,7 +299,7 @@ function EventCard({
           </span>
           <span
             style={{
-            fontSize: 13,
+              fontSize: 13,
               letterSpacing: 2,
               textTransform: "uppercase",
               color: typeColor,
@@ -294,7 +323,16 @@ function EventCard({
 
         {e.subplot && (
           <div style={{ marginBottom: 6 }}>
-            <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "var(--bg-hover)", color: "var(--text-secondary)", letterSpacing: 0.5 }}>
+            <span
+              style={{
+                fontSize: 11,
+                padding: "2px 6px",
+                borderRadius: 4,
+                background: "var(--bg-hover)",
+                color: "var(--text-secondary)",
+                letterSpacing: 0.5,
+              }}
+            >
               Plot: {e.subplot}
             </span>
           </div>

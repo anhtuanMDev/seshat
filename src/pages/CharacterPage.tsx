@@ -26,8 +26,18 @@ import {
   PeopleIcon,
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useActiveBookIdx, useEvents, useCharacters } from "../hooks/useWorldStore";
-import type { Achievement, Condition, Loss, Trauma, Relationship } from "../lib/types";
+import {
+  useActiveBookIdx,
+  useEvents,
+  useCharacters,
+} from "../hooks/useWorldStore";
+import type {
+  Achievement,
+  Condition,
+  Loss,
+  Trauma,
+  Relationship,
+} from "../lib/types";
 import {
   S,
   mkAchieve,
@@ -68,27 +78,33 @@ export default function CharacterPage() {
       .findIndex((c) => c.id === id);
   });
 
-  const { register, control, reset, setValue, getValues, formState: { isDirty } } =
-    useForm<CharacterForm>({
-      defaultValues: {
-        name: "",
-        role: "",
-        archetype: "",
-        coreWound: "",
-        coreFear: "",
-        coreDesire: "",
-        philosophy: "",
-        secrets: "",
-        arcStart: "",
-        arcEnd: "",
-        statusTimeline: [],
-        traumas: [],
-        conditions: [],
-        achievements: [],
-        losses: [],
-        relationships: [],
-      },
-    });
+  const {
+    register,
+    control,
+    reset,
+    setValue,
+    getValues,
+    formState: { isDirty },
+  } = useForm<CharacterForm>({
+    defaultValues: {
+      name: "",
+      role: "",
+      archetype: "",
+      coreWound: "",
+      coreFear: "",
+      coreDesire: "",
+      philosophy: "",
+      secrets: "",
+      arcStart: "",
+      arcEnd: "",
+      statusTimeline: [],
+      traumas: [],
+      conditions: [],
+      achievements: [],
+      losses: [],
+      relationships: [],
+    },
+  });
 
   useEffect(() => {
     if (char) {
@@ -154,7 +170,9 @@ export default function CharacterPage() {
     c.relationships.set(data.relationships);
 
     // API delta sync
-    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    const token =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
     const bookId = appStore.activeBookId.get();
     if (token && id && bookId) {
       try {
@@ -179,7 +197,12 @@ export default function CharacterPage() {
           losses: data.losses,
           relationships: data.relationships,
         };
-        await updateFileOnGitHub(token, bookId, `characters/char_${id}.json`, JSON.stringify(payload, null, 2));
+        await updateFileOnGitHub(
+          token,
+          bookId,
+          `characters/char_${id}.json`,
+          JSON.stringify(payload, null, 2),
+        );
         showToast("Character synced to cloud", "success");
         reset(data);
       } catch {
@@ -191,7 +214,9 @@ export default function CharacterPage() {
   };
 
   // ── Array helpers ─────────────────────────────────────────────────────
-  const openAdd = (type: "trauma" | "condition" | "achievement" | "loss" | "relationship") => {
+  const openAdd = (
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+  ) => {
     const fieldMap = {
       trauma: "traumas" as const,
       condition: "conditions" as const,
@@ -243,7 +268,16 @@ export default function CharacterPage() {
   };
 
   return (
-    <div ref={ref}>
+    <div
+      ref={ref}
+      style={{
+        padding: "36px 16px 0",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        height: "100%",
+      }}
+    >
       {/* ── Header ── */}
       <div
         style={{
@@ -292,8 +326,8 @@ export default function CharacterPage() {
             display: "flex",
             alignItems: "center",
             gap: 3,
-            opacity: (!isDirty || isSaving) ? 0.5 : 1,
-            cursor: (!isDirty || isSaving) ? "default" : "pointer",
+            opacity: !isDirty || isSaving ? 0.5 : 1,
+            cursor: !isDirty || isSaving ? "default" : "pointer",
           }}
         >
           <SaveIcon sx={{ fontSize: 12 }} />
@@ -702,7 +736,7 @@ export default function CharacterPage() {
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {relationships.map((rel: Relationship, i: number) => {
-            const otherChar = allCharacters.find(c => c.id === rel.withId);
+            const otherChar = allCharacters.find((c) => c.id === rel.withId);
             const title = otherChar ? otherChar.name : "Unknown Character";
             return (
               <ArrayItemCard
@@ -710,14 +744,20 @@ export default function CharacterPage() {
                 color="var(--color-purple)"
                 title={title}
                 subtitle={rel.feel ? `[${rel.feel}]` : undefined}
-                body={rel.timeline?.length > 0 ? `Timeline: ${rel.timeline.map(t => `T${t.time} (${t.dynamic})`).join(" → ")}` : undefined}
+                body={
+                  rel.timeline?.length > 0
+                    ? `Timeline: ${rel.timeline.map((t) => `T${t.time} (${t.dynamic})`).join(" → ")}`
+                    : undefined
+                }
                 onEdit={() => openEdit("relationship", i)}
                 onDelete={() => delItem("relationship", i)}
               />
             );
           })}
         </div>
-        {!relationships.length && <p style={S.dim}>No relationships defined.</p>}
+        {!relationships.length && (
+          <p style={S.dim}>No relationships defined.</p>
+        )}
       </Section>
 
       {/* ── Modals ── */}
