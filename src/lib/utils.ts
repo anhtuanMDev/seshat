@@ -248,7 +248,10 @@ export const mkTreasure = () => ({
 });
 
 // ── Styles using CSS variables ─────────────────────────────────────────────
-const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties>> = {
+const S: Record<
+  string,
+  React.CSSProperties | Record<string, React.CSSProperties>
+> = {
   app: {
     display: "flex",
     flexDirection: "column",
@@ -285,9 +288,10 @@ const S: Record<string, React.CSSProperties | Record<string, React.CSSProperties
   },
   main: {
     flex: 1,
-    overflowY: "auto",
-    padding: "32px 44px",
     background: "var(--bg-main)",
+    display: "flex",
+    flexDirection: "column",
+    minHeight: 0,
   },
   h2: {
     fontSize: 13,

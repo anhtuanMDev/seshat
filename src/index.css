@@ -247,9 +247,15 @@ svg circle {
   color: var(--text-primary);
 }
 
-.ProseMirror h1 { font-size: 25px; }
-  .ProseMirror h2 { font-size: 21px; }
-  .ProseMirror h3 { font-size: 19px; }
+.ProseMirror h1 {
+  font-size: 25px;
+}
+.ProseMirror h2 {
+  font-size: 21px;
+}
+.ProseMirror h3 {
+  font-size: 19px;
+}
 
 .ProseMirror ul,
 .ProseMirror ol {
@@ -336,7 +342,7 @@ svg circle {
   .seshat-mobile-only {
     display: flex !important;
   }
-  
+
   .seshat-desktop-only {
     display: none !important;
   }
@@ -344,7 +350,7 @@ svg circle {
   .seshat-top {
     padding: 0 16px !important;
   }
-  
+
   .seshat-top-title-input {
     width: 160px !important;
     font-size: 14px !important;
@@ -363,15 +369,11 @@ svg circle {
     background: var(--bg-side) !important;
     z-index: 50;
     transition: left 0.3s ease;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   }
 
   .seshat-side.open {
     left: 0;
-  }
-
-  .seshat-main {
-    padding: 16px !important;
   }
 
   .seshat-top-actions {
@@ -386,12 +388,14 @@ svg circle {
     font-size: 14px !important;
     padding: 4px 8px !important;
   }
-  
+
   .seshat-chapter-toolbar button svg {
     font-size: 18px !important;
   }
 
-  .seshat-grid2, .seshat-grid3, .seshat-grid4 {
+  .seshat-grid2,
+  .seshat-grid3,
+  .seshat-grid4 {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
   }
@@ -416,6 +420,7 @@ svg circle {
 /* ── Chapter Page Layout ───────────────────────────────────────────────── */
 .seshat-chapter-layout {
   display: flex;
+  flex: 1;
   gap: 0;
   min-height: 100%;
   position: relative;
@@ -424,8 +429,16 @@ svg circle {
 .seshat-chapter-prose {
   flex: 1;
   min-width: 0;
+  margin: 32px 0 0 32px;
   transition: padding 0.2s;
+  overflow: auto;
+  /* scrollbar-width: none;
+  -ms-overflow-style: none; */
 }
+
+/* .seshat-chapter-prose::-webkit-scrollbar {
+  display: none;
+} */
 
 .seshat-chapter-prose.panel-open {
   padding-right: 24px;
@@ -443,14 +456,12 @@ svg circle {
   width: 256px;
   flex-shrink: 0;
   border-left: 1px solid var(--border);
-  padding-left: 20px;
   font-size: 12px;
   /* Scroll independently on desktop */
   position: sticky;
   top: 0;
   align-self: flex-start;
-  height: calc(100vh - 112px);
-  overflow-y: auto;
+  height: 100%;
 }
 
 .seshat-chapter-toolbar {
@@ -473,16 +484,16 @@ svg circle {
   .seshat-chapter-layout {
     flex-direction: column;
   }
-  
+
   .seshat-chapter-prose.panel-open {
     padding-right: 0;
   }
-  
+
   .seshat-chapter-header {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .seshat-chapter-panel-overlay {
     display: block;
     position: fixed;
@@ -506,7 +517,7 @@ svg circle {
     padding: 24px 20px;
     margin: 0;
     overflow-y: auto;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
   }
 
   .seshat-chapter-toolbar {

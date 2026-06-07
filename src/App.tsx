@@ -13,9 +13,18 @@ import { S, mkChar, mkEvent, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import {
-  PublicIcon, AutoStoriesIcon, TimelineIcon, PeopleIcon,
-  SportsKabaddiIcon, FileDownloadIcon, LightModeIcon,
-  DarkModeIcon, AddIcon, CloudSyncIcon, MenuIcon, SearchIcon
+  PublicIcon,
+  AutoStoriesIcon,
+  TimelineIcon,
+  PeopleIcon,
+  SportsKabaddiIcon,
+  FileDownloadIcon,
+  LightModeIcon,
+  DarkModeIcon,
+  AddIcon,
+  CloudSyncIcon,
+  MenuIcon,
+  SearchIcon,
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -32,7 +41,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggle } = useTheme();
-  
+
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function App() {
 
   const bookIdx = useActiveBookIdx();
   const isInsideBook = bookIdx >= 0;
-  
+
   const fetchingRef = useRef<string | null>(null);
 
   // Lazy-load the specific book data if it's only a lightweight reference from the cloud list,
@@ -52,11 +61,16 @@ export default function App() {
       if (bookId) {
         // Find index freshly so we don't rely on stale closure if activeId hasn't updated yet
         const currentBooks = appStore.books.get() || [];
-        const freshIdx = currentBooks.findIndex(b => b && b.id === bookId);
+        const freshIdx = currentBooks.findIndex((b) => b && b.id === bookId);
         const currentBook = freshIdx >= 0 ? currentBooks[freshIdx] : null;
 
-        if ((!currentBook || !currentBook.isFullyLoaded) && fetchingRef.current !== bookId) {
-          const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+        if (
+          (!currentBook || !currentBook.isFullyLoaded) &&
+          fetchingRef.current !== bookId
+        ) {
+          const token =
+            localStorage.getItem("seshat-auth-token") ||
+            sessionStorage.getItem("seshat-auth-token");
           if (token) {
             fetchingRef.current = bookId;
             try {
@@ -64,20 +78,24 @@ export default function App() {
               if (fullBook && fullBook.id) {
                 // Find index AGAIN in case it changed during the await
                 const latestBooks = appStore.books.get() || [];
-                const finalIdx = latestBooks.findIndex(b => b && b.id === bookId);
-                
+                const finalIdx = latestBooks.findIndex(
+                  (b) => b && b.id === bookId,
+                );
+
                 if (finalIdx >= 0) {
                   appStore.books[finalIdx].set(fullBook);
                 } else {
                   appStore.books.push(fullBook);
                 }
-                if (!cancelled) showToast(`Loaded ${fullBook.title}`, "success");
+                if (!cancelled)
+                  showToast(`Loaded ${fullBook.title}`, "success");
               } else {
                 throw new Error("Invalid book data received from cloud");
               }
             } catch (err) {
               console.error("Failed to load specific book", err);
-              if (!cancelled) showToast("Failed to fetch full book data from cloud", "error");
+              if (!cancelled)
+                showToast("Failed to fetch full book data from cloud", "error");
             } finally {
               if (fetchingRef.current === bookId) {
                 fetchingRef.current = null;
@@ -125,7 +143,9 @@ export default function App() {
   };
   const delEvent = (id: string) => {
     if (bookIdx < 0) return;
-    appStore.books[bookIdx].events.set((prev: Event[]) => prev.filter((e) => e.id !== id));
+    appStore.books[bookIdx].events.set((prev: Event[]) =>
+      prev.filter((e) => e.id !== id),
+    );
   };
 
   const addChapter = () => {
@@ -188,7 +208,10 @@ export default function App() {
       showToast("Synced successfully to your secure branch!", "success");
     } catch (err) {
       showToast("Sync failed: " + (err as Error).message, "error");
-      if ((err as Error).message.includes("Unauthorized") || (err as Error).message.includes("expired")) {
+      if (
+        (err as Error).message.includes("Unauthorized") ||
+        (err as Error).message.includes("expired")
+      ) {
         localStorage.removeItem("seshat-auth-token");
         sessionStorage.removeItem("seshat-auth-token");
         navigate("/auth");
@@ -199,8 +222,10 @@ export default function App() {
   };
 
   const handleSync = () => {
-    const savedToken = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
-    
+    const savedToken =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
+
     if (!savedToken) {
       navigate("/auth");
     } else {
@@ -208,33 +233,69 @@ export default function App() {
     }
   };
 
-  const worldNations = bookIdx >= 0 ? appStore.books[bookIdx].nations.get() || EMPTY_ARR : EMPTY_ARR;
-  const worldTechniques = bookIdx >= 0 ? appStore.books[bookIdx].techniques.get() || EMPTY_ARR : EMPTY_ARR;
-  const worldIngredients = bookIdx >= 0 ? appStore.books[bookIdx].ingredients.get() || EMPTY_ARR : EMPTY_ARR;
-  const worldMonsters = bookIdx >= 0 ? appStore.books[bookIdx].monsters.get() || EMPTY_ARR : EMPTY_ARR;
-  const worldTreasures = bookIdx >= 0 ? appStore.books[bookIdx].treasures.get() || EMPTY_ARR : EMPTY_ARR;
-  const worldCount = useMemo(() =>
-    (worldNations?.length || 0) +
-    (worldTechniques?.length || 0) +
-    (worldIngredients?.length || 0) +
-    (worldMonsters?.length || 0) +
-    (worldTreasures?.length || 0)
-  , [worldNations?.length, worldTechniques?.length, worldIngredients?.length, worldMonsters?.length, worldTreasures?.length]);
+  const worldNations =
+    bookIdx >= 0
+      ? appStore.books[bookIdx].nations.get() || EMPTY_ARR
+      : EMPTY_ARR;
+  const worldTechniques =
+    bookIdx >= 0
+      ? appStore.books[bookIdx].techniques.get() || EMPTY_ARR
+      : EMPTY_ARR;
+  const worldIngredients =
+    bookIdx >= 0
+      ? appStore.books[bookIdx].ingredients.get() || EMPTY_ARR
+      : EMPTY_ARR;
+  const worldMonsters =
+    bookIdx >= 0
+      ? appStore.books[bookIdx].monsters.get() || EMPTY_ARR
+      : EMPTY_ARR;
+  const worldTreasures =
+    bookIdx >= 0
+      ? appStore.books[bookIdx].treasures.get() || EMPTY_ARR
+      : EMPTY_ARR;
+  const worldCount = useMemo(
+    () =>
+      (worldNations?.length || 0) +
+      (worldTechniques?.length || 0) +
+      (worldIngredients?.length || 0) +
+      (worldMonsters?.length || 0) +
+      (worldTreasures?.length || 0),
+    [
+      worldNations?.length,
+      worldTechniques?.length,
+      worldIngredients?.length,
+      worldMonsters?.length,
+      worldTreasures?.length,
+    ],
+  );
 
-  const text = useMemo(() => buildExport({
-    title: bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "",
-    synopsis: bookIdx >= 0 ? appStore.books[bookIdx].synopsis.get() : "",
-    setting: bookIdx >= 0 ? appStore.books[bookIdx].setting.get() : "",
-    themes: bookIdx >= 0 ? appStore.books[bookIdx].themes.get() : "",
-    rules: bookIdx >= 0 ? appStore.books[bookIdx].rules.get() : "",
-    nations: worldNations || [],
-    techniques: worldTechniques || [],
-    ingredients: worldIngredients || [],
-    monsters: worldMonsters || [],
-    treasures: worldTreasures || [],
-    events: events || [],
-    characters: characters || [],
-  }), [bookIdx, worldNations, worldTechniques, worldIngredients, worldMonsters, worldTreasures, events, characters]);
+  const text = useMemo(
+    () =>
+      buildExport({
+        title: bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "",
+        synopsis: bookIdx >= 0 ? appStore.books[bookIdx].synopsis.get() : "",
+        setting: bookIdx >= 0 ? appStore.books[bookIdx].setting.get() : "",
+        themes: bookIdx >= 0 ? appStore.books[bookIdx].themes.get() : "",
+        rules: bookIdx >= 0 ? appStore.books[bookIdx].rules.get() : "",
+        nations: worldNations || [],
+        techniques: worldTechniques || [],
+        ingredients: worldIngredients || [],
+        monsters: worldMonsters || [],
+        treasures: worldTreasures || [],
+        events: events || [],
+        characters: characters || [],
+      }),
+    [
+      bookIdx,
+      worldNations,
+      worldTechniques,
+      worldIngredients,
+      worldMonsters,
+      worldTreasures,
+      events,
+      characters,
+    ],
+  );
 
   const mainRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -257,13 +318,11 @@ export default function App() {
     fontFamily: "'Georgia', serif",
   });
 
-
-
   const isFullyLoaded = useSelector(() => {
     const activeId = appStore.activeBookId.get();
     if (!activeId) return false;
     const books = appStore.books.get() || [];
-    const book = books.find(b => b && b.id === activeId);
+    const book = books.find((b) => b && b.id === activeId);
     return !!book?.isFullyLoaded;
   });
 
@@ -275,7 +334,18 @@ export default function App() {
   // If we have a bookId but it's not fully loaded yet (or not even in memory), show loading
   if (!isFullyLoaded || !isInsideBook) {
     return (
-      <div style={{ ...S.app, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", letterSpacing: 2, fontSize: 13, textTransform: "uppercase" }}>
+      <div
+        style={{
+          ...S.app,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "var(--text-secondary)",
+          letterSpacing: 2,
+          fontSize: 13,
+          textTransform: "uppercase",
+        }}
+      >
         Loading universe...
       </div>
     );
@@ -283,22 +353,29 @@ export default function App() {
 
   return (
     <div style={S.app} className="seshat-app">
-
       {/* ── Top bar ── */}
       <div style={S.top} className="seshat-top">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button 
-            className="seshat-mobile-only" 
+          <button
+            className="seshat-mobile-only"
             onClick={() => setShowSidebar(!showSidebar)}
             style={{ ...S.ghost, padding: 0 }}
           >
             <MenuIcon />
           </button>
-          <span style={{ ...S.logo, cursor: "pointer" }} className="seshat-desktop-only" onClick={() => navigate("/")}>Seshat</span>
+          <span
+            style={{ ...S.logo, cursor: "pointer" }}
+            className="seshat-desktop-only"
+            onClick={() => navigate("/")}
+          >
+            Seshat
+          </span>
         </div>
         <input
           value={title}
-          onChange={(e) => bookIdx >= 0 && appStore.books[bookIdx].title.set(e.target.value)}
+          onChange={(e) =>
+            bookIdx >= 0 && appStore.books[bookIdx].title.set(e.target.value)
+          }
           className="seshat-top-title-input"
           style={{
             ...S.input,
@@ -310,7 +387,10 @@ export default function App() {
             letterSpacing: 1,
           }}
         />
-        <div className="seshat-top-actions" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div
+          className="seshat-top-actions"
+          style={{ display: "flex", alignItems: "center", gap: 20 }}
+        >
           <button
             onClick={() => setShowSearch(true)}
             style={{ ...S.ghost, padding: 8, color: "var(--text-secondary)" }}
@@ -332,11 +412,20 @@ export default function App() {
             }}
           >
             <CloudSyncIcon sx={{ fontSize: 14 }} />
-            <span className="seshat-desktop-only">{isSyncing ? "Syncing..." : "Sync"}</span>
+            <span className="seshat-desktop-only">
+              {isSyncing ? "Syncing..." : "Sync"}
+            </span>
           </button>
           <button
             onClick={() => setShowExport(true)}
-            style={{ ...S.ghost, letterSpacing: 2, fontSize: 15, display: "flex", alignItems: "center", gap: 4 }}
+            style={{
+              ...S.ghost,
+              letterSpacing: 2,
+              fontSize: 15,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
           >
             <FileDownloadIcon sx={{ fontSize: 14 }} />
             <span className="seshat-desktop-only">Export for AI</span>
@@ -378,24 +467,40 @@ export default function App() {
             onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
           >
-            {theme === "light" ? <LightModeIcon sx={{ fontSize: 16 }} /> : <DarkModeIcon sx={{ fontSize: 16 }} />}
+            {theme === "light" ? (
+              <LightModeIcon sx={{ fontSize: 16 }} />
+            ) : (
+              <DarkModeIcon sx={{ fontSize: 16 }} />
+            )}
           </button>
         </div>
       </div>
 
       <div style={S.row} className="seshat-row">
         {/* ── Sidebar Overlay (Mobile) ── */}
-        <div 
+        <div
           className={`seshat-sidebar-overlay ${showSidebar ? "open" : ""}`}
           onClick={() => setShowSidebar(false)}
         />
-        
+
         {/* ── Sidebar ── */}
-        <div style={S.side} className={`seshat-side ${showSidebar ? "open" : ""}`}>
-          <div className="seshat-mobile-only" style={{ padding: "10px 24px 14px" }}>
+        <div
+          style={S.side}
+          className={`seshat-side ${showSidebar ? "open" : ""}`}
+        >
+          <div
+            className="seshat-mobile-only"
+            style={{ padding: "10px 24px 14px" }}
+          >
             <button
               onClick={() => navigate("/")}
-              style={{ ...navBtnStyle(false), color: "var(--color-purple)", display: "flex", alignItems: "center", gap: 6 }}
+              style={{
+                ...navBtnStyle(false),
+                color: "var(--color-purple)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
             >
               ← Back to Books
             </button>
@@ -404,18 +509,33 @@ export default function App() {
           <div style={{ padding: "0 24px 10px" }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
-              style={{ ...navBtnStyle(
-                location.pathname === `/book/${bookId}/world` ||
-                (location.pathname === `/book/${bookId}` &&
-                  !selChar && !selEvent && !selChapter),
-              ), display: "flex", alignItems: "center", gap: 6 }}
+              style={{
+                ...navBtnStyle(
+                  location.pathname === `/book/${bookId}/world` ||
+                    (location.pathname === `/book/${bookId}` &&
+                      !selChar &&
+                      !selEvent &&
+                      !selChapter),
+                ),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
             >
               <PublicIcon sx={{ fontSize: 14 }} />
               {worldCount > 0 ? `World (${worldCount})` : "World"}
             </button>
             <button
               onClick={() => navigate(`/book/${bookId}/lore-web`)}
-              style={{ ...navBtnStyle(location.pathname === `/book/${bookId}/lore-web`), display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}
+              style={{
+                ...navBtnStyle(
+                  location.pathname === `/book/${bookId}/lore-web`,
+                ),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginTop: 4,
+              }}
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Lore Web
@@ -441,12 +561,22 @@ export default function App() {
           >
             <button
               onClick={() => navigate(`/book/${bookId}/chapters`)}
-              style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/chapters`)), display: "flex", alignItems: "center", gap: 6 }}
+              style={{
+                ...navBtnStyle(
+                  location.pathname.startsWith(`/book/${bookId}/chapters`),
+                ),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
             >
               <AutoStoriesIcon sx={{ fontSize: 14 }} />
               Chapters ({sortedChapters.length})
             </button>
-            <button onClick={addChapter} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
+            <button
+              onClick={addChapter}
+              style={{ ...S.ghost, fontSize: 16, display: "flex" }}
+            >
               <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
@@ -468,7 +598,7 @@ export default function App() {
             <p
               style={{
                 ...S.dim,
-    fontSize: 14,
+                fontSize: 14,
                 padding: "2px 24px 10px",
                 fontStyle: "italic",
               }}
@@ -496,24 +626,37 @@ export default function App() {
           >
             <button
               onClick={() => navigate(`/book/${bookId}/events`)}
-              style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/events`)), display: "flex", alignItems: "center", gap: 6 }}
+              style={{
+                ...navBtnStyle(
+                  location.pathname.startsWith(`/book/${bookId}/events`),
+                ),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Timeline
             </button>
-            <button onClick={addEvent} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
+            <button
+              onClick={addEvent}
+              style={{ ...S.ghost, fontSize: 16, display: "flex" }}
+            >
               <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
 
           {sortedEvt.map((e: Event) => {
-            const dateTag = [e.startDate && e.startDate.replace("T", " "), e.endDate && `→ ${e.endDate.replace("T", " ")}`]
+            const dateTag = [
+              e.startDate && e.startDate.replace("T", " "),
+              e.endDate && `→ ${e.endDate.replace("T", " ")}`,
+            ]
               .filter(Boolean)
               .join(" ");
-            const chTag = (e.chapters || []).length ? `Ch. ${e.chapters.join(", ")}` : "";
-            const tag = [chTag, dateTag]
-              .filter(Boolean)
-              .join(" · ");
+            const chTag = (e.chapters || []).length
+              ? `Ch. ${e.chapters.join(", ")}`
+              : "";
+            const tag = [chTag, dateTag].filter(Boolean).join(" · ");
             return (
               <SideItem
                 key={e.id}
@@ -545,12 +688,22 @@ export default function App() {
           >
             <button
               onClick={() => navigate(`/book/${bookId}/characters`)}
-              style={{ ...navBtnStyle(location.pathname.startsWith(`/book/${bookId}/characters`)), display: "flex", alignItems: "center", gap: 6 }}
+              style={{
+                ...navBtnStyle(
+                  location.pathname.startsWith(`/book/${bookId}/characters`),
+                ),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
             >
               <PeopleIcon sx={{ fontSize: 14 }} />
               Characters
             </button>
-            <button onClick={addChar} style={{ ...S.ghost, fontSize: 16, display: "flex" }}>
+            <button
+              onClick={addChar}
+              style={{ ...S.ghost, fontSize: 16, display: "flex" }}
+            >
               <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
@@ -644,18 +797,18 @@ export default function App() {
                 height: 460,
                 resize: "none",
                 fontFamily: "monospace",
-fontSize: 15,
+                fontSize: 15,
                 lineHeight: 1.7,
               }}
             />
           </div>
         </div>
       )}
-      
-      <GlobalSearchModal 
-        open={showSearch} 
-        onClose={() => setShowSearch(false)} 
-        bookId={bookId || ""} 
+
+      <GlobalSearchModal
+        open={showSearch}
+        onClose={() => setShowSearch(false)}
+        bookId={bookId || ""}
       />
     </div>
   );

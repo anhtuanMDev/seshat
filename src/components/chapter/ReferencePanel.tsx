@@ -3,12 +3,36 @@ import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
-import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon, HistoryIcon, AutoFixHighIcon, ShieldIcon } from "../ui/icons";
+import {
+  PeopleIcon,
+  EventNoteIcon,
+  PublicIcon,
+  NotesIcon,
+  HistoryIcon,
+  AutoFixHighIcon,
+  ShieldIcon,
+} from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
-  panelTab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows" | "continuity";
-  onTabChange: (tab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows" | "continuity") => void;
+  panelTab:
+    | "chars"
+    | "events"
+    | "world"
+    | "notes"
+    | "drafts"
+    | "foreshadows"
+    | "continuity";
+  onTabChange: (
+    tab:
+      | "chars"
+      | "events"
+      | "world"
+      | "notes"
+      | "drafts"
+      | "foreshadows"
+      | "continuity",
+  ) => void;
   characters: Character[];
   sortedEvents: Event[];
   pinnedCharIds: string[];
@@ -57,7 +81,6 @@ export function ReferencePanel({
         style={{
           display: "flex",
           gap: 12,
-          marginBottom: 16,
           borderBottom: "1px solid var(--border)",
           paddingBottom: 8,
           overflowX: "auto",
@@ -73,14 +96,33 @@ export function ReferencePanel({
             }
           `}
         </style>
-        {(["chars", "events", "world", "notes", "drafts", "foreshadows", "continuity"] as const).map((tab) => {
-          const icon = tab === "chars" ? <PeopleIcon sx={{ fontSize: 12 }} />
-            : tab === "events" ? <EventNoteIcon sx={{ fontSize: 12 }} />
-            : tab === "world" ? <PublicIcon sx={{ fontSize: 12 }} />
-            : tab === "drafts" ? <HistoryIcon sx={{ fontSize: 12 }} />
-            : tab === "foreshadows" ? <AutoFixHighIcon sx={{ fontSize: 12 }} />
-            : tab === "continuity" ? <ShieldIcon sx={{ fontSize: 12 }} />
-            : <NotesIcon sx={{ fontSize: 12 }} />;
+        {(
+          [
+            "chars",
+            "events",
+            "world",
+            "notes",
+            "drafts",
+            "foreshadows",
+            "continuity",
+          ] as const
+        ).map((tab, index, arr) => {
+          const icon =
+            tab === "chars" ? (
+              <PeopleIcon sx={{ fontSize: 12 }} />
+            ) : tab === "events" ? (
+              <EventNoteIcon sx={{ fontSize: 12 }} />
+            ) : tab === "world" ? (
+              <PublicIcon sx={{ fontSize: 12 }} />
+            ) : tab === "drafts" ? (
+              <HistoryIcon sx={{ fontSize: 12 }} />
+            ) : tab === "foreshadows" ? (
+              <AutoFixHighIcon sx={{ fontSize: 12 }} />
+            ) : tab === "continuity" ? (
+              <ShieldIcon sx={{ fontSize: 12 }} />
+            ) : (
+              <NotesIcon sx={{ fontSize: 12 }} />
+            );
           return (
             <button
               key={tab}
@@ -97,6 +139,9 @@ export function ReferencePanel({
                 borderBottom:
                   panelTab === tab ? "1px solid var(--text-primary)" : "none",
                 paddingBottom: 2,
+                marginLeft: index === 0 ? "8px" : "0",
+                marginRight: index === arr.length - 1 ? "16px" : "0",
+                marginTop: 12,
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
@@ -111,100 +156,105 @@ export function ReferencePanel({
         })}
       </div>
 
-      {panelTab === "chars" && (
-        <div>
-          <p style={{ ...S.dim, marginBottom: 10 }}>
-            Pin characters present in this chapter.
-          </p>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 5,
-              marginBottom: 16,
-            }}
-          >
-            {characters.map((c: Character) => (
-              <ContextTag
-                key={c.id}
-                label={c.name}
-                color={c.color}
-                active={pinnedCharIds.includes(c.id)}
-                onClick={() => onTogglePinChar(c.id)}
-              />
+      <div
+        style={{
+          paddingLeft: 12,
+          paddingBottom: 124,
+          height: "100%",
+          overflowY: "auto",
+        }}
+      >
+        {panelTab === "chars" && (
+          <div>
+            <p style={{ ...S.dim, marginBottom: 10 }}>
+              Pin characters present in this chapter.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 5,
+                marginBottom: 16,
+              }}
+            >
+              {characters.map((c: Character) => (
+                <ContextTag
+                  key={c.id}
+                  label={c.name}
+                  color={c.color}
+                  active={pinnedCharIds.includes(c.id)}
+                  onClick={() => onTogglePinChar(c.id)}
+                />
+              ))}
+              {!characters.length && <p style={S.dim}>No characters yet.</p>}
+            </div>
+            {pinnedCharObjs.map((c: Character) => (
+              <CharCard key={c.id} char={c} events={events} />
             ))}
-            {!characters.length && <p style={S.dim}>No characters yet.</p>}
           </div>
-          {pinnedCharObjs.map((c: Character) => (
-            <CharCard key={c.id} char={c} events={events} />
-          ))}
-        </div>
-      )}
+        )}
 
-      {panelTab === "events" && (
-        <div>
-          <p style={{ ...S.dim, marginBottom: 10 }}>
-            Pin timeline events this chapter covers.
-          </p>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 5,
-              marginBottom: 16,
-            }}
-          >
-            {sortedEvents.map((e: Event) => (
-              <ContextTag
-                key={e.id}
-                label={`T${e.time} ${e.title}`}
-                active={pinnedEventIds.includes(e.id)}
-                onClick={() => onTogglePinEvent(e.id)}
-              />
+        {panelTab === "events" && (
+          <div>
+            <p style={{ ...S.dim, marginBottom: 10 }}>
+              Pin timeline events this chapter covers.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 5,
+                marginBottom: 16,
+              }}
+            >
+              {sortedEvents.map((e: Event) => (
+                <ContextTag
+                  key={e.id}
+                  label={`T${e.time} ${e.title}`}
+                  active={pinnedEventIds.includes(e.id)}
+                  onClick={() => onTogglePinEvent(e.id)}
+                />
+              ))}
+              {!sortedEvents.length && <p style={S.dim}>No events yet.</p>}
+            </div>
+            {pinnedEventObjs.map((e: Event) => (
+              <EventRef key={e.id} event={e} />
             ))}
-            {!sortedEvents.length && <p style={S.dim}>No events yet.</p>}
           </div>
-          {pinnedEventObjs.map((e: Event) => (
-            <EventRef key={e.id} event={e} />
-          ))}
-        </div>
-      )}
+        )}
 
-      {panelTab === "world" && (
-        <WorldTabContent
-          synopsis={worldData.synopsis}
-          themes={worldData.themes}
-          setting={worldData.setting}
-          rules={worldData.rules}
-        />
-      )}
+        {panelTab === "world" && (
+          <WorldTabContent
+            synopsis={worldData.synopsis}
+            themes={worldData.themes}
+            setting={worldData.setting}
+            rules={worldData.rules}
+          />
+        )}
 
-      {panelTab === "notes" && (
-        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          <p style={{ ...S.dim, marginBottom: 10 }}>
-            Private notes, research, and threads to pull later...
-          </p>
-          {notesNode}
-        </div>
-      )}
+        {panelTab === "notes" && (
+          <div
+            style={{ display: "flex", flexDirection: "column", height: "100%" }}
+          >
+            <p style={{ ...S.dim, marginBottom: 10 }}>
+              Private notes, research, and threads to pull later...
+            </p>
+            {notesNode}
+          </div>
+        )}
 
-      {panelTab === "drafts" && (
-        <div style={{ paddingTop: 12 }}>
-          {draftsNode}
-        </div>
-      )}
+        {panelTab === "drafts" && (
+          <div style={{ paddingTop: 12 }}>{draftsNode}</div>
+        )}
 
-      {panelTab === "foreshadows" && (
-        <div style={{ paddingTop: 12 }}>
-          {foreshadowsNode}
-        </div>
-      )}
+        {panelTab === "foreshadows" && (
+          <div style={{ paddingTop: 12 }}>{foreshadowsNode}</div>
+        )}
 
-      {panelTab === "continuity" && (
-        <div style={{ paddingTop: 12, height: "100%" }}>
-          {continuityNode}
-        </div>
-      )}
+        {panelTab === "continuity" && (
+          <div style={{ paddingTop: 12, height: "100%" }}>{continuityNode}</div>
+        )}
+      </div>
     </div>
   );
 }
