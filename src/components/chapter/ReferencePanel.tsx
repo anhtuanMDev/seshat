@@ -76,7 +76,7 @@ export function ReferencePanel({
     .sort((a: Event, b: Event) => a.time - b.time);
 
   return (
-    <div className="seshat-chapter-panel">
+    <div className="seshat-chapter-panel" style={{ display: "flex", flexDirection: "column" }}>
       <div
         style={{
           display: "flex",
@@ -86,6 +86,7 @@ export function ReferencePanel({
           overflowX: "auto",
           scrollbarWidth: "none", // For Firefox
           msOverflowStyle: "none", // For IE/Edge
+          flexShrink: 0,
         }}
         className="no-scrollbar" // Assuming we might have a utility class, but inline works for basics
       >
@@ -160,7 +161,7 @@ export function ReferencePanel({
         style={{
           paddingLeft: 12,
           paddingBottom: 124,
-          height: "100%",
+          flex: 1,
           overflowY: "auto",
         }}
       >
