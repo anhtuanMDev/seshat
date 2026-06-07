@@ -40,3 +40,6 @@ export { default as VisibilityIcon } from "@mui/icons-material/Visibility";
 export { default as VisibilityOffIcon } from "@mui/icons-material/VisibilityOff";
 export { default as MenuIcon } from "@mui/icons-material/Menu";
 export { default as HistoryIcon } from "@mui/icons-material/History";
+export { default as ShieldIcon } from "@mui/icons-material/Shield";
+export { default as WarningIcon } from "@mui/icons-material/Warning";
+export { default as CheckCircleIcon } from "@mui/icons-material/CheckCircle";

@@ -24,6 +24,7 @@ import { SceneOutlinePanel } from "../components/chapter/SceneOutlinePanel";
 import { DraftsPanel } from "../components/chapter/DraftsPanel";
 import { ForeshadowPanel } from "../components/chapter/ForeshadowPanel";
 import { EventPicker } from "../components/ui/EventPicker";
+import { ContinuityTracker } from "../components/chapter/ContinuityTracker";
 import type { Draft, Foreshadow } from "../lib/types";
 
 export interface ChapterForm {
@@ -57,7 +58,7 @@ export default function ChapterPage() {
   });
 
   const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
-  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes" | "drafts" | "foreshadows">("chars");
+  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes" | "drafts" | "foreshadows" | "continuity">("chars");
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, control, reset, formState, getValues, setValue } =
@@ -532,6 +533,13 @@ export default function ChapterPage() {
                     }
                   }
                 }}
+              />
+            }
+            continuityNode={
+              <ContinuityTracker 
+                text={body || ""} 
+                characters={characters} 
+                pinnedCharIds={pinnedChars}
               />
             }
           />

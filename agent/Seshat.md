@@ -517,7 +517,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
 | Global Search    | `App.tsx` topbar| `GlobalSearchModal` component with safe recursive deep regex replacement |
 | Lore Web         | `LoreWebPage`   | Interactive directed node graph with Temporal Timeline slider mapping connections |
-| Continuity AI    | `RichEditor`    | BYOK (Bring Your Own Key) local OpenAI API checker for Lore-consistency auditing |
+| Continuity Tracker | `ChapterPage`   | Offline, mention-based dynamic checklist extracting Traumas and Core Wounds from pinned characters |
 | Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
 | Scene Outlining  | `ChapterPage`   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome) |
 | Cloud Sync       | `lib/githubSync`| Multi-user GitHub-as-DB syncing with branch isolation & Auth tokens |
@@ -530,6 +530,47 @@ Each domain directory mirrors a page and contains components that are only used 
 | Subplot Tracking | `TimelinePage`  | `Event` filtering and tagging by `subplot` property |
 | Global Glossary  | `App.tsx`       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures |
 ---
+
+### Continuity Tracker Rules
+The Continuity Tracker is an offline, non-AI rule engine embedded in the Chapter Editor's Reference Panel (`ContinuityTracker.tsx`). It dynamically checks prose context without making external API calls.
+**How it tracks active constraints:**
+1. **Explicit Pinning:** Any character manually pinned to the chapter via the sidebar is tracked.
+2. **Implicit @Mentions:** Any character explicitly tagged in the Tiptap editor using `@` (stored as `data-mention-id`) is tracked.
+3. **Implicit Name Match:** Any string match of a character's exact `name` in the plain text body will automatically track them.
+Once a character is marked active in the current chapter, the Tracker extracts their **Core Wound** and all **unresolved Traumas**, compiling them into a visual checklist for the author. This ensures story consistency regarding physical and psychological limitations during scene writing.
+
+### Dynamic Mentions (`MentionExtension`)
+The Tiptap text editor uses a multi-trigger custom node extension to bind plain text to specific world entities. 
+**Triggers & Resolution:**
+- `@` -> Characters (`appStore.books[i].characters`)
+- `#` -> Nations (`appStore.books[i].nations`)
+- `%` -> Monsters (`appStore.books[i].monsters`)
+- `~` -> Ingredients (`appStore.books[i].ingredients`)
+- `^` -> Techniques (`appStore.books[i].techniques`)
+- `$` -> Treasures (`appStore.books[i].treasures`)
+**Rules:** Mentions store only the unique `id` and the `trigger` character in the HTML (`<span data-mention-id="123" data-trigger="@">`). They do **not** store the name. During rendering or DOCX export, the name is dynamically resolved from the `appStore`. If an entity is renamed in the sidebar, every mention of them across the entire book updates instantly.
+
+### Foreshadow Tracker
+A structural tracking system to ensure setups are properly paid off.
+**Rules:** A Foreshadow requires two chapters: a `plantChapterId` (where the idea is introduced) and a `payoffChapterId` (where it resolves). 
+- It exists in three states: `Planted`, `Payoffed`, and `Abandoned`. 
+- When viewing a Chapter, the `ForeshadowPanel` filters the global `appStore.books[i].foreshadows` array to only show items where the current chapter is either the Plant or the Payoff, allowing the author to immediately see what promises they need to keep in the current scene.
+
+### Bi-Directional (Bi-Di) Linking
+Seshat uses implicit inverse querying rather than explicit back-pointers.
+**Rules:** When you pin a Character or an Event to a Chapter, you are modifying the Chapter's `pinnedChars` and `pinnedEventIds` arrays. You are NOT modifying the Character or Event objects. 
+- When you view an Event in the `EventPage`, it runs a computed selector to map through all Chapters, find which ones contain its `id` in their `pinnedEventIds`, and generates a "Mentioned In" list dynamically.
+
+### Fight Simulation (`scoreFighter.ts`)
+A deterministic comparison engine for power scaling.
+**Rules:** It takes two Character objects and compares their attributes: Skills, Equipment, and Conditions. 
+- It assigns arbitrary mathematical weights to `tier`, `rarity`, and `stats` text.
+- It is purely read-only; it does not mutate character state. It is used in `FightPage` as a sandbox for authors to check if a planned encounter makes logical sense based on the established world rules.
+
+### Lazy Loading Architecture (`loadBook.ts`)
+A strict memory-management rule to prevent browser tab crashes on massive novels.
+**Rules:** When a book is loaded from the cloud or local storage, the `body` and `drafts` properties of every Chapter are explicitly `delete`d from the memory payload before being pushed to the Legend State store. 
+- The `ChapterPage` detects if `chapter.body === undefined`. If so, it initiates an asynchronous fetch (`loadFileFromGitHub`) for that specific `chapter_{id}.json` file, loads the massive text string into memory, injects it into the React Hook Form, and unloads it when the user navigates away.
 
 ## 9. Theme & Style Architecture
 

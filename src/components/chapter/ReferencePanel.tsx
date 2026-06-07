@@ -3,12 +3,12 @@ import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
-import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon, HistoryIcon, AutoFixHighIcon } from "../ui/icons";
+import { PeopleIcon, EventNoteIcon, PublicIcon, NotesIcon, HistoryIcon, AutoFixHighIcon, ShieldIcon } from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
-  panelTab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows";
-  onTabChange: (tab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows") => void;
+  panelTab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows" | "continuity";
+  onTabChange: (tab: "chars" | "events" | "world" | "notes" | "drafts" | "foreshadows" | "continuity") => void;
   characters: Character[];
   sortedEvents: Event[];
   pinnedCharIds: string[];
@@ -25,6 +25,7 @@ interface ReferencePanelProps {
   notesNode?: React.ReactNode;
   draftsNode?: React.ReactNode;
   foreshadowsNode?: React.ReactNode;
+  continuityNode?: React.ReactNode;
 }
 
 export function ReferencePanel({
@@ -41,6 +42,7 @@ export function ReferencePanel({
   notesNode,
   draftsNode,
   foreshadowsNode,
+  continuityNode,
 }: ReferencePanelProps) {
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedCharIds.includes(c.id),
@@ -71,12 +73,13 @@ export function ReferencePanel({
             }
           `}
         </style>
-        {(["chars", "events", "world", "notes", "drafts", "foreshadows"] as const).map((tab) => {
+        {(["chars", "events", "world", "notes", "drafts", "foreshadows", "continuity"] as const).map((tab) => {
           const icon = tab === "chars" ? <PeopleIcon sx={{ fontSize: 12 }} />
             : tab === "events" ? <EventNoteIcon sx={{ fontSize: 12 }} />
             : tab === "world" ? <PublicIcon sx={{ fontSize: 12 }} />
             : tab === "drafts" ? <HistoryIcon sx={{ fontSize: 12 }} />
             : tab === "foreshadows" ? <AutoFixHighIcon sx={{ fontSize: 12 }} />
+            : tab === "continuity" ? <ShieldIcon sx={{ fontSize: 12 }} />
             : <NotesIcon sx={{ fontSize: 12 }} />;
           return (
             <button
@@ -194,6 +197,12 @@ export function ReferencePanel({
       {panelTab === "foreshadows" && (
         <div style={{ paddingTop: 12 }}>
           {foreshadowsNode}
+        </div>
+      )}
+
+      {panelTab === "continuity" && (
+        <div style={{ paddingTop: 12, height: "100%" }}>
+          {continuityNode}
         </div>
       )}
     </div>
