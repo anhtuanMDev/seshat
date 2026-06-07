@@ -222,16 +222,7 @@ export default function EventPage() {
   };
 
   return (
-    <div
-      ref={ref}
-      style={{
-        padding: "36px 16px 0",
-        display: "flex",
-        flexDirection: "column",
-        overflowY: "auto",
-        height: "100%",
-      }}
-    >
+    <div ref={ref} className="seshat-page-container">
       <div
         style={{
           display: "flex",
@@ -275,15 +266,7 @@ export default function EventPage() {
         </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "56px auto 1fr 1fr 1fr 1fr",
-          gap: "0 24px",
-          marginBottom: 16,
-          alignItems: "end",
-        }}
-      >
+      <div className="seshat-event-meta-grid">
         <div>
           <label style={S.label}>
             <ScheduleIcon

@@ -41,7 +41,7 @@ export default function ChapterListPage() {
   }, 0);
 
   return (
-    <div style={{ padding: "36px 16px 0px" }} ref={ref}>
+    <div ref={ref} className="seshat-page-container">
       {/* Header */}
       <div
         style={{

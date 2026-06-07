@@ -39,16 +39,7 @@ export default function FightPage() {
   const ref = useAnimateIn();
 
   return (
-    <div
-      ref={ref}
-      style={{
-        padding: "36px 16px",
-        display: "flex",
-        flexDirection: "column",
-        overflowY: "auto",
-        height: "100%",
-      }}
-    >
+    <div ref={ref} className="seshat-page-container">
       <div style={{ marginBottom: 24 }}>
         <p
           style={{

@@ -332,9 +332,23 @@ svg circle {
   backdrop-filter: blur(2px);
 }
 
+.seshat-page-container {
+  padding: 36px 44px 36px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  height: 100%;
+}
+
 @media (max-width: 1024px) {
-  .seshat-main {
+  .seshat-page-container {
     padding: 24px 28px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .seshat-page-container {
+    padding: 16px 16px !important;
   }
 }
 
@@ -414,6 +428,26 @@ svg circle {
   }
   .seshat-top-actions button {
     padding: 0 2px !important;
+  }
+}
+
+.seshat-event-meta-grid {
+  display: grid;
+  grid-template-columns: 56px auto 1fr 1fr 1fr 1fr;
+  gap: 16px 24px;
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+@media (max-width: 1024px) {
+  .seshat-event-meta-grid {
+    grid-template-columns: 56px auto 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .seshat-event-meta-grid {
+    grid-template-columns: 1fr;
   }
 }
 
