@@ -50,7 +50,16 @@ export default function TimelinePage() {
   ) as string[];
 
   return (
-    <div ref={ref}>
+    <div
+      ref={ref}
+      style={{
+        padding: "36px 16px 0",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        height: "100%",
+      }}
+    >
       {/* Header */}
       <div
         style={{
