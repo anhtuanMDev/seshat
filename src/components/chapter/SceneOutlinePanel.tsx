@@ -2,7 +2,13 @@ import { useFieldArray } from "react-hook-form";
 import type { Control } from "react-hook-form";
 import { S, mkSceneCard } from "../../lib/utils";
 import { Field } from "../ui";
-import { AddIcon, DeleteIcon, FlagIcon, PsychologyIcon, CenterFocusStrongIcon } from "../ui/icons";
+import {
+  AddIcon,
+  DeleteIcon,
+  FlagIcon,
+  PsychologyIcon,
+  CenterFocusStrongIcon,
+} from "../ui/icons";
 import type { ChapterForm } from "../../pages/ChapterPage";
 
 interface SceneOutlinePanelProps {
@@ -16,16 +22,40 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
   });
 
   return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <p style={{ ...S.h2, margin: 0, fontSize: 13, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}>
+    <div style={{ marginBottom: 32, paddingRight: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <p
+          style={{
+            ...S.h2,
+            margin: 0,
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            color: "var(--text-secondary)",
+          }}
+        >
           <CenterFocusStrongIcon sx={{ fontSize: 14 }} />
           Beat Sheet / Scene Outline ({fields.length})
         </p>
         <button
           type="button"
           onClick={() => append(mkSceneCard())}
-          style={{ ...S.ghost, fontSize: 11, display: "flex", alignItems: "center", gap: 3, color: "var(--text-secondary)" }}
+          style={{
+            ...S.ghost,
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            color: "var(--text-secondary)",
+          }}
         >
           <AddIcon sx={{ fontSize: 13 }} /> add scene card
         </button>
@@ -43,7 +73,14 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               position: "relative",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: 12,
+              }}
+            >
               <div style={{ flex: 1, marginRight: 16 }}>
                 <input
                   {...control.register(`scenes.${index}.title` as const)}
@@ -63,19 +100,37 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               <button
                 type="button"
                 onClick={() => remove(index)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-red)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  padding: 4,
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "var(--color-red)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "var(--text-muted)")
+                }
               >
                 <DeleteIcon sx={{ fontSize: 16 }} />
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div>
                 <Field
                   label={
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
                       <PsychologyIcon sx={{ fontSize: 12 }} /> POV Character
                     </span>
                   }
@@ -87,7 +142,9 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               <div>
                 <Field
                   label={
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
                       <FlagIcon sx={{ fontSize: 12 }} /> Scene Goal
                     </span>
                   }
@@ -98,7 +155,14 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 8 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginTop: 8,
+              }}
+            >
               <Field
                 label="Conflict / Obstacle"
                 name={`scenes.${index}.conflict` as const}
@@ -119,9 +183,15 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
           </div>
         ))}
       </div>
-      
+
       {fields.length > 0 && (
-        <hr style={{ border: "none", borderTop: "1px dashed var(--border)", margin: "24px 0" }} />
+        <hr
+          style={{
+            border: "none",
+            borderTop: "1px dashed var(--border)",
+            margin: "24px 0",
+          }}
+        />
       )}
     </div>
   );

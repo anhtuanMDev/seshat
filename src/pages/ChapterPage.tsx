@@ -13,7 +13,13 @@ import {
 import { S } from "../lib/utils";
 
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { Character, Event } from "../lib/types";
 import RichEditor from "../components/editor/RichEditor";
@@ -58,7 +64,15 @@ export default function ChapterPage() {
   });
 
   const [showPanel, setShowPanel] = useState(window.innerWidth > 1024);
-  const [panelTab, setPanelTab] = useState<"chars" | "events" | "world" | "notes" | "drafts" | "foreshadows" | "continuity">("chars");
+  const [panelTab, setPanelTab] = useState<
+    | "chars"
+    | "events"
+    | "world"
+    | "notes"
+    | "drafts"
+    | "foreshadows"
+    | "continuity"
+  >("chars");
   const [isSaving, setIsSaving] = useState(false);
 
   const { register, control, reset, formState, getValues, setValue } =
@@ -96,19 +110,33 @@ export default function ChapterPage() {
           }
         } else {
           // Body is missing (stripped by loadBook.ts to save RAM), fetch it lazily
-          const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+          const token =
+            localStorage.getItem("seshat-auth-token") ||
+            sessionStorage.getItem("seshat-auth-token");
           if (token && bookId) {
             try {
               const { loadFileFromGitHub } = await import("../lib/githubSync");
-              const fullChapter = await loadFileFromGitHub(token, bookId, `chapters/chapter_${chapter.id}.json`);
+              const fullChapter = await loadFileFromGitHub(
+                token,
+                bookId,
+                `chapters/chapter_${chapter.id}.json`,
+              );
               const fetchedBody = (fullChapter.body as string) || "";
               const fetchedNotes = (fullChapter.notes as string) || "";
 
               // Update appStore with the missing massive text fields
-              appStore.books[bookIdx].chapters[chapterIdx].body.set(fetchedBody);
+              appStore.books[bookIdx].chapters[chapterIdx].body.set(
+                fetchedBody,
+              );
               // Also sync notes if they were somehow stripped
-              if (fullChapter.notes) appStore.books[bookIdx].chapters[chapterIdx].notes.set(fetchedNotes);
-              if (fullChapter.drafts) appStore.books[bookIdx].chapters[chapterIdx].drafts.set(fullChapter.drafts as import("../lib/types").Draft[]);
+              if (fullChapter.notes)
+                appStore.books[bookIdx].chapters[chapterIdx].notes.set(
+                  fetchedNotes,
+                );
+              if (fullChapter.drafts)
+                appStore.books[bookIdx].chapters[chapterIdx].drafts.set(
+                  fullChapter.drafts as import("../lib/types").Draft[],
+                );
 
               // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
               reset({
@@ -117,10 +145,13 @@ export default function ChapterPage() {
                 timeRef: chapter.timeRef || "",
                 synopsis: chapter.synopsis || "",
                 body: fetchedBody,
-                notes: fullChapter.notes ? fetchedNotes : (chapter.notes || ""),
+                notes: fullChapter.notes ? fetchedNotes : chapter.notes || "",
                 pinnedChars: chapter.pinnedChars || [],
                 pinnedEventIds: chapter.pinnedEventIds || [],
-                scenes: (fullChapter.scenes as import("../lib/types").SceneCard[]) || chapter.scenes || [],
+                scenes:
+                  (fullChapter.scenes as import("../lib/types").SceneCard[]) ||
+                  chapter.scenes ||
+                  [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -169,9 +200,11 @@ export default function ChapterPage() {
     ch.pinnedChars.set(data.pinnedChars);
     ch.pinnedEventIds.set(data.pinnedEventIds);
     ch.scenes.set(data.scenes);
-    
+
     // Background delta sync
-    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    const token =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
     if (token) {
       try {
         setIsSaving(true);
@@ -189,7 +222,12 @@ export default function ChapterPage() {
           scenes: data.scenes,
           drafts: ch.drafts.get() || [],
         };
-        await updateFileOnGitHub(token, bookId, `chapters/chapter_${id}.json`, JSON.stringify(payload, null, 2));
+        await updateFileOnGitHub(
+          token,
+          bookId,
+          `chapters/chapter_${id}.json`,
+          JSON.stringify(payload, null, 2),
+        );
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
         reset(data);
@@ -211,26 +249,36 @@ export default function ChapterPage() {
     saveRef.current = onSubmit;
   }, [onSubmit]);
 
-  const handleSaveAsDraft = useCallback((name: string) => {
-    if (bookIdx < 0 || chapterIdx < 0) return;
-    const ch = appStore.books[bookIdx].chapters[chapterIdx];
-    const currentDrafts = ch.drafts.get() || [];
-    const newDraft: Draft = {
-      id: crypto.randomUUID(),
-      name,
-      body: getValues("body"),
-      createdAt: Date.now(),
-    };
-    ch.drafts.set([...currentDrafts, newDraft]);
-    saveRef.current();
-  }, [bookIdx, chapterIdx, getValues]);
+  const handleSaveAsDraft = useCallback(
+    (name: string) => {
+      if (bookIdx < 0 || chapterIdx < 0) return;
+      const ch = appStore.books[bookIdx].chapters[chapterIdx];
+      const currentDrafts = ch.drafts.get() || [];
+      const newDraft: Draft = {
+        id: crypto.randomUUID(),
+        name,
+        body: getValues("body"),
+        createdAt: Date.now(),
+      };
+      ch.drafts.set([...currentDrafts, newDraft]);
+      saveRef.current();
+    },
+    [bookIdx, chapterIdx, getValues],
+  );
 
-  const handleRestoreDraft = useCallback((draft: Draft) => {
-    setValue("body", draft.body, { shouldDirty: true });
-  }, [setValue]);
+  const handleRestoreDraft = useCallback(
+    (draft: Draft) => {
+      setValue("body", draft.body, { shouldDirty: true });
+    },
+    [setValue],
+  );
 
-  const allChapters = useSelector(() => bookIdx >= 0 ? appStore.books[bookIdx].chapters.get() : []);
-  const foreshadows = useSelector(() => bookIdx >= 0 ? appStore.books[bookIdx].foreshadows.get() : []);
+  const allChapters = useSelector(() =>
+    bookIdx >= 0 ? appStore.books[bookIdx].chapters.get() : [],
+  );
+  const foreshadows = useSelector(() =>
+    bookIdx >= 0 ? appStore.books[bookIdx].foreshadows.get() : [],
+  );
 
   if (!chapter) {
     return (
@@ -240,30 +288,40 @@ export default function ChapterPage() {
     );
   }
 
-
-
   const handleExport = () => {
     if (!chapter) return;
-    
+
     // Convert HTML to plain text paragraphs
     const temp = document.createElement("div");
     temp.innerHTML = body || "";
-    
+
     // Refresh mention names before export
     const mentionSpans = temp.querySelectorAll("span[data-mention-id]");
     if (mentionSpans.length > 0 && bookIdx >= 0) {
       const book = appStore.books[bookIdx].get();
-      mentionSpans.forEach(span => {
+      mentionSpans.forEach((span) => {
         const id = span.getAttribute("data-mention-id");
         const trigger = span.getAttribute("data-trigger");
         let entity = null;
         switch (trigger) {
-          case "@": entity = book.characters?.find(c => c.id === id); break;
-          case "#": entity = book.nations?.find(c => c.id === id); break;
-          case "%": entity = book.monsters?.find(c => c.id === id); break;
-          case "~": entity = book.ingredients?.find(c => c.id === id); break;
-          case "^": entity = book.techniques?.find(c => c.id === id); break;
-          case "$": entity = book.treasures?.find(c => c.id === id); break;
+          case "@":
+            entity = book.characters?.find((c) => c.id === id);
+            break;
+          case "#":
+            entity = book.nations?.find((c) => c.id === id);
+            break;
+          case "%":
+            entity = book.monsters?.find((c) => c.id === id);
+            break;
+          case "~":
+            entity = book.ingredients?.find((c) => c.id === id);
+            break;
+          case "^":
+            entity = book.techniques?.find((c) => c.id === id);
+            break;
+          case "$":
+            entity = book.treasures?.find((c) => c.id === id);
+            break;
         }
         if (entity) {
           span.textContent = `${trigger}${entity.name}`;
@@ -273,9 +331,12 @@ export default function ChapterPage() {
 
     // Get text and split by newlines (block elements like <p> will have newlines if we use innerText, or we can just split by \n)
     // Actually, Tiptap uses <p> tags. We can select all paragraphs.
-    const paragraphs = Array.from(temp.querySelectorAll("p")).map(p => p.textContent || "");
+    const paragraphs = Array.from(temp.querySelectorAll("p")).map(
+      (p) => p.textContent || "",
+    );
     // If no <p> tags were found, fallback to innerText split
-    const lines = paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
+    const lines =
+      paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
 
     const doc = new Document({
       sections: [
@@ -293,11 +354,14 @@ export default function ChapterPage() {
               spacing: { after: 400 },
             }),
             ...lines
-              .filter(line => line.trim().length > 0)
-              .map(line => new Paragraph({ 
-                text: line,
-                spacing: { after: 200 }
-              })),
+              .filter((line) => line.trim().length > 0)
+              .map(
+                (line) =>
+                  new Paragraph({
+                    text: line,
+                    spacing: { after: 200 },
+                  }),
+              ),
           ],
         },
       ],
@@ -325,12 +389,9 @@ export default function ChapterPage() {
   };
 
   return (
-    <div
-      ref={ref}
-      className="seshat-chapter-layout"
-    >
+    <div ref={ref} className="seshat-chapter-layout">
       {/* ── Prose column ── */}
-      <div className={`seshat-chapter-prose ${showPanel ? 'panel-open' : ''}`}>
+      <div className={`seshat-chapter-prose ${showPanel ? "panel-open" : ""}`}>
         <div className="seshat-chapter-header">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -357,10 +418,10 @@ export default function ChapterPage() {
                 }}
               />
               <div style={{ width: 240 }}>
-                <EventPicker 
-                  control={control} 
-                  name="timeRef" 
-                  events={events} 
+                <EventPicker
+                  control={control}
+                  name="timeRef"
+                  events={events}
                   placeholder="When did this chapter take place ?"
                   sx={{ marginBottom: 0 }}
                 />
@@ -408,6 +469,7 @@ export default function ChapterPage() {
             resize: "none",
             lineHeight: 1.6,
             marginBottom: 28,
+            paddingRight: "24px",
             padding: "4px 0",
           }}
         />
@@ -418,11 +480,19 @@ export default function ChapterPage() {
             pinnedEventObjs={pinnedEventObjs}
             onRemoveChar={(charId) => {
               const current = getValues("pinnedChars") || [];
-              setValue("pinnedChars", current.filter((x) => x !== charId), { shouldDirty: true });
+              setValue(
+                "pinnedChars",
+                current.filter((x) => x !== charId),
+                { shouldDirty: true },
+              );
             }}
             onRemoveEvent={(eventId) => {
               const current = getValues("pinnedEventIds") || [];
-              setValue("pinnedEventIds", current.filter((x) => x !== eventId), { shouldDirty: true });
+              setValue(
+                "pinnedEventIds",
+                current.filter((x) => x !== eventId),
+                { shouldDirty: true },
+              );
             }}
           />
         )}
@@ -448,7 +518,10 @@ export default function ChapterPage() {
       {/* ── Reference panel ── */}
       {showPanel && (
         <>
-          <div className="seshat-chapter-panel-overlay" onClick={() => setShowPanel(false)} />
+          <div
+            className="seshat-chapter-panel-overlay"
+            onClick={() => setShowPanel(false)}
+          />
           <ReferencePanel
             panelTab={panelTab}
             onTabChange={setPanelTab}
@@ -506,39 +579,76 @@ export default function ChapterPage() {
                 onAddForeshadow={(f) => {
                   if (bookIdx >= 0 && bookId) {
                     appStore.books[bookIdx].foreshadows.push(f);
-                    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+                    const token =
+                      localStorage.getItem("seshat-auth-token") ||
+                      sessionStorage.getItem("seshat-auth-token");
                     if (token) {
-                      updateFileOnGitHub(token, bookId, "foreshadows.json", JSON.stringify(appStore.books[bookIdx].foreshadows.get(), null, 2)).catch(console.error);
+                      updateFileOnGitHub(
+                        token,
+                        bookId,
+                        "foreshadows.json",
+                        JSON.stringify(
+                          appStore.books[bookIdx].foreshadows.get(),
+                          null,
+                          2,
+                        ),
+                      ).catch(console.error);
                     }
                   }
                 }}
                 onUpdateForeshadow={(f) => {
                   if (bookIdx >= 0 && bookId) {
-                    const idx = appStore.books[bookIdx].foreshadows.get().findIndex(x => x.id === f.id);
+                    const idx = appStore.books[bookIdx].foreshadows
+                      .get()
+                      .findIndex((x) => x.id === f.id);
                     if (idx >= 0) {
                       appStore.books[bookIdx].foreshadows[idx].set(f);
-                      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+                      const token =
+                        localStorage.getItem("seshat-auth-token") ||
+                        sessionStorage.getItem("seshat-auth-token");
                       if (token) {
-                        updateFileOnGitHub(token, bookId, "foreshadows.json", JSON.stringify(appStore.books[bookIdx].foreshadows.get(), null, 2)).catch(console.error);
+                        updateFileOnGitHub(
+                          token,
+                          bookId,
+                          "foreshadows.json",
+                          JSON.stringify(
+                            appStore.books[bookIdx].foreshadows.get(),
+                            null,
+                            2,
+                          ),
+                        ).catch(console.error);
                       }
                     }
                   }
                 }}
                 onDeleteForeshadow={(fid) => {
                   if (bookIdx >= 0 && bookId) {
-                    appStore.books[bookIdx].foreshadows.set((prev: Foreshadow[]) => prev.filter(x => x.id !== fid));
-                    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+                    appStore.books[bookIdx].foreshadows.set(
+                      (prev: Foreshadow[]) => prev.filter((x) => x.id !== fid),
+                    );
+                    const token =
+                      localStorage.getItem("seshat-auth-token") ||
+                      sessionStorage.getItem("seshat-auth-token");
                     if (token) {
-                      updateFileOnGitHub(token, bookId, "foreshadows.json", JSON.stringify(appStore.books[bookIdx].foreshadows.get(), null, 2)).catch(console.error);
+                      updateFileOnGitHub(
+                        token,
+                        bookId,
+                        "foreshadows.json",
+                        JSON.stringify(
+                          appStore.books[bookIdx].foreshadows.get(),
+                          null,
+                          2,
+                        ),
+                      ).catch(console.error);
                     }
                   }
                 }}
               />
             }
             continuityNode={
-              <ContinuityTracker 
-                text={body || ""} 
-                characters={characters} 
+              <ContinuityTracker
+                text={body || ""}
+                characters={characters}
                 pinnedCharIds={pinnedChars}
               />
             }

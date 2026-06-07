@@ -22,6 +22,7 @@ export function PinnedContextStrip({
         gap: 6,
         marginBottom: 20,
         paddingBottom: 16,
+        paddingRight: 12,
         borderBottom: "1px solid var(--border)",
       }}
     >
