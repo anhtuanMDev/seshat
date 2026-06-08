@@ -516,14 +516,14 @@ export default function ChapterPage() {
       </div>
 
       {/* ── Reference panel ── */}
-      {showPanel && (
-        <>
-          <div
-            className="seshat-chapter-panel-overlay"
-            onClick={() => setShowPanel(false)}
-          />
-          <ReferencePanel
-            panelTab={panelTab}
+      <>
+        <div
+          className={`seshat-chapter-panel-overlay ${showPanel ? "open" : ""}`}
+          onClick={() => setShowPanel(false)}
+        />
+        <ReferencePanel
+          isOpen={showPanel}
+          panelTab={panelTab}
             onTabChange={setPanelTab}
             characters={characters}
             sortedEvents={sortedEvents}
@@ -653,8 +653,7 @@ export default function ChapterPage() {
               />
             }
           />
-        </>
-      )}
+      </>
     </div>
   );
 }

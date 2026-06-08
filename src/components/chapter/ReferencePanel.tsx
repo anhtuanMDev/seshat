@@ -15,6 +15,7 @@ import {
 import type { Character, Event } from "../../lib/types";
 
 interface ReferencePanelProps {
+  isOpen: boolean;
   panelTab:
     | "chars"
     | "events"
@@ -53,6 +54,7 @@ interface ReferencePanelProps {
 }
 
 export function ReferencePanel({
+  isOpen,
   panelTab,
   onTabChange,
   characters,
@@ -76,7 +78,7 @@ export function ReferencePanel({
     .sort((a: Event, b: Event) => a.time - b.time);
 
   return (
-    <div className="seshat-chapter-panel" style={{ display: "flex", flexDirection: "column" }}>
+    <div className={`seshat-chapter-panel ${isOpen ? "open" : ""}`} style={{ display: "flex", flexDirection: "column" }}>
       <div
         style={{
           display: "flex",
