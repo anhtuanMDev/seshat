@@ -221,7 +221,6 @@ export default function ChapterPage() {
         // If this is the chapter being saved, use the NEW data
         const isCurrentChapter = c.id === id;
         const cTimeRef = isCurrentChapter ? data.timeRef : c.timeRef;
-        const cPinnedEvents = isCurrentChapter ? data.pinnedEventIds : c.pinnedEventIds;
         const cPinnedChars = isCurrentChapter ? data.pinnedChars : c.pinnedChars;
 
         if (cTimeRef === eventId) {
@@ -229,9 +228,6 @@ export default function ChapterPage() {
           if (cPinnedChars) {
             cPinnedChars.forEach(cid => expectedChars.add(cid));
           }
-        } else if (cPinnedEvents?.includes(eventId)) {
-          expectedChapters.add(c.id);
-          // Mentions do not contribute characters
         }
       });
 
@@ -284,14 +280,19 @@ export default function ChapterPage() {
       }
     };
 
-    // Sync the new timeRef event
-    if (data.timeRef) {
-      computeEventSync(data.timeRef);
+    // Collect all events that need to be synced
+    const eventsToSync = new Set<string>();
+    if (data.timeRef) eventsToSync.add(data.timeRef);
+    if (oldTimeRef) eventsToSync.add(oldTimeRef);
+    
+    // Also trigger sync for mentioned events so they can clean up their chapters lists
+    if (data.pinnedEventIds) {
+      data.pinnedEventIds.forEach(eid => eventsToSync.add(eid));
     }
-    // If timeRef changed, sync the old event so it loses the chapter and characters
-    if (oldTimeRef && oldTimeRef !== data.timeRef) {
-      computeEventSync(oldTimeRef);
-    }
+    const oldPinnedEvents = ch.pinnedEventIds.get() || [];
+    oldPinnedEvents.forEach(eid => eventsToSync.add(eid));
+
+    eventsToSync.forEach(eid => computeEventSync(eid));
 
     // Background delta sync
     const token =

@@ -17,12 +17,9 @@ import {
   CalendarTodayIcon,
   LocationOnIcon,
   AutoStoriesIcon,
-  AddIcon,
-  CloseIcon,
   InfoIcon,
 } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
-import { ContextTag } from "../components/chapter/ContextTag";
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { EventAttributes, EventType } from "../lib/types";
@@ -89,10 +86,9 @@ export default function EventPage() {
 
   useEffect(() => {
     if (event) {
-      // Derive valid linked chapters from both Event.chapters and Chapter.pinnedEventIds
-      // To ensure backward compatibility, we'll favor whatever is currently linked.
+      // Derive linked chapters STRICTLY from Chapter.timeRef (Takes Place At)
       const validLinkedIds = allChapters
-        .filter((c) => c.pinnedEventIds?.includes(event.id) || event.chapters?.includes(c.id) || c.timeRef === event.id)
+        .filter((c) => c.timeRef === event.id)
         .map((c) => c.id);
 
       reset({
@@ -135,68 +131,7 @@ export default function EventPage() {
     [getValues, setValue],
   );
 
-  const toggleChapter = useCallback(
-    (chId: string) => {
-      const currentChapters = getValues("chapters") || [];
-      const currentChars = getValues("characters") || [];
-      const isRemoving = currentChapters.includes(chId);
-
-      let nextChapters: string[];
-      let nextChars = [...currentChars];
-
-      if (isRemoving) {
-        nextChapters = currentChapters.filter((x: string) => x !== chId);
-
-        // Auto-remove logic
-        const removedChapter = allChapters.find((c) => c.id === chId);
-        if (removedChapter && removedChapter.pinnedChars) {
-          const removedCharIds = removedChapter.pinnedChars;
-          
-          const remainingCharsFromChapters = new Set<string>();
-          nextChapters.forEach((id) => {
-            const c = allChapters.find((x) => x.id === id);
-            if (c && c.pinnedChars) {
-              c.pinnedChars.forEach((charId: string) => remainingCharsFromChapters.add(charId));
-            }
-          });
-
-          removedCharIds.forEach((charId: string) => {
-            if (!remainingCharsFromChapters.has(charId)) {
-              // Clever Rule: Only remove if they haven't explicitly set attributes for this character in this event!
-              const attrs = charAttrs[charId];
-              const hasMeaningfulAttrs = attrs && Object.values(attrs).some(v => v !== "" && v !== undefined && v !== null);
-              
-              if (!hasMeaningfulAttrs) {
-                nextChars = nextChars.filter((id) => id !== charId);
-              }
-            }
-          });
-        }
-      } else {
-        nextChapters = [...currentChapters, chId];
-
-        // Auto-add logic
-        const addedChapter = allChapters.find((c) => c.id === chId);
-        if (addedChapter && addedChapter.pinnedChars) {
-          addedChapter.pinnedChars.forEach((charId: string) => {
-            if (!nextChars.includes(charId)) {
-              nextChars.push(charId);
-            }
-          });
-        }
-      }
-
-      setValue("chapters", nextChapters, { shouldDirty: true });
-      if (nextChars.length !== currentChars.length) {
-        setValue("characters", nextChars, { shouldDirty: true });
-      }
-    },
-    [getValues, setValue, allChapters, charAttrs],
-  );
-
-  const [showChapterModal, setShowChapterModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [chapterInput, setChapterInput] = useState("");
 
   const patchAttr = useCallback((cid: string, f: string, v: string) => {
     setCharAttrs((prev) => ({
@@ -245,27 +180,7 @@ export default function EventPage() {
       }
     });
 
-    const updatedChapterIds = new Set<string>();
-    appStore.books[bookIdx].chapters.get().forEach((ch, cIdx) => {
-      const isLinked = data.chapters.includes(ch.id);
-      const currentlyPinned = ch.pinnedEventIds?.includes(event.id);
-      const currentlyTakesPlaceAt = ch.timeRef === event.id;
-      
-      if (isLinked && !currentlyPinned && !currentlyTakesPlaceAt) {
-        appStore.books[bookIdx].chapters[cIdx].pinnedEventIds.set((prev) => [...(prev || []), event.id]);
-        updatedChapterIds.add(ch.id);
-      } else if (!isLinked) {
-        if (currentlyPinned) {
-          appStore.books[bookIdx].chapters[cIdx].pinnedEventIds.set((prev) => (prev || []).filter(eId => eId !== event.id));
-          updatedChapterIds.add(ch.id);
-        }
-        if (currentlyTakesPlaceAt) {
-          appStore.books[bookIdx].chapters[cIdx].timeRef.set("");
-          updatedChapterIds.add(ch.id);
-        }
-      }
-    });
-
+    // No need to sync back to chapters since EventPage is read-only for chapters.
     // API delta sync
     const token =
       localStorage.getItem("seshat-auth-token") ||
@@ -295,17 +210,7 @@ export default function EventPage() {
           JSON.stringify(payload, null, 2),
         );
 
-        for (const chId of updatedChapterIds) {
-          const chIdx = appStore.books[bookIdx].chapters.get().findIndex(c => c.id === chId);
-          if (chIdx >= 0) {
-            await updateFileOnGitHub(
-              token,
-              bookId,
-              `chapters/chapter_${chId}.json`,
-              JSON.stringify(appStore.books[bookIdx].chapters[chIdx].get(), null, 2)
-            );
-          }
-        }
+        // Event-to-chapter syncing is handled solely by ChapterPage.
 
         showToast("Event synced to cloud", "success");
         reset(data);
@@ -453,8 +358,11 @@ export default function EventPage() {
             gap: 4,
           }}
         >
+          <span style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 8, fontStyle: "italic" }}>
+            Chapters that take place during this event. To change this, edit the chapter's "Takes Place At" field.
+          </span>
           {formChapters.length > 0 ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {allChapters.filter(c => formChapters.includes(c.id)).map((c) => (
                 <div
                   key={c.id}
@@ -463,7 +371,7 @@ export default function EventPage() {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 4,
-                    padding: "2px 8px",
+                    padding: "4px 8px",
                     color: "var(--color-blue)",
                     borderColor: "var(--color-blue)",
                     background: "rgba(0, 153, 255, 0.05)",
@@ -478,100 +386,22 @@ export default function EventPage() {
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        maxWidth: 120,
+                        maxWidth: 150,
                         fontSize: 11,
                       }}
                     >
                       {c.title}
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); toggleChapter(c.id); }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--text-muted)",
-                      cursor: "pointer",
-                      padding: "0",
-                      marginLeft: 4,
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = "var(--color-red)"}
-                    onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
-                    title="Unpin chapter"
-                  >
-                    <CloseIcon sx={{ fontSize: 12 }} />
-                  </button>
                 </div>
               ))}
             </div>
           ) : (
-            <span style={{ color: "var(--text-muted)", marginBottom: 8 }}>
-              Not pinned to any chapters
+            <span style={{ color: "var(--text-muted)" }}>
+              No chapters take place here yet.
             </span>
           )}
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto" }}>
-            <input
-              list="unpinned-chapters"
-              value={chapterInput}
-              onChange={(e) => {
-                setChapterInput(e.target.value);
-                const match = allChapters.find(c => c.title?.toLowerCase() === e.target.value.toLowerCase() || c.number?.toLowerCase() === e.target.value.toLowerCase());
-                if (match && !formChapters.includes(match.id)) {
-                  toggleChapter(match.id);
-                  setChapterInput("");
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && chapterInput.trim() !== "") {
-                  e.preventDefault();
-                  const partial = allChapters.find(c => c.title?.toLowerCase().includes(chapterInput.toLowerCase()) || c.number?.toLowerCase().includes(chapterInput.toLowerCase()));
-                  if (partial && !formChapters.includes(partial.id)) {
-                    toggleChapter(partial.id);
-                    setChapterInput("");
-                  }
-                }
-              }}
-              placeholder="Quick pin chapter..."
-              style={{ ...S.input, flex: 1, padding: "4px 6px", fontSize: 11, background: "transparent", border: "none" }}
-            />
-            <datalist id="unpinned-chapters">
-              {allChapters.filter(c => !formChapters.includes(c.id)).map(c => <option key={c.id} value={c.title || c.number} />)}
-            </datalist>
-            <button 
-              type="button"
-              onClick={(e) => { e.preventDefault(); setShowChapterModal(true); }}
-              style={{ ...S.ghost, padding: "4px" }}
-              title="Pin multiple chapters"
-            >
-              <AddIcon sx={{ fontSize: 14 }} />
-            </button>
-          </div>
-          
-          {showChapterModal && (
-            <Modal title="Pin Chapters" onClose={() => setShowChapterModal(false)}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                {allChapters.map((c) => (
-                  <ContextTag
-                    key={c.id}
-                    label={c.title || c.number}
-                    color="var(--color-blue)"
-                    active={formChapters.includes(c.id)}
-                    onClick={() => toggleChapter(c.id)}
-                  />
-                ))}
-                {!allChapters.length && <p style={S.dim}>No chapters available.</p>}
-              </div>
-              <div style={{ marginTop: 24, textAlign: "right" }}>
-                <button type="button" style={{ ...S.button, padding: "6px 16px" }} onClick={() => setShowChapterModal(false)}>
-                  Done
-                </button>
-              </div>
-            </Modal>
-          )}
+        </div>
 
           {showInfoModal && (
             <Modal title="Smart Character Sync" onClose={() => setShowInfoModal(false)}>
@@ -596,7 +426,6 @@ export default function EventPage() {
               </div>
             </Modal>
           )}
-        </div>
       </Section>
 
       <Field
