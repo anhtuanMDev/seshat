@@ -191,39 +191,106 @@ export default function ChapterPage() {
     const ch = appStore.books[bookIdx].chapters[chapterIdx];
     ch.number.set(data.number);
     ch.title.set(data.title);
-    ch.timeRef.set(data.timeRef);
+    const oldTimeRef = ch.timeRef.get();
+    
     ch.synopsis.set(data.synopsis);
     ch.body.set(data.body);
     ch.notes.set(data.notes);
     ch.pinnedChars.set(data.pinnedChars);
     ch.pinnedEventIds.set(data.pinnedEventIds);
     ch.scenes.set(data.scenes);
+    ch.timeRef.set(data.timeRef);
 
-    let eventPayloadToSync: { eventId: string; payloadStr: string } | null = null;
-    if (data.timeRef) {
-      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === data.timeRef);
-      if (eIdx >= 0) {
-        const ev = appStore.books[bookIdx].events[eIdx];
-        const currentEvChars = ev.characters.get() || [];
-        let modified = false;
-        const nextEvChars = [...currentEvChars];
-        
-        // Ensure all characters pinned to this chapter are in the Event
-        data.pinnedChars.forEach(cid => {
-          if (!nextEvChars.includes(cid)) {
+    const eventPayloadsToSync: { eventId: string; payloadStr: string }[] = [];
+    
+    // Helper function to sync an event's characters and chapter links based on current world state
+    const computeEventSync = (eventId: string, isTargetEvent: boolean) => {
+      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === eventId);
+      if (eIdx < 0) return;
+      const ev = appStore.books[bookIdx].events[eIdx];
+      const currentEvChars = ev.characters.get() || [];
+      const currentEvChapters = ev.chapters.get() || [];
+      let modified = false;
+
+      // 1. Compute expected characters and chapters for this event
+      const allChapters = appStore.books[bookIdx].chapters.get();
+      const expectedChars = new Set<string>();
+      const expectedChapters = new Set<string>();
+
+      allChapters.forEach(c => {
+        // If this is the chapter being saved, use the NEW data
+        const isCurrentChapter = c.id === id;
+        const cTimeRef = isCurrentChapter ? data.timeRef : c.timeRef;
+        const cPinnedEvents = isCurrentChapter ? data.pinnedEventIds : c.pinnedEventIds;
+        const cPinnedChars = isCurrentChapter ? data.pinnedChars : c.pinnedChars;
+
+        if (cTimeRef === eventId) {
+          expectedChapters.add(c.id);
+          if (cPinnedChars) {
+            cPinnedChars.forEach(cid => expectedChars.add(cid));
+          }
+        } else if (cPinnedEvents?.includes(eventId)) {
+          expectedChapters.add(c.id);
+          // Mentions do not contribute characters
+        }
+      });
+
+      // 2. Resolve characters
+      const nextEvChars: string[] = [];
+      currentEvChars.forEach(cid => {
+        if (expectedChars.has(cid)) {
+          nextEvChars.push(cid);
+        } else {
+          // Check for meaningful manual attributes before auto-removing
+          const attrs = appStore.books[bookIdx].characters.get().find(c => c.id === cid)?.attributes?.[eventId];
+          const hasMeaningfulAttrs = attrs && Object.values(attrs).some(v => v !== "" && v !== undefined && v !== null);
+          if (hasMeaningfulAttrs) {
             nextEvChars.push(cid);
+          } else {
             modified = true;
           }
-        });
-
-        if (modified) {
-          ev.characters.set(nextEvChars);
-          eventPayloadToSync = {
-            eventId: ev.id.get(),
-            payloadStr: JSON.stringify(ev.get(), null, 2),
-          };
         }
+      });
+      expectedChars.forEach(cid => {
+        if (!nextEvChars.includes(cid)) {
+          nextEvChars.push(cid);
+          modified = true;
+        }
+      });
+
+      // 3. Resolve chapters
+      const nextEvChapters: string[] = [];
+      currentEvChapters.forEach(cid => {
+        if (expectedChapters.has(cid)) {
+          nextEvChapters.push(cid);
+        } else {
+          modified = true;
+        }
+      });
+      expectedChapters.forEach(cid => {
+        if (!nextEvChapters.includes(cid)) {
+          nextEvChapters.push(cid);
+          modified = true;
+        }
+      });
+
+      if (modified) {
+        ev.characters.set(nextEvChars);
+        ev.chapters.set(nextEvChapters);
+        eventPayloadsToSync.push({
+          eventId: ev.id.get(),
+          payloadStr: JSON.stringify(ev.get(), null, 2),
+        });
       }
+    };
+
+    // Sync the new timeRef event
+    if (data.timeRef) {
+      computeEventSync(data.timeRef, true);
+    }
+    // If timeRef changed, sync the old event so it loses the chapter and characters
+    if (oldTimeRef && oldTimeRef !== data.timeRef) {
+      computeEventSync(oldTimeRef, false);
     }
 
     // Background delta sync
@@ -255,16 +322,16 @@ export default function ChapterPage() {
             JSON.stringify(payload, null, 2),
           )
         ];
-        if (eventPayloadToSync) {
+        eventPayloadsToSync.forEach(ep => {
           syncPromises.push(
             updateFileOnGitHub(
               token,
               bookId,
-              `events/event_${eventPayloadToSync.eventId}.json`,
-              eventPayloadToSync.payloadStr,
+              `events/event_${ep.eventId}.json`,
+              ep.payloadStr,
             )
           );
-        }
+        });
         await Promise.all(syncPromises);
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
