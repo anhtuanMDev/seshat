@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { S } from "../../lib/utils";
 import { ContextTag } from "./ContextTag";
 import { CharCard } from "./CharCard";
 import { EventRef } from "./EventRef";
 import { WorldTabContent } from "./WorldTabContent";
+import { Modal } from "../ui/Modal";
 import {
   PeopleIcon,
   EventNoteIcon,
@@ -11,6 +13,7 @@ import {
   HistoryIcon,
   AutoFixHighIcon,
   ShieldIcon,
+  AddIcon,
 } from "../ui/icons";
 import type { Character, Event } from "../../lib/types";
 
@@ -70,9 +73,35 @@ export function ReferencePanel({
   foreshadowsNode,
   continuityNode,
 }: ReferencePanelProps) {
+  const [showCharModal, setShowCharModal] = useState(false);
+  const [charInput, setCharInput] = useState("");
+
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedCharIds.includes(c.id),
   );
+  
+  const unpinnedChars = characters.filter((c: Character) => 
+    !pinnedCharIds.includes(c.id)
+  );
+
+  const handleCharInput = (val: string) => {
+    setCharInput(val);
+    const match = unpinnedChars.find(c => c.name.toLowerCase() === val.toLowerCase());
+    if (match) {
+      onTogglePinChar(match.id);
+      setCharInput("");
+    }
+  };
+
+  const handleQuickAddChar = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && charInput.trim() !== "") {
+      const partial = unpinnedChars.find(c => c.name.toLowerCase().includes(charInput.toLowerCase()));
+      if (partial) {
+        onTogglePinChar(partial.id);
+        setCharInput("");
+      }
+    }
+  };
   const pinnedEventObjs = events
     .filter((e: Event) => pinnedEventIds.includes(e.id))
     .sort((a: Event, b: Event) => a.time - b.time);
@@ -169,31 +198,62 @@ export function ReferencePanel({
       >
         {panelTab === "chars" && (
           <div>
-            <p style={{ ...S.dim, marginBottom: 10 }}>
-              Pin characters present in this chapter.
-            </p>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 5,
-                marginBottom: 16,
-              }}
-            >
-              {characters.map((c: Character) => (
-                <ContextTag
-                  key={c.id}
-                  label={c.name}
-                  color={c.color}
-                  active={pinnedCharIds.includes(c.id)}
-                  onClick={() => onTogglePinChar(c.id)}
-                />
-              ))}
-              {!characters.length && <p style={S.dim}>No characters yet.</p>}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <input
+                list="unpinned-chars"
+                value={charInput}
+                onChange={(e) => handleCharInput(e.target.value)}
+                onKeyDown={handleQuickAddChar}
+                placeholder="Quick pin character..."
+                style={{ ...S.input, flex: 1, padding: "6px 12px", fontSize: 12 }}
+              />
+              <datalist id="unpinned-chars">
+                {unpinnedChars.map(c => <option key={c.id} value={c.name} />)}
+              </datalist>
+              <button 
+                onClick={() => setShowCharModal(true)}
+                style={{ ...S.ghost, padding: "6px" }}
+                title="Pin multiple characters"
+              >
+                <AddIcon sx={{ fontSize: 16 }} />
+              </button>
             </div>
-            {pinnedCharObjs.map((c: Character) => (
-              <CharCard key={c.id} char={c} events={events} />
-            ))}
+            
+            {pinnedCharObjs.length === 0 ? (
+              <p style={{ ...S.dim, marginTop: 10 }}>No characters pinned yet.</p>
+            ) : (
+              pinnedCharObjs.map((c: Character) => (
+                <CharCard key={c.id} char={c} events={events} />
+              ))
+            )}
+
+            {showCharModal && (
+              <Modal title="Pin Characters" onClose={() => setShowCharModal(false)}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 5,
+                  }}
+                >
+                  {characters.map((c: Character) => (
+                    <ContextTag
+                      key={c.id}
+                      label={c.name}
+                      color={c.color}
+                      active={pinnedCharIds.includes(c.id)}
+                      onClick={() => onTogglePinChar(c.id)}
+                    />
+                  ))}
+                  {!characters.length && <p style={S.dim}>No characters yet.</p>}
+                </div>
+                <div style={{ marginTop: 24, textAlign: "right" }}>
+                  <button style={{ ...S.button, padding: "6px 16px" }} onClick={() => setShowCharModal(false)}>
+                    Done
+                  </button>
+                </div>
+              </Modal>
+            )}
           </div>
         )}
 
