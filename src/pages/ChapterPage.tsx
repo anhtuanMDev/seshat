@@ -116,26 +116,27 @@ export default function ChapterPage() {
           if (token && bookId) {
             try {
               const { loadFileFromGitHub } = await import("../lib/githubSync");
-              const fullChapter = await loadFileFromGitHub(
+              const parsed = await loadFileFromGitHub(
                 token,
                 bookId,
                 `chapters/chapter_${chapter.id}.json`,
               );
-              const fetchedBody = (fullChapter.body as string) || "";
-              const fetchedNotes = (fullChapter.notes as string) || "";
+              
+              const fetchedBody = (parsed.body as string) || "";
+              const fetchedNotes = (parsed.notes as string) || "";
 
               // Update appStore with the missing massive text fields
               appStore.books[bookIdx].chapters[chapterIdx].body.set(
                 fetchedBody,
               );
               // Also sync notes if they were somehow stripped
-              if (fullChapter.notes)
+              if (parsed.notes)
                 appStore.books[bookIdx].chapters[chapterIdx].notes.set(
                   fetchedNotes,
                 );
-              if (fullChapter.drafts)
+              if (parsed.drafts)
                 appStore.books[bookIdx].chapters[chapterIdx].drafts.set(
-                  fullChapter.drafts as import("../lib/types").Draft[],
+                  parsed.drafts as import("../lib/types").Draft[],
                 );
 
               // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
@@ -145,13 +146,10 @@ export default function ChapterPage() {
                 timeRef: chapter.timeRef || "",
                 synopsis: chapter.synopsis || "",
                 body: fetchedBody,
-                notes: fullChapter.notes ? fetchedNotes : chapter.notes || "",
-                pinnedChars: chapter.pinnedChars || [],
-                pinnedEventIds: chapter.pinnedEventIds || [],
-                scenes:
-                  (fullChapter.scenes as import("../lib/types").SceneCard[]) ||
-                  chapter.scenes ||
-                  [],
+                notes: (parsed.notes as string) || "",
+                pinnedChars: (parsed.pinnedChars as string[]) || [],
+                pinnedEventIds: (parsed.pinnedEventIds as string[]) || [],
+                scenes: (parsed.scenes as import("../lib/types").SceneCard[]) || [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -193,13 +191,108 @@ export default function ChapterPage() {
     const ch = appStore.books[bookIdx].chapters[chapterIdx];
     ch.number.set(data.number);
     ch.title.set(data.title);
-    ch.timeRef.set(data.timeRef);
+    const oldTimeRef = ch.timeRef.get();
+    
     ch.synopsis.set(data.synopsis);
     ch.body.set(data.body);
     ch.notes.set(data.notes);
     ch.pinnedChars.set(data.pinnedChars);
     ch.pinnedEventIds.set(data.pinnedEventIds);
     ch.scenes.set(data.scenes);
+    ch.timeRef.set(data.timeRef);
+
+    const eventPayloadsToSync: { eventId: string; payloadStr: string }[] = [];
+    
+    // Helper function to sync an event's characters and chapter links based on current world state
+    const computeEventSync = (eventId: string) => {
+      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === eventId);
+      if (eIdx < 0) return;
+      const ev = appStore.books[bookIdx].events[eIdx];
+      const currentEvChars = ev.characters.get() || [];
+      const currentEvChapters = ev.chapters.get() || [];
+      let modified = false;
+
+      // 1. Compute expected characters and chapters for this event
+      const allChapters = appStore.books[bookIdx].chapters.get();
+      const expectedChars = new Set<string>();
+      const expectedChapters = new Set<string>();
+
+      allChapters.forEach(c => {
+        // If this is the chapter being saved, use the NEW data
+        const isCurrentChapter = c.id === id;
+        const cTimeRef = isCurrentChapter ? data.timeRef : c.timeRef;
+        const cPinnedChars = isCurrentChapter ? data.pinnedChars : c.pinnedChars;
+
+        if (cTimeRef === eventId) {
+          expectedChapters.add(c.id);
+          if (cPinnedChars) {
+            cPinnedChars.forEach(cid => expectedChars.add(cid));
+          }
+        }
+      });
+
+      // 2. Resolve characters
+      const nextEvChars: string[] = [];
+      currentEvChars.forEach(cid => {
+        if (expectedChars.has(cid)) {
+          nextEvChars.push(cid);
+        } else {
+          // Check for meaningful manual attributes before auto-removing
+          const attrs = appStore.books[bookIdx].characters.get().find(c => c.id === cid)?.attributes?.[eventId];
+          const hasMeaningfulAttrs = attrs && Object.values(attrs).some(v => v !== "" && v !== undefined && v !== null);
+          if (hasMeaningfulAttrs) {
+            nextEvChars.push(cid);
+          } else {
+            modified = true;
+          }
+        }
+      });
+      expectedChars.forEach(cid => {
+        if (!nextEvChars.includes(cid)) {
+          nextEvChars.push(cid);
+          modified = true;
+        }
+      });
+
+      // 3. Resolve chapters
+      const nextEvChapters: string[] = [];
+      currentEvChapters.forEach(cid => {
+        if (expectedChapters.has(cid)) {
+          nextEvChapters.push(cid);
+        } else {
+          modified = true;
+        }
+      });
+      expectedChapters.forEach(cid => {
+        if (!nextEvChapters.includes(cid)) {
+          nextEvChapters.push(cid);
+          modified = true;
+        }
+      });
+
+      if (modified) {
+        ev.characters.set(nextEvChars);
+        ev.chapters.set(nextEvChapters);
+        eventPayloadsToSync.push({
+          eventId: ev.id.get(),
+          payloadStr: JSON.stringify(ev.get(), null, 2),
+        });
+      }
+    };
+
+    // Collect all events that need to be synced
+    const eventsToSync = new Set<string>();
+    if (data.timeRef) eventsToSync.add(data.timeRef);
+    if (oldTimeRef) eventsToSync.add(oldTimeRef);
+    
+    // Also trigger sync for mentioned events so they can clean up their chapters lists
+    if (data.pinnedEventIds) {
+      data.pinnedEventIds.forEach(eid => eventsToSync.add(eid));
+    }
+    const oldPinnedEvents = ch.pinnedEventIds.get() || [];
+    oldPinnedEvents.forEach(eid => eventsToSync.add(eid));
+
+    eventsToSync.forEach(eid => computeEventSync(eid));
 
     // Background delta sync
     const token =
@@ -222,12 +315,21 @@ export default function ChapterPage() {
           scenes: data.scenes,
           drafts: ch.drafts.get() || [],
         };
+        // Execute sequentially to avoid GitHub branch reference race conditions
         await updateFileOnGitHub(
           token,
           bookId,
           `chapters/chapter_${id}.json`,
           JSON.stringify(payload, null, 2),
         );
+        for (const ep of eventPayloadsToSync) {
+          await updateFileOnGitHub(
+            token,
+            bookId,
+            `events/event_${ep.eventId}.json`,
+            ep.payloadStr,
+          );
+        }
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
         reset(data);

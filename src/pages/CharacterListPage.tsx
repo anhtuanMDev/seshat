@@ -106,160 +106,231 @@ function CharacterCard({
     (cd) => cd.isActive,
   ).length;
   const skillCount = (c.skills || []).length;
+  
+  const charColor = c.color || "var(--border)";
+  const initial = c.name ? c.name.charAt(0).toUpperCase() : "?";
 
   return (
     <div
       onClick={onClick}
       style={{
-        padding: "20px 24px",
-        borderLeft: `3px solid ${c.color || "var(--border)"}`,
+        display: "flex",
+        gap: 16,
         cursor: "pointer",
-        background: "var(--bg-entry)",
-        marginBottom: 10,
-        borderRadius: "0 2px 2px 0",
-        transition: "background 0.12s",
         position: "relative",
+        marginBottom: 12,
       }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.background = "var(--bg-hover)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.background = "var(--bg-entry)")
-      }
+      onMouseEnter={(e) => {
+        const card = e.currentTarget.querySelector(".char-card-inner") as HTMLElement;
+        const node = e.currentTarget.querySelector(".char-node") as HTMLElement;
+        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
+        if (card) {
+          card.style.background = "var(--bg-hover)";
+          card.style.borderColor = "var(--border)";
+          card.style.transform = "translateY(-1px)";
+          card.style.boxShadow = "0 3px 8px rgba(0,0,0,0.1)";
+        }
+        if (node) {
+          node.style.boxShadow = `0 0 10px ${charColor}88`;
+          node.style.background = charColor;
+          node.style.color = "#000";
+        }
+        if (arrow) {
+          arrow.style.opacity = "1";
+          arrow.style.transform = "translateY(-50%) translateX(2px)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        const card = e.currentTarget.querySelector(".char-card-inner") as HTMLElement;
+        const node = e.currentTarget.querySelector(".char-node") as HTMLElement;
+        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
+        if (card) {
+          card.style.background = "var(--bg-entry)";
+          card.style.borderColor = "transparent";
+          card.style.transform = "translateY(0)";
+          card.style.boxShadow = "none";
+        }
+        if (node) {
+          node.style.boxShadow = "none";
+          node.style.background = `var(--bg-app)`;
+          node.style.color = charColor;
+        }
+        if (arrow) {
+          arrow.style.opacity = "0";
+          arrow.style.transform = "translateY(-50%)";
+        }
+      }}
     >
-      {/* Name + role row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 12,
-          marginBottom: hasContent ? 12 : 0,
-        }}
-      >
-        <span
+      {/* Avatar Node */}
+      <div style={{ position: "relative", width: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div
+          className="char-node"
           style={{
-            fontSize: 17,
-            color: "var(--text-primary)",
-            fontWeight: 400,
-            letterSpacing: 0.3,
+            width: 26,
+            height: 26,
+            borderRadius: "50%",
+            background: "var(--bg-app)",
+            border: `2px solid ${charColor}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            zIndex: 1,
+            transition: "all 0.2s ease",
+            marginTop: 12,
+            alignSelf: "flex-start",
           }}
         >
-          {c.name || "Unnamed"}
-        </span>
-        {c.role && (
           <span
             style={{
               fontSize: 12,
-              color: "var(--text-muted)",
-              fontStyle: "italic",
+              fontWeight: 600,
+              color: "inherit",
             }}
           >
-            {c.role}
+            {initial}
           </span>
-        )}
-        {c.archetype && (
-          <span
-            style={{
-              fontSize: 11,
-              color: "var(--text-muted)",
-              letterSpacing: 1,
-              textTransform: "uppercase",
-              marginLeft: "auto",
-            }}
-          >
-            {c.archetype}
-          </span>
-        )}
+        </div>
       </div>
 
-      {/* Core wound — the most important thing to reference */}
-      {c.coreWound && (
-        <p
-          style={{
-            fontSize: 13,
-            color: "var(--text-secondary)",
-            lineHeight: 1.6,
-            margin: "0 0 10px",
-            paddingLeft: 1,
-          }}
-        >
-          {c.coreWound}
-        </p>
-      )}
-
-      {/* Fear / Desire inline */}
-      {(c.coreFear || c.coreDesire) && (
-        <div style={{ display: "flex", gap: 24, marginBottom: 10 }}>
-          {c.coreFear && (
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              <span
-                style={{
-                  color: "var(--color-red)",
-                  marginRight: 4,
-                  fontSize: 10,
-                }}
-              >
-                ▲
-              </span>
-              {c.coreFear}
-            </span>
-          )}
-          {c.coreDesire && (
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              <span
-                style={{
-                  color: "var(--color-green)",
-                  marginRight: 4,
-                  fontSize: 10,
-                }}
-              >
-                ◆
-              </span>
-              {c.coreDesire}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Stat pills */}
-      {(conditionCount > 0 ||
-        skillCount > 0 ||
-        (c.traumas || []).length > 0) && (
-        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-          {skillCount > 0 && (
-            <StatPill
-              label={`${skillCount} skill${skillCount !== 1 ? "s" : ""}`}
-            />
-          )}
-          {conditionCount > 0 && (
-            <StatPill
-              label={`${conditionCount} active condition${conditionCount !== 1 ? "s" : ""}`}
-              color="var(--color-orange)"
-            />
-          )}
-          {(c.traumas || []).length > 0 && (
-            <StatPill
-              label={`${c.traumas.length} trauma${c.traumas.length !== 1 ? "s" : ""}`}
-              color="var(--color-red)"
-            />
-          )}
-        </div>
-      )}
-
-      {/* Arrow hint */}
-      <span
+      {/* Card Body */}
+      <div
+        className="char-card-inner"
         style={{
-          position: "absolute",
-          right: 20,
-          top: "50%",
-          transform: "translateY(-50%)",
-          fontSize: 11,
-          color: "var(--text-muted)",
-          opacity: 0.5,
+          flex: 1,
+          padding: "8px 12px",
+          background: "var(--bg-entry)",
+          borderRadius: "6px",
+          border: "1px solid transparent",
+          transition: "all 0.2s ease",
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
         }}
       >
-        →
-      </span>
+        {/* Header Row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: "var(--text-primary)",
+              letterSpacing: 0.2,
+            }}
+          >
+            {c.name || "Unnamed"}
+          </span>
+          {c.role && (
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-muted)",
+                fontStyle: "italic",
+              }}
+            >
+              {c.role}
+            </span>
+          )}
+          {c.archetype && (
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 600,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: charColor,
+                background: `${charColor}15`,
+                padding: "1px 6px",
+                borderRadius: "10px",
+                border: `1px solid ${charColor}33`,
+                marginLeft: "auto",
+              }}
+            >
+              {c.archetype}
+            </span>
+          )}
+        </div>
+
+        {/* Content Section */}
+        {hasContent && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {c.coreWound && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.5,
+                  margin: 0,
+                }}
+              >
+                {c.coreWound}
+              </p>
+            )}
+
+            {(c.coreFear || c.coreDesire) && (
+              <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
+                {c.coreFear && (
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: "var(--color-red)", fontSize: 9 }}>▲</span>
+                    {c.coreFear}
+                  </span>
+                )}
+                {c.coreDesire && (
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: "var(--color-green)", fontSize: 9 }}>◆</span>
+                    {c.coreDesire}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Stat pills */}
+        {(conditionCount > 0 || skillCount > 0 || (c.traumas || []).length > 0) && (
+          <div style={{ display: "flex", gap: 6, marginTop: "auto", paddingTop: 4 }}>
+            {skillCount > 0 && (
+              <StatPill label={`${skillCount} skill${skillCount !== 1 ? "s" : ""}`} />
+            )}
+            {conditionCount > 0 && (
+              <StatPill
+                label={`${conditionCount} condition${conditionCount !== 1 ? "s" : ""}`}
+                color="var(--color-orange)"
+              />
+            )}
+            {(c.traumas || []).length > 0 && (
+              <StatPill
+                label={`${c.traumas.length} trauma${c.traumas.length !== 1 ? "s" : ""}`}
+                color="var(--color-red)"
+              />
+            )}
+          </div>
+        )}
+
+        {/* Hover arrow indicator */}
+        <span
+          className="hover-arrow"
+          style={{
+            position: "absolute",
+            right: 16,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 12,
+            color: "var(--text-muted)",
+            opacity: 0,
+            transition: "opacity 0.2s, transform 0.2s",
+          }}
+        >
+          →
+        </span>
+      </div>
     </div>
   );
 }
@@ -274,11 +345,14 @@ function StatPill({
   return (
     <span
       style={{
-        fontSize: 11,
+        fontSize: 10,
         color,
-        border: `1px solid ${color}44`,
-        padding: "1px 8px",
-        borderRadius: 2,
+        background: `${color}11`,
+        border: `1px solid ${color}33`,
+        padding: "1px 6px",
+        borderRadius: "10px",
+        display: "flex",
+        alignItems: "center",
         letterSpacing: 0.3,
       }}
     >

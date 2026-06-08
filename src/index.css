@@ -433,7 +433,7 @@ svg circle {
 
 .seshat-event-meta-grid {
   display: grid;
-  grid-template-columns: 56px auto 1fr 1fr 1fr 1fr;
+  grid-template-columns: 56px auto 1fr 1fr 1fr;
   gap: 16px 24px;
   margin-bottom: 16px;
   align-items: end;

@@ -148,22 +148,24 @@ export default function TimelinePage() {
       )}
 
       {/* Timeline */}
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", marginLeft: 8 }}>
         {/* Vertical line */}
         {sortedEvents.length > 1 && (
           <div
             style={{
               position: "absolute",
-              left: 30,
-              top: 16,
-              bottom: 16,
-              width: 1,
-              background: "var(--border)",
+              left: 18,
+              top: 36,
+              bottom: 36,
+              width: 2,
+              background: "linear-gradient(to bottom, var(--border), var(--border-field), var(--border))",
+              transform: "translateX(-50%)",
+              zIndex: 0,
             }}
           />
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {filteredEvents.map((e: Event) => (
             <EventCard
               key={e.id}
@@ -218,54 +220,82 @@ function EventCard({
       onClick={onClick}
       style={{
         display: "flex",
-        gap: 20,
+        gap: 24,
         cursor: "pointer",
-        padding: "16px 0",
         position: "relative",
-        paddingLeft: 60,
       }}
       onMouseEnter={(e) => {
-        const card = e.currentTarget.querySelector(
-          ".event-card-inner",
-        ) as HTMLElement;
-        if (card) card.style.background = "var(--bg-hover)";
+        const card = e.currentTarget.querySelector(".event-card-inner") as HTMLElement;
+        const node = e.currentTarget.querySelector(".event-node") as HTMLElement;
+        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
+        if (card) {
+          card.style.background = "var(--bg-hover)";
+          card.style.borderColor = "var(--border)";
+          card.style.transform = "translateY(-1px)";
+          card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+        }
+        if (node) {
+          node.style.boxShadow = `0 0 12px ${typeColor}88`;
+          node.style.background = typeColor;
+          node.style.color = "#000";
+        }
+        if (arrow) {
+          arrow.style.opacity = "1";
+          arrow.style.transform = "translateY(-50%) translateX(4px)";
+        }
       }}
       onMouseLeave={(e) => {
-        const card = e.currentTarget.querySelector(
-          ".event-card-inner",
-        ) as HTMLElement;
-        if (card) card.style.background = "var(--bg-entry)";
+        const card = e.currentTarget.querySelector(".event-card-inner") as HTMLElement;
+        const node = e.currentTarget.querySelector(".event-node") as HTMLElement;
+        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
+        if (card) {
+          card.style.background = "var(--bg-entry)";
+          card.style.borderColor = "transparent";
+          card.style.transform = "translateY(0)";
+          card.style.boxShadow = "none";
+        }
+        if (node) {
+          node.style.boxShadow = "none";
+          node.style.background = `var(--bg-app)`;
+          node.style.color = typeColor;
+        }
+        if (arrow) {
+          arrow.style.opacity = "0";
+          arrow.style.transform = "translateY(-50%)";
+        }
       }}
     >
       {/* Time bubble */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          background: typeColor + "22",
-          border: `1px solid ${typeColor}66`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          zIndex: 1,
-        }}
-      >
-        <span
+      <div style={{ position: "relative", width: 36, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div
+          className="event-node"
           style={{
-            fontSize: 13,
-            color: typeColor,
-            fontWeight: 400,
-            letterSpacing: 0.5,
+            width: 30,
+            height: 30,
+            borderRadius: "50%",
+            background: "var(--bg-app)",
+            border: `2px solid ${typeColor}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            zIndex: 1,
+            transition: "all 0.2s ease",
+            marginTop: 16,
+            alignSelf: "flex-start",
           }}
         >
-          T{e.time}
-        </span>
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: 0.5,
+              color: "inherit",
+            }}
+          >
+            T{e.time}
+          </span>
+        </div>
       </div>
 
       {/* Card body */}
@@ -273,47 +303,64 @@ function EventCard({
         className="event-card-inner"
         style={{
           flex: 1,
-          padding: "14px 18px",
+          padding: "16px 20px",
           background: "var(--bg-entry)",
-          borderRadius: "2px",
-          borderLeft: `2px solid ${typeColor}`,
-          transition: "background 0.12s",
+          borderRadius: "8px",
+          border: "1px solid transparent",
+          transition: "all 0.2s ease",
           position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
         }}
       >
+        {/* Header Row */}
         <div
           style={{
             display: "flex",
-            alignItems: "baseline",
+            alignItems: "center",
+            justifyContent: "space-between",
             gap: 10,
-            marginBottom: e.description ? 8 : 0,
           }}
         >
-          <span
-            style={{
-              fontSize: 15,
-              color: "var(--text-primary)",
-            }}
-          >
-            {e.title}
-          </span>
-          <span
-            style={{
-              fontSize: 13,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: typeColor,
-              opacity: 0.8,
-            }}
-          >
-            {e.type}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span
+              style={{
+                fontSize: 16,
+                fontWeight: 500,
+                color: "var(--text-primary)",
+                letterSpacing: 0.2,
+              }}
+            >
+              {e.title || "Untitled event"}
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: typeColor,
+                background: `${typeColor}15`,
+                padding: "2px 8px",
+                borderRadius: "12px",
+                border: `1px solid ${typeColor}33`,
+              }}
+            >
+              {e.type}
+            </span>
+          </div>
+          
           {dateTag && (
             <span
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 color: "var(--text-muted)",
-                marginLeft: "auto",
+                fontFamily: "monospace",
+                letterSpacing: -0.2,
+                background: "var(--bg-side)",
+                padding: "2px 8px",
+                borderRadius: "4px",
               }}
             >
               {dateTag}
@@ -321,58 +368,71 @@ function EventCard({
           )}
         </div>
 
-        {e.subplot && (
-          <div style={{ marginBottom: 6 }}>
-            <span
-              style={{
-                fontSize: 11,
-                padding: "2px 6px",
-                borderRadius: 4,
-                background: "var(--bg-hover)",
-                color: "var(--text-secondary)",
-                letterSpacing: 0.5,
-              }}
-            >
-              Plot: {e.subplot}
-            </span>
+        {/* Content Row */}
+        {(e.subplot || e.description || e.consequence) && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {e.subplot && (
+              <div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    background: "var(--bg-hover)",
+                    color: "var(--text-secondary)",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Plot: {e.subplot}
+                </span>
+              </div>
+            )}
+
+            {e.description && (
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
+                {e.description.length > 200
+                  ? e.description.slice(0, 197) + "…"
+                  : e.description}
+              </p>
+            )}
+
+            {e.consequence && (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  margin: "4px 0 0 0",
+                  fontStyle: "italic",
+                  display: "flex",
+                  gap: 6,
+                }}
+              >
+                <span style={{ color: typeColor }}>↳</span>
+                {e.consequence.length > 150
+                  ? e.consequence.slice(0, 147) + "…"
+                  : e.consequence}
+              </p>
+            )}
           </div>
         )}
 
-        {e.description && (
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              lineHeight: 1.65,
-              margin: "0 0 8px",
-            }}
-          >
-            {e.description.length > 160
-              ? e.description.slice(0, 157) + "…"
-              : e.description}
-          </p>
-        )}
-
-        {e.consequence && (
-          <p
-            style={{
-              fontSize: 12,
-              color: "var(--text-muted)",
-              margin: 0,
-              fontStyle: "italic",
-            }}
-          >
-            →{" "}
-            {e.consequence.length > 100
-              ? e.consequence.slice(0, 97) + "…"
-              : e.consequence}
-          </p>
-        )}
-
-        {/* Characters present */}
+        {/* Characters Row */}
         {presentChars.length > 0 && (
           <div
-            style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}
+            style={{ 
+              display: "flex", 
+              gap: 6, 
+              flexWrap: "wrap",
+              marginTop: "auto",
+              paddingTop: 8,
+            }}
           >
             {presentChars.map((c: Character) => (
               <span
@@ -380,26 +440,34 @@ function EventCard({
                 style={{
                   fontSize: 11,
                   color: c.color,
-                  border: `1px solid ${c.color}44`,
-                  padding: "1px 7px",
-                  borderRadius: 2,
+                  background: `${c.color}11`,
+                  border: `1px solid ${c.color}33`,
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
                 }}
               >
+                <span style={{ width: 4, height: 4, borderRadius: "50%", background: c.color }} />
                 {c.name}
               </span>
             ))}
           </div>
         )}
 
+        {/* Hover arrow indicator */}
         <span
+          className="hover-arrow"
           style={{
             position: "absolute",
-            right: 14,
+            right: 20,
             top: "50%",
             transform: "translateY(-50%)",
-            fontSize: 11,
+            fontSize: 14,
             color: "var(--text-muted)",
-            opacity: 0.4,
+            opacity: 0,
+            transition: "opacity 0.2s, transform 0.2s",
           }}
         >
           →

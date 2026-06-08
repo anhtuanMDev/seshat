@@ -136,98 +136,139 @@ function ChapterCard({
     <div
       onClick={onClick}
       style={{
-        padding: "18px 24px",
-        borderLeft: "3px solid var(--color-purple)",
+        padding: "20px 24px",
         cursor: "pointer",
-        background: "var(--bg-entry)",
-        marginBottom: 10,
-        borderRadius: "0 2px 2px 0",
         position: "relative",
-        transition: "background 0.12s",
+        transition: "all 0.2s ease",
+        borderBottom: "1px solid var(--border)",
       }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.background = "var(--bg-hover)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.background = "var(--bg-entry)")
-      }
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--bg-hover)";
+        const connector = e.currentTarget.querySelector(".toc-connector") as HTMLElement;
+        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
+        if (connector) connector.style.opacity = "0.8";
+        if (arrow) {
+          arrow.style.opacity = "1";
+          arrow.style.transform = "translateY(-50%) translateX(0)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        const connector = e.currentTarget.querySelector(".toc-connector") as HTMLElement;
+        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
+        if (connector) connector.style.opacity = "0.3";
+        if (arrow) {
+          arrow.style.opacity = "0";
+          arrow.style.transform = "translateY(-50%) translateX(-8px)";
+        }
+      }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 12,
-          marginBottom: c.synopsis ? 10 : 0,
-        }}
-      >
-        {c.number && (
+      <div style={{ display: "flex", alignItems: "center" }}>
+        {/* Chapter Number Column */}
+        <div style={{ width: 80, flexShrink: 0 }}>
+          {c.number ? (
+            <span
+              style={{
+                fontSize: 11,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                color: "var(--color-purple)",
+                fontWeight: 600,
+                opacity: 0.9,
+              }}
+            >
+              {c.number}
+            </span>
+          ) : (
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>—</span>
+          )}
+        </div>
+
+        {/* Title & Connector & Meta */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
           <span
             style={{
-              fontSize: 11,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              flexShrink: 0,
+              fontSize: 17,
+              color: c.title ? "var(--text-primary)" : "var(--text-muted)",
+              fontStyle: c.title ? "normal" : "italic",
+              letterSpacing: 0.3,
+              fontFamily: c.title ? "serif" : "inherit",
             }}
           >
-            {c.number}
+            {c.title || "Untitled chapter"}
           </span>
-        )}
-        <span
-          style={{
-            fontSize: 16,
-            color: c.title ? "var(--text-primary)" : "var(--text-muted)",
-            fontStyle: c.title ? "normal" : "italic",
-          }}
-        >
-          {c.title || "Untitled chapter"}
-        </span>
-        {c.timeRef && (
-          <span
-            style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 4 }}
-          >
-            {c.timeRef}
-          </span>
-        )}
-        {wordCount > 0 && (
-          <span
+
+          {c.timeRef && (
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-secondary)",
+                background: "var(--bg-entry)",
+                border: "1px solid var(--border-field)",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                marginLeft: 12,
+                letterSpacing: 0.5,
+              }}
+            >
+              {c.timeRef}
+            </span>
+          )}
+
+          <div
+            className="toc-connector"
             style={{
-              marginLeft: "auto",
-              fontSize: 11,
-              color: "var(--text-muted)",
+              flex: 1,
+              borderBottom: "1px dotted var(--text-muted)",
+              margin: "0 16px",
+              opacity: 0.3,
+              transition: "opacity 0.2s ease",
             }}
-          >
-            {wordCount >= 1000
-              ? `${(wordCount / 1000).toFixed(1)}k`
-              : wordCount}
-            w
-          </span>
-        )}
+          />
+
+          {wordCount > 0 && (
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                fontVariantNumeric: "tabular-nums",
+                letterSpacing: 0.5,
+              }}
+            >
+              {wordCount >= 1000 ? `${(wordCount / 1000).toFixed(1)}k` : wordCount} w
+            </span>
+          )}
+        </div>
       </div>
 
       {c.synopsis && (
-        <p
-          style={{
-            fontSize: 13,
-            color: "var(--text-secondary)",
-            lineHeight: 1.6,
-            margin: 0,
-            fontStyle: "italic",
-          }}
-        >
-          {c.synopsis}
-        </p>
+        <div style={{ paddingLeft: 80, paddingRight: 60, marginTop: 8 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              lineHeight: 1.6,
+              margin: 0,
+              fontStyle: "italic",
+            }}
+          >
+            {c.synopsis}
+          </p>
+        </div>
       )}
 
+      {/* Hover arrow indicator */}
       <span
+        className="hover-arrow"
         style={{
           position: "absolute",
-          right: 20,
+          right: 24,
           top: "50%",
-          transform: "translateY(-50%)",
-          fontSize: 11,
-          color: "var(--text-muted)",
-          opacity: 0.5,
+          transform: "translateY(-50%) translateX(-8px)",
+          fontSize: 14,
+          color: "var(--color-purple)",
+          opacity: 0,
+          transition: "all 0.2s ease",
         }}
       >
         →

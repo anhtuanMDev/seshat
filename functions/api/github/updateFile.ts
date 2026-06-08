@@ -102,7 +102,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       headers,
       body: JSON.stringify({ sha: commitData.sha }),
     });
-    if (!refRes.ok) throw new Error("Failed to update branch reference");
+    if (!refRes.ok) {
+      const errTxt = await refRes.text();
+      throw new Error(`Failed to update branch reference: ${refRes.status} ${errTxt}`);
+    }
 
     return new Response(
       JSON.stringify({ success: true, sha: commitData.sha }),

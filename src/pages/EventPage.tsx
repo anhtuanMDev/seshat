@@ -9,7 +9,7 @@ import {
   useChapters,
 } from "../hooks/useWorldStore";
 import { S } from "../lib/utils";
-import { Field } from "../components/ui";
+import { Field, Section } from "../components/ui";
 import { CharacterAttrsBlock } from "../components/event/CharacterAttrsBlock";
 import {
   SaveIcon,
@@ -17,7 +17,9 @@ import {
   CalendarTodayIcon,
   LocationOnIcon,
   AutoStoriesIcon,
+  InfoIcon,
 } from "../components/ui/icons";
+import { Modal } from "../components/ui/Modal";
 import { useState, useEffect, useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { EventAttributes, EventType } from "../lib/types";
@@ -28,7 +30,7 @@ interface EventForm {
   title: string;
   time: number;
   type: string;
-  chapters: string;
+  chapters: string[];
   startDate: string;
   endDate: string;
   setting: string;
@@ -43,10 +45,6 @@ export default function EventPage() {
   const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
   const allChapters = useChapters();
-
-  const linkedChapters = allChapters.filter((c) =>
-    c.pinnedEventIds?.includes(id!),
-  );
 
   const event = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -75,7 +73,7 @@ export default function EventPage() {
       title: "",
       time: 1,
       type: "Story",
-      chapters: "",
+      chapters: [],
       startDate: "",
       endDate: "",
       setting: "",
@@ -88,11 +86,16 @@ export default function EventPage() {
 
   useEffect(() => {
     if (event) {
+      // Derive linked chapters STRICTLY from Chapter.timeRef (Takes Place At)
+      const validLinkedIds = allChapters
+        .filter((c) => c.timeRef === event.id)
+        .map((c) => c.id);
+
       reset({
         title: event.title || "",
         time: event.time,
         type: event.type,
-        chapters: (event.chapters || []).join("\n"),
+        chapters: validLinkedIds,
         startDate: event.startDate || "",
         endDate: event.endDate || "",
         setting: event.setting || "",
@@ -113,7 +116,7 @@ export default function EventPage() {
       setCharAttrs(attrs);
       setIsAttrsDirty(false);
     }
-  }, [event, event?.id, reset, bookIdx]);
+  }, [event, event?.id, reset, bookIdx, allChapters]);
 
   const ref = useAnimateIn();
 
@@ -123,10 +126,12 @@ export default function EventPage() {
       const updated = current.includes(cid)
         ? current.filter((x: string) => x !== cid)
         : [...current, cid];
-      setValue("characters", updated);
+      setValue("characters", updated, { shouldDirty: true });
     },
     [getValues, setValue],
   );
+
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const patchAttr = useCallback((cid: string, f: string, v: string) => {
     setCharAttrs((prev) => ({
@@ -137,6 +142,7 @@ export default function EventPage() {
   }, []);
 
   const formChars = useWatch({ control, name: "characters" }) || [];
+  const formChapters = useWatch({ control, name: "chapters" }) || [];
 
   if (!event)
     return (
@@ -152,12 +158,7 @@ export default function EventPage() {
     ev.title.set(data.title);
     ev.time.set(data.time);
     ev.type.set(data.type as EventType);
-    ev.chapters.set(
-      data.chapters
-        .split("\n")
-        .map((s: string) => s.trim())
-        .filter(Boolean),
-    );
+    ev.chapters.set(data.chapters);
     ev.startDate.set(data.startDate);
     ev.endDate.set(data.endDate);
     ev.setting.set(data.setting);
@@ -179,6 +180,7 @@ export default function EventPage() {
       }
     });
 
+    // No need to sync back to chapters since EventPage is read-only for chapters.
     // API delta sync
     const token =
       localStorage.getItem("seshat-auth-token") ||
@@ -192,10 +194,7 @@ export default function EventPage() {
           title: data.title,
           time: data.time,
           type: data.type,
-          chapters: data.chapters
-            .split("\n")
-            .map((s: string) => s.trim())
-            .filter(Boolean),
+          chapters: data.chapters,
           startDate: data.startDate,
           endDate: data.endDate,
           setting: data.setting,
@@ -210,6 +209,9 @@ export default function EventPage() {
           `events/event_${id}.json`,
           JSON.stringify(payload, null, 2),
         );
+
+        // Event-to-chapter syncing is handled solely by ChapterPage.
+
         showToast("Event synced to cloud", "success");
         reset(data);
         setIsAttrsDirty(false);
@@ -220,6 +222,7 @@ export default function EventPage() {
       }
     }
   };
+
 
   return (
     <div ref={ref} className="seshat-page-container">
@@ -288,71 +291,7 @@ export default function EventPage() {
             ))}
           </select>
         </div>
-        <div>
-          <label style={S.label}>
-            <AutoStoriesIcon
-              sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-            />
-            Chapters
-          </label>
-          <div
-            style={{
-              ...S.input,
-              minHeight: 68,
-              fontSize: 12,
-              padding: "8px 12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-            }}
-          >
-            {linkedChapters.length > 0 ? (
-              linkedChapters.map((c) => (
-                <div
-                  key={c.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    color: "var(--color-blue)",
-                  }}
-                >
-                  <span style={{ fontSize: 11, fontWeight: "bold" }}>
-                    {c.number}
-                  </span>
-                  <span
-                    style={{
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {c.title}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <span style={{ color: "var(--text-muted)" }}>
-                Not pinned to any chapters
-              </span>
-            )}
 
-            <input
-              {...register("chapters")}
-              placeholder="Or type manually..."
-              style={{
-                ...S.input,
-                border: "none",
-                padding: "4px 0",
-                marginTop: "auto",
-                fontSize: 11,
-                background: "transparent",
-              }}
-            />
-          </div>
-        </div>
         <div>
           <label style={S.label}>
             <CalendarTodayIcon
@@ -388,6 +327,106 @@ export default function EventPage() {
           />
         </div>
       </div>
+
+      <Section 
+        title={
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <AutoStoriesIcon sx={{ fontSize: 12, marginRight: 4 }} />
+            Chapters
+            <button 
+              type="button" 
+              onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
+              style={{ ...S.ghost, padding: "0 4px", marginLeft: 8, height: 20 }}
+              title="How does Chapter Sync work?"
+            >
+              <InfoIcon sx={{ fontSize: 14, color: "var(--color-blue)" }} />
+            </button>
+          </div>
+        } 
+        defaultOpen={true}
+      >
+        <div
+          style={{
+            ...S.input,
+            minHeight: 48,
+            fontSize: 12,
+            padding: "12px",
+            background: "transparent",
+            border: "1px solid var(--border)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
+          <span style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 8, fontStyle: "italic" }}>
+            Chapters that take place during this event. To change this, edit the chapter's "Takes Place At" field.
+          </span>
+          {formChapters.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {allChapters.filter(c => formChapters.includes(c.id)).map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    ...S.pill,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "4px 8px",
+                    color: "var(--color-blue)",
+                    borderColor: "var(--color-blue)",
+                    background: "rgba(0, 153, 255, 0.05)",
+                  }}
+                >
+                  <span style={{ fontSize: 11, fontWeight: "bold" }}>
+                    {c.number}
+                  </span>
+                  {c.title && (
+                    <span
+                      style={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: 150,
+                        fontSize: 11,
+                      }}
+                    >
+                      {c.title}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span style={{ color: "var(--text-muted)" }}>
+              No chapters take place here yet.
+            </span>
+          )}
+        </div>
+
+          {showInfoModal && (
+            <Modal title="Smart Character Sync" onClose={() => setShowInfoModal(false)}>
+              <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+                <p style={{ marginBottom: 12 }}>
+                  <strong>Auto-Add:</strong> When you pin a chapter to this event, all characters currently present in that chapter are automatically added to the event.
+                </p>
+                <p style={{ marginBottom: 12 }}>
+                  <strong>Clever Auto-Remove:</strong> If you unpin a chapter, the system will look for characters that belonged <em>exclusively</em> to that chapter. 
+                </p>
+                <p style={{ marginBottom: 12 }}>
+                  Before removing an exclusive character, the system checks if you have actively planned for them in this event (e.g., set their "Motive", "Emotional State", or "Power Tier"). 
+                </p>
+                <div style={{ ...S.pill, background: "rgba(0, 153, 255, 0.05)", borderColor: "var(--color-blue)", color: "var(--text-primary)", display: "inline-block", marginTop: 8 }}>
+                  <strong>TL;DR:</strong> If a character's attributes are entirely blank, they will be safely auto-cleaned. If you've modified their event attributes, they are protected from auto-removal, preserving your manual planning!
+                </div>
+              </div>
+              <div style={{ marginTop: 24, textAlign: "right" }}>
+                <button type="button" style={{ ...S.button, padding: "6px 16px" }} onClick={() => setShowInfoModal(false)}>
+                  Got it
+                </button>
+              </div>
+            </Modal>
+          )}
+      </Section>
 
       <Field
         label={
