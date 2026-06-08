@@ -314,25 +314,21 @@ export default function ChapterPage() {
           scenes: data.scenes,
           drafts: ch.drafts.get() || [],
         };
-        const syncPromises = [
-          updateFileOnGitHub(
+        // Execute sequentially to avoid GitHub branch reference race conditions
+        await updateFileOnGitHub(
+          token,
+          bookId,
+          `chapters/chapter_${id}.json`,
+          JSON.stringify(payload, null, 2),
+        );
+        for (const ep of eventPayloadsToSync) {
+          await updateFileOnGitHub(
             token,
             bookId,
-            `chapters/chapter_${id}.json`,
-            JSON.stringify(payload, null, 2),
-          )
-        ];
-        eventPayloadsToSync.forEach(ep => {
-          syncPromises.push(
-            updateFileOnGitHub(
-              token,
-              bookId,
-              `events/event_${ep.eventId}.json`,
-              ep.payloadStr,
-            )
+            `events/event_${ep.eventId}.json`,
+            ep.payloadStr,
           );
-        });
-        await Promise.all(syncPromises);
+        }
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
         reset(data);
