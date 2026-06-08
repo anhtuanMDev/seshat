@@ -204,7 +204,7 @@ export default function ChapterPage() {
     const eventPayloadsToSync: { eventId: string; payloadStr: string }[] = [];
     
     // Helper function to sync an event's characters and chapter links based on current world state
-    const computeEventSync = (eventId: string, isTargetEvent: boolean) => {
+    const computeEventSync = (eventId: string) => {
       const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === eventId);
       if (eIdx < 0) return;
       const ev = appStore.books[bookIdx].events[eIdx];
@@ -286,11 +286,11 @@ export default function ChapterPage() {
 
     // Sync the new timeRef event
     if (data.timeRef) {
-      computeEventSync(data.timeRef, true);
+      computeEventSync(data.timeRef);
     }
     // If timeRef changed, sync the old event so it loses the chapter and characters
     if (oldTimeRef && oldTimeRef !== data.timeRef) {
-      computeEventSync(oldTimeRef, false);
+      computeEventSync(oldTimeRef);
     }
 
     // Background delta sync
