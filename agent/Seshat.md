@@ -562,12 +562,12 @@ Seshat uses implicit inverse querying rather than explicit back-pointers.
 - When you view an Event in the `EventPage`, it runs a computed selector to map through all Chapters, find which ones contain its `id` in their `pinnedEventIds`, and generates a "Mentioned In" list dynamically.
 
 ### Smart Character Sync (Events)
-A quality-of-life feature to automatically sync characters to an Event based on chapter linkages. A Chapter distinguishes between the primary event it **Takes Place At** (`takesPlaceAt`) and events it merely **Mentions** (`pinnedEventIds`).
+A quality-of-life feature to automatically sync characters to an Event based on chapter linkages. A Chapter distinguishes between the primary event it **Takes Place At** (`timeRef`) and events it merely **Mentions** (`pinnedEventIds`).
 **Rules:** The system strictly aggregates characters *only* to the primary event.
-- **Takes Place At (Auto-Add):** When a Chapter sets its `takesPlaceAt` event, all characters pinned to that Chapter are immediately aggregated and pushed into that specific Event's `characters` list upon saving.
+- **Takes Place At (Auto-Add):** When a Chapter sets its `timeRef` event (via the Chapter header "When did this chapter take place?"), all characters pinned to that Chapter are immediately aggregated and pushed into that specific Event's `characters` list upon saving.
 - **Mentions (Ignored):** Events listed in a chapter's `pinnedEventIds` (Mentions) do *not* automatically inherit the chapter's characters.
 - **Event Page (Auto-Remove):** When viewing an Event Page, if you unpin a Chapter, the system identifies characters unique to that Chapter. It then checks the Event's `charAttrs` state. If the character has *any* non-blank attributes set (meaning the user actively planned them for this event), they are protected. If their attributes are blank, they are safely auto-removed.
-- **Event Page (Clearing Links):** Unpinning a chapter from the Event Page safely clears the chapter from both the Event's `chapters` array and deletes the Chapter's `takesPlaceAt` and `pinnedEventIds` references to that event.
+- **Event Page (Clearing Links):** Unpinning a chapter from the Event Page safely clears the chapter from both the Event's `chapters` array and deletes the Chapter's `timeRef` and `pinnedEventIds` references to that event.
 ### Fight Simulation (`scoreFighter.ts`)
 A deterministic comparison engine for power scaling.
 **Rules:** It takes two Character objects and compares their attributes: Skills, Equipment, and Conditions. 

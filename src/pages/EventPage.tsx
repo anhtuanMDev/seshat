@@ -92,7 +92,7 @@ export default function EventPage() {
       // Derive valid linked chapters from both Event.chapters and Chapter.pinnedEventIds
       // To ensure backward compatibility, we'll favor whatever is currently linked.
       const validLinkedIds = allChapters
-        .filter((c) => c.pinnedEventIds?.includes(event.id) || event.chapters?.includes(c.id) || c.takesPlaceAt === event.id)
+        .filter((c) => c.pinnedEventIds?.includes(event.id) || event.chapters?.includes(c.id) || c.timeRef === event.id)
         .map((c) => c.id);
 
       reset({
@@ -249,7 +249,7 @@ export default function EventPage() {
     appStore.books[bookIdx].chapters.get().forEach((ch, cIdx) => {
       const isLinked = data.chapters.includes(ch.id);
       const currentlyPinned = ch.pinnedEventIds?.includes(event.id);
-      const currentlyTakesPlaceAt = ch.takesPlaceAt === event.id;
+      const currentlyTakesPlaceAt = ch.timeRef === event.id;
       
       if (isLinked && !currentlyPinned && !currentlyTakesPlaceAt) {
         appStore.books[bookIdx].chapters[cIdx].pinnedEventIds.set((prev) => [...(prev || []), event.id]);
@@ -260,7 +260,7 @@ export default function EventPage() {
           updatedChapterIds.add(ch.id);
         }
         if (currentlyTakesPlaceAt) {
-          appStore.books[bookIdx].chapters[cIdx].takesPlaceAt.set("");
+          appStore.books[bookIdx].chapters[cIdx].timeRef.set("");
           updatedChapterIds.add(ch.id);
         }
       }

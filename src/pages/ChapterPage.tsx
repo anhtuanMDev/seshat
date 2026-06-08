@@ -41,7 +41,6 @@ export interface ChapterForm {
   body: string;
   notes: string;
   pinnedChars: string[];
-  takesPlaceAt: string;
   pinnedEventIds: string[];
   scenes: import("../lib/types").SceneCard[];
 }
@@ -86,7 +85,6 @@ export default function ChapterPage() {
         body: "",
         notes: "",
         pinnedChars: [],
-        takesPlaceAt: "",
         pinnedEventIds: [],
         scenes: [],
       },
@@ -106,7 +104,6 @@ export default function ChapterPage() {
               body: chapter.body || "",
               notes: chapter.notes || "",
               pinnedChars: chapter.pinnedChars || [],
-              takesPlaceAt: chapter.takesPlaceAt || "",
               pinnedEventIds: chapter.pinnedEventIds || [],
               scenes: chapter.scenes || [],
             });
@@ -149,11 +146,10 @@ export default function ChapterPage() {
                 timeRef: chapter.timeRef || "",
                 synopsis: chapter.synopsis || "",
                 body: fetchedBody,
-                notes: parsed.notes || "",
-                pinnedChars: parsed.pinnedChars || [],
-                takesPlaceAt: parsed.takesPlaceAt || "",
-                pinnedEventIds: parsed.pinnedEventIds || [],
-                scenes: parsed.scenes || [],
+                notes: (parsed.notes as string) || "",
+                pinnedChars: (parsed.pinnedChars as string[]) || [],
+                pinnedEventIds: (parsed.pinnedEventIds as string[]) || [],
+                scenes: (parsed.scenes as import("../lib/types").SceneCard[]) || [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -187,7 +183,6 @@ export default function ChapterPage() {
 
   const body = useWatch({ control, name: "body" });
   const pinnedChars = useWatch({ control, name: "pinnedChars" }) || [];
-  const takesPlaceAt = useWatch({ control, name: "takesPlaceAt" }) || "";
   const pinnedEventIds = useWatch({ control, name: "pinnedEventIds" }) || [];
 
   const onSubmit = useCallback(async () => {
@@ -201,13 +196,12 @@ export default function ChapterPage() {
     ch.body.set(data.body);
     ch.notes.set(data.notes);
     ch.pinnedChars.set(data.pinnedChars);
-    ch.takesPlaceAt.set(data.takesPlaceAt);
     ch.pinnedEventIds.set(data.pinnedEventIds);
     ch.scenes.set(data.scenes);
 
     let eventPayloadToSync: { eventId: string; payloadStr: string } | null = null;
-    if (data.takesPlaceAt) {
-      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === data.takesPlaceAt);
+    if (data.timeRef) {
+      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === data.timeRef);
       if (eIdx >= 0) {
         const ev = appStore.books[bookIdx].events[eIdx];
         const currentEvChars = ev.characters.get() || [];
@@ -249,7 +243,6 @@ export default function ChapterPage() {
           body: data.body,
           notes: data.notes,
           pinnedChars: data.pinnedChars,
-          takesPlaceAt: data.takesPlaceAt,
           pinnedEventIds: data.pinnedEventIds,
           scenes: data.scenes,
           drafts: ch.drafts.get() || [],
@@ -573,7 +566,6 @@ export default function ChapterPage() {
             characters={characters}
             sortedEvents={sortedEvents}
             pinnedCharIds={pinnedChars}
-            takesPlaceAt={takesPlaceAt}
             pinnedEventIds={pinnedEventIds}
             onTogglePinChar={(charId) => {
               const current = getValues("pinnedChars") || [];
@@ -581,9 +573,6 @@ export default function ChapterPage() {
                 ? current.filter((x) => x !== charId)
                 : [...current, charId];
               setValue("pinnedChars", next, { shouldDirty: true });
-            }}
-            onSetTakesPlaceAt={(eventId) => {
-              setValue("takesPlaceAt", eventId, { shouldDirty: true });
             }}
             onTogglePinEvent={(eventId) => {
               const current = getValues("pinnedEventIds") || [];

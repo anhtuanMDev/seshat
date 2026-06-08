@@ -379,7 +379,6 @@ export interface Chapter {
   notes: string;
   order: number;
   pinnedChars?: string[];
-  takesPlaceAt?: string;
   pinnedEventIds?: string[];
   scenes?: SceneCard[];
   drafts?: Draft[];
