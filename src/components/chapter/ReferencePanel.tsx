@@ -40,8 +40,10 @@ interface ReferencePanelProps {
   characters: Character[];
   sortedEvents: Event[];
   pinnedCharIds: string[];
+  takesPlaceAt: string;
   pinnedEventIds: string[];
   onTogglePinChar: (id: string) => void;
+  onSetTakesPlaceAt: (id: string) => void;
   onTogglePinEvent: (id: string) => void;
   worldData: {
     synopsis: string;
@@ -63,8 +65,10 @@ export function ReferencePanel({
   characters,
   sortedEvents,
   pinnedCharIds,
+  takesPlaceAt,
   pinnedEventIds,
   onTogglePinChar,
+  onSetTakesPlaceAt,
   onTogglePinEvent,
   worldData,
   events,
@@ -259,8 +263,24 @@ export function ReferencePanel({
 
         {panelTab === "events" && (
           <div>
-            <p style={{ ...S.dim, marginBottom: 10 }}>
-              Pin timeline events this chapter covers.
+            <div style={{ marginBottom: 24 }}>
+              <p style={{ ...S.label, marginBottom: 8 }}>Takes Place At</p>
+              <select
+                value={takesPlaceAt}
+                onChange={(e) => onSetTakesPlaceAt(e.target.value)}
+                style={{ ...S.select, width: "100%", fontSize: 12, padding: "6px" }}
+              >
+                <option value="">(None)</option>
+                {sortedEvents.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    T{e.time} {e.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <p style={{ ...S.label, marginBottom: 8 }}>
+              Also Mentions
             </p>
             <div
               style={{

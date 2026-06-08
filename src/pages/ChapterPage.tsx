@@ -41,6 +41,7 @@ export interface ChapterForm {
   body: string;
   notes: string;
   pinnedChars: string[];
+  takesPlaceAt: string;
   pinnedEventIds: string[];
   scenes: import("../lib/types").SceneCard[];
 }
@@ -85,6 +86,7 @@ export default function ChapterPage() {
         body: "",
         notes: "",
         pinnedChars: [],
+        takesPlaceAt: "",
         pinnedEventIds: [],
         scenes: [],
       },
@@ -104,6 +106,7 @@ export default function ChapterPage() {
               body: chapter.body || "",
               notes: chapter.notes || "",
               pinnedChars: chapter.pinnedChars || [],
+              takesPlaceAt: chapter.takesPlaceAt || "",
               pinnedEventIds: chapter.pinnedEventIds || [],
               scenes: chapter.scenes || [],
             });
@@ -116,26 +119,27 @@ export default function ChapterPage() {
           if (token && bookId) {
             try {
               const { loadFileFromGitHub } = await import("../lib/githubSync");
-              const fullChapter = await loadFileFromGitHub(
+              const parsed = await loadFileFromGitHub(
                 token,
                 bookId,
                 `chapters/chapter_${chapter.id}.json`,
               );
-              const fetchedBody = (fullChapter.body as string) || "";
-              const fetchedNotes = (fullChapter.notes as string) || "";
+              
+              const fetchedBody = (parsed.body as string) || "";
+              const fetchedNotes = (parsed.notes as string) || "";
 
               // Update appStore with the missing massive text fields
               appStore.books[bookIdx].chapters[chapterIdx].body.set(
                 fetchedBody,
               );
               // Also sync notes if they were somehow stripped
-              if (fullChapter.notes)
+              if (parsed.notes)
                 appStore.books[bookIdx].chapters[chapterIdx].notes.set(
                   fetchedNotes,
                 );
-              if (fullChapter.drafts)
+              if (parsed.drafts)
                 appStore.books[bookIdx].chapters[chapterIdx].drafts.set(
-                  fullChapter.drafts as import("../lib/types").Draft[],
+                  parsed.drafts as import("../lib/types").Draft[],
                 );
 
               // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
@@ -145,13 +149,11 @@ export default function ChapterPage() {
                 timeRef: chapter.timeRef || "",
                 synopsis: chapter.synopsis || "",
                 body: fetchedBody,
-                notes: fullChapter.notes ? fetchedNotes : chapter.notes || "",
-                pinnedChars: chapter.pinnedChars || [],
-                pinnedEventIds: chapter.pinnedEventIds || [],
-                scenes:
-                  (fullChapter.scenes as import("../lib/types").SceneCard[]) ||
-                  chapter.scenes ||
-                  [],
+                notes: parsed.notes || "",
+                pinnedChars: parsed.pinnedChars || [],
+                takesPlaceAt: parsed.takesPlaceAt || "",
+                pinnedEventIds: parsed.pinnedEventIds || [],
+                scenes: parsed.scenes || [],
               });
             } catch (err) {
               console.error("Failed to lazy load chapter body:", err);
@@ -185,6 +187,7 @@ export default function ChapterPage() {
 
   const body = useWatch({ control, name: "body" });
   const pinnedChars = useWatch({ control, name: "pinnedChars" }) || [];
+  const takesPlaceAt = useWatch({ control, name: "takesPlaceAt" }) || "";
   const pinnedEventIds = useWatch({ control, name: "pinnedEventIds" }) || [];
 
   const onSubmit = useCallback(async () => {
@@ -198,8 +201,36 @@ export default function ChapterPage() {
     ch.body.set(data.body);
     ch.notes.set(data.notes);
     ch.pinnedChars.set(data.pinnedChars);
+    ch.takesPlaceAt.set(data.takesPlaceAt);
     ch.pinnedEventIds.set(data.pinnedEventIds);
     ch.scenes.set(data.scenes);
+
+    let eventPayloadToSync: { eventId: string; payloadStr: string } | null = null;
+    if (data.takesPlaceAt) {
+      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === data.takesPlaceAt);
+      if (eIdx >= 0) {
+        const ev = appStore.books[bookIdx].events[eIdx];
+        const currentEvChars = ev.characters.get() || [];
+        let modified = false;
+        const nextEvChars = [...currentEvChars];
+        
+        // Ensure all characters pinned to this chapter are in the Event
+        data.pinnedChars.forEach(cid => {
+          if (!nextEvChars.includes(cid)) {
+            nextEvChars.push(cid);
+            modified = true;
+          }
+        });
+
+        if (modified) {
+          ev.characters.set(nextEvChars);
+          eventPayloadToSync = {
+            eventId: ev.id.get(),
+            payloadStr: JSON.stringify(ev.get(), null, 2),
+          };
+        }
+      }
+    }
 
     // Background delta sync
     const token =
@@ -218,16 +249,30 @@ export default function ChapterPage() {
           body: data.body,
           notes: data.notes,
           pinnedChars: data.pinnedChars,
+          takesPlaceAt: data.takesPlaceAt,
           pinnedEventIds: data.pinnedEventIds,
           scenes: data.scenes,
           drafts: ch.drafts.get() || [],
         };
-        await updateFileOnGitHub(
-          token,
-          bookId,
-          `chapters/chapter_${id}.json`,
-          JSON.stringify(payload, null, 2),
-        );
+        const syncPromises = [
+          updateFileOnGitHub(
+            token,
+            bookId,
+            `chapters/chapter_${id}.json`,
+            JSON.stringify(payload, null, 2),
+          )
+        ];
+        if (eventPayloadToSync) {
+          syncPromises.push(
+            updateFileOnGitHub(
+              token,
+              bookId,
+              `events/event_${eventPayloadToSync.eventId}.json`,
+              eventPayloadToSync.payloadStr,
+            )
+          );
+        }
+        await Promise.all(syncPromises);
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
         reset(data);
@@ -528,6 +573,7 @@ export default function ChapterPage() {
             characters={characters}
             sortedEvents={sortedEvents}
             pinnedCharIds={pinnedChars}
+            takesPlaceAt={takesPlaceAt}
             pinnedEventIds={pinnedEventIds}
             onTogglePinChar={(charId) => {
               const current = getValues("pinnedChars") || [];
@@ -535,6 +581,9 @@ export default function ChapterPage() {
                 ? current.filter((x) => x !== charId)
                 : [...current, charId];
               setValue("pinnedChars", next, { shouldDirty: true });
+            }}
+            onSetTakesPlaceAt={(eventId) => {
+              setValue("takesPlaceAt", eventId, { shouldDirty: true });
             }}
             onTogglePinEvent={(eventId) => {
               const current = getValues("pinnedEventIds") || [];
