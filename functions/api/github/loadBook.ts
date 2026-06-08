@@ -39,20 +39,48 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
     }
 
     const fileContents: Record<string, string> = {};
-    for (let i = 0; i < blobs.length; i += 10) {
-      const chunk = blobs.slice(i, i + 10);
-      const promises = chunk.map(async (blob) => {
-        const blobRes = await fetch(`${baseUrl}/git/blobs/${blob.sha}`, { headers });
-        if (blobRes.ok) {
-          const blobData = await blobRes.json() as { content: string; encoding: string };
-          if (blobData.encoding === "base64") {
-             fileContents[blob.path] = decodeURIComponent(escape(atob(blobData.content.replace(/\n/g, ""))));
-          } else {
-             fileContents[blob.path] = blobData.content;
-          }
+    const CHUNK_SIZE = 100;
+    
+    for (let i = 0; i < blobs.length; i += CHUNK_SIZE) {
+      const chunk = blobs.slice(i, i + CHUNK_SIZE);
+      
+      const query = `query {
+        repository(owner: "${owner}", name: "${repo}") {
+          ${chunk.map((blob, index) => `
+            blob${index}: object(oid: "${blob.sha}") {
+              ... on Blob {
+                text
+              }
+            }
+          `).join("")}
         }
+      }`;
+
+      const graphqlRes = await fetch("https://api.github.com/graphql", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query })
       });
-      await Promise.all(promises);
+
+      if (!graphqlRes.ok) {
+        console.error("GraphQL request failed:", await graphqlRes.text());
+        continue;
+      }
+
+      const graphqlData = await graphqlRes.json() as { data?: { repository: Record<string, { text?: string | null }> }, errors?: unknown };
+      
+      if (graphqlData.errors) {
+        console.error("GraphQL returned errors:", graphqlData.errors);
+      }
+
+      if (graphqlData.data && graphqlData.data.repository) {
+        chunk.forEach((blob, index) => {
+          const blobData = graphqlData.data!.repository[`blob${index}`];
+          if (blobData && typeof blobData.text === "string") {
+            fileContents[blob.path] = blobData.text;
+          }
+        });
+      }
     }
 
     const book: Record<string, unknown> = {

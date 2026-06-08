@@ -50,21 +50,52 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const blobs = treeData.tree.filter(f => f.type === "blob" && f.path.startsWith("books/") && f.path.endsWith("/book.json"));
     // Cloudflare Workers can fetch up to 50 concurrent requests easily, let's do it in chunks of 10 to be safe.
     const fileContents: Record<string, string> = {};
-    for (let i = 0; i < blobs.length; i += 10) {
-      const chunk = blobs.slice(i, i + 10);
-      const promises = chunk.map(async (blob) => {
-        const blobRes = await fetch(`${baseUrl}/git/blobs/${blob.sha}`, { headers });
-        if (blobRes.ok) {
-          const blobData = await blobRes.json() as { content: string; encoding: string };
-          if (blobData.encoding === "base64") {
-             // atob is available in workers
-             fileContents[blob.path] = decodeURIComponent(escape(atob(blobData.content.replace(/\n/g, ""))));
-          } else {
-             fileContents[blob.path] = blobData.content;
-          }
+    const CHUNK_SIZE = 100;
+
+    for (let i = 0; i < blobs.length; i += CHUNK_SIZE) {
+      const chunk = blobs.slice(i, i + CHUNK_SIZE);
+
+      const query = `query {
+        repository(owner: "${GITHUB_OWNER}", name: "${GITHUB_REPO}") {
+          ${chunk.map((blob, index) => `
+            blob${index}: object(oid: "${blob.sha}") {
+              ... on Blob {
+                text
+              }
+            }
+          `).join("")}
         }
+      }`;
+
+      const graphqlRes = await fetch("https://api.github.com/graphql", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${GITHUB_TOKEN}`,
+          "User-Agent": "Seshat-Cloudflare-Worker",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query })
       });
-      await Promise.all(promises);
+
+      if (!graphqlRes.ok) {
+        console.error("GraphQL request failed:", await graphqlRes.text());
+        continue;
+      }
+
+      const graphqlData = await graphqlRes.json() as { data?: { repository: Record<string, { text?: string | null }> }, errors?: unknown };
+
+      if (graphqlData.errors) {
+        console.error("GraphQL returned errors:", graphqlData.errors);
+      }
+
+      if (graphqlData.data && graphqlData.data.repository) {
+        chunk.forEach((blob, index) => {
+          const blobData = graphqlData.data!.repository[`blob${index}`];
+          if (blobData && typeof blobData.text === "string") {
+            fileContents[blob.path] = blobData.text;
+          }
+        });
+      }
     }
 
     // Now re-assemble into BookData[]
