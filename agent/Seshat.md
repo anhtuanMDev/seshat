@@ -561,6 +561,11 @@ Seshat uses implicit inverse querying rather than explicit back-pointers.
 **Rules:** When you pin a Character or an Event to a Chapter, you are modifying the Chapter's `pinnedChars` and `pinnedEventIds` arrays. You are NOT modifying the Character or Event objects. 
 - When you view an Event in the `EventPage`, it runs a computed selector to map through all Chapters, find which ones contain its `id` in their `pinnedEventIds`, and generates a "Mentioned In" list dynamically.
 
+### Smart Character Sync (Events)
+A quality-of-life feature to automatically sync characters to an Event when relevant chapters are pinned.
+**Rules:** The system automatically binds the characters in a pinned Chapter to the Event.
+- **Auto-Add:** When Chapter X is pinned to an Event, all characters from Chapter X are pushed into the Event's `characters` list.
+- **Clever Auto-Remove:** When Chapter X is unpinned, characters unique to Chapter X are identified. The system then checks the Event's `charAttrs` state. If the character has *any* non-blank attributes set (meaning the user actively planned/edited them for this event), they are protected and kept. If their attributes are blank, they are safely removed to clean up the workspace without destroying manual planning.
 ### Fight Simulation (`scoreFighter.ts`)
 A deterministic comparison engine for power scaling.
 **Rules:** It takes two Character objects and compares their attributes: Skills, Equipment, and Conditions. 
