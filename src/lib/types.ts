@@ -113,6 +113,12 @@ export interface Character {
   philosophy: string;
   secrets: string;
   arcStart: string;
+  arcType?: string;
+  arcLie?: string;
+  arcTruth?: string;
+  arcBreakingPoint?: string;
+  arcFromEventId?: string;
+  arcToEventId?: string;
   arcEnd: string;
   statusTimeline: StatusEntry[];
   traumas: Trauma[];

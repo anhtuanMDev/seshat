@@ -123,7 +123,17 @@ export function buildExport(state: ExportState): string {
     if (c.coreDesire) L.push(`  Desire:  ${c.coreDesire}`);
     if (c.philosophy) L.push(`  Belief:  ${c.philosophy}`);
     if (c.secrets) L.push(`  Secrets: ${c.secrets}`);
-    if (c.arcStart || c.arcEnd) L.push(`  Arc: ${c.arcStart} → ${c.arcEnd}`);
+    const arcTimeStr = [
+      c.arcFromEventId ? `From: ${state.events.find((e) => e.id === c.arcFromEventId)?.title || "Unknown"}` : "",
+      c.arcToEventId ? `To: ${state.events.find((e) => e.id === c.arcToEventId)?.title || "Unknown"}` : ""
+    ].filter(Boolean).join(" | ");
+
+    if (arcTimeStr) L.push(`  Arc Timeframe: ${arcTimeStr}`);
+    if (c.arcType) L.push(`  Arc Type: ${c.arcType}`);
+    if (c.arcLie) L.push(`  The Lie: ${c.arcLie}`);
+    if (c.arcTruth) L.push(`  The Truth: ${c.arcTruth}`);
+    if (c.arcBreakingPoint) L.push(`  Breaking Pt: ${c.arcBreakingPoint}`);
+    if (c.arcStart || c.arcEnd) L.push(`  Arc Path: ${c.arcStart} → ${c.arcEnd}`);
 
     const timeline = (c.statusTimeline || []).sort(
       (a, b) => {

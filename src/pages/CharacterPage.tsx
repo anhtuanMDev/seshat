@@ -8,7 +8,7 @@ import { LossBlock } from "../components/character/LossBlock";
 import { TraumaBlock } from "../components/character/TraumaBlock";
 import { RelationshipBlock } from "../components/character/RelationshipBlock";
 import type { CharacterForm } from "../components/character/types";
-import { Field, Section } from "../components/ui";
+import { Field, Section, EventPicker } from "../components/ui";
 import { StatusBlock } from "../components/character/StatusBlock";
 import { Modal } from "../components/ui/Modal";
 import {
@@ -145,14 +145,6 @@ export default function CharacterPage() {
   const relationships = useWatch({ control, name: "relationships" }) || [];
   const allCharacters = useCharacters() || [];
 
-  if (!char) {
-    return (
-      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
-        Character not found.
-      </div>
-    );
-  }
-
   const exportText = useMemo(() => {
     if (!showExport || !char) return "";
     return buildExport({
@@ -167,9 +159,17 @@ export default function CharacterPage() {
       monsters: [],
       treasures: [],
       events: events,
-      characters: [{ ...char, ...getValues() } as any], // Merge current unsaved changes
+      characters: [{ ...char, ...getValues() } as unknown as import("../lib/types").Character], // Merge current unsaved changes
     });
   }, [showExport, char, events, getValues]);
+
+  if (!char) {
+    return (
+      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
+        Character not found.
+      </div>
+    );
+  }
 
   const onSubmit = async () => {
     const data = getValues();
@@ -599,6 +599,50 @@ export default function CharacterPage() {
           Where they begin and where they end. The transformation the story puts
           them through.
         </p>
+        <div style={S.grid2} className="seshat-grid2">
+          <EventPicker
+            label="Arc from event"
+            name="arcFromEventId"
+            control={control}
+            events={events}
+            placeholder="— Start of story —"
+          />
+          <EventPicker
+            label="Arc to event"
+            name="arcToEventId"
+            control={control}
+            events={events}
+            placeholder="— End of story —"
+          />
+        </div>
+        <div style={S.grid2} className="seshat-grid2">
+          <Field
+            label="Arc type"
+            name="arcType"
+            control={control}
+            placeholder="Positive, Negative, Flat, Fall, Corruption..."
+          />
+          <Field
+            label="The Lie they believe"
+            name="arcLie"
+            control={control}
+            placeholder="What false belief holds them back?"
+          />
+        </div>
+        <div style={S.grid2} className="seshat-grid2">
+          <Field
+            label="The Truth they must learn"
+            name="arcTruth"
+            control={control}
+            placeholder="The realization that will save (or destroy) them..."
+          />
+          <Field
+            label="The Breaking Point"
+            name="arcBreakingPoint"
+            control={control}
+            placeholder="The moment they must choose the truth or fail..."
+          />
+        </div>
         <div style={S.grid2} className="seshat-grid2">
           <Field
             label="Arc start — who they are"
