@@ -94,6 +94,7 @@ seshat/
 │   │   ├── editor/
 │   │   │   ├── RichEditor.tsx         # Tiptap-based rich text editor with formatting toolbar
 │   │   │   ├── MentionExtension.ts    # Tiptap @mention character linking extension
+│   │   │   ├── PinPointExtension.ts   # Tiptap pinpoint comment extension
 │   │   │   ├── CharMentionTooltip.tsx # Tooltip for hovering mentioned characters
 │   │   │   ├── MentionHelpButton.tsx  # Help popover for mention syntax
 │   │   │   └── UnsavedGuard.tsx       # Route transition guard for unsaved editor changes
@@ -110,7 +111,9 @@ seshat/
 │   │   │   ├── TraumaBlock.tsx
 │   │   │   ├── ConditionBlock.tsx
 │   │   │   ├── AchievementBlock.tsx
-│   │   │   └── LossBlock.tsx
+│   │   │   ├── LossBlock.tsx
+│   │   │   ├── ArcBlock.tsx
+│   │   │   └── StatusBlock.tsx
 │   │   │
 │   │   ├── world/             # WorldPage sub-components
 │   │   │   ├── types.ts       # WorldForm interface
@@ -356,11 +359,11 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | Page                | Lines | Extracted sub-components                        | Icons added |
 | ------------------- | ----- | ----------------------------------------------- | ----------- |
 | WorldPage           | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure) | Section icons: Flag, Build, Science, BugReport, Diamond; SaveIcon |
-| CharacterPage       | 220   | 4 character blocks (Trauma, Condition, Achievement, Loss) + CharStatusPanel + ArrayItemCard + Modal | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
-| CharacterListPage   | 288   | CharacterCard, StatPill                          | PeopleIcon, AddIcon |
+| CharacterPage       | 220   | 6 character blocks (Arc, Status, Trauma, Condition, Achievement, Loss) + CharStatusPanel + ArrayItemCard + Modal | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
+| CharacterListPage   | 288   | CharacterCard, StatPill (Features multi-select export mode)      | PeopleIcon, AddIcon, ArticleIcon |
 | EventPage           | 252   | CharacterAttrsBlock                             | SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon; PeopleAltIcon in block |
 | TimelinePage        | 326   | EventCard                                       | TimelineIcon, AddIcon |
-| ChapterPage         | ~300  | ReferencePanel, PinnedContextStrip, ChapterToolbar (no focus toggle — always-on RichEditor), ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
+| ChapterPage         | ~300  | ReferencePanel, PinnedContextStrip, ChapterToolbar (floating on scroll, always-on RichEditor), ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
 | ChapterListPage     | 237   | ChapterCard                                     | AutoStoriesIcon, AddIcon |
 | FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
 
@@ -376,7 +379,7 @@ Nation blocks include `periodActive` (time range the nation existed), structured
 
 ### CharacterPage (`/book/:bookId/characters/:id`)
 
-Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (traumas, conditions, achievements, losses) has its own sub-component in `src/components/character/`. Status Timeline uses a custom `CharStatusPanel`. `onSubmit` uses explicit per-field `.set()` calls.
+Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (arcs, status, traumas, conditions, achievements, losses) has its own sub-component in `src/components/character/` (e.g. `ArcBlock`, `StatusBlock`). The Status Timeline and Arcs sections both use modal-based array editing. `onSubmit` uses explicit per-field `.set()` calls.
 
 ### EventPage (`/book/:bookId/events/:id`)
 
@@ -477,14 +480,14 @@ Icons are imported from `@mui/icons-material` via `src/components/ui/icons.tsx` 
 
 ### RichEditor (`src/components/editor/RichEditor.tsx`)
 
-Tiptap-based rich text editor with inline `MenuBar` toolbar. Always shown for the chapter body field. Supports both controlled (via `react-hook-form` `Control` + `name`) and uncontrolled (`content` + `onChange`) usage. Tiptap extensions enabled: `StarterKit` (bold, italic, strike, heading, lists, blockquote, code), `Underline`, `Link` (prompt-based URL), `Highlight`, `TextAlign`, `Typography`, `Placeholder`, and custom **`MentionExtension`** (allows `@CharacterName` linking). ProseMirror styling in `index.css` for headings, lists, blockquote, code, links, mentions, and placeholder. Includes `UnsavedGuard` logic to prevent accidental navigation away from dirty forms.
+Tiptap-based rich text editor with inline `MenuBar` toolbar. Always shown for the chapter body field. Supports both controlled (via `react-hook-form` `Control` + `name`) and uncontrolled (`content` + `onChange`) usage. Tiptap extensions enabled: `StarterKit` (bold, italic, strike, heading, lists, blockquote, code), `Underline`, `Link` (prompt-based URL), `Highlight`, `TextAlign`, `Typography`, `Placeholder`, custom **`MentionExtension`** (allows `@CharacterName` linking), and custom **`PinPointExtension`** (allows dropping 📍 pinpoint comments that display on the side). ProseMirror styling in `index.css` for headings, lists, blockquote, code, links, mentions, pinpoints, and placeholder. Includes `UnsavedGuard` logic to prevent accidental navigation away from dirty forms.
 
 ### Domain-specific components
 
 Each domain directory mirrors a page and contains components that are only used by that page:
 
 - `src/components/fight/` — 5 components for FightPage
-- `src/components/character/` — 4 blocks + types for CharacterPage
+- `src/components/character/` — 6 blocks + types for CharacterPage
 - `src/components/world/` — 5 blocks + types + NationConnectionBlock for WorldPage
 - `src/components/event/` — 1 block for EventPage
 - `src/components/chapter/` — 7 components for ChapterPage
@@ -503,6 +506,8 @@ Each domain directory mirrors a page and contains components that are only used 
 | Monsters         | `WorldPage`     | `appStore.books[i].monsters[]`                                   |
 | Treasures        | `WorldPage`     | `appStore.books[i].treasures[]`                                  |
 | Characters       | `CharacterPage` | `appStore.books[i].characters[]`                                 |
+| Arcs             | `CharacterPage` | `.arcs[]`                                                        |
+| Status Timeline  | `CharacterPage` | `.statusTimeline[]` (includes role, archetype, power, states)    |
 | Traumas          | `CharacterPage` | `.traumas[]`                                                     |
 | Conditions       | `CharacterPage` | `.conditions[]`                                                  |
 | Achievements     | `CharacterPage` | `.achievements[]`                                                |
@@ -511,7 +516,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Event attributes | `EventPage`     | `appStore.books[i].characters[j].attributes[eventId]`            |
 | Chapters         | `ChapterPage`   | `appStore.books[i].chapters[]`                                   |
 | Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |
-| Export           | `App.tsx` modal | `buildExport()`                                                  |
+| Export           | `App.tsx` / `CharacterListPage` | `buildExport()` modal in App.tsx, batch export in list page  |
 | Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
 | @mentions        | `RichEditor`    | Multi-trigger Tiptap Mention extension (@, #, %, ~, ^, $)        |
 | Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
