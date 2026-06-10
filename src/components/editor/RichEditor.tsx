@@ -170,12 +170,7 @@ function MenuBar({
       <span
         style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
       />
-      {btn(
-        "📍",
-        handleAddPinpoint,
-        false,
-        "Add Pinpoint Comment"
-      )}
+      {btn("📍", handleAddPinpoint, false, "Add Pinpoint Comment")}
 
       {/* @ mention help button — always shown when characters exist */}
       {showMentionHelp && (
@@ -217,7 +212,9 @@ function MenuBar({
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 style={{ margin: "0 0 16px 0", fontSize: 16 }}>Add Pinpoint</h3>
+              <h3 style={{ margin: "0 0 16px 0", fontSize: 16 }}>
+                Add Pinpoint
+              </h3>
               <textarea
                 autoFocus
                 rows={3}
@@ -239,7 +236,14 @@ function MenuBar({
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     if (pinpointComment.trim()) {
-                      editor.chain().focus().setPinPoint({ id: crypto.randomUUID(), comment: pinpointComment.trim() }).run();
+                      editor
+                        .chain()
+                        .focus()
+                        .setPinPoint({
+                          id: crypto.randomUUID(),
+                          comment: pinpointComment.trim(),
+                        })
+                        .run();
                     }
                     setShowPinpointModal(false);
                   } else if (e.key === "Escape") {
@@ -248,7 +252,9 @@ function MenuBar({
                 }}
                 placeholder="What are your thoughts?"
               />
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <div
+                style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+              >
                 <button
                   onClick={() => setShowPinpointModal(false)}
                   style={{
@@ -265,7 +271,14 @@ function MenuBar({
                 <button
                   onClick={() => {
                     if (pinpointComment.trim()) {
-                      editor.chain().focus().setPinPoint({ id: crypto.randomUUID(), comment: pinpointComment.trim() }).run();
+                      editor
+                        .chain()
+                        .focus()
+                        .setPinPoint({
+                          id: crypto.randomUUID(),
+                          comment: pinpointComment.trim(),
+                        })
+                        .run();
                     }
                     setShowPinpointModal(false);
                   }}
@@ -284,7 +297,7 @@ function MenuBar({
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );
@@ -351,7 +364,9 @@ function RichEditorCore({
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
   const isSyncingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pinpoints, setPinpoints] = useState<{ id: string; comment: string; top: number; node: HTMLElement }[]>([]);
+  const [pinpoints, setPinpoints] = useState<
+    { id: string; comment: string; top: number; node: HTMLElement }[]
+  >([]);
 
   const bookIdx = useActiveBookIdx();
   const extraEntities = useSelector(() => {
@@ -452,18 +467,18 @@ function RichEditorCore({
   const updatePinpoints = useCallback((editorInstance: Editor) => {
     if (!editorInstance || !containerRef.current) return;
     const el = editorInstance.view.dom;
-    const nodes = Array.from(el.querySelectorAll('span.seshat-pinpoint-node'));
-    
+    const nodes = Array.from(el.querySelectorAll("span.seshat-pinpoint-node"));
+
     const containerTop = containerRef.current.getBoundingClientRect().top;
-    
+
     const newPinpoints = nodes.map((node) => {
       const n = node as HTMLElement;
       // Get exact pixel offset from the top of the RichEditor container
       const relativeTop = n.getBoundingClientRect().top - containerTop;
-      
+
       return {
-        id: n.getAttribute('data-id') || '',
-        comment: n.getAttribute('data-comment') || '',
+        id: n.getAttribute("data-id") || "",
+        comment: n.getAttribute("data-comment") || "",
         top: relativeTop,
         node: n,
       };
@@ -573,10 +588,7 @@ function RichEditorCore({
 
   return (
     <div style={{ position: "relative" }}>
-      <MenuBar 
-        editor={editor} 
-        showMentionHelp={characters.length > 0} 
-      />
+      <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
       <EditorContent editor={editor} />
 
       {tooltip &&

@@ -1,19 +1,27 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { appStore } from "../store/appStore";
-import { useCharacters, useActiveBookIdx } from "../hooks/useWorldStore";
+import { useCharacters, useEvents, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, mkChar } from "../lib/utils";
-import { PeopleIcon, AddIcon } from "../components/ui/icons";
+import { PeopleIcon, AddIcon, ArticleIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { CHAR_COLORS } from "../lib/constants";
 import type { Character } from "../lib/types";
-import { useCallback } from "react";
+import { useCallback, useState, useMemo } from "react";
+import { Modal } from "../components/ui/Modal";
+import { buildExport } from "../lib/export";
 
 export default function CharacterListPage() {
   const { bookId } = useParams();
   const navigate = useNavigate();
   const characters = useCharacters();
+  const events = useEvents();
   const bookIdx = useActiveBookIdx();
   const ref = useAnimateIn();
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showExport, setShowExport] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const add = useCallback(() => {
     if (bookIdx < 0) return;
@@ -24,6 +32,35 @@ export default function CharacterListPage() {
     appStore.books[bookIdx].characters.push(c);
     navigate(`/book/${bookId}/characters/${c.id}`);
   }, [characters.length, bookIdx, bookId, navigate]);
+
+  const toggleSelect = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const exportText = useMemo(() => {
+    if (!showExport) return "";
+    const selectedChars = characters.filter((c) => selectedIds.has(c.id));
+    return buildExport({
+      title: "",
+      synopsis: "",
+      setting: "",
+      themes: "",
+      rules: "",
+      nations: [],
+      techniques: [],
+      ingredients: [],
+      monsters: [],
+      treasures: [],
+      events: events, // needed for context of attributes/timelines
+      characters: selectedChars,
+    });
+  }, [showExport, selectedIds, characters, events]);
 
   return (
     <div ref={ref} className="seshat-page-container">
@@ -49,20 +86,74 @@ export default function CharacterListPage() {
             Characters ({characters.length})
           </span>
         </div>
-        <button
-          onClick={add}
-          style={{
-            ...S.ghost,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 12,
-            color: "var(--text-secondary)",
-          }}
-        >
-          <AddIcon sx={{ fontSize: 14 }} />
-          add character
-        </button>
+        <div style={{ display: "flex", gap: 12 }}>
+          {isSelectionMode ? (
+            <>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowExport(true)}
+                  style={{
+                    ...S.ghost,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 12,
+                    color: "var(--color-purple)",
+                  }}
+                >
+                  <ArticleIcon sx={{ fontSize: 14 }} />
+                  export ({selectedIds.size})
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedIds(new Set());
+                }}
+                style={{
+                  ...S.ghost,
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                cancel
+              </button>
+            </>
+          ) : (
+            <>
+              {characters.length > 0 && (
+                <button
+                  onClick={() => setIsSelectionMode(true)}
+                  style={{
+                    ...S.ghost,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <ArticleIcon sx={{ fontSize: 14 }} />
+                  export
+                </button>
+              )}
+              <button
+                onClick={add}
+                style={{
+                  ...S.ghost,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <AddIcon sx={{ fontSize: 14 }} />
+                add character
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Cards */}
@@ -71,7 +162,16 @@ export default function CharacterListPage() {
           <CharacterCard
             key={c.id}
             character={c}
-            onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
+            onClick={() => {
+              if (isSelectionMode) {
+                toggleSelect({ stopPropagation: () => {} } as React.MouseEvent, c.id);
+              } else {
+                navigate(`/book/${bookId}/characters/${c.id}`);
+              }
+            }}
+            selected={selectedIds.has(c.id)}
+            onToggleSelect={(e) => toggleSelect(e, c.id)}
+            isSelectionMode={isSelectionMode}
           />
         ))}
       </div>
@@ -89,6 +189,58 @@ export default function CharacterListPage() {
           No characters yet. Add one to begin.
         </div>
       )}
+
+      {/* Export Modal */}
+      {showExport && (
+        <Modal
+          title={`Export ${selectedIds.size} Characters`}
+          onClose={() => setShowExport(false)}
+          footer={
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(exportText);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                style={{
+                  ...S.ghost,
+                  color: copied ? "var(--color-green)" : "var(--color-purple)",
+                }}
+              >
+                {copied ? "Copied!" : "Copy all"}
+              </button>
+              <button onClick={() => setShowExport(false)} style={S.ghost}>
+                Close
+              </button>
+            </div>
+          }
+        >
+          <div style={{ padding: 12 }}>
+            <p style={{ ...S.dim, marginBottom: 16 }}>
+              Paste into your AI's system prompt. Includes full psychological profile, history, state, and relationships for selected characters.
+            </p>
+            <textarea
+              readOnly
+              value={exportText}
+              style={{
+                ...S.textarea,
+                border: "none",
+                background: "var(--bg-export-ta)",
+                padding: 16,
+                borderRadius: 4,
+                height: 360,
+                width: 500,
+                resize: "none",
+                fontFamily: "monospace",
+                fontSize: 13,
+                outline: "none",
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -96,9 +248,15 @@ export default function CharacterListPage() {
 function CharacterCard({
   character: c,
   onClick,
+  selected,
+  onToggleSelect,
+  isSelectionMode,
 }: {
   character: Character;
   onClick: () => void;
+  selected: boolean;
+  onToggleSelect: (e: React.MouseEvent) => void;
+  isSelectionMode: boolean;
 }) {
   const hasContent =
     c.role || c.archetype || c.coreWound || c.coreFear || c.coreDesire;
@@ -161,6 +319,27 @@ function CharacterCard({
         }
       }}
     >
+      {/* Checkbox */}
+      {isSelectionMode && (
+        <div 
+          onClick={onToggleSelect}
+          style={{
+            width: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 17,
+          }}
+        >
+          <input 
+            type="checkbox" 
+            checked={selected} 
+            readOnly 
+            style={{ cursor: "pointer", width: 14, height: 14, accentColor: "var(--color-purple)" }} 
+          />
+        </div>
+      )}
+
       {/* Avatar Node */}
       <div style={{ position: "relative", width: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div

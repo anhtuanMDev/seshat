@@ -1,5 +1,5 @@
 import { useSelector } from "@legendapp/state/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { AchievementBlock } from "../components/character/AchievementBlock";
@@ -24,8 +24,10 @@ import {
   SaveIcon,
   TimelineIcon,
   PeopleIcon,
+  ArticleIcon,
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
+import { buildExport } from "../lib/export";
 import {
   useActiveBookIdx,
   useEvents,
@@ -53,11 +55,11 @@ import { updateFileOnGitHub } from "../lib/githubSync";
 
 // ── Modal state type ──────────────────────────────────────────────────────
 type ModalKind =
-  | { type: "trauma"; idx: number | null }
-  | { type: "condition"; idx: number | null }
-  | { type: "achievement"; idx: number | null }
-  | { type: "loss"; idx: number | null }
-  | { type: "relationship"; idx: number | null }
+  | { type: "trauma"; idx: number | null; isNew?: boolean }
+  | { type: "condition"; idx: number | null; isNew?: boolean }
+  | { type: "achievement"; idx: number | null; isNew?: boolean }
+  | { type: "loss"; idx: number | null; isNew?: boolean }
+  | { type: "relationship"; idx: number | null; isNew?: boolean }
   | null;
 
 export default function CharacterPage() {
@@ -66,6 +68,8 @@ export default function CharacterPage() {
   const bookIdx = useActiveBookIdx();
   const [modal, setModal] = useState<ModalKind>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const char = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -147,6 +151,24 @@ export default function CharacterPage() {
       </div>
     );
   }
+
+  const exportText = useMemo(() => {
+    if (!showExport || !char) return "";
+    return buildExport({
+      title: "",
+      synopsis: "",
+      setting: "",
+      themes: "",
+      rules: "",
+      nations: [],
+      techniques: [],
+      ingredients: [],
+      monsters: [],
+      treasures: [],
+      events: events,
+      characters: [{ ...char, ...getValues() } as any], // Merge current unsaved changes
+    });
+  }, [showExport, char, events, getValues]);
 
   const onSubmit = async () => {
     const data = getValues();
@@ -233,7 +255,7 @@ export default function CharacterPage() {
     };
     const current = getValues(fieldMap[type]);
     setValue(fieldMap[type], [...current, mkMap[type]()] as never);
-    setModal({ type, idx: current.length });
+    setModal({ type, idx: current.length, isNew: true });
   };
 
   const openEdit = (
@@ -262,7 +284,15 @@ export default function CharacterPage() {
     setModal(null);
   };
 
-  const closeModal = () => {
+  const handleCancelModal = () => {
+    if (modal?.isNew && modal.idx !== null) {
+      delItem(modal.type, modal.idx);
+    } else {
+      setModal(null);
+    }
+  };
+
+  const handleSaveModal = () => {
     setModal(null);
     onSubmit();
   };
@@ -305,25 +335,43 @@ export default function CharacterPage() {
             }}
           />
         </div>
-        <button
-          onClick={onSubmit}
-          disabled={!isDirty || isSaving}
-          style={{
-            ...S.ghost,
-            fontSize: 11,
-            letterSpacing: 1,
-            color: "var(--color-green)",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            opacity: !isDirty || isSaving ? 0.5 : 1,
-            cursor: !isDirty || isSaving ? "default" : "pointer",
-          }}
-        >
-          <SaveIcon sx={{ fontSize: 12 }} />
-          {isSaving ? "saving..." : "save"}
-        </button>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button
+            onClick={() => setShowExport(true)}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              letterSpacing: 1,
+              color: "var(--color-purple)",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <ArticleIcon sx={{ fontSize: 12 }} />
+            export
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={!isDirty || isSaving}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              letterSpacing: 1,
+              color: "var(--color-green)",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              opacity: !isDirty || isSaving ? 0.5 : 1,
+              cursor: !isDirty || isSaving ? "default" : "pointer",
+            }}
+          >
+            <SaveIcon sx={{ fontSize: 12 }} />
+            {isSaving ? "saving..." : "save"}
+          </button>
+        </div>
       </div>
 
       {/* ── Status Timeline ── */}
@@ -755,10 +803,10 @@ export default function CharacterPage() {
       {modal?.type === "trauma" && modal.idx !== null && (
         <Modal
           title="Trauma"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -786,10 +834,10 @@ export default function CharacterPage() {
       {modal?.type === "condition" && modal.idx !== null && (
         <Modal
           title="Condition"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -818,10 +866,10 @@ export default function CharacterPage() {
       {modal?.type === "achievement" && modal.idx !== null && (
         <Modal
           title="Achievement"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -849,10 +897,10 @@ export default function CharacterPage() {
       {modal?.type === "loss" && modal.idx !== null && (
         <Modal
           title="Loss"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -880,10 +928,10 @@ export default function CharacterPage() {
       {modal?.type === "relationship" && modal.idx !== null && (
         <Modal
           title="Relationship"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -906,6 +954,58 @@ export default function CharacterPage() {
             characters={allCharacters}
             currentCharacterId={char.id}
           />
+        </Modal>
+      )}
+
+      {/* Export Modal */}
+      {showExport && (
+        <Modal
+          title={`Export ${char.name || "Character"}`}
+          onClose={() => setShowExport(false)}
+          footer={
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(exportText);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                style={{
+                  ...S.ghost,
+                  color: copied ? "var(--color-green)" : "var(--color-purple)",
+                }}
+              >
+                {copied ? "Copied!" : "Copy text"}
+              </button>
+              <button onClick={() => setShowExport(false)} style={S.ghost}>
+                Close
+              </button>
+            </div>
+          }
+        >
+          <div style={{ padding: 12 }}>
+            <p style={{ ...S.dim, marginBottom: 16 }}>
+              Paste into your AI's system prompt. Includes full psychological profile, history, state, and relationships for this character. Includes any unsaved changes you just made!
+            </p>
+            <textarea
+              readOnly
+              value={exportText}
+              style={{
+                ...S.textarea,
+                border: "none",
+                background: "var(--bg-export-ta)",
+                padding: 16,
+                borderRadius: 4,
+                height: 360,
+                width: 500,
+                resize: "none",
+                fontFamily: "monospace",
+                fontSize: 13,
+                outline: "none",
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
         </Modal>
       )}
     </div>
