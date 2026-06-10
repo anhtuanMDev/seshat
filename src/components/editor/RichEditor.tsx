@@ -18,6 +18,7 @@ import type { Character, Event } from "../../lib/types";
 import type { Editor } from "@tiptap/core";
 import { buildMentionExtension, type MentionItem } from "./MentionExtension";
 import { EntityMention } from "./EntityMentionNode";
+import { PinPointExtension } from "./PinPointExtension";
 import CharMentionTooltip from "./CharMentionTooltip";
 import UnsavedGuard from "./UnsavedGuard";
 import MentionHelpButton from "./MentionHelpButton";
@@ -46,9 +47,10 @@ function MenuBar({
   showMentionHelp: boolean;
 }) {
   const btn = useCallback(
-    (label: string, action: () => void, active?: boolean) => (
+    (label: string, action: () => void, active?: boolean, title?: string) => (
       <button
         type="button"
+        title={title}
         onClick={action}
         style={{
           background: active ? "var(--bg-active)" : "transparent",
@@ -67,6 +69,14 @@ function MenuBar({
     ),
     [],
   );
+
+  const [showPinpointModal, setShowPinpointModal] = useState(false);
+  const [pinpointComment, setPinpointComment] = useState("");
+
+  const handleAddPinpoint = useCallback(() => {
+    setShowPinpointModal(true);
+    setPinpointComment("");
+  }, []);
 
   return (
     <div
@@ -157,6 +167,15 @@ function MenuBar({
         () => editor.chain().focus().toggleHighlight().run(),
         editor.isActive("highlight"),
       )}
+      <span
+        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
+      />
+      {btn(
+        "📍",
+        handleAddPinpoint,
+        false,
+        "Add Pinpoint Comment"
+      )}
 
       {/* @ mention help button — always shown when characters exist */}
       {showMentionHelp && (
@@ -172,6 +191,101 @@ function MenuBar({
 
       <div style={{ flex: 1 }} />
       <WordCountDisplay editor={editor} />
+
+      {showPinpointModal &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 2000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(0,0,0,0.5)",
+            }}
+            onClick={() => setShowPinpointModal(false)}
+          >
+            <div
+              style={{
+                background: "var(--bg-app)",
+                padding: 24,
+                borderRadius: 8,
+                width: 400,
+                border: "1px solid var(--border)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ margin: "0 0 16px 0", fontSize: 16 }}>Add Pinpoint</h3>
+              <textarea
+                autoFocus
+                rows={3}
+                style={{
+                  width: "100%",
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                  padding: 8,
+                  color: "inherit",
+                  resize: "none",
+                  marginBottom: 16,
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+                value={pinpointComment}
+                onChange={(e) => setPinpointComment(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (pinpointComment.trim()) {
+                      editor.chain().focus().setPinPoint({ id: crypto.randomUUID(), comment: pinpointComment.trim() }).run();
+                    }
+                    setShowPinpointModal(false);
+                  } else if (e.key === "Escape") {
+                    setShowPinpointModal(false);
+                  }
+                }}
+                placeholder="What are your thoughts?"
+              />
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                <button
+                  onClick={() => setShowPinpointModal(false)}
+                  style={{
+                    padding: "6px 12px",
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (pinpointComment.trim()) {
+                      editor.chain().focus().setPinPoint({ id: crypto.randomUUID(), comment: pinpointComment.trim() }).run();
+                    }
+                    setShowPinpointModal(false);
+                  }}
+                  style={{
+                    padding: "6px 12px",
+                    background: "var(--color-purple)",
+                    border: "none",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                    color: "#fff",
+                    fontWeight: 600,
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -236,6 +350,8 @@ function RichEditorCore({
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
   const isSyncingRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pinpoints, setPinpoints] = useState<{ id: string; comment: string; top: number; node: HTMLElement }[]>([]);
 
   const bookIdx = useActiveBookIdx();
   const extraEntities = useSelector(() => {
@@ -333,6 +449,28 @@ function RichEditorCore({
     return items;
   }, []);
 
+  const updatePinpoints = useCallback((editorInstance: Editor) => {
+    if (!editorInstance || !containerRef.current) return;
+    const el = editorInstance.view.dom;
+    const nodes = Array.from(el.querySelectorAll('span.seshat-pinpoint-node'));
+    
+    const containerTop = containerRef.current.getBoundingClientRect().top;
+    
+    const newPinpoints = nodes.map((node) => {
+      const n = node as HTMLElement;
+      // Get exact pixel offset from the top of the RichEditor container
+      const relativeTop = n.getBoundingClientRect().top - containerTop;
+      
+      return {
+        id: n.getAttribute('data-id') || '',
+        comment: n.getAttribute('data-comment') || '',
+        top: relativeTop,
+        node: n,
+      };
+    });
+    setPinpoints(newPinpoints);
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -348,13 +486,23 @@ function RichEditorCore({
       // eslint-disable-next-line react-hooks/refs
       buildMentionExtension(getMentionItems),
       EntityMention,
+      PinPointExtension,
     ],
     content,
     onUpdate: ({ editor }) => {
       if (isSyncingRef.current) return;
       onChange?.(editor.getHTML());
+      updatePinpoints(editor);
     },
   });
+
+  useEffect(() => {
+    if (!editor || !containerRef.current) return;
+    const obs = new ResizeObserver(() => updatePinpoints(editor));
+    obs.observe(containerRef.current);
+    obs.observe(editor.view.dom);
+    return () => obs.disconnect();
+  }, [editor, updatePinpoints]);
 
   // Sync external content changes (e.g. from lazy load or form reset) into the editor
   useEffect(() => {
@@ -477,6 +625,42 @@ function RichEditorCore({
             }, 80);
           }}
         />
+      )}
+
+      {pinpoints.length > 0 && (
+        <div
+          className="seshat-pinpoints-layer"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: -32,
+            bottom: 0,
+            width: 24,
+            zIndex: 10,
+          }}
+        >
+          {pinpoints.map((p) => (
+            <div
+              key={p.id}
+              title={p.comment}
+              onClick={() => {
+                p.node.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+              style={{
+                position: "absolute",
+                top: `${p.top}px`,
+                left: 0,
+                width: 16,
+                height: 16,
+                backgroundColor: "var(--color-purple)",
+                borderRadius: "50%",
+                cursor: "pointer",
+                transform: "translateY(-50%)",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+              }}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
