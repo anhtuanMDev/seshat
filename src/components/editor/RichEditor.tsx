@@ -60,7 +60,7 @@ function MenuBar({
           fontSize: 12,
           padding: "2px 6px",
           color: "var(--text-secondary)",
-          fontFamily: "'Georgia',serif",
+          fontFamily: "var(--font-serif)",
           lineHeight: "20px",
         }}
       >
@@ -326,7 +326,7 @@ function WordCountDisplay({ editor }: { editor: Editor }) {
         color: "var(--text-muted)",
         letterSpacing: 1,
         paddingRight: 4,
-        fontFamily: "'Georgia',serif",
+        fontFamily: "var(--font-serif)",
       }}
     >
       {wordCount.toLocaleString()} w

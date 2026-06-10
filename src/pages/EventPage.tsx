@@ -240,6 +240,7 @@ export default function EventPage() {
           style={{
             ...S.input,
             fontSize: 28,
+            fontFamily: "var(--font-serif)",
             border: "none",
             padding: 0,
             flex: 1,

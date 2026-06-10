@@ -7,7 +7,6 @@ const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
   marginBottom: 16,
   "& .MuiFilledInput-root": {
-    fontFamily: "Georgia, serif",
     fontSize: 13,
     color: "var(--mui-text-color)",
     background: "var(--bg-active)",
@@ -61,7 +60,6 @@ function SelInner({ label, value, onChange, opts = [], options }: SelInnerProps)
                 background: "var(--bg-side)",
                 border: "1px solid var(--border)",
                 "& .MuiMenuItem-root": {
-                  fontFamily: "Georgia, serif",
                   fontSize: 13,
                   color: "var(--text-primary)",
                   "&:hover": { background: "var(--bg-hover)" },
@@ -76,7 +74,6 @@ function SelInner({ label, value, onChange, opts = [], options }: SelInnerProps)
         <MenuItem
           value=""
           sx={{
-            fontFamily: "Georgia, serif",
             fontSize: 13,
             color: "var(--text-secondary)",
           }}

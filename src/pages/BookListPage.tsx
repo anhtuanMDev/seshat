@@ -183,7 +183,6 @@ export default function BookListPage() {
       justifyContent: "center",
       background: "var(--bg-app)",
       color: "var(--text-primary)",
-      fontFamily: "'Georgia',serif",
       padding: 40,
     }}>
       <div style={{ position: "absolute", top: 20, right: 24 }}>

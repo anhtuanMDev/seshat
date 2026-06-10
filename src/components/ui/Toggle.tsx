@@ -4,7 +4,6 @@ import { useController } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
 
 const StyledButton = styled(Button)(() => ({
-  fontFamily: "Georgia, serif",
   fontSize: 12,
   letterSpacing: 1,
   padding: "3px 12px",

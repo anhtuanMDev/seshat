@@ -21,7 +21,6 @@ export function EventRef({ event }: EventRefProps) {
           background: "none",
           border: "none",
           cursor: "pointer",
-          fontFamily: "Georgia, serif",
           fontSize: 12,
           color: "var(--text-primary)",
           padding: 0,

@@ -44,7 +44,6 @@ export default function FightPage() {
         <p
           style={{
             fontSize: 22,
-            fontFamily: "Georgia,serif",
             color: "var(--text-primary)",
             marginBottom: 4,
             display: "flex",

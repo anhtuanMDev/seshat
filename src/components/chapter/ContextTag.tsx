@@ -26,7 +26,6 @@ export const ContextTag = memo(function ContextTag({
           : "transparent",
         color: active ? color || "var(--color-purple)" : "var(--text-muted)",
         cursor: "pointer",
-        fontFamily: "Georgia, serif",
         letterSpacing: 0.5,
         transition: "all 0.12s",
         whiteSpace: "nowrap",

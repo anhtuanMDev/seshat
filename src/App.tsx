@@ -315,7 +315,6 @@ export default function App() {
     letterSpacing: 2,
     textTransform: "uppercase" as const,
     color: active ? "var(--text-primary)" : "var(--text-muted)",
-    fontFamily: "'Georgia', serif",
   });
 
   const isFullyLoaded = useSelector(() => {

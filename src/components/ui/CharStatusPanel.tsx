@@ -252,7 +252,6 @@ export function CharStatusPanel({
               rows={2}
               style={{
                 width: "100%",
-                fontFamily: "Georgia, serif",
                 fontSize: 12,
                 color: "var(--text-secondary)",
                 background: "transparent",

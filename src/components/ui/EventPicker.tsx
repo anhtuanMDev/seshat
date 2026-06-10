@@ -7,7 +7,6 @@ const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
   marginBottom: 16,
   "& .MuiInputBase-root": {
-    fontFamily: "Georgia, serif",
     fontSize: 13,
     color: "var(--mui-text-color)",
     background: "transparent",
@@ -67,7 +66,6 @@ function EventPickerInner({ label, placeholder, value, onChange, events, sx }: E
                 background: "var(--bg-side)",
                 border: "1px solid var(--border)",
                 "& .MuiMenuItem-root": {
-                  fontFamily: "Georgia, serif",
                   fontSize: 13,
                   color: "var(--text-primary)",
                   "&:hover": { background: "var(--bg-hover)" },
@@ -82,7 +80,6 @@ function EventPickerInner({ label, placeholder, value, onChange, events, sx }: E
         <MenuItem
           value=""
           sx={{
-            fontFamily: "Georgia, serif",
             fontSize: 13,
             color: "var(--text-secondary)",
           }}

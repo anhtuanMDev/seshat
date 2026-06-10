@@ -35,7 +35,7 @@ function getPopup(): HTMLElement {
       border: 1px solid var(--border, #e0ddd8);
       border-radius: 4px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      font-family: Georgia, serif;
+      font-family: var(--font-serif);
       min-width: 180px;
       max-width: 280px;
       max-height: 220px;

@@ -1,7 +1,6 @@
 import { Button, styled } from "@mui/material";
 
 export const GhostButton = styled(Button)(() => ({
-  fontFamily: "Georgia, serif",
   fontSize: 12,
   color: "var(--text-secondary)",
   letterSpacing: 1,

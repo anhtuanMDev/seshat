@@ -10,7 +10,7 @@ html {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  font-family: "Georgia", serif;
+  font-family: var(--font-sans);
   background: var(--bg-app);
   color: var(--text-primary);
   transition:
@@ -78,8 +78,7 @@ html {
 .MuiAlert-root {
   color: #fff !important;
   border-radius: 8px !important;
-  font-family: "Georgia", serif !important;
-}
+  }
 
 .MuiAlert-filledSuccess {
   background: var(--color-green) !important;
@@ -91,8 +90,7 @@ html {
 
 .MuiMenuItem-root {
   color: var(--text-primary) !important;
-  font-family: "Georgia", serif !important;
-  font-size: 17px !important;
+    font-size: 17px !important;
 }
 
 .MuiMenuItem-root:hover,
@@ -227,11 +225,11 @@ svg circle {
 }
 
 .seshat-modal-title {
-  font-size: 13px;
-  letter-spacing: 3px;
+  font-size: 14px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text-secondary);
-  font-weight: 400;
+  font-weight: 600;
 }
 
 /* ── Tiptap / ProseMirror ───────────────────────────────────────────────── */
@@ -242,7 +240,7 @@ svg circle {
   line-height: 1.9;
   font-size: 18px;
   color: var(--text-primary);
-  font-family: "Georgia", serif;
+  font-family: var(--font-serif);
 }
 
 .ProseMirror p {
@@ -340,6 +338,7 @@ svg circle {
 .seshat-top-title-input {
   border-bottom: 1px solid var(--border) !important;
   transition: border-color 0.15s ease;
+  font-family: var(--font-serif) !important;
 }
 
 .seshat-top-title-input:hover,

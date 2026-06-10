@@ -27,7 +27,6 @@ export function CharCard({ char, events }: CharCardProps) {
           background: "none",
           border: "none",
           cursor: "pointer",
-          fontFamily: "Georgia, serif",
           fontSize: 12,
           color: char.color,
           padding: 0,

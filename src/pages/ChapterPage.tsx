@@ -472,6 +472,7 @@ export default function ChapterPage() {
               style={{
                 ...S.input,
                 fontSize: 28,
+                fontFamily: "var(--font-serif)",
                 fontWeight: 400,
                 border: "none",
                 padding: 0,
@@ -498,7 +499,6 @@ export default function ChapterPage() {
           rows={2}
           style={{
             width: "100%",
-            fontFamily: "Georgia, serif",
             fontSize: 12,
             color: "var(--text-muted)",
             fontStyle: "italic",
@@ -592,7 +592,6 @@ export default function ChapterPage() {
                 style={{
                   width: "100%",
                   flex: 1,
-                  fontFamily: "Georgia, serif",
                   fontSize: 13,
                   color: "var(--text-secondary)",
                   background: "transparent",

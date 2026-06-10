@@ -263,7 +263,6 @@ export function CharacterAttrsBlock({
                     color: active ? c.color : "var(--text-muted)",
                     borderColor: active ? c.color : "var(--border)",
                     background: active ? `${c.color}10` : "transparent",
-                    fontFamily: "'Georgia', serif",
                     fontSize: 14,
                     padding: "8px 16px",
                   }}

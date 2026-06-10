@@ -21,7 +21,6 @@ export default function MentionHelpButton() {
           fontSize: 11,
           padding: "2px 8px",
           color: "var(--color-purple)",
-          fontFamily: "Georgia, serif",
           letterSpacing: 0.5,
           display: "flex",
           alignItems: "center",
@@ -63,7 +62,6 @@ export default function MentionHelpButton() {
               maxHeight: "80vh",
               overflowY: "auto",
               padding: "24px 32px",
-              fontFamily: "Georgia, serif",
               boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
               zIndex: 200,
             }}
@@ -206,7 +204,6 @@ export default function MentionHelpButton() {
                   fontSize: 12,
                   padding: "6px 20px",
                   color: "var(--text-secondary)",
-                  fontFamily: "Georgia, serif",
                   letterSpacing: 1,
                 }}
               >

@@ -42,7 +42,6 @@ export default function CharMentionTooltip({
         boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
         zIndex: 1000,
         maxWidth: 280,
-        fontFamily: "'Georgia',serif",
         pointerEvents: "auto",
       }}
     >

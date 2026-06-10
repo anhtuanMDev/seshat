@@ -8,7 +8,6 @@ const StyledTextField = styled(TextField)(() => ({
   width: "100%",
   marginBottom: 16,
   "& .MuiFilledInput-root": {
-    fontFamily: "Georgia, serif",
     fontSize: 14,
     color: "var(--mui-text-color)",
     background: "var(--bg-active)",

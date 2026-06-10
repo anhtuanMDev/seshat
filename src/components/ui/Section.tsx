@@ -4,9 +4,9 @@ import { styled } from "@mui/material/styles";
 import { ExpandMoreIcon, ChevronRightIcon } from "./icons";
 
 const GhostButton = styled(Button)(() => ({
-  fontFamily: "Georgia, serif",
-  fontSize: 11,
-  letterSpacing: 3,
+  fontSize: 12,
+  fontWeight: 600,
+  letterSpacing: 1.5,
   padding: "4px 0",
   textTransform: "uppercase",
   background: "none",
