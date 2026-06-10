@@ -94,9 +94,25 @@ export interface StatusEntry {
   endDate: string;
   power: string;
   arcStage: string;
+  role?: string;
+  archetype?: string;
   emotionalState: string;
   physicalState: string;
   note: string;
+}
+
+export interface CharacterArc {
+  id: string;
+  arcType: string;
+  arcLie: string;
+  arcTruth: string;
+  arcBreakingPoint: string;
+  arcFromEventId: string;
+  arcToEventId: string;
+  arcFromTime: string;
+  arcToTime: string;
+  arcStart: string;
+  arcEnd: string;
 }
 
 export interface Character {
@@ -110,8 +126,7 @@ export interface Character {
   coreDesire: string;
   philosophy: string;
   secrets: string;
-  arcStart: string;
-  arcEnd: string;
+  arcs: CharacterArc[];
   statusTimeline: StatusEntry[];
   traumas: Trauma[];
   relationships: Relationship[];

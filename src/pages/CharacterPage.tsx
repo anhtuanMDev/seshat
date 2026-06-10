@@ -1,5 +1,5 @@
 import { useSelector } from "@legendapp/state/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { AchievementBlock } from "../components/character/AchievementBlock";
@@ -9,7 +9,7 @@ import { TraumaBlock } from "../components/character/TraumaBlock";
 import { RelationshipBlock } from "../components/character/RelationshipBlock";
 import type { CharacterForm } from "../components/character/types";
 import { Field, Section } from "../components/ui";
-import { CharStatusPanel } from "../components/ui/CharStatusPanel";
+import { StatusBlock } from "../components/character/StatusBlock";
 import { Modal } from "../components/ui/Modal";
 import {
   AddIcon,
@@ -24,8 +24,10 @@ import {
   SaveIcon,
   TimelineIcon,
   PeopleIcon,
+  ArticleIcon,
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
+import { buildExport } from "../lib/export";
 import {
   useActiveBookIdx,
   useEvents,
@@ -46,18 +48,23 @@ import {
   mkStatusEntry,
   mkTrauma,
   mkRel,
+  mkArc,
 } from "../lib/utils";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
 import { updateFileOnGitHub } from "../lib/githubSync";
 
+import { ArcBlock } from "../components/character/ArcBlock";
+
 // ── Modal state type ──────────────────────────────────────────────────────
 type ModalKind =
-  | { type: "trauma"; idx: number | null }
-  | { type: "condition"; idx: number | null }
-  | { type: "achievement"; idx: number | null }
-  | { type: "loss"; idx: number | null }
-  | { type: "relationship"; idx: number | null }
+  | { type: "trauma"; idx: number | null; isNew?: boolean }
+  | { type: "condition"; idx: number | null; isNew?: boolean }
+  | { type: "achievement"; idx: number | null; isNew?: boolean }
+  | { type: "loss"; idx: number | null; isNew?: boolean }
+  | { type: "relationship"; idx: number | null; isNew?: boolean }
+  | { type: "status"; idx: number | null; isNew?: boolean }
+  | { type: "arc"; idx: number | null; isNew?: boolean }
   | null;
 
 export default function CharacterPage() {
@@ -66,6 +73,8 @@ export default function CharacterPage() {
   const bookIdx = useActiveBookIdx();
   const [modal, setModal] = useState<ModalKind>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const char = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -95,8 +104,7 @@ export default function CharacterPage() {
       coreDesire: "",
       philosophy: "",
       secrets: "",
-      arcStart: "",
-      arcEnd: "",
+      arcs: [],
       statusTimeline: [],
       traumas: [],
       conditions: [],
@@ -117,8 +125,7 @@ export default function CharacterPage() {
         coreDesire: char.coreDesire || "",
         philosophy: char.philosophy || "",
         secrets: char.secrets || "",
-        arcStart: char.arcStart || "",
-        arcEnd: char.arcEnd || "",
+        arcs: char.arcs || [],
         statusTimeline: char.statusTimeline || [],
         traumas: char.traumas || [],
         conditions: char.conditions || [],
@@ -133,12 +140,31 @@ export default function CharacterPage() {
   const ref = useAnimateIn();
 
   const statusTimeline = useWatch({ control, name: "statusTimeline" }) || [];
+  const arcs = useWatch({ control, name: "arcs" }) || [];
   const traumas = useWatch({ control, name: "traumas" }) || [];
   const conditions = useWatch({ control, name: "conditions" }) || [];
   const achievements = useWatch({ control, name: "achievements" }) || [];
   const losses = useWatch({ control, name: "losses" }) || [];
   const relationships = useWatch({ control, name: "relationships" }) || [];
   const allCharacters = useCharacters() || [];
+
+  const exportText = useMemo(() => {
+    if (!showExport || !char) return "";
+    return buildExport({
+      title: "",
+      synopsis: "",
+      setting: "",
+      themes: "",
+      rules: "",
+      nations: [],
+      techniques: [],
+      ingredients: [],
+      monsters: [],
+      treasures: [],
+      events: events,
+      characters: [{ ...char, ...getValues() } as unknown as import("../lib/types").Character], // Merge current unsaved changes
+    });
+  }, [showExport, char, events, getValues]);
 
   if (!char) {
     return (
@@ -160,10 +186,9 @@ export default function CharacterPage() {
     c.coreDesire.set(data.coreDesire);
     c.philosophy.set(data.philosophy);
     c.secrets.set(data.secrets);
-    c.arcStart.set(data.arcStart);
-    c.arcEnd.set(data.arcEnd);
-    c.statusTimeline.set(data.statusTimeline);
-    c.traumas.set(data.traumas);
+    c.statusTimeline.set(data.statusTimeline || []);
+    c.arcs.set(data.arcs || []);
+    c.traumas.set(data.traumas || []);
     c.conditions.set(data.conditions);
     c.achievements.set(data.achievements);
     c.losses.set(data.losses);
@@ -188,8 +213,7 @@ export default function CharacterPage() {
           coreDesire: data.coreDesire,
           philosophy: data.philosophy,
           secrets: data.secrets,
-          arcStart: data.arcStart,
-          arcEnd: data.arcEnd,
+          arcs: data.arcs,
           statusTimeline: data.statusTimeline,
           traumas: data.traumas,
           conditions: data.conditions,
@@ -215,7 +239,7 @@ export default function CharacterPage() {
 
   // ── Array helpers ─────────────────────────────────────────────────────
   const openAdd = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status" | "arc",
   ) => {
     const fieldMap = {
       trauma: "traumas" as const,
@@ -223,6 +247,8 @@ export default function CharacterPage() {
       achievement: "achievements" as const,
       loss: "losses" as const,
       relationship: "relationships" as const,
+      status: "statusTimeline" as const,
+      arc: "arcs" as const,
     };
     const mkMap = {
       trauma: mkTrauma,
@@ -230,21 +256,23 @@ export default function CharacterPage() {
       achievement: mkAchieve,
       loss: mkLoss,
       relationship: mkRel,
+      status: mkStatusEntry,
+      arc: mkArc,
     };
     const current = getValues(fieldMap[type]);
     setValue(fieldMap[type], [...current, mkMap[type]()] as never);
-    setModal({ type, idx: current.length });
+    setModal({ type, idx: current.length, isNew: true });
   };
 
   const openEdit = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status" | "arc",
     idx: number,
   ) => {
     setModal({ type, idx });
   };
 
   const delItem = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status" | "arc",
     itemIdx: number,
   ) => {
     const fieldMap = {
@@ -253,6 +281,8 @@ export default function CharacterPage() {
       achievement: "achievements" as const,
       loss: "losses" as const,
       relationship: "relationships" as const,
+      status: "statusTimeline" as const,
+      arc: "arcs" as const,
     };
     const current = getValues(fieldMap[type]);
     setValue(
@@ -262,7 +292,15 @@ export default function CharacterPage() {
     setModal(null);
   };
 
-  const closeModal = () => {
+  const handleCancelModal = () => {
+    if (modal?.isNew && modal.idx !== null) {
+      delItem(modal.type, modal.idx);
+    } else {
+      setModal(null);
+    }
+  };
+
+  const handleSaveModal = () => {
     setModal(null);
     onSubmit();
   };
@@ -305,25 +343,43 @@ export default function CharacterPage() {
             }}
           />
         </div>
-        <button
-          onClick={onSubmit}
-          disabled={!isDirty || isSaving}
-          style={{
-            ...S.ghost,
-            fontSize: 11,
-            letterSpacing: 1,
-            color: "var(--color-green)",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            opacity: !isDirty || isSaving ? 0.5 : 1,
-            cursor: !isDirty || isSaving ? "default" : "pointer",
-          }}
-        >
-          <SaveIcon sx={{ fontSize: 12 }} />
-          {isSaving ? "saving..." : "save"}
-        </button>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button
+            onClick={() => setShowExport(true)}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              letterSpacing: 1,
+              color: "var(--color-purple)",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <ArticleIcon sx={{ fontSize: 12 }} />
+            export
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={!isDirty || isSaving}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              letterSpacing: 1,
+              color: "var(--color-green)",
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+              opacity: !isDirty || isSaving ? 0.5 : 1,
+              cursor: !isDirty || isSaving ? "default" : "pointer",
+            }}
+          >
+            <SaveIcon sx={{ fontSize: 12 }} />
+            {isSaving ? "saving..." : "save"}
+          </button>
+        </div>
       </div>
 
       {/* ── Status Timeline ── */}
@@ -331,52 +387,91 @@ export default function CharacterPage() {
         title={
           <>
             <TimelineIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Status Timeline
+            Status Timeline ({statusTimeline.length})
           </>
         }
+        action={
+          <button
+            onClick={() => openAdd("status")}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <AddIcon sx={{ fontSize: 13 }} />
+            add
+          </button>
+        }
       >
-        <CharStatusPanel
-          statusTimeline={statusTimeline}
-          color={char.color}
-          events={events}
-          onChange={(entries) => setValue("statusTimeline", entries)}
-        />
-        <button
-          onClick={() =>
-            setValue("statusTimeline", [
-              ...getValues("statusTimeline"),
-              mkStatusEntry(),
-            ])
-          }
-          style={{
-            ...S.ghost,
-            fontSize: 12,
-            letterSpacing: 1,
-            color: "var(--text-secondary)",
-          }}
-        >
-          + add status entry
-        </button>
+        <p style={{ ...S.dim, marginBottom: 14 }}>
+          Track how their physical state, emotions, and roles shift over time and events.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {statusTimeline
+            .map((s, i) => ({ s, i }))
+            .sort((a, b) => {
+              const evA = events.find((e) => e.id === a.s.eventId);
+              const evB = events.find((e) => e.id === b.s.eventId);
+              return (evA?.time ?? 0) - (evB?.time ?? 0) || a.s.id.localeCompare(b.s.id);
+            })
+            .map(({ s, i }) => {
+              const ev = events.find((e) => e.id === s.eventId);
+              const dateTag = [s.startDate && s.startDate.replace("T", " "), s.endDate && `→ ${s.endDate.replace("T", " ")}`].filter(Boolean).join(" ");
+              const label = ev ? `T${ev.time} — ${ev.title}` : "Unknown Event";
+              
+              const title = `${label}${dateTag ? ` (${dateTag})` : ""}`;
+              const tags = [
+                s.power && `Power: ${s.power}`,
+                s.arcStage && `Arc: ${s.arcStage}`,
+                s.role && `Role: ${s.role}`,
+                s.archetype && `Archetype: ${s.archetype}`,
+                s.emotionalState && `Emotion: ${s.emotionalState}`,
+                s.physicalState && `Physical: ${s.physicalState}`,
+              ].filter(Boolean) as string[];
+
+              return (
+                <ArrayItemCard
+                  key={s.id}
+                  color={char.color}
+                  title={title}
+                  body={s.note}
+                  tags={tags}
+                  onEdit={() => openEdit("status", i)}
+                  onDelete={() => delItem("status", i)}
+                />
+              );
+            })}
+        </div>
+        {!statusTimeline.length && (
+          <p style={{ ...S.dim, fontStyle: "italic" }}>No status entries recorded.</p>
+        )}
       </Section>
 
-      {/* ── Identity ── */}
+      {/* ── Primary Identity ── */}
       <Section
         title={
           <>
             <BadgeIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Identity
+            Primary Identity
           </>
         }
       >
+        <p style={{ ...S.dim, marginBottom: 12 }}>
+          Core defining roles. These can be overridden for specific events in the timeline above as the character evolves.
+        </p>
         <div style={S.grid2} className="seshat-grid2">
           <Field
-            label="Role in story"
+            label="Primary role in story"
             name="role"
             control={control}
             placeholder="Protagonist, mentor…"
           />
           <Field
-            label="Archetype"
+            label="Primary archetype"
             name="archetype"
             control={control}
             placeholder="The trickster…"
@@ -503,25 +598,47 @@ export default function CharacterPage() {
             Character arc
           </>
         }
+        action={
+          <div
+            style={S.addBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              openAdd("arc");
+            }}
+          >
+            <AddIcon sx={{ fontSize: 14 }} /> add
+          </div>
+        }
       >
         <p style={{ ...S.dim, marginBottom: 12 }}>
           Where they begin and where they end. The transformation the story puts
           them through.
         </p>
-        <div style={S.grid2} className="seshat-grid2">
-          <Field
-            label="Arc start — who they are"
-            name="arcStart"
-            control={control}
-            placeholder="Closed off, convinced the world is cruel…"
-          />
-          <Field
-            label="Arc end — who they become"
-            name="arcEnd"
-            control={control}
-            placeholder="Capable of trust, grief without collapse…"
-          />
+        <div style={S.grid3} className="seshat-grid3">
+          {arcs.map((a, i) => {
+            const ev1 = events.find((e) => e.id === a.arcFromEventId);
+            const ev2 = events.find((e) => e.id === a.arcToEventId);
+            const fromStr = ev1 ? `T${ev1.time}` : a.arcFromTime;
+            const toStr = ev2 ? `T${ev2.time}` : a.arcToTime;
+            const label = [fromStr && `From ${fromStr}`, toStr && `To ${toStr}`].filter(Boolean).join(" ");
+            return (
+              <ArrayItemCard
+                key={a.id}
+                color={char.color}
+                title={a.arcType || `Arc ${i + 1}`}
+                subtitle={label || undefined}
+                body={a.arcStart ? `${a.arcStart} → ${a.arcEnd || "?"}` : undefined}
+                onEdit={() => openEdit("arc", i)}
+                onDelete={() => {
+                  delItem("arc", i);
+                }}
+              />
+            );
+          })}
         </div>
+        {!arcs.length && (
+          <p style={{ ...S.dim, fontStyle: "italic" }}>No arcs recorded.</p>
+        )}
       </Section>
 
       {/* ── Conditions ── */}
@@ -755,10 +872,10 @@ export default function CharacterPage() {
       {modal?.type === "trauma" && modal.idx !== null && (
         <Modal
           title="Trauma"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -786,10 +903,10 @@ export default function CharacterPage() {
       {modal?.type === "condition" && modal.idx !== null && (
         <Modal
           title="Condition"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -818,10 +935,10 @@ export default function CharacterPage() {
       {modal?.type === "achievement" && modal.idx !== null && (
         <Modal
           title="Achievement"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -849,10 +966,10 @@ export default function CharacterPage() {
       {modal?.type === "loss" && modal.idx !== null && (
         <Modal
           title="Loss"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -880,10 +997,10 @@ export default function CharacterPage() {
       {modal?.type === "relationship" && modal.idx !== null && (
         <Modal
           title="Relationship"
-          onClose={closeModal}
+          onClose={handleCancelModal}
           footer={
             <button
-              onClick={closeModal}
+              onClick={handleSaveModal}
               style={{
                 ...S.ghost,
                 fontSize: 12,
@@ -906,6 +1023,122 @@ export default function CharacterPage() {
             characters={allCharacters}
             currentCharacterId={char.id}
           />
+        </Modal>
+      )}
+
+      {modal?.type === "status" && modal.idx !== null && (
+        <Modal
+          title="Status Entry"
+          onClose={handleCancelModal}
+          footer={
+            <button
+              onClick={handleSaveModal}
+              style={{
+                ...S.ghost,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: "var(--color-green)",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <SaveIcon sx={{ fontSize: 12 }} />
+              done
+            </button>
+          }
+        >
+          <StatusBlock
+            control={control}
+            index={modal.idx}
+            color={char.color}
+            onDelete={() => delItem("status", modal.idx!)}
+            events={events}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "arc" && modal.idx !== null && (
+        <Modal
+          title="Character Arc"
+          onClose={handleCancelModal}
+          footer={
+            <button
+              onClick={handleSaveModal}
+              style={{
+                ...S.ghost,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: "var(--color-green)",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <SaveIcon sx={{ fontSize: 12 }} />
+              done
+            </button>
+          }
+        >
+          <ArcBlock
+            control={control}
+            index={modal.idx}
+            color={char.color}
+            onDelete={() => delItem("arc", modal.idx!)}
+            events={events}
+          />
+        </Modal>
+      )}
+
+      {/* Export Modal */}
+      {showExport && (
+        <Modal
+          title={`Export ${char.name || "Character"}`}
+          onClose={() => setShowExport(false)}
+          footer={
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(exportText);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                style={{
+                  ...S.ghost,
+                  color: copied ? "var(--color-green)" : "var(--color-purple)",
+                }}
+              >
+                {copied ? "Copied!" : "Copy text"}
+              </button>
+              <button onClick={() => setShowExport(false)} style={S.ghost}>
+                Close
+              </button>
+            </div>
+          }
+        >
+          <div style={{ padding: 12 }}>
+            <p style={{ ...S.dim, marginBottom: 16 }}>
+              Paste into your AI's system prompt. Includes full psychological profile, history, state, and relationships for this character. Includes any unsaved changes you just made!
+            </p>
+            <textarea
+              readOnly
+              value={exportText}
+              style={{
+                ...S.textarea,
+                border: "none",
+                background: "var(--bg-export-ta)",
+                padding: 16,
+                borderRadius: 4,
+                height: 360,
+                width: 500,
+                resize: "none",
+                fontFamily: "monospace",
+                fontSize: 13,
+                outline: "none",
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+          </div>
         </Modal>
       )}
     </div>

@@ -74,6 +74,9 @@ export default function ChapterPage() {
     | "continuity"
   >("chars");
   const [isSaving, setIsSaving] = useState(false);
+  const [isFloating, setIsFloating] = useState(false);
+
+
 
   const { register, control, reset, formState, getValues, setValue } =
     useForm<ChapterForm>({
@@ -493,7 +496,10 @@ export default function ChapterPage() {
   return (
     <div ref={ref} className="seshat-chapter-layout">
       {/* ── Prose column ── */}
-      <div className={`seshat-chapter-prose ${showPanel ? "panel-open" : ""}`}>
+      <div 
+        className={`seshat-chapter-prose ${showPanel ? "panel-open" : ""}`}
+        onScroll={(e) => setIsFloating(e.currentTarget.scrollTop > 120)}
+      >
         <div className="seshat-chapter-header">
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
@@ -551,6 +557,7 @@ export default function ChapterPage() {
             onExport={handleExport}
             isSaving={isSaving}
             isDirty={formState.isDirty}
+            isFloating={isFloating}
           />
         </div>
 

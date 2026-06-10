@@ -28,8 +28,7 @@ export const mkChar = (n: string, color: string) => ({
   coreDesire: "",
   philosophy: "",
   secrets: "",
-  arcStart: "",
-  arcEnd: "",
+  arcs: [],
   traumas: [],
   relationships: [],
   branch: [],
@@ -41,6 +40,20 @@ export const mkChar = (n: string, color: string) => ({
   losses: [],
 });
 
+export const mkArc = (): import("./types").CharacterArc => ({
+  id: uid(),
+  arcType: "",
+  arcLie: "",
+  arcTruth: "",
+  arcBreakingPoint: "",
+  arcFromEventId: "",
+  arcToEventId: "",
+  arcFromTime: "",
+  arcToTime: "",
+  arcStart: "",
+  arcEnd: "",
+});
+
 import type { Event, EventType, StatusEntry, Condition } from "./types";
 
 export const mkStatusEntry = (): StatusEntry => ({
@@ -50,6 +63,8 @@ export const mkStatusEntry = (): StatusEntry => ({
   endDate: "",
   power: "",
   arcStage: "",
+  role: "",
+  archetype: "",
   emotionalState: "",
   physicalState: "",
   note: "",

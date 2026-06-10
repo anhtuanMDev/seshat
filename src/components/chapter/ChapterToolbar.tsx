@@ -8,6 +8,7 @@ interface ChapterToolbarProps {
   onExport: () => void;
   isSaving?: boolean;
   isDirty?: boolean;
+  isFloating?: boolean;
 }
 
 export function ChapterToolbar({
@@ -17,9 +18,10 @@ export function ChapterToolbar({
   onExport,
   isSaving,
   isDirty,
+  isFloating,
 }: ChapterToolbarProps) {
   return (
-    <div className="seshat-chapter-toolbar">
+    <div className={`seshat-chapter-toolbar ${showPanel ? "panel-open" : ""} ${isFloating ? "floating" : ""}`}>
       <button
         onClick={onSave}
         title="Save changes"

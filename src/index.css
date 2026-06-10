@@ -518,7 +518,23 @@ svg circle {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
-  padding-top: 28px;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1), bottom 0.3s, top 0.3s, opacity 0.3s;
+}
+
+.seshat-chapter-toolbar.floating {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: var(--bg-app);
+  padding: 8px 12px;
+  border-radius: 32px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  border: 1px solid var(--border);
+  z-index: 100;
+}
+
+.seshat-chapter-toolbar.floating.panel-open {
+  right: 340px;
 }
 
 .seshat-chapter-panel-overlay {
@@ -593,9 +609,13 @@ svg circle {
     visibility: visible;
   }
 
-  .seshat-chapter-toolbar {
-    padding-top: 8px;
-    width: 100%;
-    justify-content: flex-start;
+  .seshat-chapter-toolbar.floating {
+    top: auto;
+    bottom: 24px;
+  }
+
+  .seshat-chapter-toolbar.floating.panel-open {
+    right: 24px;
+    z-index: 60;
   }
 }

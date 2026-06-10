@@ -123,7 +123,22 @@ export function buildExport(state: ExportState): string {
     if (c.coreDesire) L.push(`  Desire:  ${c.coreDesire}`);
     if (c.philosophy) L.push(`  Belief:  ${c.philosophy}`);
     if (c.secrets) L.push(`  Secrets: ${c.secrets}`);
-    if (c.arcStart || c.arcEnd) L.push(`  Arc: ${c.arcStart} → ${c.arcEnd}`);
+    if (c.arcs?.length) {
+      L.push(`  ── Character Arcs ──`);
+      c.arcs.forEach((a, i) => {
+        const fromEvent = a.arcFromEventId ? state.events.find((e) => e.id === a.arcFromEventId)?.title : "";
+        const toEvent = a.arcToEventId ? state.events.find((e) => e.id === a.arcToEventId)?.title : "";
+        const fromStr = [fromEvent, a.arcFromTime].filter(Boolean).join(" / ");
+        const toStr = [toEvent, a.arcToTime].filter(Boolean).join(" / ");
+        const arcTimeStr = [fromStr ? `From: ${fromStr}` : "", toStr ? `To: ${toStr}` : ""].filter(Boolean).join(" | ");
+
+        L.push(`    Arc ${i + 1}${a.arcType ? ` (${a.arcType})` : ""}${arcTimeStr ? ` [${arcTimeStr}]` : ""}`);
+        if (a.arcLie) L.push(`      The Lie: ${a.arcLie}`);
+        if (a.arcTruth) L.push(`      The Truth: ${a.arcTruth}`);
+        if (a.arcBreakingPoint) L.push(`      Breaking Pt: ${a.arcBreakingPoint}`);
+        if (a.arcStart || a.arcEnd) L.push(`      Path: ${a.arcStart} → ${a.arcEnd}`);
+      });
+    }
 
     const timeline = (c.statusTimeline || []).sort(
       (a, b) => {
@@ -141,6 +156,8 @@ export function buildExport(state: ExportState): string {
         L.push(`    ${label}${dateTag ? `  (${dateTag})` : ""}`);
         if (s.power) L.push(`      Power tier: ${s.power}`);
         if (s.arcStage) L.push(`      Arc stage: ${s.arcStage}`);
+        if (s.role) L.push(`      Role: ${s.role}`);
+        if (s.archetype) L.push(`      Archetype: ${s.archetype}`);
         if (s.emotionalState) L.push(`      Emotional state: ${s.emotionalState}`);
         if (s.physicalState) L.push(`      Physical state: ${s.physicalState}`);
         if (s.note) L.push(`      Note: ${s.note}`);
