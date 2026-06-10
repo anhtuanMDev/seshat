@@ -6,7 +6,7 @@ import type { Character, Event } from "../../lib/types";
 const makeChar = (overrides: Partial<Character> = {}): Character => ({
   id: "c1", name: "Hero", color: "#c0392b", role: "",
   archetype: "", coreWound: "", coreFear: "", coreDesire: "",
-  philosophy: "", secrets: "", arcStart: "", arcEnd: "",
+  philosophy: "", secrets: "", arcs: [],
   statusTimeline: [], traumas: [], relationships: [], branch: [],
   attributes: {}, conditions: [], skills: [], equipment: [],
   achievements: [], losses: [],

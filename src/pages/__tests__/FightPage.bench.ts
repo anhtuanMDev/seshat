@@ -6,7 +6,7 @@ import type { Character, Event } from "../../lib/types";
 const makeChar = (id: string): Character => ({
   id, name: `Hero ${id}`, color: "#c0392b", role: "Protagonist",
   archetype: "", coreWound: "", coreFear: "", coreDesire: "",
-  philosophy: "", secrets: "", arcStart: "", arcEnd: "",
+  philosophy: "", secrets: "", arcs: [],
   statusTimeline: [], traumas: [], relationships: [], branch: [],
   attributes: {},
   conditions: [

@@ -8,7 +8,7 @@ import { LossBlock } from "../components/character/LossBlock";
 import { TraumaBlock } from "../components/character/TraumaBlock";
 import { RelationshipBlock } from "../components/character/RelationshipBlock";
 import type { CharacterForm } from "../components/character/types";
-import { Field, Section, EventPicker } from "../components/ui";
+import { Field, Section } from "../components/ui";
 import { StatusBlock } from "../components/character/StatusBlock";
 import { Modal } from "../components/ui/Modal";
 import {
@@ -48,10 +48,13 @@ import {
   mkStatusEntry,
   mkTrauma,
   mkRel,
+  mkArc,
 } from "../lib/utils";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
 import { updateFileOnGitHub } from "../lib/githubSync";
+
+import { ArcBlock } from "../components/character/ArcBlock";
 
 // ── Modal state type ──────────────────────────────────────────────────────
 type ModalKind =
@@ -61,6 +64,7 @@ type ModalKind =
   | { type: "loss"; idx: number | null; isNew?: boolean }
   | { type: "relationship"; idx: number | null; isNew?: boolean }
   | { type: "status"; idx: number | null; isNew?: boolean }
+  | { type: "arc"; idx: number | null; isNew?: boolean }
   | null;
 
 export default function CharacterPage() {
@@ -100,8 +104,7 @@ export default function CharacterPage() {
       coreDesire: "",
       philosophy: "",
       secrets: "",
-      arcStart: "",
-      arcEnd: "",
+      arcs: [],
       statusTimeline: [],
       traumas: [],
       conditions: [],
@@ -122,8 +125,7 @@ export default function CharacterPage() {
         coreDesire: char.coreDesire || "",
         philosophy: char.philosophy || "",
         secrets: char.secrets || "",
-        arcStart: char.arcStart || "",
-        arcEnd: char.arcEnd || "",
+        arcs: char.arcs || [],
         statusTimeline: char.statusTimeline || [],
         traumas: char.traumas || [],
         conditions: char.conditions || [],
@@ -138,6 +140,7 @@ export default function CharacterPage() {
   const ref = useAnimateIn();
 
   const statusTimeline = useWatch({ control, name: "statusTimeline" }) || [];
+  const arcs = useWatch({ control, name: "arcs" }) || [];
   const traumas = useWatch({ control, name: "traumas" }) || [];
   const conditions = useWatch({ control, name: "conditions" }) || [];
   const achievements = useWatch({ control, name: "achievements" }) || [];
@@ -183,10 +186,9 @@ export default function CharacterPage() {
     c.coreDesire.set(data.coreDesire);
     c.philosophy.set(data.philosophy);
     c.secrets.set(data.secrets);
-    c.arcStart.set(data.arcStart);
-    c.arcEnd.set(data.arcEnd);
-    c.statusTimeline.set(data.statusTimeline);
-    c.traumas.set(data.traumas);
+    c.statusTimeline.set(data.statusTimeline || []);
+    c.arcs.set(data.arcs || []);
+    c.traumas.set(data.traumas || []);
     c.conditions.set(data.conditions);
     c.achievements.set(data.achievements);
     c.losses.set(data.losses);
@@ -211,8 +213,7 @@ export default function CharacterPage() {
           coreDesire: data.coreDesire,
           philosophy: data.philosophy,
           secrets: data.secrets,
-          arcStart: data.arcStart,
-          arcEnd: data.arcEnd,
+          arcs: data.arcs,
           statusTimeline: data.statusTimeline,
           traumas: data.traumas,
           conditions: data.conditions,
@@ -238,7 +239,7 @@ export default function CharacterPage() {
 
   // ── Array helpers ─────────────────────────────────────────────────────
   const openAdd = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status" | "arc",
   ) => {
     const fieldMap = {
       trauma: "traumas" as const,
@@ -247,6 +248,7 @@ export default function CharacterPage() {
       loss: "losses" as const,
       relationship: "relationships" as const,
       status: "statusTimeline" as const,
+      arc: "arcs" as const,
     };
     const mkMap = {
       trauma: mkTrauma,
@@ -255,6 +257,7 @@ export default function CharacterPage() {
       loss: mkLoss,
       relationship: mkRel,
       status: mkStatusEntry,
+      arc: mkArc,
     };
     const current = getValues(fieldMap[type]);
     setValue(fieldMap[type], [...current, mkMap[type]()] as never);
@@ -262,14 +265,14 @@ export default function CharacterPage() {
   };
 
   const openEdit = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status" | "arc",
     idx: number,
   ) => {
     setModal({ type, idx });
   };
 
   const delItem = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status" | "arc",
     itemIdx: number,
   ) => {
     const fieldMap = {
@@ -279,6 +282,7 @@ export default function CharacterPage() {
       loss: "losses" as const,
       relationship: "relationships" as const,
       status: "statusTimeline" as const,
+      arc: "arcs" as const,
     };
     const current = getValues(fieldMap[type]);
     setValue(
@@ -594,69 +598,47 @@ export default function CharacterPage() {
             Character arc
           </>
         }
+        action={
+          <div
+            style={S.addBtn}
+            onClick={(e) => {
+              e.stopPropagation();
+              openAdd("arc");
+            }}
+          >
+            <AddIcon sx={{ fontSize: 14 }} /> add
+          </div>
+        }
       >
         <p style={{ ...S.dim, marginBottom: 12 }}>
           Where they begin and where they end. The transformation the story puts
           them through.
         </p>
-        <div style={S.grid2} className="seshat-grid2">
-          <EventPicker
-            label="Arc from event"
-            name="arcFromEventId"
-            control={control}
-            events={events}
-            placeholder="— Start of story —"
-          />
-          <EventPicker
-            label="Arc to event"
-            name="arcToEventId"
-            control={control}
-            events={events}
-            placeholder="— End of story —"
-          />
+        <div style={S.grid3} className="seshat-grid3">
+          {arcs.map((a, i) => {
+            const ev1 = events.find((e) => e.id === a.arcFromEventId);
+            const ev2 = events.find((e) => e.id === a.arcToEventId);
+            const fromStr = ev1 ? `T${ev1.time}` : a.arcFromTime;
+            const toStr = ev2 ? `T${ev2.time}` : a.arcToTime;
+            const label = [fromStr && `From ${fromStr}`, toStr && `To ${toStr}`].filter(Boolean).join(" ");
+            return (
+              <ArrayItemCard
+                key={a.id}
+                color={char.color}
+                title={a.arcType || `Arc ${i + 1}`}
+                subtitle={label || undefined}
+                body={a.arcStart ? `${a.arcStart} → ${a.arcEnd || "?"}` : undefined}
+                onEdit={() => openEdit("arc", i)}
+                onDelete={() => {
+                  delItem("arc", i);
+                }}
+              />
+            );
+          })}
         </div>
-        <div style={S.grid2} className="seshat-grid2">
-          <Field
-            label="Arc type"
-            name="arcType"
-            control={control}
-            placeholder="Positive, Negative, Flat, Fall, Corruption..."
-          />
-          <Field
-            label="The Lie they believe"
-            name="arcLie"
-            control={control}
-            placeholder="What false belief holds them back?"
-          />
-        </div>
-        <div style={S.grid2} className="seshat-grid2">
-          <Field
-            label="The Truth they must learn"
-            name="arcTruth"
-            control={control}
-            placeholder="The realization that will save (or destroy) them..."
-          />
-          <Field
-            label="The Breaking Point"
-            name="arcBreakingPoint"
-            control={control}
-            placeholder="The moment they must choose the truth or fail..."
-          />
-        </div>
-        <div style={S.grid2} className="seshat-grid2">
-          <Field
-            label="Arc start — who they are"
-            name="arcStart"
-            control={control}
-            placeholder="Closed off, convinced the world is cruel…"
-          />
-          <Field
-            label="Arc end — who they become"
-            name="arcEnd"
-            control={control}
-            placeholder="Capable of trust, grief without collapse…"
-          />
-        </div>
+        {!arcs.length && (
+          <p style={{ ...S.dim, fontStyle: "italic" }}>No arcs recorded.</p>
+        )}
       </Section>
 
       {/* ── Conditions ── */}
@@ -1071,6 +1053,38 @@ export default function CharacterPage() {
             index={modal.idx}
             color={char.color}
             onDelete={() => delItem("status", modal.idx!)}
+            events={events}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "arc" && modal.idx !== null && (
+        <Modal
+          title="Character Arc"
+          onClose={handleCancelModal}
+          footer={
+            <button
+              onClick={handleSaveModal}
+              style={{
+                ...S.ghost,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: "var(--color-green)",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <SaveIcon sx={{ fontSize: 12 }} />
+              done
+            </button>
+          }
+        >
+          <ArcBlock
+            control={control}
+            index={modal.idx}
+            color={char.color}
+            onDelete={() => delItem("arc", modal.idx!)}
             events={events}
           />
         </Modal>

@@ -28,14 +28,7 @@ export const mkChar = (n: string, color: string) => ({
   coreDesire: "",
   philosophy: "",
   secrets: "",
-  arcStart: "",
-  arcType: "",
-  arcLie: "",
-  arcTruth: "",
-  arcBreakingPoint: "",
-  arcFromEventId: "",
-  arcToEventId: "",
-  arcEnd: "",
+  arcs: [],
   traumas: [],
   relationships: [],
   branch: [],
@@ -45,6 +38,20 @@ export const mkChar = (n: string, color: string) => ({
   equipment: [],
   achievements: [],
   losses: [],
+});
+
+export const mkArc = (): import("./types").CharacterArc => ({
+  id: uid(),
+  arcType: "",
+  arcLie: "",
+  arcTruth: "",
+  arcBreakingPoint: "",
+  arcFromEventId: "",
+  arcToEventId: "",
+  arcFromTime: "",
+  arcToTime: "",
+  arcStart: "",
+  arcEnd: "",
 });
 
 import type { Event, EventType, StatusEntry, Condition } from "./types";

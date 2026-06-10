@@ -10,7 +10,7 @@ const big = (() => {
     role: i % 3 === 0 ? "Protagonist" : "", archetype: "",
     coreWound: "wound", coreFear: "fear", coreDesire: "desire",
     philosophy: "philosophy", secrets: "secrets",
-    arcStart: "", arcEnd: "",
+    arcs: [],
     statusTimeline: Array.from({ length: 5 }, (_, si) => ({
       id: `s${i}_${si}`, eventId: `e${(i + si) % 100}`,
       startDate: `2024-01-${(si % 28) + 1}T10:00`, endDate: "",

@@ -35,8 +35,6 @@ describe("mkChar", () => {
     expect(c.coreDesire).toBe("");
     expect(c.philosophy).toBe("");
     expect(c.secrets).toBe("");
-    expect(c.arcStart).toBe("");
-    expect(c.arcEnd).toBe("");
     expect(c.traumas).toEqual([]);
     expect(c.relationships).toEqual([]);
     expect(c.branch).toEqual([]);

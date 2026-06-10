@@ -101,6 +101,20 @@ export interface StatusEntry {
   note: string;
 }
 
+export interface CharacterArc {
+  id: string;
+  arcType: string;
+  arcLie: string;
+  arcTruth: string;
+  arcBreakingPoint: string;
+  arcFromEventId: string;
+  arcToEventId: string;
+  arcFromTime: string;
+  arcToTime: string;
+  arcStart: string;
+  arcEnd: string;
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -112,14 +126,7 @@ export interface Character {
   coreDesire: string;
   philosophy: string;
   secrets: string;
-  arcStart: string;
-  arcType?: string;
-  arcLie?: string;
-  arcTruth?: string;
-  arcBreakingPoint?: string;
-  arcFromEventId?: string;
-  arcToEventId?: string;
-  arcEnd: string;
+  arcs: CharacterArc[];
   statusTimeline: StatusEntry[];
   traumas: Trauma[];
   relationships: Relationship[];

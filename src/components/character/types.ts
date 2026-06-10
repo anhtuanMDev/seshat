@@ -10,14 +10,7 @@ export interface CharacterForm {
   coreDesire: string;
   philosophy: string;
   secrets: string;
-  arcStart: string;
-  arcType?: string;
-  arcLie?: string;
-  arcTruth?: string;
-  arcBreakingPoint?: string;
-  arcFromEventId?: string;
-  arcToEventId?: string;
-  arcEnd: string;
+  arcs: import("../../lib/types").CharacterArc[];
   statusTimeline: StatusEntry[];
   traumas: Trauma[];
   conditions: Condition[];

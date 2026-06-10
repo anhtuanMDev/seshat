@@ -123,17 +123,22 @@ export function buildExport(state: ExportState): string {
     if (c.coreDesire) L.push(`  Desire:  ${c.coreDesire}`);
     if (c.philosophy) L.push(`  Belief:  ${c.philosophy}`);
     if (c.secrets) L.push(`  Secrets: ${c.secrets}`);
-    const arcTimeStr = [
-      c.arcFromEventId ? `From: ${state.events.find((e) => e.id === c.arcFromEventId)?.title || "Unknown"}` : "",
-      c.arcToEventId ? `To: ${state.events.find((e) => e.id === c.arcToEventId)?.title || "Unknown"}` : ""
-    ].filter(Boolean).join(" | ");
+    if (c.arcs?.length) {
+      L.push(`  ── Character Arcs ──`);
+      c.arcs.forEach((a, i) => {
+        const fromEvent = a.arcFromEventId ? state.events.find((e) => e.id === a.arcFromEventId)?.title : "";
+        const toEvent = a.arcToEventId ? state.events.find((e) => e.id === a.arcToEventId)?.title : "";
+        const fromStr = [fromEvent, a.arcFromTime].filter(Boolean).join(" / ");
+        const toStr = [toEvent, a.arcToTime].filter(Boolean).join(" / ");
+        const arcTimeStr = [fromStr ? `From: ${fromStr}` : "", toStr ? `To: ${toStr}` : ""].filter(Boolean).join(" | ");
 
-    if (arcTimeStr) L.push(`  Arc Timeframe: ${arcTimeStr}`);
-    if (c.arcType) L.push(`  Arc Type: ${c.arcType}`);
-    if (c.arcLie) L.push(`  The Lie: ${c.arcLie}`);
-    if (c.arcTruth) L.push(`  The Truth: ${c.arcTruth}`);
-    if (c.arcBreakingPoint) L.push(`  Breaking Pt: ${c.arcBreakingPoint}`);
-    if (c.arcStart || c.arcEnd) L.push(`  Arc Path: ${c.arcStart} → ${c.arcEnd}`);
+        L.push(`    Arc ${i + 1}${a.arcType ? ` (${a.arcType})` : ""}${arcTimeStr ? ` [${arcTimeStr}]` : ""}`);
+        if (a.arcLie) L.push(`      The Lie: ${a.arcLie}`);
+        if (a.arcTruth) L.push(`      The Truth: ${a.arcTruth}`);
+        if (a.arcBreakingPoint) L.push(`      Breaking Pt: ${a.arcBreakingPoint}`);
+        if (a.arcStart || a.arcEnd) L.push(`      Path: ${a.arcStart} → ${a.arcEnd}`);
+      });
+    }
 
     const timeline = (c.statusTimeline || []).sort(
       (a, b) => {
