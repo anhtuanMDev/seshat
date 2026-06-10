@@ -957,3 +957,10 @@ Fetches all blobs recursively via the GitHub Tree API for the specified `books/b
 Any component that triggers an asynchronous workflow (API calls for load, sync, create, read, update, delete) MUST explicitly handle and display two visual states:
 1. **Normal State**: The default interactive state.
 2. **Pending State**: Displayed while the promise is resolving. The element should provide visual feedback (e.g., text changes to "Saving...", "Syncing...", opacity reduces) and be `disabled` to prevent duplicate submissions.
+
+### UX Conventions
+- **No Native Dialogs:** The use of `window.prompt()`, `window.confirm()`, and `window.alert()` is strictly prohibited as they block the main thread and break the visual aesthetic. Always use the internal state-driven `Modal` component (`src/components/ui/Modal.tsx`) for user confirmation or text inputs.
+
+### The `S` Utility Object
+Global style presets (like grids, input fields, layout wrappers) are centralized in the `S` object within `src/lib/utils.ts`. 
+**Rule:** The object must be typed using `satisfies Record<string, React.CSSProperties>` rather than cast loosely. This ensures strict type safety and enables accurate IDE autocomplete for consumers (preventing silent fallbacks of undefined styles).
