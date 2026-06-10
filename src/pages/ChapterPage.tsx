@@ -5,6 +5,7 @@ import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
 import { updateFileOnGitHub } from "../lib/githubSync";
+import { computeEventSync } from "../lib/eventSync";
 import {
   useEvents,
   useCharacters,
@@ -206,80 +207,10 @@ export default function ChapterPage() {
 
     const eventPayloadsToSync: { eventId: string; payloadStr: string }[] = [];
     
-    // Helper function to sync an event's characters and chapter links based on current world state
-    const computeEventSync = (eventId: string) => {
-      const eIdx = appStore.books[bookIdx].events.get().findIndex(e => e.id === eventId);
-      if (eIdx < 0) return;
-      const ev = appStore.books[bookIdx].events[eIdx];
-      const currentEvChars = ev.characters.get() || [];
-      const currentEvChapters = ev.chapters.get() || [];
-      let modified = false;
-
-      // 1. Compute expected characters and chapters for this event
-      const allChapters = appStore.books[bookIdx].chapters.get();
-      const expectedChars = new Set<string>();
-      const expectedChapters = new Set<string>();
-
-      allChapters.forEach(c => {
-        // If this is the chapter being saved, use the NEW data
-        const isCurrentChapter = c.id === id;
-        const cTimeRef = isCurrentChapter ? data.timeRef : c.timeRef;
-        const cPinnedChars = isCurrentChapter ? data.pinnedChars : c.pinnedChars;
-
-        if (cTimeRef === eventId) {
-          expectedChapters.add(c.id);
-          if (cPinnedChars) {
-            cPinnedChars.forEach(cid => expectedChars.add(cid));
-          }
-        }
-      });
-
-      // 2. Resolve characters
-      const nextEvChars: string[] = [];
-      currentEvChars.forEach(cid => {
-        if (expectedChars.has(cid)) {
-          nextEvChars.push(cid);
-        } else {
-          // Check for meaningful manual attributes before auto-removing
-          const attrs = appStore.books[bookIdx].characters.get().find(c => c.id === cid)?.attributes?.[eventId];
-          const hasMeaningfulAttrs = attrs && Object.values(attrs).some(v => v !== "" && v !== undefined && v !== null);
-          if (hasMeaningfulAttrs) {
-            nextEvChars.push(cid);
-          } else {
-            modified = true;
-          }
-        }
-      });
-      expectedChars.forEach(cid => {
-        if (!nextEvChars.includes(cid)) {
-          nextEvChars.push(cid);
-          modified = true;
-        }
-      });
-
-      // 3. Resolve chapters
-      const nextEvChapters: string[] = [];
-      currentEvChapters.forEach(cid => {
-        if (expectedChapters.has(cid)) {
-          nextEvChapters.push(cid);
-        } else {
-          modified = true;
-        }
-      });
-      expectedChapters.forEach(cid => {
-        if (!nextEvChapters.includes(cid)) {
-          nextEvChapters.push(cid);
-          modified = true;
-        }
-      });
-
-      if (modified) {
-        ev.characters.set(nextEvChars);
-        ev.chapters.set(nextEvChapters);
-        eventPayloadsToSync.push({
-          eventId: ev.id.get(),
-          payloadStr: JSON.stringify(ev.get(), null, 2),
-        });
+    const processEventSync = (eventId: string) => {
+      const syncPayload = computeEventSync(bookIdx, eventId, id, data.timeRef, data.pinnedChars);
+      if (syncPayload) {
+        eventPayloadsToSync.push(syncPayload);
       }
     };
 
@@ -295,7 +226,7 @@ export default function ChapterPage() {
     const oldPinnedEvents = ch.pinnedEventIds.get() || [];
     oldPinnedEvents.forEach(eid => eventsToSync.add(eid));
 
-    eventsToSync.forEach(eid => computeEventSync(eid));
+    eventsToSync.forEach(eid => processEventSync(eid));
 
     // Background delta sync
     const token =

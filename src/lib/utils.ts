@@ -263,10 +263,7 @@ export const mkTreasure = () => ({
 });
 
 // ── Styles using CSS variables ─────────────────────────────────────────────
-const S: Record<
-  string,
-  React.CSSProperties | Record<string, React.CSSProperties>
-> = {
+const S = {
   app: {
     display: "flex",
     flexDirection: "column",
@@ -343,6 +340,27 @@ const S: Record<
     color: "var(--text-primary)",
     cursor: "pointer",
   },
+  button: {
+    padding: "6px 16px",
+    borderRadius: 4,
+    border: "none",
+    cursor: "pointer",
+    background: "var(--bg-panel)",
+    color: "var(--text-primary)",
+  },
+  addBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    fontSize: 12,
+    color: "var(--color-blue)",
+    background: "transparent",
+    border: "1px dashed var(--color-blue)",
+    borderRadius: 4,
+    padding: "8px 12px",
+    cursor: "pointer",
+  },
   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 40px" },
   grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 28px" },
   grid4: {
@@ -386,6 +404,6 @@ const S: Record<
     borderTop: "1px solid var(--border)",
     margin: "20px 0",
   },
-};
+} satisfies Record<string, React.CSSProperties>;
 
 export { S };

@@ -29,7 +29,7 @@ import {
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { animate } from "animejs";
-import { useTheme } from "./hooks/useThemeHook";
+import { useTheme } from "./hooks/useTheme";
 import { syncToGitHub, loadBookFromGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
 import type { Chapter } from "./store/appStore";

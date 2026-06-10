@@ -4,7 +4,7 @@ import { appStore, mkBook } from "../store/appStore";
 import { S } from "../lib/utils";
 import { AutoStoriesIcon, AddIcon, LightModeIcon, DarkModeIcon, CloseIcon } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
-import { useTheme } from "../hooks/useThemeHook";
+import { useTheme } from "../hooks/useTheme";
 import { useBooks, useActiveBookId } from "../hooks/useWorldStore";
 import { syncToGitHub, loadFromGitHub } from "../lib/githubSync";
 import { showToast } from "../store/toastStore";
@@ -24,10 +24,11 @@ export default function BookListPage() {
   const [isLoadingBooks, setIsLoadingBooks] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+
   useEffect(() => {
     let cancelled = false;
     const loadBooks = async () => {
-      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
       if (token) {
         const currentBooks = appStore.books.get();
         const isFirstLoad = !currentBooks || currentBooks.length === 0;
@@ -71,7 +72,7 @@ export default function BookListPage() {
     };
     loadBooks();
     return () => { cancelled = true; };
-  }, []); // Only run exactly once when BookListPage mounts
+  }, [token]); // Re-run if token changes
 
   const confirmCreateBook = async () => {
     const title = newBookTitle.trim();

@@ -23,6 +23,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
   const [query, setQuery] = useState("");
   const [replaceStr, setReplaceStr] = useState("");
   const [isReplacing, setIsReplacing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const rawCharacters = useCharacters();
   const rawEvents = useEvents();
@@ -101,10 +102,13 @@ export function GlobalSearchModal({ open, onClose }: Props) {
     return hits;
   }, [query, characters, events, chapters, bookIdx]);
 
-  const handleReplaceAll = () => {
+  const handleReplaceClick = () => {
     if (!query || !replaceStr) return;
-    if (!confirm(`Are you sure you want to replace all occurrences of "${query}" with "${replaceStr}" across the entire loaded book?`)) return;
+    setShowConfirm(true);
+  };
 
+  const executeReplaceAll = () => {
+    setShowConfirm(false);
     setIsReplacing(true);
     try {
       const bookData = appStore.books[bookIdx].get();
@@ -189,13 +193,21 @@ export function GlobalSearchModal({ open, onClose }: Props) {
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <button style={S.ghost} onClick={onClose}>Cancel</button>
-          <button 
-            style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} 
-            onClick={handleReplaceAll}
-            disabled={!query || !replaceStr || isReplacing}
-          >
-            {isReplacing ? "Replacing..." : "Replace All"}
-          </button>
+          {!showConfirm ? (
+            <button 
+              style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} 
+              onClick={handleReplaceClick}
+              disabled={!query || !replaceStr || isReplacing}
+            >
+              {isReplacing ? "Replacing..." : "Replace All"}
+            </button>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-panel)", padding: "4px 8px", borderRadius: 4, border: "1px solid var(--color-red)" }}>
+              <span style={{ fontSize: 12, color: "var(--color-red)" }}>Are you sure?</span>
+              <button style={{ ...S.ghost, color: "var(--text-muted)" }} onClick={() => setShowConfirm(false)}>No</button>
+              <button style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} onClick={executeReplaceAll}>Yes, replace all</button>
+            </div>
+          )}
         </div>
 
         <div style={{ maxHeight: 300, overflowY: "auto", borderTop: "1px solid var(--border)", paddingTop: 10 }}>

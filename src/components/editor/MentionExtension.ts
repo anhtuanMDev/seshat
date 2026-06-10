@@ -389,6 +389,10 @@ export const Mention = Extension.create<MentionOptions, {}>({
           },
           destroy() {
             hidePopup();
+            if (popupEl && popupEl.parentNode) {
+              popupEl.parentNode.removeChild(popupEl);
+              popupEl = null;
+            }
           },
         };
       },

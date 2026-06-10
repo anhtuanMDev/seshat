@@ -1,6 +1,8 @@
 import { S } from "../../lib/utils";
 import { AddIcon, HistoryIcon } from "../ui/icons";
 import type { Draft } from "../../lib/types";
+import { useState } from "react";
+import { Modal } from "../ui/Modal";
 
 interface DraftsPanelProps {
   drafts: Draft[];
@@ -9,16 +11,31 @@ interface DraftsPanelProps {
 }
 
 export function DraftsPanel({ drafts, onSaveAsDraft, onRestoreDraft }: DraftsPanelProps) {
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [draftName, setDraftName] = useState("");
+  const [draftToRestore, setDraftToRestore] = useState<Draft | null>(null);
+
   const handleSave = () => {
-    const name = prompt("Name this draft (e.g., 'First Draft', 'Editor Polish'):", `Draft ${drafts.length + 1}`);
-    if (name) {
-      onSaveAsDraft(name);
+    setDraftName(`Draft ${drafts.length + 1}`);
+    setShowSaveModal(true);
+  };
+
+  const confirmSave = () => {
+    if (draftName.trim()) {
+      onSaveAsDraft(draftName.trim());
+      setShowSaveModal(false);
+      setDraftName("");
     }
   };
 
   const handleRestore = (draft: Draft) => {
-    if (window.confirm(`Are you sure you want to restore '${draft.name}'? Your current unsaved text will be replaced. You can save it as a draft first if you want to keep it.`)) {
-      onRestoreDraft(draft);
+    setDraftToRestore(draft);
+  };
+
+  const confirmRestore = () => {
+    if (draftToRestore) {
+      onRestoreDraft(draftToRestore);
+      setDraftToRestore(null);
     }
   };
 
@@ -75,6 +92,43 @@ export function DraftsPanel({ drafts, onSaveAsDraft, onRestoreDraft }: DraftsPan
           </div>
         ))}
       </div>
+
+      {showSaveModal && (
+        <Modal title="Save Draft" onClose={() => setShowSaveModal(false)}>
+          <div style={{ padding: "0 24px 24px" }}>
+            <p style={{ ...S.dim, marginBottom: 16 }}>
+              Name this draft (e.g., 'First Draft', 'Editor Polish'):
+            </p>
+            <input
+              autoFocus
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmSave();
+              }}
+              style={{ ...S.input, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, marginBottom: 24 }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button onClick={() => setShowSaveModal(false)} style={{ ...S.ghost, padding: "6px 16px" }}>Cancel</button>
+              <button onClick={confirmSave} disabled={!draftName.trim()} style={{ ...S.pill, background: "var(--color-blue)", color: "#fff", border: "none", padding: "6px 20px" }}>Save</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {draftToRestore && (
+        <Modal title="Restore Draft" onClose={() => setDraftToRestore(null)}>
+          <div style={{ padding: "0 24px 24px" }}>
+            <p style={{ ...S.dim, marginBottom: 24 }}>
+              Are you sure you want to restore '{draftToRestore.name}'? Your current unsaved text will be replaced. You can save it as a draft first if you want to keep it.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button onClick={() => setDraftToRestore(null)} style={{ ...S.ghost, padding: "6px 16px" }}>Cancel</button>
+              <button onClick={confirmRestore} style={{ ...S.pill, background: "var(--color-red)", color: "#fff", border: "none", padding: "6px 20px" }}>Restore</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
