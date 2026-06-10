@@ -47,7 +47,6 @@ html {
 
 .MuiInputLabel-root {
   color: var(--mui-label-color) !important;
-  margin-bottom: 4px !important;
 }
 
 .MuiInputBase-input {

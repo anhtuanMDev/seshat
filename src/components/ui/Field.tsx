@@ -7,12 +7,12 @@ import type { Control, FieldValues, Path } from "react-hook-form";
 const StyledTextField = styled(TextField)(() => ({
   width: "100%",
   marginBottom: 16,
-  "& .MuiInputBase-root": {
+  "& .MuiFilledInput-root": {
     fontFamily: "Georgia, serif",
     fontSize: 14,
     color: "var(--mui-text-color)",
-    background: "transparent",
-    "&:before": { borderBottomColor: "var(--mui-input-before)" },
+    background: "var(--bg-active)",
+    "&:before": { borderBottomColor: "var(--border)" },
     "&:after": { borderBottomColor: "var(--mui-input-before)" },
     "&:hover:not(.Mui-disabled):before": {
       borderBottomColor: "var(--mui-input-before)",
@@ -52,17 +52,18 @@ function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "",
   const isDate = type === "date" || type === "datetime-local";
   const shrink = isDate || InputLabelProps?.shrink;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const StyledField = StyledTextField as any;
 
   return (
     <StyledField
       label={label}
       value={value ?? ""}
-      onChange={(e: any) => onChange?.(e.target.value)}
+      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange?.(e.target.value)}
       multiline={multi}
       minRows={multi ? rows : undefined}
       placeholder={placeholder}
-      variant="standard"
+      variant="filled"
       fullWidth
       type={type}
       InputLabelProps={{ ...InputLabelProps, shrink: shrink ? true : undefined }}

@@ -6,12 +6,12 @@ import type { Control, FieldValues, Path } from "react-hook-form";
 const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
   marginBottom: 16,
-  "& .MuiInputBase-root": {
+  "& .MuiFilledInput-root": {
     fontFamily: "Georgia, serif",
     fontSize: 13,
     color: "var(--mui-text-color)",
-    background: "transparent",
-    "&:before": { borderBottomColor: "var(--mui-input-before)" },
+    background: "var(--bg-active)",
+    "&:before": { borderBottomColor: "var(--border)" },
     "&:hover:not(.Mui-disabled):before": {
       borderBottomColor: "var(--mui-input-before)",
     },
@@ -47,7 +47,7 @@ type SelInnerProps = Omit<SelProps<FieldValues>, "control" | "name">;
 function SelInner({ label, value, onChange, opts = [], options }: SelInnerProps) {
   const finalOptions = options || opts.map((o) => ({ label: o, value: o }));
   return (
-    <StyledFormControl variant="standard">
+    <StyledFormControl variant="filled">
       {label && <InputLabel shrink={true}>{label}</InputLabel>}
       <Select
         displayEmpty

@@ -361,8 +361,8 @@ const S = {
     padding: "8px 12px",
     cursor: "pointer",
   },
-  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 40px" },
-  grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 28px" },
+  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" },
+  grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 16px" },
   grid4: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr 1fr",
