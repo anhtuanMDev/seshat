@@ -28,40 +28,20 @@ export function CharacterAttrsBlock({
   const getAttr = (cid: string) => charAttrs[cid] || {};
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editModalCid, setEditModalCid] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
 
   // Auto-expand if only one character is selected
   const activeExpandedId = expandedId || (selectedIds.length === 1 ? selectedIds[0] : null);
 
   return (
     <Section title={<><PeopleAltIcon sx={{ fontSize: 12, marginRight: 4 }} />Characters present</>}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 8,
-          marginBottom: 20,
-        }}
-      >
-        {characters.map((c: Character) => {
-          const active = selectedIds.includes(c.id);
-          return (
-            <button
-              key={c.id}
-              onClick={() => onToggle(c.id)}
-              style={{
-                ...S.pill,
-                color: active ? c.color : "var(--text-muted)",
-                borderColor: active ? c.color : "var(--border)",
-                fontFamily: "'Georgia', serif",
-              }}
-            >
-              {c.name}
-            </button>
-          );
-        })}
-        {!characters.length && (
-          <span style={S.dim}>Add characters first.</span>
-        )}
+      <div style={{ marginBottom: 16 }}>
+        <button
+          onClick={() => setShowPicker(true)}
+          style={{ ...S.addBtn, padding: "6px 12px", borderStyle: "solid" }}
+        >
+          Manage Characters in Scene
+        </button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -260,6 +240,44 @@ export function CharacterAttrsBlock({
           </Modal>
         );
       })()}
+
+      {showPicker && (
+        <Modal
+          title="Select Characters in Scene"
+          onClose={() => setShowPicker(false)}
+          footer={
+            <button style={S.button} onClick={() => setShowPicker(false)}>
+              Done
+            </button>
+          }
+        >
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
+            {characters.map((c: Character) => {
+              const active = selectedIds.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => onToggle(c.id)}
+                  style={{
+                    ...S.pill,
+                    color: active ? c.color : "var(--text-muted)",
+                    borderColor: active ? c.color : "var(--border)",
+                    background: active ? `${c.color}10` : "transparent",
+                    fontFamily: "'Georgia', serif",
+                    fontSize: 14,
+                    padding: "8px 16px",
+                  }}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+            {!characters.length && (
+              <span style={S.dim}>No characters created in this book yet.</span>
+            )}
+          </div>
+        </Modal>
+      )}
     </Section>
   );
 }
