@@ -64,7 +64,7 @@ export default function TimelinePage() {
           <TimelineIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
-              fontSize: 13,
+              fontSize: 11,
               letterSpacing: 3,
               textTransform: "uppercase",
               color: "var(--text-secondary)",
@@ -231,7 +231,7 @@ function EventCard({
         if (card) {
           card.style.background = "var(--bg-hover)";
           card.style.borderColor = "var(--border)";
-          card.style.transform = "translateY(-1px)";
+          card.style.transform = "translateY(-2px)";
           card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
         }
         if (node) {
@@ -270,8 +270,8 @@ function EventCard({
         <div
           className="event-node"
           style={{
-            width: 30,
-            height: 30,
+            width: 36,
+            height: 36,
             borderRadius: "50%",
             background: "var(--bg-app)",
             border: `2px solid ${typeColor}`,
@@ -303,7 +303,7 @@ function EventCard({
         className="event-card-inner"
         style={{
           flex: 1,
-          padding: "16px 20px",
+          padding: "20px 24px",
           background: "var(--bg-entry)",
           borderRadius: "8px",
           border: "1px solid transparent",
@@ -326,7 +326,7 @@ function EventCard({
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span
               style={{
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: 500,
                 color: "var(--text-primary)",
                 letterSpacing: 0.2,
@@ -342,7 +342,7 @@ function EventCard({
                 textTransform: "uppercase",
                 color: typeColor,
                 background: `${typeColor}15`,
-                padding: "2px 8px",
+                padding: "3px 10px",
                 borderRadius: "12px",
                 border: `1px solid ${typeColor}33`,
               }}

@@ -29,8 +29,8 @@ export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, name
       </div>
       <div
         style={{
-          height: 24,
-          borderRadius: 2,
+          height: 32,
+          borderRadius: 4,
           overflow: "hidden",
           display: "flex",
           background: "var(--bg-active)",
@@ -63,9 +63,12 @@ export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, name
         ) : (
           <span
             style={{
-              fontSize: 13,
+              fontSize: 12,
               color: pctA > pctB ? colA : colB,
               fontWeight: 500,
+              background: "var(--bg-status)",
+              padding: "4px 12px",
+              borderRadius: 20,
             }}
           >
             {pctA > pctB ? nameA : nameB} has the edge (

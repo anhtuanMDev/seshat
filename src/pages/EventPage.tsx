@@ -239,7 +239,7 @@ export default function EventPage() {
           {...register("title")}
           style={{
             ...S.input,
-            fontSize: 22,
+            fontSize: 28,
             border: "none",
             padding: 0,
             flex: 1,

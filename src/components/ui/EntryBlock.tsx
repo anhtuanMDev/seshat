@@ -12,9 +12,10 @@ export function EntryBlock({ color, onDelete, children }: EntryBlockProps) {
     <div
       style={{
         marginBottom: 24,
-        paddingLeft: 14,
-        borderLeft: `2px solid ${color || "var(--border)"}`,
-        background: "var(--bg-entry)",
+        padding: "16px 20px",
+        borderLeft: `3px solid ${color || "var(--border)"}`,
+        background: "var(--bg-status)",
+        borderRadius: "0 4px 4px 0",
       }}
     >
       <div

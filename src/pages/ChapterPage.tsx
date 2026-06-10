@@ -540,7 +540,7 @@ export default function ChapterPage() {
               placeholder="Chapter title…"
               style={{
                 ...S.input,
-                fontSize: 26,
+                fontSize: 28,
                 fontWeight: 400,
                 border: "none",
                 padding: 0,

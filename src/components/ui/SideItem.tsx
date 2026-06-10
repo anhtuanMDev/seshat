@@ -29,21 +29,18 @@ export function SideItem({
       style={{
         padding: "8px 24px",
         cursor: "pointer",
-        background: active
-          ? "var(--bg-active)"
-          : hover
-            ? "var(--bg-hover)"
-            : "transparent",
+        background: hover ? "var(--bg-hover)" : "transparent",
+        borderLeft: active ? `2px solid ${color || "var(--color-purple)"}` : "2px solid transparent",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        transition: "background 0.1s",
+        transition: "background 0.1s, border-left 0.1s",
       }}
     >
       <div style={{ minWidth: 0 }}>
         <div
           style={{
-            fontSize: 13,
+            fontSize: 14,
             color: color || "var(--text-primary)",
             display: "flex",
             alignItems: "center",
@@ -76,7 +73,7 @@ export function SideItem({
           <div
             style={{
               color: "var(--text-secondary)",
-              fontSize: 12,
+              fontSize: 13,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",

@@ -334,7 +334,7 @@ export default function CharacterPage() {
             {...register("name")}
             style={{
               ...S.input,
-              fontSize: 24,
+              fontSize: 28,
               border: "none",
               padding: 0,
               flex: 1,
@@ -1173,11 +1173,13 @@ function ArrayItemCard({
         display: "flex",
         alignItems: "center",
         gap: 0,
-        borderLeft: `2px solid ${color}`,
+        border: `1px solid ${hover ? "var(--border-field)" : "var(--border)"}`,
+        borderLeft: `3px solid ${color}`,
         background: hover ? "var(--bg-hover)" : "var(--bg-entry)",
-        transition: "background 0.1s",
+        boxShadow: hover ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
+        transition: "background 0.1s, border 0.1s, box-shadow 0.1s",
         cursor: "pointer",
-        borderRadius: "0 2px 2px 0",
+        borderRadius: "4px",
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -1245,7 +1247,7 @@ function ArrayItemCard({
           gap: 2,
           padding: "0 12px",
           opacity: hover ? 1 : 0,
-          transition: "opacity 0.1s",
+          transition: "opacity 0.15s",
         }}
       >
         <button

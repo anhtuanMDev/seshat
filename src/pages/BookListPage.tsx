@@ -195,9 +195,9 @@ export default function BookListPage() {
         </button>
       </div>
 
-      <AutoStoriesIcon sx={{ fontSize: 40, marginBottom: 8, color: "var(--text-logo)" }} />
-      <h1 style={{ fontSize: 18, letterSpacing: 6, textTransform: "uppercase", color: "var(--text-logo)", margin: "0 0 4px", fontWeight: 400 }}>Seshat</h1>
-      <p style={{ ...S.dim, marginBottom: 32 }}>World-building for writers and game designers</p>
+      <AutoStoriesIcon sx={{ fontSize: 48, marginBottom: 8, color: "var(--text-logo)" }} />
+      <h1 style={{ fontSize: 22, letterSpacing: 8, textTransform: "uppercase", color: "var(--text-logo)", margin: "0 0 4px", fontWeight: 400 }}>Seshat</h1>
+      <p style={{ color: "var(--text-secondary)", fontSize: 15, marginBottom: 32 }}>World-building for writers and game designers</p>
 
       {isLoadingBooks ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 24 }}>
@@ -207,7 +207,7 @@ export default function BookListPage() {
       ) : books.length === 0 ? (
         <div style={{ textAlign: "center" }}>
           <p style={{ ...S.dim, fontStyle: "italic", marginBottom: 20 }}>No books yet. Create one to get started.</p>
-          <button onClick={() => setShowCreateModal(true)} style={{ ...S.pill, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, padding: "8px 20px" }}>
+          <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-purple)", color: "#fff", border: "none", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
             <AddIcon sx={{ fontSize: 16 }} />
             New book
           </button>
@@ -216,7 +216,7 @@ export default function BookListPage() {
         <div style={{ width: "100%", maxWidth: 480 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <p style={{ ...S.h2, margin: 0 }}>My books</p>
-            <button onClick={() => setShowCreateModal(true)} style={{ ...S.ghost, display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+            <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-purple)", color: "#fff", border: "none", borderRadius: 20, display: "flex", alignItems: "center", gap: 4, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
               <AddIcon sx={{ fontSize: 14 }} />
               New book
             </button>
@@ -236,15 +236,21 @@ export default function BookListPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "12px 16px",
+                    padding: "16px 20px",
                     border: "1px solid var(--border)",
-                    borderRadius: 6,
+                    borderRadius: 8,
                     cursor: "pointer",
                     background: "var(--bg-main)",
-                    transition: "border-color 0.15s",
+                    transition: "border-color 0.15s, box-shadow 0.15s",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--text-secondary)"}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--text-secondary)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
                 >
                   {editingId === book.id ? (
                     <input

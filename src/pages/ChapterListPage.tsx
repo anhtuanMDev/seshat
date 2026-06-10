@@ -5,7 +5,7 @@ import { S, uid } from "../lib/utils";
 import { AutoStoriesIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import type { Chapter } from "../store/appStore";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 export default function ChapterListPage() {
   const { bookId } = useParams();
@@ -55,7 +55,7 @@ export default function ChapterListPage() {
           <AutoStoriesIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
-              fontSize: 13,
+              fontSize: 11,
               letterSpacing: 3,
               textTransform: "uppercase",
               color: "var(--text-secondary)",
@@ -130,6 +130,7 @@ function ChapterCard({
   chapter: Chapter;
   onClick: () => void;
 }) {
+  const [hover, setHover] = useState(false);
   const wordCount = c.body?.trim() ? c.body.trim().split(/\s+/).length : 0;
 
   return (
@@ -141,27 +142,12 @@ function ChapterCard({
         position: "relative",
         transition: "all 0.2s ease",
         borderBottom: "1px solid var(--border)",
+        borderLeft: `3px solid var(--color-purple)`,
+        borderLeftColor: hover ? "var(--color-purple)" : "color-mix(in srgb, var(--color-purple) 40%, transparent)",
+        background: hover ? "var(--bg-hover)" : "transparent",
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--bg-hover)";
-        const connector = e.currentTarget.querySelector(".toc-connector") as HTMLElement;
-        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
-        if (connector) connector.style.opacity = "0.8";
-        if (arrow) {
-          arrow.style.opacity = "1";
-          arrow.style.transform = "translateY(-50%) translateX(0)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
-        const connector = e.currentTarget.querySelector(".toc-connector") as HTMLElement;
-        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
-        if (connector) connector.style.opacity = "0.3";
-        if (arrow) {
-          arrow.style.opacity = "0";
-          arrow.style.transform = "translateY(-50%) translateX(-8px)";
-        }
-      }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
     >
       <div style={{ display: "flex", alignItems: "center" }}>
         {/* Chapter Number Column */}
@@ -188,7 +174,7 @@ function ChapterCard({
         <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
           <span
             style={{
-              fontSize: 17,
+              fontSize: 14,
               color: c.title ? "var(--text-primary)" : "var(--text-muted)",
               fontStyle: c.title ? "normal" : "italic",
               letterSpacing: 0.3,
@@ -221,7 +207,7 @@ function ChapterCard({
               flex: 1,
               borderBottom: "1px dotted var(--text-muted)",
               margin: "0 16px",
-              opacity: 0.3,
+              opacity: hover ? 0.8 : 0.3,
               transition: "opacity 0.2s ease",
             }}
           />
@@ -232,10 +218,12 @@ function ChapterCard({
                 fontSize: 12,
                 color: "var(--text-muted)",
                 fontVariantNumeric: "tabular-nums",
-                letterSpacing: 0.5,
+                background: "var(--bg-active)",
+                padding: "2px 8px",
+                borderRadius: "12px",
               }}
             >
-              {wordCount >= 1000 ? `${(wordCount / 1000).toFixed(1)}k` : wordCount} w
+              {wordCount >= 1000 ? `${(wordCount / 1000).toFixed(1)}k` : wordCount}
             </span>
           )}
         </div>
@@ -264,10 +252,10 @@ function ChapterCard({
           position: "absolute",
           right: 24,
           top: "50%",
-          transform: "translateY(-50%) translateX(-8px)",
+          transform: hover ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(-8px)",
           fontSize: 14,
           color: "var(--color-purple)",
-          opacity: 0,
+          opacity: hover ? 1 : 0,
           transition: "all 0.2s ease",
         }}
       >

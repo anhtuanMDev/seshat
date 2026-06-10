@@ -77,7 +77,7 @@ export default function CharacterListPage() {
           <PeopleIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
-              fontSize: 13,
+              fontSize: 11,
               letterSpacing: 3,
               textTransform: "uppercase",
               color: "var(--text-secondary)",
@@ -398,7 +398,7 @@ function CharacterCard({
         >
           <span
             style={{
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: 500,
               color: "var(--text-primary)",
               letterSpacing: 0.2,

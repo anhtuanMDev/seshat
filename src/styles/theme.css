@@ -53,13 +53,13 @@
 [data-theme="dark"] {
   /* Backgrounds */
   --bg-app:        #12110f;
-  --bg-side:       #16150d;
+  --bg-side:       #1c1a14;
   --bg-main:       #12110f;
   --bg-top:        #16150d;
-  --bg-active:     #1e1c16;
-  --bg-hover:      #1a1915;
+  --bg-active:     #252318;
+  --bg-hover:      #201e18;
   --bg-entry:      #12110f;
-  --bg-status:     #1e1c16;
+  --bg-status:     #252318;
   --bg-export:     rgba(12,11,9,0.96);
   --bg-export-ta:  #1a1915;
   --bg-field:      transparent;

@@ -311,10 +311,10 @@ export default function App() {
 
   const navBtnStyle = (active: boolean) => ({
     ...S.ghost,
-    fontSize: 14,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase" as const,
-    color: active ? "var(--text-primary)" : "var(--text-secondary)",
+    color: active ? "var(--text-primary)" : "var(--text-muted)",
     fontFamily: "'Georgia', serif",
   });
 
@@ -412,7 +412,7 @@ export default function App() {
             }}
           >
             <CloudSyncIcon sx={{ fontSize: 14 }} />
-            <span className="seshat-desktop-only">
+            <span className="seshat-sync-text seshat-desktop-only">
               {isSyncing ? "Syncing..." : "Sync"}
             </span>
           </button>
@@ -546,7 +546,7 @@ export default function App() {
             style={{
               height: 1,
               background: "var(--border)",
-              margin: "4px 0 10px",
+              margin: "12px 0 20px",
             }}
           />
 
@@ -673,7 +673,7 @@ export default function App() {
             style={{
               height: 1,
               background: "var(--border)",
-              margin: "12px 0 10px",
+              margin: "12px 0 20px",
             }}
           />
 

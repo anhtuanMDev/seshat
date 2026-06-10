@@ -55,7 +55,17 @@ export function Section({
         </GhostButton>
         {open && action}
       </div>
-      {open && <div>{children}</div>}
+      <div
+        style={{
+          opacity: open ? 1 : 0,
+          transform: open ? "translateY(0)" : "translateY(-10px)",
+          maxHeight: open ? 2000 : 0,
+          overflow: "hidden",
+          transition: `opacity 0.2s ease, transform 0.2s ease, max-height ${open ? "0.25s ease-in" : "0.2s ease-out"}`,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
