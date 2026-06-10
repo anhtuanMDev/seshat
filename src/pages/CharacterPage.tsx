@@ -407,24 +407,27 @@ export default function CharacterPage() {
         </button>
       </Section>
 
-      {/* ── Identity ── */}
+      {/* ── Primary Identity ── */}
       <Section
         title={
           <>
             <BadgeIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Identity
+            Primary Identity
           </>
         }
       >
+        <p style={{ ...S.dim, marginBottom: 12 }}>
+          Core defining roles. These can be overridden for specific events in the timeline above as the character evolves.
+        </p>
         <div style={S.grid2} className="seshat-grid2">
           <Field
-            label="Role in story"
+            label="Primary role in story"
             name="role"
             control={control}
             placeholder="Protagonist, mentor…"
           />
           <Field
-            label="Archetype"
+            label="Primary archetype"
             name="archetype"
             control={control}
             placeholder="The trickster…"

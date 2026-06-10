@@ -94,6 +94,8 @@ export interface StatusEntry {
   endDate: string;
   power: string;
   arcStage: string;
+  role?: string;
+  archetype?: string;
   emotionalState: string;
   physicalState: string;
   note: string;

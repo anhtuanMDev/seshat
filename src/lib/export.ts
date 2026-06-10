@@ -141,6 +141,8 @@ export function buildExport(state: ExportState): string {
         L.push(`    ${label}${dateTag ? `  (${dateTag})` : ""}`);
         if (s.power) L.push(`      Power tier: ${s.power}`);
         if (s.arcStage) L.push(`      Arc stage: ${s.arcStage}`);
+        if (s.role) L.push(`      Role: ${s.role}`);
+        if (s.archetype) L.push(`      Archetype: ${s.archetype}`);
         if (s.emotionalState) L.push(`      Emotional state: ${s.emotionalState}`);
         if (s.physicalState) L.push(`      Physical state: ${s.physicalState}`);
         if (s.note) L.push(`      Note: ${s.note}`);

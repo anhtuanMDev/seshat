@@ -161,6 +161,35 @@ export function CharStatusPanel({
               </div>
             </div>
 
+            {/* ── Identity ── */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "6px 12px",
+                marginBottom: 8,
+              }}
+            >
+              <div>
+                <label style={S.label}>Role in story</label>
+                <input
+                  value={entry.role || ""}
+                  onChange={(e) => patch(entry.id, "role", e.target.value)}
+                  placeholder="Protagonist, mentor…"
+                  style={S.input}
+                />
+              </div>
+              <div>
+                <label style={S.label}>Archetype</label>
+                <input
+                  value={entry.archetype || ""}
+                  onChange={(e) => patch(entry.id, "archetype", e.target.value)}
+                  placeholder="The trickster…"
+                  style={S.input}
+                />
+              </div>
+            </div>
+
             {/* ── Power / Arc / Emotional / Physical ── */}
             <div
               style={{

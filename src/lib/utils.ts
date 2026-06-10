@@ -50,6 +50,8 @@ export const mkStatusEntry = (): StatusEntry => ({
   endDate: "",
   power: "",
   arcStage: "",
+  role: "",
+  archetype: "",
   emotionalState: "",
   physicalState: "",
   note: "",
