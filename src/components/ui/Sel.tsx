@@ -48,8 +48,9 @@ function SelInner({ label, value, onChange, opts = [], options }: SelInnerProps)
   const finalOptions = options || opts.map((o) => ({ label: o, value: o }));
   return (
     <StyledFormControl variant="standard">
-      {label && <InputLabel>{label}</InputLabel>}
+      {label && <InputLabel shrink={true}>{label}</InputLabel>}
       <Select
+        displayEmpty
         value={value ?? ""}
         onChange={(e) => onChange?.(e.target.value as string)}
         label={label}

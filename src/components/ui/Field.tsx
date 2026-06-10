@@ -43,21 +43,29 @@ interface FieldProps<T extends FieldValues = FieldValues> extends Omit<
   multi?: boolean;
   rows?: number;
   InputProps?: Partial<import("@mui/material").InputProps>;
+  InputLabelProps?: Partial<import("@mui/material").InputLabelProps>;
 }
 
 type FieldInnerProps = Omit<FieldProps<FieldValues>, "control" | "name">;
 
-function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "", ...props }: FieldInnerProps) {
+function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "", type, InputLabelProps, ...props }: FieldInnerProps & { type?: string }) {
+  const isDate = type === "date" || type === "datetime-local";
+  const shrink = isDate || InputLabelProps?.shrink;
+
+  const StyledField = StyledTextField as any;
+
   return (
-    <StyledTextField
+    <StyledField
       label={label}
       value={value ?? ""}
-      onChange={(e) => onChange?.(e.target.value)}
+      onChange={(e: any) => onChange?.(e.target.value)}
       multiline={multi}
       minRows={multi ? rows : undefined}
       placeholder={placeholder}
       variant="standard"
       fullWidth
+      type={type}
+      InputLabelProps={{ ...InputLabelProps, shrink: shrink ? true : undefined }}
       {...props}
     />
   );

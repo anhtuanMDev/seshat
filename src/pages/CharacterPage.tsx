@@ -9,7 +9,7 @@ import { TraumaBlock } from "../components/character/TraumaBlock";
 import { RelationshipBlock } from "../components/character/RelationshipBlock";
 import type { CharacterForm } from "../components/character/types";
 import { Field, Section } from "../components/ui";
-import { CharStatusPanel } from "../components/ui/CharStatusPanel";
+import { StatusBlock } from "../components/character/StatusBlock";
 import { Modal } from "../components/ui/Modal";
 import {
   AddIcon,
@@ -60,6 +60,7 @@ type ModalKind =
   | { type: "achievement"; idx: number | null; isNew?: boolean }
   | { type: "loss"; idx: number | null; isNew?: boolean }
   | { type: "relationship"; idx: number | null; isNew?: boolean }
+  | { type: "status"; idx: number | null; isNew?: boolean }
   | null;
 
 export default function CharacterPage() {
@@ -237,7 +238,7 @@ export default function CharacterPage() {
 
   // ── Array helpers ─────────────────────────────────────────────────────
   const openAdd = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status",
   ) => {
     const fieldMap = {
       trauma: "traumas" as const,
@@ -245,6 +246,7 @@ export default function CharacterPage() {
       achievement: "achievements" as const,
       loss: "losses" as const,
       relationship: "relationships" as const,
+      status: "statusTimeline" as const,
     };
     const mkMap = {
       trauma: mkTrauma,
@@ -252,6 +254,7 @@ export default function CharacterPage() {
       achievement: mkAchieve,
       loss: mkLoss,
       relationship: mkRel,
+      status: mkStatusEntry,
     };
     const current = getValues(fieldMap[type]);
     setValue(fieldMap[type], [...current, mkMap[type]()] as never);
@@ -259,14 +262,14 @@ export default function CharacterPage() {
   };
 
   const openEdit = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status",
     idx: number,
   ) => {
     setModal({ type, idx });
   };
 
   const delItem = (
-    type: "trauma" | "condition" | "achievement" | "loss" | "relationship",
+    type: "trauma" | "condition" | "achievement" | "loss" | "relationship" | "status",
     itemIdx: number,
   ) => {
     const fieldMap = {
@@ -275,6 +278,7 @@ export default function CharacterPage() {
       achievement: "achievements" as const,
       loss: "losses" as const,
       relationship: "relationships" as const,
+      status: "statusTimeline" as const,
     };
     const current = getValues(fieldMap[type]);
     setValue(
@@ -379,32 +383,68 @@ export default function CharacterPage() {
         title={
           <>
             <TimelineIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Status Timeline
+            Status Timeline ({statusTimeline.length})
           </>
         }
+        action={
+          <button
+            onClick={() => openAdd("status")}
+            style={{
+              ...S.ghost,
+              fontSize: 11,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <AddIcon sx={{ fontSize: 13 }} />
+            add
+          </button>
+        }
       >
-        <CharStatusPanel
-          statusTimeline={statusTimeline}
-          color={char.color}
-          events={events}
-          onChange={(entries) => setValue("statusTimeline", entries)}
-        />
-        <button
-          onClick={() =>
-            setValue("statusTimeline", [
-              ...getValues("statusTimeline"),
-              mkStatusEntry(),
-            ])
-          }
-          style={{
-            ...S.ghost,
-            fontSize: 12,
-            letterSpacing: 1,
-            color: "var(--text-secondary)",
-          }}
-        >
-          + add status entry
-        </button>
+        <p style={{ ...S.dim, marginBottom: 14 }}>
+          Track how their physical state, emotions, and roles shift over time and events.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {statusTimeline
+            .map((s, i) => ({ s, i }))
+            .sort((a, b) => {
+              const evA = events.find((e) => e.id === a.s.eventId);
+              const evB = events.find((e) => e.id === b.s.eventId);
+              return (evA?.time ?? 0) - (evB?.time ?? 0) || a.s.id.localeCompare(b.s.id);
+            })
+            .map(({ s, i }) => {
+              const ev = events.find((e) => e.id === s.eventId);
+              const dateTag = [s.startDate && s.startDate.replace("T", " "), s.endDate && `→ ${s.endDate.replace("T", " ")}`].filter(Boolean).join(" ");
+              const label = ev ? `T${ev.time} — ${ev.title}` : "Unknown Event";
+              
+              const title = `${label}${dateTag ? ` (${dateTag})` : ""}`;
+              const tags = [
+                s.power && `Power: ${s.power}`,
+                s.arcStage && `Arc: ${s.arcStage}`,
+                s.role && `Role: ${s.role}`,
+                s.archetype && `Archetype: ${s.archetype}`,
+                s.emotionalState && `Emotion: ${s.emotionalState}`,
+                s.physicalState && `Physical: ${s.physicalState}`,
+              ].filter(Boolean) as string[];
+
+              return (
+                <ArrayItemCard
+                  key={s.id}
+                  color={char.color}
+                  title={title}
+                  body={s.note}
+                  tags={tags}
+                  onEdit={() => openEdit("status", i)}
+                  onDelete={() => delItem("status", i)}
+                />
+              );
+            })}
+        </div>
+        {!statusTimeline.length && (
+          <p style={{ ...S.dim, fontStyle: "italic" }}>No status entries recorded.</p>
+        )}
       </Section>
 
       {/* ── Primary Identity ── */}
@@ -956,6 +996,38 @@ export default function CharacterPage() {
             onDelete={() => delItem("relationship", modal.idx!)}
             characters={allCharacters}
             currentCharacterId={char.id}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "status" && modal.idx !== null && (
+        <Modal
+          title="Status Entry"
+          onClose={handleCancelModal}
+          footer={
+            <button
+              onClick={handleSaveModal}
+              style={{
+                ...S.ghost,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: "var(--color-green)",
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <SaveIcon sx={{ fontSize: 12 }} />
+              done
+            </button>
+          }
+        >
+          <StatusBlock
+            control={control}
+            index={modal.idx}
+            color={char.color}
+            onDelete={() => delItem("status", modal.idx!)}
+            events={events}
           />
         </Modal>
       )}

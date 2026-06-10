@@ -39,7 +39,7 @@ interface EventPickerProps<T extends FieldValues = FieldValues> {
   events: Array<{ id: string; time: number; title: string }>;
   control?: Control<T>;
   name?: Path<T>;
-  sx?: any;
+  sx?: import("@mui/material").SxProps<import("@mui/material").Theme>;
 }
 
 type EventPickerInnerProps = Omit<EventPickerProps<FieldValues>, "control" | "name">;
@@ -47,7 +47,7 @@ type EventPickerInnerProps = Omit<EventPickerProps<FieldValues>, "control" | "na
 function EventPickerInner({ label, placeholder, value, onChange, events, sx }: EventPickerInnerProps) {
   return (
     <StyledFormControl variant="standard" sx={sx}>
-      {label && <InputLabel>{label}</InputLabel>}
+      {label && <InputLabel shrink={true}>{label}</InputLabel>}
       <Select
         value={value ?? ""}
         displayEmpty
