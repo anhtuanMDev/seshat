@@ -403,42 +403,6 @@ export default function App() {
           >
             <SearchIcon sx={{ fontSize: 20 }} />
           </button>
-          <button
-            onClick={() => setShowExport(true)}
-            style={{
-              ...S.ghost,
-              letterSpacing: 2,
-              fontSize: 15,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <FileDownloadIcon sx={{ fontSize: 14 }} />
-            <span className="seshat-desktop-only">Export for AI</span>
-          </button>
-          <button
-            onClick={() => navigate(`/book/${bookId}/fight`)}
-            style={{
-              ...S.ghost,
-              letterSpacing: 2,
-              fontSize: 15,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color:
-                location.pathname === `/book/${bookId}/fight`
-                  ? "var(--color-red)"
-                  : "var(--text-secondary)",
-              borderBottom:
-                location.pathname === `/book/${bookId}/fight`
-                  ? "1px solid var(--color-red)"
-                  : "none",
-            }}
-          >
-            <SportsKabaddiIcon sx={{ fontSize: 14 }} />
-            <span className="seshat-desktop-only">Fight</span>
-          </button>
 
           {/* More Menu Toggle */}
           <div style={{ position: "relative" }}>
@@ -474,6 +438,43 @@ export default function App() {
                   zIndex: 100,
                 }}
               >
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    navigate(`/book/${bookId}/fight`);
+                  }}
+                  style={{
+                    ...S.ghost,
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    padding: "8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: location.pathname === `/book/${bookId}/fight` ? "var(--color-red)" : "inherit",
+                  }}
+                >
+                  <SportsKabaddiIcon sx={{ fontSize: 14 }} />
+                  Fight Mode
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    setShowExport(true);
+                  }}
+                  style={{
+                    ...S.ghost,
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    padding: "8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <FileDownloadIcon sx={{ fontSize: 14 }} />
+                  Export for AI
+                </button>
                 <button
                   onClick={() => {
                     setShowMoreMenu(false);
@@ -552,6 +553,9 @@ export default function App() {
             </button>
           </div>
 
+          <div style={{ padding: "16px 24px 8px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
+            World Building
+          </div>
           <div style={{ padding: "0 24px 10px" }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
@@ -592,9 +596,13 @@ export default function App() {
             style={{
               height: 1,
               background: "var(--border)",
-              margin: "12px 0 20px",
+              margin: "12px 0 0",
             }}
           />
+
+          <div style={{ padding: "16px 24px 8px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
+            Drafting
+          </div>
 
           {/* ── Chapters section ── */}
           <div
