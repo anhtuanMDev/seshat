@@ -306,19 +306,19 @@ export default function CharacterPage() {
   };
 
   return (
-    <div ref={ref} className="seshat-page-container">
+    <div ref={ref} className="seshat-page-container" data-testid="character-page-container">
       {/* ── Header ── */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 28,
-          gap: 16,
+          marginBottom: "var(--space-6)",
+          gap: "var(--space-4)",
         }}
       >
         <div
-          style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}
+          style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flex: 1 }}
         >
           <span
             style={{
@@ -332,9 +332,10 @@ export default function CharacterPage() {
           />
           <input
             {...register("name")}
+            data-testid="character-name-input"
             style={{
               ...S.input,
-              fontSize: 28,
+              fontSize: "var(--text-3xl)",
               fontFamily: "var(--font-serif)",
               border: "none",
               padding: 0,
@@ -344,12 +345,13 @@ export default function CharacterPage() {
             }}
           />
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: "var(--space-3)" }}>
           <button
             onClick={() => setShowExport(true)}
+            data-testid="character-export-btn"
             style={{
               ...S.ghost,
-              fontSize: 11,
+              fontSize: "var(--text-xs)",
               letterSpacing: 1,
               color: "var(--color-purple)",
               flexShrink: 0,
@@ -364,9 +366,10 @@ export default function CharacterPage() {
           <button
             onClick={onSubmit}
             disabled={!isDirty || isSaving}
+            data-testid="character-save-btn"
             style={{
               ...S.ghost,
-              fontSize: 11,
+              fontSize: "var(--text-xs)",
               letterSpacing: 1,
               color: "var(--color-green)",
               flexShrink: 0,
@@ -453,15 +456,16 @@ export default function CharacterPage() {
       </Section>
 
       {/* ── Primary Identity ── */}
-      <Section
-        title={
-          <>
-            <BadgeIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Primary Identity
-          </>
-        }
-      >
-        <p style={{ ...S.dim, marginBottom: 12 }}>
+      <div data-testid="primary-identity-section">
+        <Section
+          title={
+            <>
+              <BadgeIcon sx={{ fontSize: 12, marginRight: 4 }} />
+              Primary Identity
+            </>
+          }
+        >
+          <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Core defining roles. These can be overridden for specific events in the timeline above as the character evolves.
         </p>
         <div style={S.grid2} className="seshat-grid2">
@@ -478,17 +482,19 @@ export default function CharacterPage() {
             placeholder="The trickster…"
           />
         </div>
-      </Section>
+        </Section>
+      </div>
 
       {/* ── Psychological core ── */}
-      <Section
-        title={
-          <>
-            <PsychologyIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Psychological core
-          </>
-        }
-      >
+      <div data-testid="psychological-core-section">
+        <Section
+          title={
+            <>
+              <PsychologyIcon sx={{ fontSize: 12, marginRight: 4 }} />
+              Psychological core
+            </>
+          }
+        >
         <Field
           label="Core wound"
           name="coreWound"
@@ -586,10 +592,11 @@ export default function CharacterPage() {
             />
           ))}
         </div>
-        {!traumas.length && (
-          <p style={{ ...S.dim, fontStyle: "italic" }}>No traumas recorded.</p>
-        )}
-      </Section>
+          {!traumas.length && (
+            <p style={{ ...S.dim, fontStyle: "italic" }}>No traumas recorded.</p>
+          )}
+        </Section>
+      </div>
 
       {/* ── Character arc ── */}
       <Section

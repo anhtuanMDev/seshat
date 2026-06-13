@@ -14,9 +14,9 @@ html {
   background: var(--bg-app);
   color: var(--text-primary);
   transition:
-    background 0.2s ease,
-    color 0.2s ease;
-  font-size: 18px;
+    background var(--duration-normal) var(--ease-smooth),
+    color var(--duration-normal) var(--ease-smooth);
+  font-size: var(--text-base);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

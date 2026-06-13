@@ -1,104 +1,126 @@
-/* ── Seshat Theme Variables ─────────────────────────────────────────────── */
+/* ── Seshat Design System Tokens (Phase 2 UI Architecture) ──────────────── */
+/* Based on strict 4px/8px grid, modular typography, and WCAG AA contrast */
 
 :root,
 [data-theme="light"] {
-  /* Fonts */
+  /* ── Typography Scale ── */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-serif: "Georgia", serif;
+  
+  --text-xs:   0.75rem;   /* 12px */
+  --text-sm:   0.875rem;  /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg:   1.125rem;  /* 18px */
+  --text-xl:   1.25rem;   /* 20px */
+  --text-2xl:  1.5rem;    /* 24px */
+  --text-3xl:  1.875rem;  /* 30px */
 
-  /* Backgrounds */
-  --bg-app:        #faf9f7;
-  --bg-side:       #faf9f7;
-  --bg-main:       #faf9f7;
-  --bg-top:        #faf9f7;
-  --bg-active:     #f0ede8;
-  --bg-hover:      #f5f3f0;
-  --bg-entry:      #faf9f7;
-  --bg-status:     #f0ede8;
-  --bg-export:     rgba(250,249,247,0.94);
-  --bg-export-ta:  #f0ede8;
+  /* ── Spacing Tokens (4px / 8px Grid) ── */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem;  /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem;    /* 16px */
+  --space-6: 1.5rem;  /* 24px */
+  --space-8: 2rem;    /* 32px */
+  --space-12: 3rem;   /* 48px */
+
+  /* ── Light Mode Palette (Premium Warm Sand) ── */
+  --bg-app:        #fdfcfb;
+  --bg-side:       #f7f5f2;
+  --bg-main:       #fdfcfb;
+  --bg-top:        #fdfcfb;
+  --bg-active:     #ebe6df;
+  --bg-hover:      #f0eae4;
+  --bg-entry:      #fdfcfb;
+  --bg-status:     #ebe6df;
+  --bg-export:     rgba(253,252,251,0.95);
+  --bg-export-ta:  #f0eae4;
   --bg-field:      transparent;
+  --bg-card:       #ffffff;
 
-  /* Text */
-  --text-primary:   #1a1a1a;
-  --text-secondary: #444;
-  --text-muted:     #888;
-  --text-logo:      #444;
-  --text-dim:       #444;
+  /* ── Text (WCAG 4.5:1 Minimum) ── */
+  --text-primary:   #2b2927;
+  --text-secondary: #595550;
+  --text-muted:     #8c867d;
+  --text-logo:      #2b2927;
+  --text-dim:       #736e66;
 
-  /* Borders */
-  --border:        #e0ddd8;
-  --border-field:  #bbb;
+  /* ── Borders & Rules ── */
+  --border:        #e6e2db;
+  --border-field:  #cfcac2;
 
-  /* Input */
+  /* ── Inputs ── */
   --input-bg:      transparent;
-  --input-color:   #1a1a1a;
-
-  /* Select */
+  --input-color:   #2b2927;
   --select-bg:     transparent;
-  --select-color:  #1a1a1a;
+  --select-color:  #2b2927;
 
-  /* Semantic colors (unchanged in both themes) */
-  --color-red:     #c0392b;
-  --color-blue:    #2980b9;
-  --color-green:   #27ae60;
-  --color-purple:  #8e44ad;
-  --color-orange:  #e67e22;
-  --color-teal:    #16a085;
-  --color-dark:    #2c3e50;
-  --color-brown:   #d35400;
+  /* ── Semantic Colors (Desaturated) ── */
+  --color-red:     #d94b4b; /* Error / Fight */
+  --color-blue:    #3182ce; /* Info / Lore */
+  --color-green:   #38a169; /* Success */
+  --color-purple:  #805ad5; /* Primary Brand */
+  --color-orange:  #dd6b20; /* Warning / Event */
+  --color-teal:    #319795; /* Accent */
+  --color-dark:    #2d3748; /* Neutral */
+  --color-brown:   #b05a2e; /* Earth */
 
-  /* MUI overrides */
-  --mui-input-before: #bbb;
-  --mui-label-color:  #444;
-  --mui-text-color:   #1a1a1a;
+  /* ── Animation Easing Curves ── */
+  --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+
+  /* ── MUI overrides ── */
+  --mui-input-before: #cfcac2;
+  --mui-label-color:  #595550;
+  --mui-text-color:   #2b2927;
 }
 
 [data-theme="dark"] {
-  /* Backgrounds */
-  --bg-app:        #12110f;
-  --bg-side:       #1c1a14;
-  --bg-main:       #12110f;
-  --bg-top:        #16150d;
-  --bg-active:     #252318;
-  --bg-hover:      #201e18;
-  --bg-entry:      #12110f;
-  --bg-status:     #252318;
-  --bg-export:     rgba(12,11,9,0.96);
-  --bg-export-ta:  #1a1915;
+  /* ── Dark Mode Palette (Rich Charcoal) ── */
+  --bg-app:        #141312;
+  --bg-side:       #1a1918;
+  --bg-main:       #141312;
+  --bg-top:        #1a1918;
+  --bg-active:     #2b2927;
+  --bg-hover:      #211f1d;
+  --bg-entry:      #141312;
+  --bg-status:     #2b2927;
+  --bg-export:     rgba(20,19,18,0.96);
+  --bg-export-ta:  #1f1d1b;
   --bg-field:      transparent;
+  --bg-card:       #1c1a19;
 
-  /* Text */
-  --text-primary:   #e8e4dc;
-  --text-secondary: #b5ae9f;
-  --text-muted:     #6b6460;
-  --text-logo:      #b5ae9f;
-  --text-dim:       #b5ae9f;
+  /* ── Text ── */
+  --text-primary:   #eceae8;
+  --text-secondary: #a6a29d;
+  --text-muted:     #736e66;
+  --text-logo:      #eceae8;
+  --text-dim:       #8c867d;
 
-  /* Borders */
-  --border:        #2e2b24;
-  --border-field:  #3d3830;
+  /* ── Borders & Rules ── */
+  --border:        #33302d;
+  --border-field:  #4d4844;
 
-  /* Input */
+  /* ── Inputs ── */
   --input-bg:      transparent;
-  --input-color:   #e8e4dc;
+  --input-color:   #eceae8;
+  --select-bg:     #1a1918;
+  --select-color:  #eceae8;
 
-  /* Select */
-  --select-bg:     #16150d;
-  --select-color:  #e8e4dc;
+  /* ── Semantic Colors (Vibrant Dark) ── */
+  --color-red:     #fc8181;
+  --color-blue:    #63b3ed;
+  --color-green:   #68d391;
+  --color-purple:  #b794f4;
+  --color-orange:  #f6ad55;
+  --color-teal:    #4fd1c5;
+  --color-dark:    #a0aec0;
+  --color-brown:   #ed8936;
 
-  /* Semantic colors — slightly lighter for dark bg readability */
-  --color-red:     #e05445;
-  --color-blue:    #4a9fd4;
-  --color-green:   #3dc475;
-  --color-purple:  #a85cc4;
-  --color-orange:  #f0922a;
-  --color-teal:    #1abfa0;
-  --color-dark:    #8095b0;
-  --color-brown:   #e06020;
-
-  /* MUI overrides */
-  --mui-input-before: #3d3830;
-  --mui-label-color:  #b5ae9f;
-  --mui-text-color:   #e8e4dc;
+  /* ── MUI overrides ── */
+  --mui-input-before: #4d4844;
+  --mui-label-color:  #a6a29d;
+  --mui-text-color:   #eceae8;
 }

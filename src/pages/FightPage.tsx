@@ -39,22 +39,24 @@ export default function FightPage() {
   const ref = useAnimateIn();
 
   return (
-    <div ref={ref} className="seshat-page-container">
-      <div style={{ marginBottom: 24 }}>
-        <p
+    <div ref={ref} className="seshat-page-container" data-testid="fight-page-container">
+      <div style={{ marginBottom: "var(--space-6)" }}>
+        <h1
           style={{
-            fontSize: 22,
+            fontSize: "var(--text-2xl)",
+            fontWeight: 600,
             color: "var(--text-primary)",
-            marginBottom: 4,
+            marginBottom: "var(--space-2)",
             display: "flex",
             alignItems: "center",
-            gap: 6,
+            gap: "var(--space-2)",
+            margin: 0,
           }}
         >
-          <SportsKabaddiIcon sx={{ fontSize: 20 }} />
+          <SportsKabaddiIcon sx={{ fontSize: 24 }} />
           Fight Simulation
-        </p>
-        <p style={S.dim}>
+        </h1>
+        <p style={{ ...S.dim, fontSize: "var(--text-sm)", marginTop: "var(--space-2)" }}>
           Compare two characters at any point in the timeline. Win % is
           calculated from power tier, skills, equipped items, conditions, arc
           stage, and emotional state.
@@ -70,45 +72,50 @@ export default function FightPage() {
       {chars.length >= 2 && (
         <>
           <div
+            data-testid="fighter-picker-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 80px 1fr",
-              gap: "0 24px",
+              gap: "0 var(--space-6)",
               alignItems: "center",
-              marginBottom: 28,
+              marginBottom: "var(--space-6)",
             }}
           >
-            <FighterPicker
-              label="Fighter A"
-              charId={aId}
-              onCharChange={setAId}
-              eventId={aEventId}
-              onEventChange={setAEventId}
-              characters={chars}
-              events={events}
-              selectedChar={charA}
-            />
+            <div data-testid="fighter-a-container">
+              <FighterPicker
+                label="Fighter A"
+                charId={aId}
+                onCharChange={setAId}
+                eventId={aEventId}
+                onEventChange={setAEventId}
+                characters={chars}
+                events={events}
+                selectedChar={charA}
+              />
+            </div>
             <div
               style={{
                 textAlign: "center",
-                paddingTop: 20,
-                fontSize: 16,
+                paddingTop: "var(--space-4)",
+                fontSize: "var(--text-base)",
                 color: "var(--text-muted)",
                 letterSpacing: 2,
               }}
             >
               vs
             </div>
-            <FighterPicker
-              label="Fighter B"
-              charId={bId}
-              onCharChange={setBId}
-              eventId={bEventId}
-              onEventChange={setBEventId}
-              characters={chars}
-              events={events}
-              selectedChar={charB}
-            />
+            <div data-testid="fighter-b-container">
+              <FighterPicker
+                label="Fighter B"
+                charId={bId}
+                onCharChange={setBId}
+                eventId={bEventId}
+                onEventChange={setBEventId}
+                characters={chars}
+                events={events}
+                selectedChar={charB}
+              />
+            </div>
           </div>
 
           {!ready && (
@@ -116,7 +123,7 @@ export default function FightPage() {
           )}
 
           {ready && (
-            <>
+            <div data-testid="fight-results-container">
               <WinBar
                 pctA={pctA}
                 pctB={pctB}
@@ -127,8 +134,9 @@ export default function FightPage() {
               />
 
               <div
-                style={{ ...S.grid2, marginBottom: 20 }}
+                style={{ ...S.grid2, marginBottom: "var(--space-4)" }}
                 className="seshat-grid2"
+                data-testid="snapshot-cards"
               >
                 <SnapshotCard
                   color={colA}
@@ -142,7 +150,7 @@ export default function FightPage() {
                 />
               </div>
 
-              <div style={S.grid2} className="seshat-grid2">
+              <div style={S.grid2} className="seshat-grid2" data-testid="score-breakdowns">
                 <ScoreBreakdown
                   name={charA!.name}
                   color={colA}
@@ -157,15 +165,15 @@ export default function FightPage() {
                 />
               </div>
 
-              <hr style={{ ...S.rule, margin: "24px 0 12px" }} />
-              <p style={{ ...S.dim, fontSize: 11 }}>
+              <hr style={{ ...S.rule, margin: "var(--space-6) 0 var(--space-3)" }} />
+              <p style={{ ...S.dim, fontSize: "var(--text-xs)" }}>
                 Scoring: power tier (×3), skills (×1.2 each), equipped items
                 (×1, −0.5 per cursed), conditions (varies by type), arc stage
                 (0–2), emotional state (±0.3–1.5), achievements (+0.3 each),
                 losses (−0.15 each). Items not equipped or inaccessible do not
                 contribute to combat score.
               </p>
-            </>
+            </div>
           )}
         </>
       )}

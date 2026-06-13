@@ -194,6 +194,12 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [prevPath, setPrevPath] = useState(location.pathname);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    chapters: true,
+    timeline: true,
+    characters: true,
+  });
 
   // Auto-close sidebar on navigation (React recommended pattern)
   if (location.pathname !== prevPath) {
@@ -388,7 +394,7 @@ export default function App() {
         />
         <div
           className="seshat-top-actions"
-          style={{ display: "flex", alignItems: "center", gap: 20 }}
+          style={{ display: "flex", alignItems: "center", gap: 20, position: "relative" }}
         >
           <button
             onClick={() => setShowSearch(true)}
@@ -396,24 +402,6 @@ export default function App() {
             title="Global Search & Replace"
           >
             <SearchIcon sx={{ fontSize: 20 }} />
-          </button>
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            style={{
-              ...S.ghost,
-              letterSpacing: 2,
-              fontSize: 15,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              opacity: isSyncing ? 0.5 : 1,
-            }}
-          >
-            <CloudSyncIcon sx={{ fontSize: 14 }} />
-            <span className="seshat-sync-text seshat-desktop-only">
-              {isSyncing ? "Syncing..." : "Sync"}
-            </span>
           </button>
           <button
             onClick={() => setShowExport(true)}
@@ -451,27 +439,86 @@ export default function App() {
             <SportsKabaddiIcon sx={{ fontSize: 14 }} />
             <span className="seshat-desktop-only">Fight</span>
           </button>
-          <button
-            onClick={toggle}
-            title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-            style={{
-              ...S.ghost,
-              fontSize: 15,
-              lineHeight: 1,
-              padding: "2px 4px",
-              opacity: 0.7,
-              transition: "opacity 0.15s",
-              display: "flex",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
-          >
-            {theme === "light" ? (
-              <LightModeIcon sx={{ fontSize: 16 }} />
-            ) : (
-              <DarkModeIcon sx={{ fontSize: 16 }} />
+
+          {/* More Menu Toggle */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              style={{
+                ...S.ghost,
+                letterSpacing: 2,
+                fontSize: 15,
+                display: "flex",
+                alignItems: "center",
+                color: "var(--text-secondary)",
+              }}
+            >
+              More ▾
+            </button>
+            {showMoreMenu && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "100%",
+                  right: 0,
+                  marginTop: 8,
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                  padding: "8px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  minWidth: 140,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  zIndex: 100,
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleSync();
+                  }}
+                  disabled={isSyncing}
+                  style={{
+                    ...S.ghost,
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    padding: "8px 16px",
+                    opacity: isSyncing ? 0.5 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <CloudSyncIcon sx={{ fontSize: 14 }} />
+                  {isSyncing ? "Syncing..." : "Sync"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    toggle();
+                  }}
+                  style={{
+                    ...S.ghost,
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    padding: "8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  {theme === "light" ? (
+                    <LightModeIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    <DarkModeIcon sx={{ fontSize: 16 }} />
+                  )}
+                  {theme === "light" ? "Dark Mode" : "Light Mode"}
+                </button>
+              </div>
             )}
-          </button>
+          </div>
         </div>
       </div>
 
@@ -558,20 +605,28 @@ export default function App() {
               alignItems: "center",
             }}
           >
-            <button
-              onClick={() => navigate(`/book/${bookId}/chapters`)}
-              style={{
-                ...navBtnStyle(
-                  location.pathname.startsWith(`/book/${bookId}/chapters`),
-                ),
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <AutoStoriesIcon sx={{ fontSize: 14 }} />
-              Chapters ({sortedChapters.length})
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button
+                onClick={() => setOpenSections((s) => ({ ...s, chapters: !s.chapters }))}
+                style={{ ...S.ghost, padding: 0, fontSize: 10, color: "var(--text-muted)" }}
+              >
+                {openSections.chapters ? "▼" : "▶"}
+              </button>
+              <button
+                onClick={() => navigate(`/book/${bookId}/chapters`)}
+                style={{
+                  ...navBtnStyle(
+                    location.pathname.startsWith(`/book/${bookId}/chapters`),
+                  ),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <AutoStoriesIcon sx={{ fontSize: 14 }} />
+                Chapters ({sortedChapters.length})
+              </button>
+            </div>
             <button
               onClick={addChapter}
               style={{ ...S.ghost, fontSize: 16, display: "flex" }}
@@ -580,30 +635,35 @@ export default function App() {
             </button>
           </div>
 
-          {sortedChapters.map((ch: Chapter) => (
-            <SideItem
-              key={ch.id}
-              label={ch.title || "Untitled chapter"}
-              sub={
-                [ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined
-              }
-              active={selChapter === ch.id}
-              onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
-              onDelete={() => delChapter(ch.id)}
-            />
-          ))}
+          {openSections.chapters && (
+            <div style={{ maxHeight: "30vh", overflowY: "auto", overflowX: "hidden" }}>
+              {sortedChapters.map((ch: Chapter) => (
+                <SideItem
+                  key={ch.id}
+                  label={ch.title || "Untitled chapter"}
+                  sub={
+                    [ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined
+                  }
+                  active={selChapter === ch.id}
+                  onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
+                  onDelete={() => delChapter(ch.id)}
+                />
+              ))}
 
-          {sortedChapters.length === 0 && (
-            <p
-              style={{
-                ...S.dim,
-                fontSize: 14,
-                padding: "2px 24px 10px",
-                fontStyle: "italic",
-              }}
-            >
-              No chapters yet.
-            </p>
+              {sortedChapters.length === 0 && (
+                <div style={{ padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ ...S.dim, fontSize: 13, fontStyle: "italic", margin: 0 }}>
+                    No chapters yet.
+                  </p>
+                  <button 
+                    onClick={addChapter}
+                    style={{ ...S.ghost, fontSize: 12, padding: "4px 8px", background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: 4, width: "100%" }}
+                  >
+                    + Create Chapter
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           <div
@@ -623,20 +683,28 @@ export default function App() {
               alignItems: "center",
             }}
           >
-            <button
-              onClick={() => navigate(`/book/${bookId}/events`)}
-              style={{
-                ...navBtnStyle(
-                  location.pathname.startsWith(`/book/${bookId}/events`),
-                ),
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <TimelineIcon sx={{ fontSize: 14 }} />
-              Timeline
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button
+                onClick={() => setOpenSections((s) => ({ ...s, timeline: !s.timeline }))}
+                style={{ ...S.ghost, padding: 0, fontSize: 10, color: "var(--text-muted)" }}
+              >
+                {openSections.timeline ? "▼" : "▶"}
+              </button>
+              <button
+                onClick={() => navigate(`/book/${bookId}/events`)}
+                style={{
+                  ...navBtnStyle(
+                    location.pathname.startsWith(`/book/${bookId}/events`),
+                  ),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <TimelineIcon sx={{ fontSize: 14 }} />
+                Timeline
+              </button>
+            </div>
             <button
               onClick={addEvent}
               style={{ ...S.ghost, fontSize: 16, display: "flex" }}
@@ -645,28 +713,46 @@ export default function App() {
             </button>
           </div>
 
-          {sortedEvt.map((e: Event) => {
-            const dateTag = [
-              e.startDate && e.startDate.replace("T", " "),
-              e.endDate && `→ ${e.endDate.replace("T", " ")}`,
-            ]
-              .filter(Boolean)
-              .join(" ");
-            const chTag = (e.chapters || []).length
-              ? `Ch. ${e.chapters.join(", ")}`
-              : "";
-            const tag = [chTag, dateTag].filter(Boolean).join(" · ");
-            return (
-              <SideItem
-                key={e.id}
-                label={e.title}
-                sub={`T${e.time}${tag ? ` · ${tag}` : ""}${e.type ? ` · ${e.type}` : ""}`}
-                active={selEvent === e.id}
-                onClick={() => navigate(`/book/${bookId}/events/${e.id}`)}
-                onDelete={() => delEvent(e.id)}
-              />
-            );
-          })}
+          {openSections.timeline && (
+            <div style={{ maxHeight: "30vh", overflowY: "auto", overflowX: "hidden" }}>
+              {sortedEvt.map((e: Event) => {
+                const dateTag = [
+                  e.startDate && e.startDate.replace("T", " "),
+                  e.endDate && `→ ${e.endDate.replace("T", " ")}`,
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+                const chTag = (e.chapters || []).length
+                  ? `Ch. ${e.chapters.join(", ")}`
+                  : "";
+                const tag = [chTag, dateTag].filter(Boolean).join(" · ");
+                return (
+                  <SideItem
+                    key={e.id}
+                    label={e.title}
+                    sub={`T${e.time}${tag ? ` · ${tag}` : ""}${e.type ? ` · ${e.type}` : ""}`}
+                    active={selEvent === e.id}
+                    onClick={() => navigate(`/book/${bookId}/events/${e.id}`)}
+                    onDelete={() => delEvent(e.id)}
+                  />
+                );
+              })}
+              
+              {sortedEvt.length === 0 && (
+                <div style={{ padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ ...S.dim, fontSize: 13, fontStyle: "italic", margin: 0 }}>
+                    No events mapped.
+                  </p>
+                  <button 
+                    onClick={addEvent}
+                    style={{ ...S.ghost, fontSize: 12, padding: "4px 8px", background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: 4, width: "100%" }}
+                  >
+                    + Create Event
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <div
             style={{
@@ -685,20 +771,28 @@ export default function App() {
               alignItems: "center",
             }}
           >
-            <button
-              onClick={() => navigate(`/book/${bookId}/characters`)}
-              style={{
-                ...navBtnStyle(
-                  location.pathname.startsWith(`/book/${bookId}/characters`),
-                ),
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              <PeopleIcon sx={{ fontSize: 14 }} />
-              Characters
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button
+                onClick={() => setOpenSections((s) => ({ ...s, characters: !s.characters }))}
+                style={{ ...S.ghost, padding: 0, fontSize: 10, color: "var(--text-muted)" }}
+              >
+                {openSections.characters ? "▼" : "▶"}
+              </button>
+              <button
+                onClick={() => navigate(`/book/${bookId}/characters`)}
+                style={{
+                  ...navBtnStyle(
+                    location.pathname.startsWith(`/book/${bookId}/characters`),
+                  ),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <PeopleIcon sx={{ fontSize: 14 }} />
+                Characters
+              </button>
+            </div>
             <button
               onClick={addChar}
               style={{ ...S.ghost, fontSize: 16, display: "flex" }}
@@ -707,19 +801,37 @@ export default function App() {
             </button>
           </div>
 
-          {characters.map((c: Character) => (
-            <SideItem
-              key={c.id}
-              label={c.name}
-              sub={
-                [c.role, c.archetype].filter(Boolean).join(" · ") || undefined
-              }
-              color={c.color}
-              active={selChar === c.id}
-              onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
-              onDelete={() => delChar(c.id)}
-            />
-          ))}
+          {openSections.characters && (
+            <div style={{ maxHeight: "30vh", overflowY: "auto", overflowX: "hidden" }}>
+              {characters.map((c: Character) => (
+                <SideItem
+                  key={c.id}
+                  label={c.name}
+                  sub={
+                    [c.role, c.archetype].filter(Boolean).join(" · ") || undefined
+                  }
+                  color={c.color}
+                  active={selChar === c.id}
+                  onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
+                  onDelete={() => delChar(c.id)}
+                />
+              ))}
+
+              {characters.length === 0 && (
+                <div style={{ padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                  <p style={{ ...S.dim, fontSize: 13, fontStyle: "italic", margin: 0 }}>
+                    No characters created.
+                  </p>
+                  <button 
+                    onClick={addChar}
+                    style={{ ...S.ghost, fontSize: 12, padding: "4px 8px", background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: 4, width: "100%" }}
+                  >
+                    + Create Character
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Main content ── */}
