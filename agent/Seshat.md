@@ -38,6 +38,8 @@
 | UI/Icons    | MUI (Material UI) v9 + @mui/icons-material | Consistent, accessible components; centralized icon exports via `src/components/ui/icons.tsx` |
 | Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
 | Rich text   | Tiptap v3 (StarterKit + Underline, Link, Highlight, TextAlign, Typography, Placeholder) | ProseMirror-based editor with formatting toolbar |
+| Node Graph  | @xyflow/react + dagre        | Interactive visual relationship graphs with auto-layout       |
+| Exporting   | docx + file-saver            | Generating chapter files as `.docx` directly in the browser   |
 | Testing     | Vitest + testing-library     | Unit/integration tests with jsdom environment                 |
 
 ---
@@ -149,6 +151,8 @@ seshat/
 │   │   ├── ChapterListPage.tsx  # 237 lines — chapter list (card-based with word count)
 │   │   ├── TimelinePage.tsx     # 326 lines — timeline (visual vertical-line layout with event cards)
 │   │   ├── FightPage.tsx        # 162 lines — fight simulator
+│   │   ├── AuthPage.tsx         # 179 lines — authentication page (login/register)
+│   │   ├── LoreWebPage.tsx      # 326 lines — interactive node graph of world lore
 │   │   └── __tests__/           # Page logic tests
 │   │       ├── FightPage.test.ts  # 22 tests
 │   │       └── FightPage.bench.ts
@@ -167,7 +171,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 9 pages totaling ~2050 lines (incl. icons).**
+**Total: 73 tests across 8 test files. 11 pages totaling ~2555 lines (incl. icons).**
 
 ---
 
@@ -179,8 +183,16 @@ import { createBrowserRouter } from "react-router-dom";
 
 export const router = createBrowserRouter([
   {
+    path: "/auth",
+    element: <AuthPage />,
+  },
+  {
     path: "/",
-    element: <App />,
+    element: (
+      <AuthGuard>
+        <App />
+      </AuthGuard>
+    ),
     children: [
       { index: true, element: <BookListPage /> },
       {
@@ -195,14 +207,16 @@ export const router = createBrowserRouter([
           { path: "fight", element: <FightPage /> },
           { path: "chapters", element: <ChapterListPage /> },
           { path: "chapters/:id", element: <ChapterPage /> },
+          { path: "lore-web", element: <LoreWebPage /> },
         ],
       },
     ],
   },
 ]);
 
-// Root `/` shows BookListPage (multi-book manager).
-// All world/character/event/chapter/fight routes are nested under `/book/:bookId`.
+// `/auth` handles login and registration.
+// Root `/` shows BookListPage (multi-book manager), protected by AuthGuard.
+// All world/character/event/chapter/fight/lore-web routes are nested under `/book/:bookId`.
 
 ```
 
@@ -366,6 +380,8 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | ChapterPage         | ~300  | ReferencePanel, PinnedContextStrip, ChapterToolbar (floating on scroll, always-on RichEditor), ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
 | ChapterListPage     | 237   | ChapterCard                                     | AutoStoriesIcon, AddIcon |
 | FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
+| AuthPage            | 179   | None                                            | VisibilityIcon, VisibilityOffIcon |
+| LoreWebPage         | 326   | None                                            | None |
 
 ### BookListPage (`/`)
 
@@ -392,6 +408,14 @@ Chapter prose editor with a reference panel (characters, events, world info). Us
 ### FightPage (`/book/:bookId/fight`)
 
 Combat simulation comparing two characters with a weighted score breakdown. Uses `scoreFighter()` from `src/lib/scoreFighter.ts`. Display components (WinBar, SnapshotCard, ScoreBreakdown, NoteRow, FighterPicker) extracted to `src/components/fight/`.
+
+### AuthPage (`/auth`)
+
+Login and registration page. Handles generating JWT tokens via Cloudflare worker and persisting them to `localStorage` or `sessionStorage`.
+
+### LoreWebPage (`/book/:bookId/lore-web`)
+
+Interactive directed node graph visualizing connections between characters, nations, events, and treasures. Includes a temporal timeline slider to visualize relationships at specific points in time. Uses `@xyflow/react` and `dagre` for layout.
 
 ### TimelinePage / ChapterListPage / CharacterListPage
 
