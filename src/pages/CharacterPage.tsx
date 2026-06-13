@@ -1264,6 +1264,7 @@ function ArrayItemCard({
             color: "var(--text-muted)",
             display: "flex",
           }}
+          title="Delete item"
           onMouseEnter={(e) =>
             (e.currentTarget.style.color = "var(--color-red)")
           }

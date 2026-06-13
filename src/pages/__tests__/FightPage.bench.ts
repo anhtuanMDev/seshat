@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { bench, describe } from "vitest";
 import { scoreFighter } from "../../lib/scoreFighter";
 import type { Character, Event } from "../../lib/types";
@@ -17,7 +16,7 @@ const makeChar = (id: string): Character => ({
     id: `${id}_sk${i}`, name: `Skill ${i}`, atTime: "", atEventId: "", howGained: "", source: "", appearance: "", attitude: "", stats: "", cost: "", costDescription: "", uses: "∞", cooldown: "", upside: "", downside: "", requirement: "", notes: "",
   })),
   equipment: Array.from({ length: 4 }, (_, i) => ({
-    id: `${id}_eq${i}`, slot: ["Weapon", "Armor", "Helmet", "Accessory"][i] as any,
+    id: `${id}_eq${i}`, slot: ["Weapon", "Armor", "Helmet", "Accessory"][i] as Character["equipment"][number]["slot"],
     name: `Item ${i}`, atTime: "", atEventId: "", stats: "", curses: i === 3 ? "curse" : "", unbindCondition: "", uses: "∞", creator: "", createdWhy: "", ingredients: "", lore: "", accessState: "Equipped" as const, accessNote: "",
   })),
   achievements: [], losses: [],

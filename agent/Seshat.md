@@ -58,6 +58,9 @@ seshat/
 │   │   ├── types.ts            # Shared TypeScript interfaces for entities
 │   │   ├── queryClient.ts      # React Query client configuration
 │   │   ├── mkChapter.ts        # Factory for generating new chapters
+│   │   ├── githubSync.ts       # GitHub API integration functions
+│   │   ├── eventSync.ts        # computeEventSync() — synchronizing characters to events
+│   │   ├── resolveStatus.ts    # resolveStatusAt() — resolving character status entries by time context
 │   │   └── __tests__/          # Unit tests for lib utilities
 │   │       ├── utils.test.ts   #   10 tests
 │   │       ├── export.test.ts  #   12 tests
@@ -65,7 +68,7 @@ seshat/
 │   │
 │   ├── store/
 │   │   ├── appStore.ts         # Multi-book Legend State observable + localStorage persistence
-│   │   └── worldStore.ts       # (removed — merged into appStore.ts)
+│   │   └── toastStore.ts       # Global toast notification state
 │   │
 │   ├── hooks/
 │   │   ├── useWorldStore.ts    # Typed selectors from legend-state
@@ -171,7 +174,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 11 pages totaling ~2555 lines (incl. icons).**
+**Total: 73 tests across 8 test files. 11 pages totaling ~2555 lines (incl. icons). Note: Testing coverage is currently limited mostly to util logic and specific UI components. Core pages, API sync logic, and complex state management lack edge-to-edge testing.**
 
 ---
 
@@ -546,6 +549,8 @@ Each domain directory mirrors a page and contains components that are only used 
 | Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
 | Global Search    | `App.tsx` topbar| `GlobalSearchModal` component with safe recursive deep regex replacement |
 | Lore Web         | `LoreWebPage`   | Interactive directed node graph with Temporal Timeline slider mapping connections |
+| Status Resolution| `resolveStatus` | Computes active character status entry based on chapter timeline context |
+| Toast System     | `toastStore.ts` | Global temporary notifications system for user actions |
 | Continuity Tracker | `ChapterPage`   | Offline, mention-based dynamic checklist extracting Traumas and Core Wounds from pinned characters |
 | Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
 | Scene Outlining  | `ChapterPage`   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome) |

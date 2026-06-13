@@ -51,8 +51,12 @@ function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "",
   const isDate = type === "date" || type === "datetime-local";
   const shrink = isDate || InputLabelProps?.shrink;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const StyledField = StyledTextField as any;
+  const StyledField = StyledTextField as unknown as React.FC<
+    Omit<import("@mui/material").TextFieldProps, "variant"> & {
+      variant?: "filled";
+      InputLabelProps?: Partial<import("@mui/material").InputLabelProps>;
+    }
+  >;
 
   return (
     <StyledField
@@ -65,7 +69,7 @@ function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "",
       variant="filled"
       fullWidth
       type={type}
-      InputLabelProps={{ ...InputLabelProps, shrink: shrink ? true : undefined }}
+      InputLabelProps={{ ...InputLabelProps, shrink: shrink ? true : undefined } as import("@mui/material").InputLabelProps}
       {...props}
     />
   );

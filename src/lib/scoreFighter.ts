@@ -65,7 +65,7 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   const cursedEquipped = equippedItems.filter(
     (eq: Equipment) => eq.curses && eq.curses.trim(),
   );
-  const equipPts = equippedItems.length * 1.0 - cursedEquipped.length * 1.5;
+  const equipPts = equippedItems.length * 1.0 - cursedEquipped.length * 0.6;
   if (equippedItems.length) {
     score += equipPts;
     notes.push({
@@ -112,11 +112,9 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   const emo = (attr.emotionalState || "").toLowerCase();
   if (emo.includes("grief") || emo.includes("broken") || emo.includes("despair")) {
     emoScore -= 1;
-  }
-  if (emo.includes("resolute") || emo.includes("focused") || emo.includes("calm")) {
+  } else if (emo.includes("resolute") || emo.includes("focused") || emo.includes("calm")) {
     emoScore += 0.5;
-  }
-  if (emo.includes("rage") || emo.includes("fury")) {
+  } else if (emo.includes("rage") || emo.includes("fury")) {
     emoScore += 0.3;
   }
 

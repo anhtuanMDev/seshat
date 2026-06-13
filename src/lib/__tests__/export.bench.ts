@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { bench, describe } from "vitest";
 import { buildExport } from "../export";
 import type { Character, Event } from "../types";
@@ -28,7 +27,7 @@ const big = (() => {
     branch: [],
     attributes: {},
     conditions: Array.from({ length: 2 }, (_, ci) => ({
-      id: `cd${i}_${ci}`, type: (ci === 0 ? "Physical" : "Blessed") as any,
+      id: `cd${i}_${ci}`, type: (ci === 0 ? "Physical" : "Blessed") as Character["conditions"][number]["type"],
       name: `Condition ${ci}`, atTime: "", atEventId: "",
       why: "", description: "", effects: "", isActive: true,
     })),
@@ -39,7 +38,7 @@ const big = (() => {
       cooldown: "", upside: "good", downside: "bad", requirement: "", notes: "",
     })),
     equipment: Array.from({ length: 3 }, (_, ei) => ({
-      id: `eq${i}_${ei}`, slot: ["Weapon", "Armor", "Accessory"][ei] as any,
+      id: `eq${i}_${ei}`, slot: ["Weapon", "Armor", "Accessory"][ei] as Character["equipment"][number]["slot"],
       name: `Item ${ei}`, atTime: "", atEventId: "",
       stats: "def+5", curses: ei === 2 ? "curse" : "", unbindCondition: "",
       uses: "∞", creator: "", createdWhy: "", ingredients: "", lore: "",
