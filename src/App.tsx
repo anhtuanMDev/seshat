@@ -582,7 +582,7 @@ export default function App() {
         >
           <div
             className="seshat-mobile-only"
-            style={{ padding: "10px 24px 14px" }}
+            style={{ padding: "20px 24px 16px" }}
           >
             <button
               onClick={() => navigate("/")}
@@ -598,10 +598,10 @@ export default function App() {
             </button>
           </div>
 
-          <div style={{ padding: "16px 24px 8px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
+          <div style={{ padding: "20px 24px 8px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
             World Building
           </div>
-          <div style={{ padding: "0 24px 10px" }}>
+          <div style={{ padding: "0 24px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
               style={{
@@ -629,7 +629,6 @@ export default function App() {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                marginTop: 4,
               }}
             >
               <TimelineIcon sx={{ fontSize: 14 }} />

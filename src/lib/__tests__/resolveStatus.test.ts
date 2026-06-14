@@ -12,7 +12,7 @@ describe("chapterContext", () => {
 
   it("extracts context from single pinned event", () => {
     const events: Event[] = [
-      { id: "e1", startDate: "2023-01-01", endDate: "2023-01-05", time: 10 } as Event
+      { id: "e1", startDate: "2023-01-01", endDate: "2023-01-05", time: 10 } as unknown as Event
     ];
     const ctx = chapterContext(events);
     expect(ctx.contextDate).toBe(new Date("2023-01-05").toISOString());
@@ -22,8 +22,8 @@ describe("chapterContext", () => {
 
   it("extracts context from multiple pinned events spanning a window", () => {
     const events: Event[] = [
-      { id: "e1", startDate: "2023-01-01", endDate: "2023-01-05", time: 10 } as Event,
-      { id: "e2", startDate: "2023-01-04", endDate: "2023-01-10", time: 8 } as Event
+      { id: "e1", startDate: "2023-01-01", endDate: "2023-01-05", time: 10 } as unknown as Event,
+      { id: "e2", startDate: "2023-01-04", endDate: "2023-01-10", time: 8 } as unknown as Event
     ];
     const ctx = chapterContext(events);
     expect(ctx.contextDate).toBe(new Date("2023-01-10").toISOString());
@@ -34,16 +34,16 @@ describe("chapterContext", () => {
 
 describe("resolveStatusAt", () => {
   it("returns undefined if character has no timeline", () => {
-    const char: Character = { id: "c1", statusTimeline: [] } as Character;
+    const char: Character = { id: "c1", statusTimeline: [] } as unknown as Character;
     expect(resolveStatusAt(char, [])).toBeUndefined();
   });
 
   it("resolves exact date match within window", () => {
-    const entry1: StatusEntry = { id: "s1", startDate: "2022-12-01", eventId: "" } as StatusEntry;
-    const entry2: StatusEntry = { id: "s2", startDate: "2023-01-03", eventId: "" } as StatusEntry;
-    const entry3: StatusEntry = { id: "s3", startDate: "2023-02-01", eventId: "" } as StatusEntry;
+    const entry1: StatusEntry = { id: "s1", startDate: "2022-12-01", eventId: "" } as unknown as StatusEntry;
+    const entry2: StatusEntry = { id: "s2", startDate: "2023-01-03", eventId: "" } as unknown as StatusEntry;
+    const entry3: StatusEntry = { id: "s3", startDate: "2023-02-01", eventId: "" } as unknown as StatusEntry;
     
-    const char: Character = { id: "c1", statusTimeline: [entry1, entry2, entry3] } as Character;
+    const char: Character = { id: "c1", statusTimeline: [entry1, entry2, entry3] } as unknown as Character;
     
     // Window: Jan 1 - Jan 5
     const result = resolveStatusAt(
@@ -57,10 +57,10 @@ describe("resolveStatusAt", () => {
   });
 
   it("falls back to entry before window if none in window", () => {
-    const entry1: StatusEntry = { id: "s1", startDate: "2022-12-01", eventId: "" } as StatusEntry;
-    const entry2: StatusEntry = { id: "s2", startDate: "2023-02-01", eventId: "" } as StatusEntry;
+    const entry1: StatusEntry = { id: "s1", startDate: "2022-12-01", eventId: "" } as unknown as StatusEntry;
+    const entry2: StatusEntry = { id: "s2", startDate: "2023-02-01", eventId: "" } as unknown as StatusEntry;
     
-    const char: Character = { id: "c1", statusTimeline: [entry1, entry2] } as Character;
+    const char: Character = { id: "c1", statusTimeline: [entry1, entry2] } as unknown as Character;
     
     // Window: Jan 1 - Jan 5
     const result = resolveStatusAt(
@@ -74,13 +74,13 @@ describe("resolveStatusAt", () => {
   });
 
   it("falls back to event time if no dates provided", () => {
-    const entry1: StatusEntry = { id: "s1", eventId: "e1" } as StatusEntry;
-    const entry2: StatusEntry = { id: "s2", eventId: "e2" } as StatusEntry;
+    const entry1: StatusEntry = { id: "s1", eventId: "e1" } as unknown as StatusEntry;
+    const entry2: StatusEntry = { id: "s2", eventId: "e2" } as unknown as StatusEntry;
     
-    const char: Character = { id: "c1", statusTimeline: [entry1, entry2] } as Character;
+    const char: Character = { id: "c1", statusTimeline: [entry1, entry2] } as unknown as Character;
     const events: Event[] = [
-      { id: "e1", time: 5 } as Event,
-      { id: "e2", time: 10 } as Event
+      { id: "e1", time: 5 } as unknown as Event,
+      { id: "e2", time: 10 } as unknown as Event
     ];
     
     const result = resolveStatusAt(char, events, undefined, 8, undefined);
@@ -88,10 +88,10 @@ describe("resolveStatusAt", () => {
   });
 
   it("falls back to absolute latest if no context", () => {
-    const entry1: StatusEntry = { id: "s1", eventId: "e1" } as StatusEntry;
-    const entry2: StatusEntry = { id: "s2", eventId: "e2" } as StatusEntry;
+    const entry1: StatusEntry = { id: "s1", eventId: "e1" } as unknown as StatusEntry;
+    const entry2: StatusEntry = { id: "s2", eventId: "e2" } as unknown as StatusEntry;
     
-    const char: Character = { id: "c1", statusTimeline: [entry1, entry2] } as Character;
+    const char: Character = { id: "c1", statusTimeline: [entry1, entry2] } as unknown as Character;
     const result = resolveStatusAt(char, [], undefined, undefined, undefined);
     expect(result).toBe(entry2);
   });
