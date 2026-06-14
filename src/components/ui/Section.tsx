@@ -29,27 +29,25 @@ export function Section({
 }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ marginBottom: 8 }}>
+    <div style={{ marginBottom: "var(--space-2)" }}>
       <hr
         style={{
           border: "none",
           borderTop: "1px solid var(--border)",
-          margin: "20px 0",
+          margin: "var(--space-6) 0",
         }}
       />
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: open ? 14 : 0,
+          marginBottom: open ? "var(--space-4)" : 0,
         }}
       >
         <GhostButton onClick={() => setOpen((o) => !o)}>
           {open ? (
-            <ExpandMoreIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: 8 }} />
+            <ExpandMoreIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: "var(--space-2)" }} />
           ) : (
-            <ChevronRightIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: 8 }} />
+            <ChevronRightIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: "var(--space-2)" }} />
           )}
           {title}
         </GhostButton>
@@ -57,14 +55,16 @@ export function Section({
       </div>
       <div
         style={{
+          display: "grid",
+          gridTemplateRows: open ? "1fr" : "0fr",
           opacity: open ? 1 : 0,
-          transform: open ? "translateY(0)" : "translateY(-10px)",
-          maxHeight: open ? 2000 : 0,
-          overflow: "hidden",
-          transition: `opacity 0.2s ease, transform 0.2s ease, max-height ${open ? "0.25s ease-in" : "0.2s ease-out"}`,
+          transform: open ? "translateY(0)" : "translateY(-4px)",
+          transition: "grid-template-rows 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
         }}
       >
-        {children}
+        <div style={{ overflow: "hidden" }}>
+          {children}
+        </div>
       </div>
     </div>
   );

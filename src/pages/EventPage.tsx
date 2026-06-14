@@ -227,12 +227,10 @@ export default function EventPage() {
   return (
     <div ref={ref} className="seshat-page-container">
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 16,
-          gap: 16,
+          marginBottom: "var(--space-4)",
+          gap: "var(--space-4)",
         }}
       >
         <input
@@ -331,7 +329,7 @@ export default function EventPage() {
 
       <Section 
         title={
-          <div style={{ display: "flex", alignItems: "center" }}>
+          <div className="seshat-flex-align">
             <AutoStoriesIcon sx={{ fontSize: 12, marginRight: 4 }} />
             Chapters
             <button 

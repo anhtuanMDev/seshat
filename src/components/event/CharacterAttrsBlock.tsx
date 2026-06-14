@@ -44,7 +44,7 @@ export function CharacterAttrsBlock({
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="seshat-flex-col" style={{ gap: "var(--space-2)" }}>
         {selectedIds.map((cid: string) => {
           const c = characters.find((x: Character) => x.id === cid);
           if (!c) return null;
@@ -73,7 +73,7 @@ export function CharacterAttrsBlock({
                   transition: "background 0.1s ease",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div className="seshat-flex-align" style={{ gap: "var(--space-2)" }}>
                   <span
                     style={{
                       width: 8,
@@ -100,7 +100,7 @@ export function CharacterAttrsBlock({
                   }}
                 >
                   {Object.keys(a).length > 0 && Object.values(a).some(Boolean) ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px 24px", marginBottom: 16 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px 24px", marginBottom: "var(--space-4)" }}>
                       {a.power && <div style={{ fontSize: 14 }}><span style={{ ...S.h2, margin: 0, marginRight: 8 }}>Power tier:</span>{a.power}</div>}
                       {a.difficulty && <div style={{ fontSize: 14 }}><span style={{ ...S.h2, margin: 0, marginRight: 8 }}>Difficulty:</span>{a.difficulty}</div>}
                       {a.arcStage && <div style={{ fontSize: 14 }}><span style={{ ...S.h2, margin: 0, marginRight: 8 }}>Arc stage:</span>{a.arcStage}</div>}
@@ -251,7 +251,7 @@ export function CharacterAttrsBlock({
             </button>
           }
         >
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
             {characters.map((c: Character) => {
               const active = selectedIds.includes(c.id);
               return (

@@ -226,19 +226,17 @@ export default function WorldPage() {
   return (
     <div ref={ref} className="seshat-page-container">
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 24,
-          gap: 16,
+          marginBottom: "var(--space-6)",
+          gap: "var(--space-4)",
         }}
       >
         <input
           {...register("title")}
           style={{
             ...S.input,
-            fontSize: 22,
+            fontSize: "var(--text-2xl)",
             border: "none",
             padding: 0,
             flex: 1,
@@ -314,7 +312,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Kingdoms, empires, tribes, hidden societies. The political landscape
           your characters live inside.
         </p>
@@ -346,7 +344,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Martial arts, blacksmithing schools, biological arts, forbidden
           knowledge. How things are made and mastered in this world.
         </p>
@@ -375,7 +373,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Materials, herbs, minerals, essences. The raw stuff of your world —
           what things are made from.
         </p>
@@ -404,7 +402,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Creatures, beasts, horrors. What hunts your characters — and what
           drops when they die.
         </p>
@@ -433,7 +431,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           World-level relics, legendary items not yet held by anyone. When a
           character claims one, add it to their equipment too.
         </p>

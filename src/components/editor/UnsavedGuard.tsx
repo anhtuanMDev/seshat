@@ -26,6 +26,7 @@ export default function UnsavedGuard({
 
   return createPortal(
     <div
+      className="seshat-flex-center"
       style={{
         position: "fixed",
         inset: 0,
@@ -33,9 +34,6 @@ export default function UnsavedGuard({
         background: "rgba(0, 0, 0, 0.6)",
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         padding: 24,
         opacity: mounted ? 1 : 0,
         transition: "opacity 0.3s ease",
@@ -59,12 +57,10 @@ export default function UnsavedGuard({
           transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease",
         }}
       >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-4)", marginBottom: "var(--space-5)" }}>
           <div
+            className="seshat-flex-center"
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               width: 40,
               height: 40,
               borderRadius: 12,
@@ -106,17 +102,15 @@ export default function UnsavedGuard({
         </div>
 
         <div
+          className="seshat-flex-between"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
             marginTop: 32,
           }}
         >
           <ModernButton variant="secondary" onClick={onCancel}>
             Cancel
           </ModernButton>
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: "var(--space-3)" }}>
             <ModernButton variant="danger" onClick={onDiscard}>
               Discard Changes
             </ModernButton>

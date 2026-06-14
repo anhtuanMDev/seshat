@@ -66,14 +66,12 @@ export default function CharacterListPage() {
     <div ref={ref} className="seshat-page-container">
       {/* Header */}
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 32,
+          marginBottom: "var(--space-8)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="seshat-flex-align" style={{ gap: "var(--space-2)" }}>
           <PeopleIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{

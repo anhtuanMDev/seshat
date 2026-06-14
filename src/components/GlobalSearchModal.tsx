@@ -165,7 +165,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
 
   return (
     <Modal title="Global Search & Replace" onClose={onClose}>
-      <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="seshat-flex-col" style={{ padding: "0 var(--space-5) var(--space-5)", gap: "var(--space-4)" }}>
         <p style={{ ...S.dim, margin: 0, fontSize: 13 }}>
           Search across all loaded characters, events, items, world glossary, and chapters. 
           {unloadedCount > 0 && (
@@ -175,7 +175,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
           )}
         </p>
 
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: "var(--space-2)" }}>
           <input
             style={{ ...S.input, flex: 1 }}
             placeholder="Search for..."
@@ -191,7 +191,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
           />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        <div className="seshat-flex-end" style={{ gap: "var(--space-2)" }}>
           <button style={S.ghost} onClick={onClose}>Cancel</button>
           {!showConfirm ? (
             <button 
@@ -202,7 +202,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
               {isReplacing ? "Replacing..." : "Replace All"}
             </button>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--bg-panel)", padding: "4px 8px", borderRadius: 4, border: "1px solid var(--color-red)" }}>
+            <div className="seshat-flex-align" style={{ gap: "var(--space-2)", background: "var(--bg-panel)", padding: "var(--space-1) var(--space-2)", borderRadius: 4, border: "1px solid var(--color-red)" }}>
               <span style={{ fontSize: 12, color: "var(--color-red)" }}>Are you sure?</span>
               <button style={{ ...S.ghost, color: "var(--text-muted)" }} onClick={() => setShowConfirm(false)}>No</button>
               <button style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} onClick={executeReplaceAll}>Yes, replace all</button>
@@ -212,7 +212,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
 
         <div style={{ maxHeight: 300, overflowY: "auto", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
           {results.length > 0 ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="seshat-flex-col" style={{ gap: "var(--space-2)" }}>
               <span style={{ ...S.dim, fontSize: 12 }}>Found {results.length} matches:</span>
               {results.slice(0, 50).map((r, i) => (
                 <div key={i} style={{ padding: 8, background: "var(--bg-panel)", borderRadius: 4 }}>

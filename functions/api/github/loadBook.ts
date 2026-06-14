@@ -125,7 +125,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
 
     return new Response(JSON.stringify({ book }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" },
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });

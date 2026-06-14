@@ -44,14 +44,12 @@ export default function ChapterListPage() {
     <div ref={ref} className="seshat-page-container">
       {/* Header */}
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 32,
+          marginBottom: "var(--space-8)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="seshat-flex-align" style={{ gap: "var(--space-2)" }}>
           <AutoStoriesIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
@@ -81,12 +79,11 @@ export default function ChapterListPage() {
         </div>
         <button
           onClick={addChapter}
+          className="seshat-flex-align"
           style={{
             ...S.ghost,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 12,
+            gap: "var(--space-1)",
+            fontSize: "var(--text-xs)",
             color: "var(--text-secondary)",
           }}
         >
@@ -149,7 +146,7 @@ function ChapterCard({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <div style={{ display: "flex", alignItems: "center" }}>
+      <div className="seshat-flex-align">
         {/* Chapter Number Column */}
         <div style={{ width: 80, flexShrink: 0 }}>
           {c.number ? (
@@ -171,7 +168,7 @@ function ChapterCard({
         </div>
 
         {/* Title & Connector & Meta */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+        <div className="seshat-flex-align" style={{ flex: 1 }}>
           <span
             style={{
               fontSize: 14,

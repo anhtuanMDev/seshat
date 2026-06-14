@@ -13,21 +13,21 @@ export const SnapshotCard = memo(function SnapshotCard({ color, event, power }: 
   return (
     <div
       style={{
-        padding: "8px 12px",
+        padding: "var(--space-2) var(--space-3)",
         background: "var(--bg-status)",
-        borderRadius: 2,
+        borderRadius: "var(--space-1)",
         borderLeft: `3px solid ${color}`,
       }}
     >
-      <p style={{ ...S.dim, marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}>
+      <p style={{ ...S.dim, marginBottom: "var(--space-1)", display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
         <CameraAltIcon sx={{ fontSize: 11 }} />Snapshot</p>
-      <p style={{ fontSize: 12, color: "var(--text-primary)" }}>
+      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-primary)" }}>
         {event
           ? `T${event.time} — ${event.title}`
           : "No timeline data"}
       </p>
       {power && (
-        <p style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+        <p style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
           Power: {power}
         </p>
       )}

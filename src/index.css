@@ -321,6 +321,35 @@ svg circle {
   font-style: italic;
 }
 
+/* ── Layout Utilities ───────────────────────────────────────────────────── */
+.seshat-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.seshat-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seshat-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.seshat-flex-align {
+  display: flex;
+  align-items: center;
+}
+
+.seshat-flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 /* ── Responsive Layout Overrides ────────────────────────────────────────── */
 
 /* Show on mobile, hide on desktop */

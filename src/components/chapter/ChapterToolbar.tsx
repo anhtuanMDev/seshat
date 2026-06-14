@@ -26,13 +26,12 @@ export function ChapterToolbar({
         onClick={onSave}
         title="Save changes"
         disabled={!isDirty || isSaving}
+        className="seshat-flex-align"
         style={{
           ...S.ghost,
           fontSize: 11,
           letterSpacing: 1,
           color: "var(--color-green)",
-          display: "flex",
-          alignItems: "center",
           gap: 3,
           opacity: (!isDirty || isSaving) ? 0.5 : 1,
           cursor: (!isDirty || isSaving) ? "default" : "pointer",
@@ -43,14 +42,13 @@ export function ChapterToolbar({
       </button>
       <button
         onClick={onTogglePanel}
+        className="seshat-flex-align"
         style={{
           ...S.ghost,
           fontSize: 11,
           letterSpacing: 1,
           color: showPanel ? "var(--color-purple)" : "var(--text-muted)",
           borderBottom: showPanel ? "1px solid var(--color-purple)" : "none",
-          display: "flex",
-          alignItems: "center",
           gap: 3,
         }}
       >
@@ -60,13 +58,12 @@ export function ChapterToolbar({
       <button
         onClick={onExport}
         title="Export to plain text DOCX"
+        className="seshat-flex-align"
         style={{
           ...S.ghost,
           fontSize: 11,
           letterSpacing: 1,
           color: "var(--text-muted)",
-          display: "flex",
-          alignItems: "center",
           gap: 3,
         }}
       >

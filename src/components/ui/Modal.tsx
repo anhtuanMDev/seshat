@@ -43,14 +43,13 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
           <span className="seshat-modal-title">{title}</span>
           <button
             onClick={onClose}
+            className="seshat-flex-center"
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
               color: "var(--text-muted)",
               padding: "2px",
-              display: "flex",
-              alignItems: "center",
               lineHeight: 1,
             }}
             onMouseEnter={(e) =>
@@ -66,13 +65,12 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
         <div>{children}</div>
         {footer && (
           <div
+            className="seshat-flex-end"
             style={{
-              marginTop: 28,
-              paddingTop: 16,
+              marginTop: "var(--space-8)",
+              paddingTop: "var(--space-4)",
               borderTop: "1px solid var(--border)",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 12,
+              gap: "var(--space-3)",
             }}
           >
             {footer}

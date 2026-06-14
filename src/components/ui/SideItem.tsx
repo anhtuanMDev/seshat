@@ -26,24 +26,21 @@ export function SideItem({
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      className="seshat-flex-between"
       style={{
         padding: "8px 24px",
         cursor: "pointer",
         background: hover ? "var(--bg-hover)" : "transparent",
         borderLeft: active ? `2px solid ${color || "var(--color-purple)"}` : "2px solid transparent",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
         transition: "background 0.1s, border-left 0.1s",
       }}
     >
       <div style={{ minWidth: 0 }}>
         <div
+          className="seshat-flex-align"
           style={{
             fontSize: 14,
             color: color || "var(--text-primary)",
-            display: "flex",
-            alignItems: "center",
             gap: 6,
           }}
         >

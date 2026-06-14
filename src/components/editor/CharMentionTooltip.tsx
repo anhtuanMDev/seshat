@@ -47,12 +47,11 @@ export default function CharMentionTooltip({
     >
       {/* Header */}
       <div
+        className="seshat-flex-align"
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 12,
-          paddingBottom: 10,
+          gap: "var(--space-2)",
+          marginBottom: "var(--space-3)",
+          paddingBottom: "var(--space-2)",
           borderBottom: "1px solid var(--border)",
         }}
       >
@@ -238,7 +237,7 @@ export default function CharMentionTooltip({
           >
             Timeline ({charEvents.length})
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-1)" }}>
             {charEvents.slice(0, 6).map((e) => (
               <span
                 key={e.id}

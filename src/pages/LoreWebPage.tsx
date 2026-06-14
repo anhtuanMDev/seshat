@@ -247,21 +247,18 @@ export default function LoreWebPage() {
   return (
     <div ref={ref} className="seshat-page-container">
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: isFullscreen ? 0 : 20,
+          marginBottom: isFullscreen ? 0 : "var(--space-5)",
           padding: isFullscreen ? "10px 20px" : 0,
         }}
       >
         <h2 style={{ ...S.h2, margin: 0 }}>Lore & Relationship Web</h2>
 
         <div
+          className="seshat-flex-align"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
+            gap: "var(--space-4)",
             flex: 1,
             maxWidth: 400,
             marginLeft: 40,

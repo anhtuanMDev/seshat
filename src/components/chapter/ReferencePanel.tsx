@@ -107,7 +107,7 @@ export function ReferencePanel({
     .sort((a: Event, b: Event) => a.time - b.time);
 
   return (
-    <div className={`seshat-chapter-panel ${isOpen ? "open" : ""}`} style={{ display: "flex", flexDirection: "column" }}>
+    <div className={`seshat-chapter-panel seshat-flex-col ${isOpen ? "open" : ""}`}>
       <div
         style={{
           display: "flex",
@@ -198,7 +198,7 @@ export function ReferencePanel({
       >
         {panelTab === "chars" && (
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <div className="seshat-flex-align" style={{ gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
               <input
                 list="unpinned-chars"
                 value={charInput}
@@ -296,9 +296,7 @@ export function ReferencePanel({
         )}
 
         {panelTab === "notes" && (
-          <div
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
-          >
+          <div className="seshat-flex-col" style={{ height: "100%" }}>
             <p style={{ ...S.dim, marginBottom: 10 }}>
               Private notes, research, and threads to pull later...
             </p>

@@ -53,18 +53,16 @@ export default function TimelinePage() {
     <div ref={ref} className="seshat-page-container">
       {/* Header */}
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 32,
+          marginBottom: "var(--space-8)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
           <TimelineIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
           <span
             style={{
-              fontSize: 11,
+              fontSize: "var(--text-xs)",
               letterSpacing: 3,
               textTransform: "uppercase",
               color: "var(--text-secondary)",
@@ -79,8 +77,8 @@ export default function TimelinePage() {
             ...S.ghost,
             display: "flex",
             alignItems: "center",
-            gap: 4,
-            fontSize: 12,
+            gap: "var(--space-1)",
+            fontSize: "var(--text-xs)",
             color: "var(--text-secondary)",
           }}
         >
@@ -93,15 +91,15 @@ export default function TimelinePage() {
         <div
           style={{
             display: "flex",
-            gap: 8,
-            marginBottom: 20,
+            gap: "var(--space-2)",
+            marginBottom: "var(--space-5)",
             flexWrap: "wrap",
             alignItems: "center",
           }}
         >
           <span
             style={{
-              fontSize: 11,
+              fontSize: "var(--text-xs)",
               color: "var(--text-muted)",
               textTransform: "uppercase",
               letterSpacing: 1,
@@ -165,7 +163,7 @@ export default function TimelinePage() {
           />
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
           {filteredEvents.map((e: Event) => (
             <EventCard
               key={e.id}
@@ -220,7 +218,7 @@ function EventCard({
       onClick={onClick}
       style={{
         display: "flex",
-        gap: 24,
+        gap: "var(--space-6)",
         cursor: "pointer",
         position: "relative",
       }}
@@ -303,7 +301,7 @@ function EventCard({
         className="event-card-inner"
         style={{
           flex: 1,
-          padding: "20px 24px",
+          padding: "var(--space-5) var(--space-6)",
           background: "var(--bg-entry)",
           borderRadius: "8px",
           border: "1px solid transparent",
@@ -311,22 +309,20 @@ function EventCard({
           position: "relative",
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          gap: "var(--space-3)",
         }}
       >
         {/* Header Row */}
         <div
+          className="seshat-flex-between"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
+            gap: "var(--space-2)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
             <span
               style={{
-                fontSize: 14,
+                fontSize: "var(--text-sm)",
                 fontWeight: 500,
                 color: "var(--text-primary)",
                 letterSpacing: 0.2,

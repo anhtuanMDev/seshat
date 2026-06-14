@@ -13,6 +13,7 @@ export default function MentionHelpButton() {
         type="button"
         onClick={handleClick}
         title="How to use mentions"
+        className="seshat-flex-align"
         style={{
           background: open ? "var(--bg-active)" : "transparent",
           border: "1px solid var(--color-purple)",
@@ -22,8 +23,6 @@ export default function MentionHelpButton() {
           padding: "2px 8px",
           color: "var(--color-purple)",
           letterSpacing: 0.5,
-          display: "flex",
-          alignItems: "center",
           gap: 4,
           transition: "background 0.12s",
         }}
@@ -68,10 +67,8 @@ export default function MentionHelpButton() {
           >
             {/* Header */}
             <div
+              className="seshat-flex-between"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
                 marginBottom: 24,
                 paddingBottom: 16,
                 borderBottom: "1px solid var(--border)",
@@ -186,12 +183,11 @@ export default function MentionHelpButton() {
             </div>
 
             <div
+              className="seshat-flex-end"
               style={{
                 marginTop: 28,
                 paddingTop: 16,
                 borderTop: "1px solid var(--border)",
-                display: "flex",
-                justifyContent: "flex-end",
               }}
             >
               <button
@@ -228,17 +224,15 @@ function Tip({
   body: string;
 }) {
   return (
-    <div style={{ display: "flex", gap: 14 }}>
+    <div style={{ display: "flex", gap: "var(--space-4)" }}>
       <span
+        className="seshat-flex-center"
         style={{
           width: 22,
           height: 22,
           borderRadius: "50%",
           border: "1px solid var(--color-purple)",
           color: "var(--color-purple)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           fontSize: 11,
           flexShrink: 0,
           marginTop: 1,

@@ -12,25 +12,25 @@ interface WinBarProps {
 
 export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, nameB }: WinBarProps) {
   return (
-    <div style={{ marginBottom: 28 }}>
+    <div style={{ marginBottom: "var(--space-8)" }}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginBottom: 6,
+          marginBottom: "var(--space-2)",
         }}
       >
-        <span style={{ fontSize: 13, color: colA, fontWeight: 500 }}>
+        <span style={{ fontSize: "var(--text-sm)", color: colA, fontWeight: 500 }}>
           {nameA} — {pctA}%
         </span>
-        <span style={{ fontSize: 13, color: colB, fontWeight: 500 }}>
+        <span style={{ fontSize: "var(--text-sm)", color: colB, fontWeight: 500 }}>
           {pctB}% — {nameB}
         </span>
       </div>
       <div
         style={{
-          height: 32,
-          borderRadius: 4,
+          height: "var(--space-8)",
+          borderRadius: "var(--space-1)",
           overflow: "hidden",
           display: "flex",
           background: "var(--bg-active)",
@@ -55,20 +55,20 @@ export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, name
         style={{
           display: "flex",
           justifyContent: "center",
-          marginTop: 8,
+          marginTop: "var(--space-2)",
         }}
       >
         {pctA === pctB ? (
-          <span style={{ ...S.dim, fontSize: 13 }}>Even match</span>
+          <span style={{ ...S.dim, fontSize: "var(--text-xs)" }}>Even match</span>
         ) : (
           <span
             style={{
-              fontSize: 12,
+              fontSize: "var(--text-xs)",
               color: pctA > pctB ? colA : colB,
               fontWeight: 500,
               background: "var(--bg-status)",
-              padding: "4px 12px",
-              borderRadius: 20,
+              padding: "var(--space-1) var(--space-3)",
+              borderRadius: "20px",
             }}
           >
             {pctA > pctB ? nameA : nameB} has the edge (

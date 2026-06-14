@@ -36,12 +36,12 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
       const content = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ""))));
       return new Response(content, {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" },
       });
     } else {
       return new Response(fileData.content, {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" },
       });
     }
   } catch (error) {

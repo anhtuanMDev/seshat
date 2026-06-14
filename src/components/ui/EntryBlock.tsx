@@ -11,15 +11,16 @@ export function EntryBlock({ color, onDelete, children }: EntryBlockProps) {
   return (
     <div
       style={{
-        marginBottom: 24,
-        padding: "16px 20px",
+        marginBottom: "var(--space-6)",
+        padding: "var(--space-4) var(--space-5)",
         borderLeft: `3px solid ${color || "var(--border)"}`,
         background: "var(--bg-status)",
-        borderRadius: "0 4px 4px 0",
+        borderRadius: "0 var(--space-1) var(--space-1) 0",
       }}
     >
       <div
-        style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}
+        className="seshat-flex-end"
+        style={{ marginBottom: "var(--space-1)" }}
       >
         <IconButton
           onClick={onDelete}

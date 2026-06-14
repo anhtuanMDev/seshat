@@ -80,14 +80,13 @@ function MenuBar({
 
   return (
     <div
+      className="seshat-flex-align"
       style={{
-        display: "flex",
         gap: 1,
         padding: "6px 0",
         borderBottom: "1px solid var(--border)",
-        marginBottom: 12,
+        marginBottom: "var(--space-3)",
         flexWrap: "wrap",
-        alignItems: "center",
       }}
     >
       {btn(
@@ -190,13 +189,11 @@ function MenuBar({
       {showPinpointModal &&
         createPortal(
           <div
+            className="seshat-flex-center"
             style={{
               position: "fixed",
               inset: 0,
               zIndex: 2000,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               backgroundColor: "rgba(0,0,0,0.5)",
             }}
             onClick={() => setShowPinpointModal(false)}
@@ -252,9 +249,7 @@ function MenuBar({
                 }}
                 placeholder="What are your thoughts?"
               />
-              <div
-                style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
-              >
+              <div className="seshat-flex-end" style={{ gap: "var(--space-3)" }}>
                 <button
                   onClick={() => setShowPinpointModal(false)}
                   style={{

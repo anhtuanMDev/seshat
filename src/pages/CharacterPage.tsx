@@ -67,6 +67,25 @@ type ModalKind =
   | { type: "arc"; idx: number | null; isNew?: boolean }
   | null;
 
+function GhostAddButton({ onClick }: { onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        ...S.ghost,
+        fontSize: "11px",
+        display: "flex",
+        alignItems: "center",
+        gap: "var(--space-1)",
+        color: "var(--text-secondary)",
+      }}
+    >
+      <AddIcon sx={{ fontSize: 13 }} />
+      add
+    </button>
+  );
+}
+
 export default function CharacterPage() {
   const { id } = useParams();
   const events = useEvents();
@@ -309,10 +328,8 @@ export default function CharacterPage() {
     <div ref={ref} className="seshat-page-container" data-testid="character-page-container">
       {/* ── Header ── */}
       <div
+        className="seshat-flex-between"
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
           marginBottom: "var(--space-6)",
           gap: "var(--space-4)",
         }}
@@ -394,27 +411,13 @@ export default function CharacterPage() {
             Status Timeline ({statusTimeline.length})
           </>
         }
-        action={
-          <button
-            onClick={() => openAdd("status")}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <AddIcon sx={{ fontSize: 13 }} />
-            add
-          </button>
-        }
+        action={<GhostAddButton onClick={() => openAdd("status")} />}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Track how their physical state, emotions, and roles shift over time and events.
         </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           {statusTimeline
             .map((s, i) => ({ s, i }))
             .sort((a, b) => {
@@ -538,11 +541,9 @@ export default function CharacterPage() {
 
         {/* Traumas */}
         <div
+          className="seshat-flex-between"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
+            marginBottom: "var(--space-4)",
           }}
         >
           <p
@@ -551,29 +552,16 @@ export default function CharacterPage() {
               margin: 0,
               display: "flex",
               alignItems: "center",
-              gap: 4,
+              gap: "var(--space-1)",
             }}
           >
             <CrisisAlertIcon sx={{ fontSize: 12 }} />
             Traumas ({traumas.length})
           </p>
-          <button
-            onClick={() => openAdd("trauma")}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-              color: "var(--text-secondary)",
-            }}
-          >
-            <AddIcon sx={{ fontSize: 13 }} />
-            add
-          </button>
+          <GhostAddButton onClick={() => openAdd("trauma")} />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           {traumas.map((t: Trauma, i: number) => (
             <ArrayItemCard
               key={t.id}
@@ -607,18 +595,10 @@ export default function CharacterPage() {
           </>
         }
         action={
-          <div
-            style={S.addBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              openAdd("arc");
-            }}
-          >
-            <AddIcon sx={{ fontSize: 14 }} /> add
-          </div>
+          <GhostAddButton onClick={(e) => { e.stopPropagation(); openAdd("arc"); }} />
         }
       >
-        <p style={{ ...S.dim, marginBottom: 12 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Where they begin and where they end. The transformation the story puts
           them through.
         </p>
@@ -657,26 +637,12 @@ export default function CharacterPage() {
             Conditions ({conditions.length})
           </>
         }
-        action={
-          <button
-            onClick={() => openAdd("condition")}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <AddIcon sx={{ fontSize: 13 }} />
-            add
-          </button>
-        }
+        action={<GhostAddButton onClick={() => openAdd("condition")} />}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           Current physical, mental, social, or spiritual states.
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           {conditions.map((cd: Condition, i: number) => (
             <ArrayItemCard
               key={cd.id}
@@ -706,16 +672,14 @@ export default function CharacterPage() {
           </>
         }
       >
-        <p style={{ ...S.dim, marginBottom: 20 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-5)" }}>
           What they've gained and lost over the course of the story.
         </p>
 
         <div
+          className="seshat-flex-between"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: "var(--space-3)",
           }}
         >
           <p
@@ -724,32 +688,20 @@ export default function CharacterPage() {
               margin: 0,
               display: "flex",
               alignItems: "center",
-              gap: 4,
+              gap: "var(--space-1)",
             }}
           >
             <EmojiEventsIcon sx={{ fontSize: 12 }} />
             Achievements ({achievements.length})
           </p>
-          <button
-            onClick={() => openAdd("achievement")}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <AddIcon sx={{ fontSize: 13 }} />
-            add
-          </button>
+          <GhostAddButton onClick={() => openAdd("achievement")} />
         </div>
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 8,
-            marginBottom: 24,
+            gap: "var(--space-2)",
+            marginBottom: "var(--space-6)",
           }}
         >
           {achievements.map((a: Achievement, i: number) => (
@@ -774,11 +726,9 @@ export default function CharacterPage() {
         <hr style={S.rule} />
 
         <div
+          className="seshat-flex-between"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: "var(--space-3)",
           }}
         >
           <p
@@ -787,27 +737,15 @@ export default function CharacterPage() {
               margin: 0,
               display: "flex",
               alignItems: "center",
-              gap: 4,
+              gap: "var(--space-1)",
             }}
           >
             <HeartBrokenIcon sx={{ fontSize: 12 }} />
             Losses ({losses.length})
           </p>
-          <button
-            onClick={() => openAdd("loss")}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <AddIcon sx={{ fontSize: 13 }} />
-            add
-          </button>
+          <GhostAddButton onClick={() => openAdd("loss")} />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           {losses.map((ls: Loss, i: number) => (
             <ArrayItemCard
               key={ls.id}
@@ -831,26 +769,12 @@ export default function CharacterPage() {
             Relationships ({relationships.length})
           </>
         }
-        action={
-          <button
-            onClick={() => openAdd("relationship")}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-            }}
-          >
-            <AddIcon sx={{ fontSize: 13 }} />
-            add
-          </button>
-        }
+        action={<GhostAddButton onClick={() => openAdd("relationship")} />}
       >
-        <p style={{ ...S.dim, marginBottom: 14 }}>
+        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
           How this character relates to others over time.
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
           {relationships.map((rel: Relationship, i: number) => {
             const otherChar = allCharacters.find((c) => c.id === rel.withId);
             const title = otherChar ? otherChar.name : "Unknown Character";
