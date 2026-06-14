@@ -55,16 +55,16 @@
   --select-bg:     transparent;
   --select-color:  #2b2927;
 
-  /* ── Semantic Colors (Desaturated) ── */
-  --color-red:     #d94b4b; /* Error / Fight */
-  --color-blue:    #3182ce; /* Info / Lore */
-  --color-green:   #38a169; /* Success */
+  /* ── Semantic Colors (High Contrast) ── */
+  --color-red:     #c53030; /* Error / Fight */
+  --color-blue:    #2b6cb0; /* Info / Lore */
+  --color-green:   #276749; /* Success */
   --color-primary: #2c5282; /* Primary Brand (Midnight Blue) */
   --color-purple:  var(--color-primary); /* Legacy alias */
-  --color-orange:  #dd6b20; /* Warning / Event */
-  --color-teal:    #319795; /* Accent */
-  --color-dark:    #2d3748; /* Neutral */
-  --color-brown:   #b05a2e; /* Earth */
+  --color-orange:  #c05621; /* Warning / Event */
+  --color-teal:    #285e61; /* Accent */
+  --color-dark:    #1a202c; /* Neutral */
+  --color-brown:   #9c4221; /* Earth */
 
   /* ── Animation Easing Curves ── */
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
@@ -110,16 +110,16 @@
   --select-bg:     #1a1918;
   --select-color:  #eceae8;
 
-  /* ── Semantic Colors (Vibrant Dark) ── */
-  --color-red:     #fc8181;
-  --color-blue:    #63b3ed;
-  --color-green:   #68d391;
+  /* ── Semantic Colors (High Contrast Vibrant) ── */
+  --color-red:     #feb2b2;
+  --color-blue:    #90cdf4;
+  --color-green:   #9ae6b4;
   --color-primary: #90cdf4; /* Primary Brand (Crisp Blue) */
   --color-purple:  var(--color-primary); /* Legacy alias */
-  --color-orange:  #f6ad55;
-  --color-teal:    #4fd1c5;
-  --color-dark:    #a0aec0;
-  --color-brown:   #ed8936;
+  --color-orange:  #fbd38d;
+  --color-teal:    #81e6d9;
+  --color-dark:    #e2e8f0;
+  --color-brown:   #f6ad55;
 
   /* ── MUI overrides ── */
   --mui-input-before: #4d4844;
