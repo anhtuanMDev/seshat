@@ -119,6 +119,24 @@ export default function EventPage() {
   }, [event, event?.id, reset, bookIdx, allChapters]);
 
   const ref = useAnimateIn();
+  const [isFloating, setIsFloating] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      let st: number;
+      if (e.target === document) {
+        st =
+          document.scrollingElement?.scrollTop ||
+          document.documentElement?.scrollTop ||
+          0;
+      } else {
+        st = e.target instanceof HTMLElement ? e.target.scrollTop : 0;
+      }
+      setIsFloating(st > 80);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, []);
 
   const toggleChar = useCallback(
     (cid: string) => {
@@ -223,245 +241,353 @@ export default function EventPage() {
     }
   };
 
-
   return (
-    <div ref={ref} className="seshat-page-container">
-      <div
-        className="seshat-flex-between"
-        style={{
-          marginBottom: "var(--space-4)",
-          gap: "var(--space-4)",
-        }}
-      >
-        <input
-          {...register("title")}
-          style={{
-            ...S.input,
-            fontSize: 28,
-            fontFamily: "var(--font-serif)",
-            border: "none",
-            padding: 0,
-            flex: 1,
-            color: "var(--text-primary)",
-          }}
-        />
-        <button
-          onClick={onSubmit}
-          title="Save changes"
-          disabled={(!isDirty && !isAttrsDirty) || isSaving}
-          style={{
-            ...S.ghost,
-            fontSize: 11,
-            letterSpacing: 1,
-            color: "var(--color-green)",
-            flexShrink: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            opacity: (!isDirty && !isAttrsDirty) || isSaving ? 0.5 : 1,
-            cursor:
-              (!isDirty && !isAttrsDirty) || isSaving ? "default" : "pointer",
-          }}
-        >
-          <SaveIcon sx={{ fontSize: 12 }} />
-          {isSaving ? "saving..." : "save"}
-        </button>
-      </div>
-
-      <div className="seshat-event-meta-grid">
-        <div>
-          <label style={S.label}>
-            <ScheduleIcon
-              sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-            />
-            Time
-          </label>
-          <input
-            type="number"
-            {...register("time", { valueAsNumber: true })}
-            style={{ ...S.input, width: 52 }}
-          />
-        </div>
-        <div>
-          <label style={S.label}>Type</label>
-          <select {...register("type")} style={S.select}>
-            {EVENT_TYPES.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label style={S.label}>
-            <CalendarTodayIcon
-              sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-            />
-            Start
-          </label>
-          <input
-            type="datetime-local"
-            {...register("startDate")}
-            style={{ ...S.input, width: "100%", fontSize: 12 }}
-          />
-        </div>
-        <div>
-          <label style={S.label}>
-            <CalendarTodayIcon
-              sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-            />
-            End
-          </label>
-          <input
-            type="datetime-local"
-            {...register("endDate")}
-            style={{ ...S.input, width: "100%", fontSize: 12 }}
-          />
-        </div>
-        <div>
-          <label style={S.label}>Subplot</label>
-          <input
-            {...register("subplot")}
-            placeholder="e.g. A-Plot, B-Plot"
-            style={{ ...S.input, width: "100%", fontSize: 12 }}
-          />
-        </div>
-      </div>
-
-      <Section 
-        title={
-          <div className="seshat-flex-align">
-            <AutoStoriesIcon sx={{ fontSize: 12, marginRight: 4 }} />
-            Chapters
-            <button 
-              type="button" 
-              onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
-              style={{ ...S.ghost, padding: "0 4px", marginLeft: 8, height: 20 }}
-              title="How does Chapter Sync work?"
-            >
-              <InfoIcon sx={{ fontSize: 14, color: "var(--color-blue)" }} />
-            </button>
-          </div>
-        } 
-        defaultOpen={true}
-      >
+    <>
+      <div ref={ref} className="seshat-page-container">
         <div
+          className="seshat-flex-between"
           style={{
-            ...S.input,
-            minHeight: 48,
-            fontSize: 12,
-            padding: "12px",
-            background: "transparent",
-            border: "1px solid var(--border)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 4,
+            marginBottom: "var(--space-4)",
+            gap: "var(--space-4)",
           }}
         >
-          <span style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 8, fontStyle: "italic" }}>
-            Chapters that take place during this event. To change this, edit the chapter's "Takes Place At" field.
-          </span>
-          {formChapters.length > 0 ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {allChapters.filter(c => formChapters.includes(c.id)).map((c) => (
-                <div
-                  key={c.id}
-                  style={{
-                    ...S.pill,
-                    display: "inline-flex",
+          <input
+            {...register("title")}
+            style={{
+              ...S.input,
+              fontSize: 28,
+              fontFamily: "var(--font-serif)",
+              border: "none",
+              padding: 0,
+              flex: 1,
+              color: "var(--text-primary)",
+            }}
+          />
+          <button
+            onClick={onSubmit}
+            title="Save changes"
+            disabled={(!isDirty && !isAttrsDirty) || isSaving}
+            style={
+              isDirty || isAttrsDirty
+                ? {
+                    background: "var(--color-green)",
+                    color: "var(--bg-app)",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: isSaving ? "default" : "pointer",
+                    opacity: isSaving ? 0.7 : 1,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }
+                : {
+                    ...S.ghost,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    color: "var(--color-green)",
+                    flexShrink: 0,
+                    display: "flex",
                     alignItems: "center",
                     gap: 4,
-                    padding: "4px 8px",
-                    color: "var(--color-blue)",
-                    borderColor: "var(--color-blue)",
-                    background: "rgba(0, 153, 255, 0.05)",
-                  }}
-                >
-                  <span style={{ fontSize: 11, fontWeight: "bold" }}>
-                    {c.number}
-                  </span>
-                  {c.title && (
-                    <span
-                      style={{
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxWidth: 150,
-                        fontSize: 11,
-                      }}
-                    >
-                      {c.title}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <span style={{ color: "var(--text-muted)" }}>
-              No chapters take place here yet.
-            </span>
-          )}
+                    opacity: 0.5,
+                    cursor: "default",
+                  }
+            }
+          >
+            <SaveIcon sx={{ fontSize: 14 }} />
+            {isSaving ? "saving..." : "save"}
+          </button>
         </div>
 
+        <div className="seshat-event-meta-grid">
+          <div>
+            <label style={S.label}>
+              <ScheduleIcon
+                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
+              />
+              Time
+            </label>
+            <input
+              type="number"
+              {...register("time", { valueAsNumber: true })}
+              style={{ ...S.input, width: 52 }}
+            />
+          </div>
+          <div>
+            <label style={S.label}>Type</label>
+            <select {...register("type")} style={S.select}>
+              {EVENT_TYPES.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={S.label}>
+              <CalendarTodayIcon
+                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
+              />
+              Start
+            </label>
+            <input
+              type="datetime-local"
+              {...register("startDate")}
+              style={{ ...S.input, width: "100%", fontSize: 12 }}
+            />
+          </div>
+          <div>
+            <label style={S.label}>
+              <CalendarTodayIcon
+                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
+              />
+              End
+            </label>
+            <input
+              type="datetime-local"
+              {...register("endDate")}
+              style={{ ...S.input, width: "100%", fontSize: 12 }}
+            />
+          </div>
+          <div>
+            <label style={S.label}>Subplot</label>
+            <input
+              {...register("subplot")}
+              placeholder="e.g. A-Plot, B-Plot"
+              style={{ ...S.input, width: "100%", fontSize: 12 }}
+            />
+          </div>
+        </div>
+
+        <Section
+          title={
+            <div className="seshat-flex-align">
+              <AutoStoriesIcon sx={{ fontSize: 12, marginRight: 4 }} />
+              Chapters
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowInfoModal(true);
+                }}
+                style={{
+                  ...S.ghost,
+                  padding: "0 4px",
+                  marginLeft: 8,
+                  height: 20,
+                }}
+                title="How does Chapter Sync work?"
+              >
+                <InfoIcon sx={{ fontSize: 14, color: "var(--color-blue)" }} />
+              </button>
+            </div>
+          }
+          defaultOpen={true}
+        >
+          <div
+            style={{
+              ...S.input,
+              minHeight: 48,
+              fontSize: 12,
+              padding: "12px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                color: "var(--text-muted)",
+                marginBottom: 8,
+                fontStyle: "italic",
+              }}
+            >
+              Chapters that take place during this event. To change this, edit
+              the chapter's "Takes Place At" field.
+            </span>
+            {formChapters.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {allChapters
+                  .filter((c) => formChapters.includes(c.id))
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      style={{
+                        ...S.pill,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "4px 8px",
+                        color: "var(--color-blue)",
+                        borderColor: "var(--color-blue)",
+                        background: "rgba(0, 153, 255, 0.05)",
+                      }}
+                    >
+                      <span style={{ fontSize: 11, fontWeight: "bold" }}>
+                        {c.number}
+                      </span>
+                      {c.title && (
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: 150,
+                            fontSize: 11,
+                          }}
+                        >
+                          {c.title}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <span style={{ color: "var(--text-muted)" }}>
+                No chapters take place here yet.
+              </span>
+            )}
+          </div>
+
           {showInfoModal && (
-            <Modal title="Smart Character Sync" onClose={() => setShowInfoModal(false)}>
-              <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+            <Modal
+              title="Smart Character Sync"
+              onClose={() => setShowInfoModal(false)}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: "var(--text-secondary)",
+                }}
+              >
                 <p style={{ marginBottom: 12 }}>
-                  <strong>Auto-Add:</strong> When you pin a chapter to this event, all characters currently present in that chapter are automatically added to the event.
+                  <strong>Auto-Add:</strong> When you pin a chapter to this
+                  event, all characters currently present in that chapter are
+                  automatically added to the event.
                 </p>
                 <p style={{ marginBottom: 12 }}>
-                  <strong>Clever Auto-Remove:</strong> If you unpin a chapter, the system will look for characters that belonged <em>exclusively</em> to that chapter. 
+                  <strong>Clever Auto-Remove:</strong> If you unpin a chapter,
+                  the system will look for characters that belonged{" "}
+                  <em>exclusively</em> to that chapter.
                 </p>
                 <p style={{ marginBottom: 12 }}>
-                  Before removing an exclusive character, the system checks if you have actively planned for them in this event (e.g., set their "Motive", "Emotional State", or "Power Tier"). 
+                  Before removing an exclusive character, the system checks if
+                  you have actively planned for them in this event (e.g., set
+                  their "Motive", "Emotional State", or "Power Tier").
                 </p>
-                <div style={{ ...S.pill, background: "rgba(0, 153, 255, 0.05)", borderColor: "var(--color-blue)", color: "var(--text-primary)", display: "inline-block", marginTop: 8 }}>
-                  <strong>TL;DR:</strong> If a character's attributes are entirely blank, they will be safely auto-cleaned. If you've modified their event attributes, they are protected from auto-removal, preserving your manual planning!
+                <div
+                  style={{
+                    ...S.pill,
+                    background: "rgba(0, 153, 255, 0.05)",
+                    borderColor: "var(--color-blue)",
+                    color: "var(--text-primary)",
+                    display: "inline-block",
+                    marginTop: 8,
+                  }}
+                >
+                  <strong>TL;DR:</strong> If a character's attributes are
+                  entirely blank, they will be safely auto-cleaned. If you've
+                  modified their event attributes, they are protected from
+                  auto-removal, preserving your manual planning!
                 </div>
               </div>
               <div style={{ marginTop: 24, textAlign: "right" }}>
-                <button type="button" style={{ ...S.button, padding: "6px 16px" }} onClick={() => setShowInfoModal(false)}>
+                <button
+                  type="button"
+                  style={{ ...S.button, padding: "6px 16px" }}
+                  onClick={() => setShowInfoModal(false)}
+                >
                   Got it
                 </button>
               </div>
             </Modal>
           )}
-      </Section>
+        </Section>
 
-      <Field
-        label={
-          <>
-            <LocationOnIcon
-              sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-            />
-            Setting / location
-          </>
-        }
-        name="setting"
-        control={control}
-        placeholder="Where and what it feels like here…"
-      />
-      <Field
-        label="What happens"
-        name="description"
-        control={control}
-        multi
-        rows={3}
-      />
-      <Field
-        label="Consequence / after-effects"
-        name="consequence"
-        control={control}
-        multi
-        rows={2}
-      />
+        <Field
+          label={
+            <>
+              <LocationOnIcon
+                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
+              />
+              Setting / location
+            </>
+          }
+          name="setting"
+          control={control}
+          placeholder="Where and what it feels like here…"
+        />
+        <Field
+          label="What happens"
+          name="description"
+          control={control}
+          multi
+          rows={3}
+        />
+        <Field
+          label="Consequence / after-effects"
+          name="consequence"
+          control={control}
+          multi
+          rows={2}
+        />
 
-      <CharacterAttrsBlock
-        characters={characters}
-        selectedIds={formChars}
-        charAttrs={charAttrs}
-        onToggle={toggleChar}
-        onPatchAttr={patchAttr}
-      />
-    </div>
+        <CharacterAttrsBlock
+          characters={characters}
+          selectedIds={formChars}
+          charAttrs={charAttrs}
+          onToggle={toggleChar}
+          onPatchAttr={patchAttr}
+        />
+      </div>
+
+      {isFloating && (
+        <div className="seshat-chapter-toolbar floating">
+          <button
+            disabled={(!isDirty && !isAttrsDirty) || isSaving}
+            onClick={onSubmit}
+            title="Save changes"
+            style={
+              isDirty || isAttrsDirty
+                ? {
+                    background: "var(--color-green)",
+                    color: "var(--bg-app)",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: isSaving ? "default" : "pointer",
+                    opacity: isSaving ? 0.7 : 1,
+                  }
+                : {
+                    ...S.ghost,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    color: "var(--color-green)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: 0.5,
+                    cursor: "default",
+                  }
+            }
+          >
+            <SaveIcon sx={{ fontSize: 14 }} />
+            {isSaving ? "saving..." : "save"}
+          </button>
+        </div>
+      )}
+    </>
   );
 }

@@ -133,6 +133,22 @@ export default function CharacterPage() {
     },
   });
 
+  const [isFloating, setIsFloating] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      let st: number;
+      if (e.target === document) {
+        st = document.scrollingElement?.scrollTop || document.documentElement?.scrollTop || 0;
+      } else {
+        st = e.target instanceof HTMLElement ? e.target.scrollTop : 0;
+      }
+      setIsFloating(st > 80);
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, []);
+
   useEffect(() => {
     if (char) {
       reset({
@@ -325,7 +341,12 @@ export default function CharacterPage() {
   };
 
   return (
-    <div ref={ref} className="seshat-page-container" data-testid="character-page-container">
+    <>
+      <div 
+        ref={ref} 
+        className="seshat-page-container" 
+        data-testid="character-page-container"
+      >
       {/* ── Header ── */}
       <div
         className="seshat-flex-between"
@@ -384,24 +405,44 @@ export default function CharacterPage() {
             onClick={onSubmit}
             disabled={!isDirty || isSaving}
             data-testid="character-save-btn"
-            style={{
-              ...S.ghost,
-              fontSize: "var(--text-xs)",
-              letterSpacing: 1,
-              color: "var(--color-green)",
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-              opacity: !isDirty || isSaving ? 0.5 : 1,
-              cursor: !isDirty || isSaving ? "default" : "pointer",
-            }}
+            style={
+              isDirty
+                ? {
+                    background: "var(--color-green)",
+                    color: "var(--bg-app)",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: isSaving ? "default" : "pointer",
+                    opacity: isSaving ? 0.7 : 1,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }
+                : {
+                    ...S.ghost,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    color: "var(--color-green)",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: 0.5,
+                    cursor: "default",
+                  }
+            }
           >
-            <SaveIcon sx={{ fontSize: 12 }} />
+            <SaveIcon sx={{ fontSize: 14 }} />
             {isSaving ? "saving..." : "save"}
           </button>
         </div>
       </div>
+
+
 
       {/* ── Status Timeline ── */}
       <Section
@@ -1073,7 +1114,49 @@ export default function CharacterPage() {
           </div>
         </Modal>
       )}
-    </div>
+      </div>
+
+      {isFloating && (
+        <div className="seshat-chapter-toolbar floating">
+          <button
+            disabled={!isDirty || isSaving}
+            onClick={onSubmit}
+            title="Save changes"
+            style={
+              isDirty
+                ? {
+                    background: "var(--color-green)",
+                    color: "var(--bg-app)",
+                    border: "none",
+                    borderRadius: 4,
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: isSaving ? "default" : "pointer",
+                    opacity: isSaving ? 0.7 : 1,
+                  }
+                : {
+                    ...S.ghost,
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    color: "var(--color-green)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    opacity: 0.5,
+                    cursor: "default",
+                  }
+            }
+          >
+            <SaveIcon sx={{ fontSize: 14 }} />
+            {isSaving ? "saving..." : "save"}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
