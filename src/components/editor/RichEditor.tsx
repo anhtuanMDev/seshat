@@ -279,11 +279,11 @@ function MenuBar({
                   }}
                   style={{
                     padding: "6px 12px",
-                    background: "var(--color-purple)",
+                    background: "var(--color-primary)",
                     border: "none",
                     borderRadius: 4,
                     cursor: "pointer",
-                    color: "#fff",
+                    color: "var(--bg-app)",
                     fontWeight: 600,
                   }}
                 >

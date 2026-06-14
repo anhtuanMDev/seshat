@@ -59,7 +59,8 @@
   --color-red:     #d94b4b; /* Error / Fight */
   --color-blue:    #3182ce; /* Info / Lore */
   --color-green:   #38a169; /* Success */
-  --color-purple:  #805ad5; /* Primary Brand */
+  --color-primary: #2c5282; /* Primary Brand (Midnight Blue) */
+  --color-purple:  var(--color-primary); /* Legacy alias */
   --color-orange:  #dd6b20; /* Warning / Event */
   --color-teal:    #319795; /* Accent */
   --color-dark:    #2d3748; /* Neutral */
@@ -113,7 +114,8 @@
   --color-red:     #fc8181;
   --color-blue:    #63b3ed;
   --color-green:   #68d391;
-  --color-purple:  #b794f4;
+  --color-primary: #90cdf4; /* Primary Brand (Crisp Blue) */
+  --color-purple:  var(--color-primary); /* Legacy alias */
   --color-orange:  #f6ad55;
   --color-teal:    #4fd1c5;
   --color-dark:    #a0aec0;

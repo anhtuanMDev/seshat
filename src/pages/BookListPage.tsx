@@ -207,7 +207,7 @@ export default function BookListPage() {
       ) : books.length === 0 ? (
         <div style={{ textAlign: "center" }}>
           <p style={{ ...S.dim, fontStyle: "italic", marginBottom: 20 }}>No books yet. Create one to get started.</p>
-          <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-purple)", color: "#fff", border: "none", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+          <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-primary)", color: "var(--bg-app)", border: "none", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
             <AddIcon sx={{ fontSize: 16 }} />
             New book
           </button>
@@ -216,7 +216,7 @@ export default function BookListPage() {
         <div style={{ width: "100%", maxWidth: 480 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <p style={{ ...S.h2, margin: 0 }}>My books</p>
-            <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-purple)", color: "#fff", border: "none", borderRadius: 20, display: "flex", alignItems: "center", gap: 4, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
+            <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-primary)", color: "var(--bg-app)", border: "none", borderRadius: 20, display: "flex", alignItems: "center", gap: 4, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
               <AddIcon sx={{ fontSize: 14 }} />
               New book
             </button>

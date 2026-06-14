@@ -184,6 +184,10 @@ export default function App() {
       location.pathname.split("/")[4]) ||
     null;
 
+  const isWorldPage =
+    location.pathname === `/book/${bookId}/world` ||
+    (location.pathname === `/book/${bookId}` && !selChar && !selEvent && !selChapter);
+
   const sortedEvt = [...(events || [])].sort((a, b) => a.time - b.time);
   const sortedChapters = [...(chapters || [])].sort(
     (a, b) => a.order - b.order,
@@ -317,6 +321,7 @@ export default function App() {
 
   const navBtnStyle = (active: boolean) => ({
     ...S.ghost,
+    padding: "6px 0",
     fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase" as const,
@@ -360,38 +365,44 @@ export default function App() {
     <div style={S.app} className="seshat-app">
       {/* ── Top bar ── */}
       <div style={S.top} className="seshat-top">
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            className="seshat-mobile-only"
-            onClick={() => setShowSidebar(!showSidebar)}
-            style={{ ...S.ghost, padding: 0 }}
+        <div style={{ display: "flex", alignItems: "center", gap: 32, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              className="seshat-mobile-only"
+              onClick={() => setShowSidebar(!showSidebar)}
+              style={{ ...S.ghost, padding: 0 }}
+            >
+              <MenuIcon />
+            </button>
+            <span
+              style={{ ...S.logo, cursor: "pointer" }}
+              className="seshat-desktop-only"
+              onClick={() => navigate("/")}
+            >
+              Seshat
+            </span>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              maxWidth: 500,
+              opacity: isWorldPage ? 0 : 1,
+              pointerEvents: isWorldPage ? "none" : "auto",
+              transform: isWorldPage ? "translateY(8px)" : "translateY(0)",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              fontSize: 15,
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              padding: "4px 0",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              userSelect: "none"
+            }}
           >
-            <MenuIcon />
-          </button>
-          <span
-            style={{ ...S.logo, cursor: "pointer" }}
-            className="seshat-desktop-only"
-            onClick={() => navigate("/")}
-          >
-            Seshat
-          </span>
+            {title || "Untitled World"}
+          </div>
         </div>
-        <input
-          value={title}
-          onChange={(e) =>
-            bookIdx >= 0 && appStore.books[bookIdx].title.set(e.target.value)
-          }
-          className="seshat-top-title-input"
-          style={{
-            ...S.input,
-            width: 240,
-            textAlign: "center",
-            border: "none",
-            fontSize: 15,
-            color: "var(--text-secondary)",
-            letterSpacing: 1,
-          }}
-        />
         <div
           className="seshat-top-actions"
           style={{ display: "flex", alignItems: "center", gap: 20, position: "relative", height: "100%" }}
@@ -598,10 +609,10 @@ export default function App() {
             </button>
           </div>
 
-          <div style={{ padding: "20px 24px 8px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
+          <div style={{ padding: "20px 24px 4px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
             World Building
           </div>
-          <div style={{ padding: "0 24px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+          <div style={{ padding: "0 24px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
               style={{
@@ -644,7 +655,7 @@ export default function App() {
             }}
           />
 
-          <div style={{ padding: "16px 24px 8px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
+          <div style={{ padding: "16px 24px 4px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
             Drafting
           </div>
 
@@ -815,6 +826,9 @@ export default function App() {
           />
 
           {/* ── Characters section ── */}
+          <div style={{ padding: "16px 24px 4px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
+            Characters
+          </div>
           <div
             style={{
               padding: "0 24px 8px",
