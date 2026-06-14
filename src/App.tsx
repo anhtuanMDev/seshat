@@ -394,7 +394,7 @@ export default function App() {
         />
         <div
           className="seshat-top-actions"
-          style={{ display: "flex", alignItems: "center", gap: 20, position: "relative" }}
+          style={{ display: "flex", alignItems: "center", gap: 20, position: "relative", height: "100%" }}
         >
           <button
             onClick={() => setShowSearch(true)}
@@ -404,8 +404,41 @@ export default function App() {
             <SearchIcon sx={{ fontSize: 20 }} />
           </button>
 
-          {/* More Menu Toggle */}
-          <div style={{ position: "relative" }}>
+          {/* Desktop Inline Actions */}
+          <div className="seshat-desktop-only" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", opacity: isSyncing ? 0.5 : 1 }}
+            >
+              <CloudSyncIcon sx={{ fontSize: 16 }} />
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>{isSyncing ? "Syncing..." : "Sync"}</span>
+            </button>
+            <button
+              onClick={() => setShowExport(true)}
+              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}
+            >
+              <FileDownloadIcon sx={{ fontSize: 16 }} />
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>Export for AI</span>
+            </button>
+            <button
+              onClick={() => navigate(`/book/${bookId}/fight`)}
+              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: location.pathname === `/book/${bookId}/fight` ? "var(--color-red)" : "var(--text-secondary)" }}
+            >
+              <SportsKabaddiIcon sx={{ fontSize: 16 }} />
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>Fight</span>
+            </button>
+            <button
+              onClick={toggle}
+              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", color: "var(--text-secondary)" }}
+              title={theme === "light" ? "Dark Mode" : "Light Mode"}
+            >
+              {theme === "light" ? <DarkModeIcon sx={{ fontSize: 16 }} /> : <LightModeIcon sx={{ fontSize: 16 }} />}
+            </button>
+          </div>
+
+          {/* More Menu Toggle (Mobile/Tablet) */}
+          <div className="seshat-mobile-only" style={{ position: "relative", height: "100%", alignItems: "center" }}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
               style={{
@@ -420,13 +453,24 @@ export default function App() {
               More ▾
             </button>
             {showMoreMenu && (
-              <div
+              <>
+                <div
+                  style={{
+                    position: "fixed",
+                    top: 48,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 90,
+                  }}
+                  onClick={() => setShowMoreMenu(false)}
+                />
+                <div
+                  className="seshat-more-dropdown"
                 style={{
                   position: "absolute",
                   top: "100%",
-                  right: 0,
-                  marginTop: 8,
-                  background: "var(--bg)",
+                  background: "var(--bg-card)",
                   border: "1px solid var(--border)",
                   borderRadius: 4,
                   padding: "8px 0",
@@ -518,6 +562,7 @@ export default function App() {
                   {theme === "light" ? "Dark Mode" : "Light Mode"}
                 </button>
               </div>
+              </>
             )}
           </div>
         </div>

@@ -383,6 +383,12 @@ svg circle {
 }
 
 /* Sidebar Drawer overlay */
+.seshat-more-dropdown {
+  right: 0;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
 .seshat-sidebar-overlay {
   display: none;
   position: fixed;
@@ -405,39 +411,27 @@ svg circle {
   .seshat-page-container {
     padding: 24px 28px !important;
   }
-}
-
-@media (max-width: 768px) {
-  .seshat-page-container {
-    padding: 16px 16px !important;
+  .seshat-more-dropdown {
+    right: -28px;
+    border-radius: 0 0 0 4px !important;
+    border-right: none !important;
+    border-top: none !important;
+    margin-top: 0 !important;
   }
-}
-
-@media (max-width: 768px) {
   .seshat-mobile-only {
     display: flex !important;
   }
-
   .seshat-desktop-only {
     display: none !important;
   }
-
-  .seshat-top {
-    padding: 0 16px !important;
-  }
-
-  .seshat-top-title-input {
-    width: 160px !important;
-    font-size: 14px !important;
-  }
-
+  
   .seshat-sidebar-overlay.open {
     display: block;
   }
 
   .seshat-side {
     position: fixed;
-    top: 48px; /* Below top bar */
+    top: 0; /* Overlay top bar */
     left: -280px;
     bottom: 0;
     width: 280px !important;
@@ -449,6 +443,28 @@ svg circle {
 
   .seshat-side.open {
     left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .seshat-page-container {
+    padding: 16px 16px !important;
+  }
+  .seshat-top {
+    padding: 0 16px !important;
+  }
+
+  .seshat-top-title-input {
+    width: 160px !important;
+    font-size: 14px !important;
+  }
+
+  .seshat-more-dropdown {
+    right: -16px;
+    border-radius: 0 0 0 4px !important;
+    border-right: none !important;
+    border-top: none !important;
+    margin-top: 0 !important;
   }
 
   .seshat-top-actions {
@@ -489,6 +505,10 @@ svg circle {
   }
   .seshat-top-actions button {
     padding: 0 2px !important;
+  }
+  .seshat-more-dropdown {
+    right: -8px;
+    margin-top: 0 !important;
   }
 }
 
