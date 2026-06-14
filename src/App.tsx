@@ -572,6 +572,26 @@ export default function App() {
                 <button
                   onClick={() => {
                     setShowMoreMenu(false);
+                    handlePull();
+                  }}
+                  disabled={isSyncing}
+                  style={{
+                    ...S.ghost,
+                    width: "100%",
+                    justifyContent: "flex-start",
+                    padding: "8px 16px",
+                    opacity: isSyncing ? 0.5 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <CloudSyncIcon sx={{ fontSize: 14, transform: "rotate(180deg)" }} />
+                  Pull
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
                     handleSync();
                   }}
                   disabled={isSyncing}
