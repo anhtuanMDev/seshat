@@ -64,12 +64,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const branchData = (await branchRes.json()) as { object: { sha: string } };
     const branchSha = branchData.object.sha;
 
+    // Get the tree SHA from the current commit
+    const commitFetchRes = await fetch(`${baseUrl}/git/commits/${branchSha}`, { headers });
+    if (!commitFetchRes.ok) throw new Error("Failed to fetch commit to get tree SHA");
+    const commitFetchData = (await commitFetchRes.json()) as { tree: { sha: string } };
+    const treeSha = commitFetchData.tree.sha;
+
     // 2. Create the tree with ONLY the changed file, using the current commit's tree as base_tree
     const treeRes = await fetch(`${baseUrl}/git/trees`, {
       method: "POST",
       headers,
       body: JSON.stringify({
-        base_tree: branchSha,
+        base_tree: treeSha,
         tree: [
           {
             path: `books/book_${bookId}/${path}`,

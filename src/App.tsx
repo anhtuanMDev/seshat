@@ -231,6 +231,36 @@ export default function App() {
     }
   };
 
+  const handlePull = async () => {
+    const savedToken =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
+    if (!savedToken) {
+      navigate("/auth");
+      return;
+    }
+    if (!bookId) return;
+    try {
+      setIsSyncing(true);
+      showToast("Pulling latest data from cloud...", "info");
+      const fullBook = await loadBookFromGitHub(savedToken, bookId);
+      if (fullBook && fullBook.id) {
+        const currentBooks = appStore.books.get() || [];
+        const freshIdx = currentBooks.findIndex((b) => b && b.id === bookId);
+        if (freshIdx >= 0) {
+          appStore.books[freshIdx].set(fullBook);
+        } else {
+          appStore.books.push(fullBook);
+        }
+        showToast("Successfully pulled latest data!", "success");
+      }
+    } catch (err) {
+      showToast("Failed to pull from cloud: " + (err as Error).message, "error");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleSync = () => {
     const savedToken =
       localStorage.getItem("seshat-auth-token") ||
@@ -415,12 +445,21 @@ export default function App() {
             <SearchIcon sx={{ fontSize: 20 }} />
           </button>
 
-          {/* Desktop Inline Actions */}
           <div className="seshat-desktop-only" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              onClick={handlePull}
+              disabled={isSyncing}
+              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", opacity: isSyncing ? 0.5 : 1 }}
+              title="Pull latest data from Cloud (overwrite local changes)"
+            >
+              <CloudSyncIcon sx={{ fontSize: 16, transform: "rotate(180deg)" }} />
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>Pull</span>
+            </button>
             <button
               onClick={handleSync}
               disabled={isSyncing}
               style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", opacity: isSyncing ? 0.5 : 1 }}
+              title="Push local data to Cloud"
             >
               <CloudSyncIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>{isSyncing ? "Syncing..." : "Sync"}</span>

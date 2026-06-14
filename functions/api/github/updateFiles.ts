@@ -68,6 +68,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const branchData = (await branchRes.json()) as { object: { sha: string } };
     const branchSha = branchData.object.sha;
 
+    // Get the tree SHA from the current commit
+    const commitFetchRes = await fetch(`${baseUrl}/git/commits/${branchSha}`, { headers });
+    if (!commitFetchRes.ok) throw new Error("Failed to fetch commit to get tree SHA");
+    const commitFetchData = (await commitFetchRes.json()) as { tree: { sha: string } };
+    const treeSha = commitFetchData.tree.sha;
+
     const treeArray = files.map((file) => ({
       path: `books/book_${bookId}/${file.path}`,
       mode: "100644",
@@ -79,7 +85,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       method: "POST",
       headers,
       body: JSON.stringify({
-        base_tree: branchSha,
+        base_tree: treeSha,
         tree: treeArray,
       }),
     });
