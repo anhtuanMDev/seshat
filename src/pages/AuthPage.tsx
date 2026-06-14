@@ -117,9 +117,26 @@ export default function AuthPage() {
           <Field
             label="Access Code"
             value={loginCode}
-            onChange={setLoginCode}
+            onChange={(v) => setLoginCode(v)}
             placeholder="Enter secret code"
             type={showPassword ? "text" : "password"}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton 
+                      onClick={() => setShowPassword(!showPassword)} 
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end" 
+                      size="small" 
+                      style={{ color: "var(--text-secondary)", marginRight: -8 }}
+                    >
+                      {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }
+            }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">

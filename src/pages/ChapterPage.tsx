@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { Skeleton } from "@mui/material";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
@@ -114,6 +115,22 @@ export default function ChapterPage() {
           }
         } else {
           // Body is missing (stripped by loadBook.ts to save RAM), fetch it lazily
+          
+          // Clear the form immediately so we don't show the previous chapter's data while fetching
+          if (!formState.isDirty) {
+            reset({
+              number: chapter.number || "",
+              title: chapter.title || "",
+              timeRef: chapter.timeRef || "",
+              synopsis: chapter.synopsis || "",
+              body: "", // Clear body immediately
+              notes: "",
+              pinnedChars: chapter.pinnedChars || [],
+              pinnedEventIds: chapter.pinnedEventIds || [],
+              scenes: chapter.scenes || [],
+            });
+          }
+
           const token =
             localStorage.getItem("seshat-auth-token") ||
             sessionStorage.getItem("seshat-auth-token");
@@ -323,6 +340,8 @@ export default function ChapterPage() {
       </div>
     );
   }
+
+  const isLoading = chapter.body === undefined;
 
   const handleExport = () => {
     if (!chapter) return;
@@ -541,18 +560,29 @@ export default function ChapterPage() {
         <SceneOutlinePanel control={control} />
 
         {/* ── Rich editor — all context props wired ── */}
-        <RichEditor
-          control={control}
-          name="body"
-          placeholder="Begin writing the chapter here. The story lives in this space…"
-          characters={characters}
-          events={events}
-          pinnedEvents={pinnedEventObjs}
-          pinnedCharIds={pinnedChars}
-          isDirty={formState.isDirty}
-          onSave={() => saveRef.current()}
-          bookId={bookId}
-        />
+        {isLoading ? (
+          <div style={{ marginTop: 24, padding: "0 12px" }}>
+            <Skeleton animation="wave" height={24} width="100%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+            <Skeleton animation="wave" height={24} width="92%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+            <Skeleton animation="wave" height={24} width="96%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+            <Skeleton animation="wave" height={24} width="85%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+            <Skeleton animation="wave" height={24} width="90%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+            <Skeleton animation="wave" height={24} width="70%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+          </div>
+        ) : (
+          <RichEditor
+            control={control}
+            name="body"
+            placeholder="Begin writing the chapter here. The story lives in this space…"
+            characters={characters}
+            events={events}
+            pinnedEvents={pinnedEventObjs}
+            pinnedCharIds={pinnedChars}
+            isDirty={formState.isDirty}
+            onSave={() => saveRef.current()}
+            bookId={bookId}
+          />
+        )}
       </div>
 
       {/* ── Reference panel ── */}

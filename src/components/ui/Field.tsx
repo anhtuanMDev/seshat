@@ -47,7 +47,19 @@ interface FieldProps<T extends FieldValues = FieldValues> extends Omit<
 
 type FieldInnerProps = Omit<FieldProps<FieldValues>, "control" | "name">;
 
-function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "", type, InputLabelProps, ...props }: FieldInnerProps & { type?: string }) {
+function FieldInner({
+  label,
+  value,
+  onChange,
+  multi,
+  rows = 3,
+  placeholder = "",
+  type,
+  InputLabelProps,
+  InputProps,
+  ...props
+}: FieldInnerProps & { type?: string }) {
+  console.log("FieldInner InputProps:", InputProps);
   const isDate = type === "date" || type === "datetime-local";
   const shrink = isDate || InputLabelProps?.shrink;
 
@@ -55,6 +67,7 @@ function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "",
     Omit<import("@mui/material").TextFieldProps, "variant"> & {
       variant?: "filled";
       InputLabelProps?: Partial<import("@mui/material").InputLabelProps>;
+      InputProps?: Partial<import("@mui/material").InputProps>;
     }
   >;
 
@@ -62,25 +75,45 @@ function FieldInner({ label, value, onChange, multi, rows = 3, placeholder = "",
     <StyledField
       label={label}
       value={value ?? ""}
-      onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange?.(e.target.value)}
+      onChange={(
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+      ) => onChange?.(e.target.value)}
       multiline={multi}
       minRows={multi ? rows : undefined}
       placeholder={placeholder}
       variant="filled"
       fullWidth
       type={type}
-      InputLabelProps={{ ...InputLabelProps, shrink: shrink ? true : undefined } as import("@mui/material").InputLabelProps}
+      InputLabelProps={
+        {
+          ...InputLabelProps,
+          shrink: shrink ? true : undefined,
+        } as import("@mui/material").InputLabelProps
+      }
+      InputProps={InputProps as import("@mui/material").InputProps}
       {...props}
     />
   );
 }
 
-function ControlledField<T extends FieldValues>({ control, name, ...rest }: FieldProps<T>) {
+function ControlledField<T extends FieldValues>({
+  control,
+  name,
+  ...rest
+}: FieldProps<T>) {
   const { field } = useController({ control: control!, name: name! });
-  return <FieldInner {...rest} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
+  return (
+    <FieldInner
+      {...rest}
+      value={field.value ?? ""}
+      onChange={(v: string) => field.onChange(v)}
+    />
+  );
 }
 
-export function Field<T extends FieldValues = FieldValues>(props: FieldProps<T>) {
+export function Field<T extends FieldValues = FieldValues>(
+  props: FieldProps<T>,
+) {
   if (props.control && props.name) {
     return <ControlledField<T> {...props} />;
   }
