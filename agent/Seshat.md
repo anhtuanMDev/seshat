@@ -554,7 +554,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Continuity Tracker | `ChapterPage`   | Offline, mention-based dynamic checklist extracting Traumas and Core Wounds from pinned characters |
 | Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
 | Scene Outlining  | `ChapterPage`   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome) |
-| Cloud Sync       | `lib/githubSync`| Multi-user GitHub-as-DB syncing with branch isolation & Auth tokens |
+| Cloud Sync       | `lib/githubSync`| Push (Sync) & Pull mechanisms syncing `appStore` to GitHub branch |
 | Lazy Loading     | `lib/loadBook`  | Strips massive chapter bodies AND historical drafts payloads from RAM; dynamically fetches them into ChapterPage |
 | Mobile Overlay   | `ChapterPage`   | Drawer-style overlay backdrop for ReferencePanel on small screens |
 | Dynamic Mentions | `MentionExtension`| Tiptap custom nodes dynamically resolve entity names from store state during render/export |
@@ -602,6 +602,14 @@ A quality-of-life feature to automatically sync characters to an Event based on 
 - **Mentions (Ignored):** Events listed in a chapter's `pinnedEventIds` (Mentions) do *not* automatically inherit the chapter's characters.
 - **Event Page (Auto-Remove):** When viewing an Event Page, if you unpin a Chapter, the system identifies characters unique to that Chapter. It then checks the Event's `charAttrs` state. If the character has *any* non-blank attributes set (meaning the user actively planned them for this event), they are protected. If their attributes are blank, they are safely auto-removed.
 - **Event Page (Clearing Links):** Unpinning a chapter from the Event Page safely clears the chapter from both the Event's `chapters` array and deletes the Chapter's `timeRef` and `pinnedEventIds` references to that event.
+
+### Cloud Sync Architecture (Local-First)
+Seshat uses a **Local-First** architecture. The browser's `localStorage` (via Legend State) is the absolute source of truth to guarantee zero-latency navigation and offline capabilities.
+**Rules:**
+- **`isFullyLoaded` Bypass:** When navigating to a book, if the local memory already flags it as `isFullyLoaded: true`, the app *will not* automatically fetch from GitHub. This protects offline, unsaved edits from being overwritten by stale cloud data.
+- **Push (Sync):** Pushes the current local state to the cloud.
+- **Pull:** Forces a fetch from GitHub, aggressively overwriting local memory with the cloud state. This is required when switching devices or environments (e.g., from `localhost` to `production`) because `localStorage` is domain-isolated, meaning the production site won't know about changes made on localhost unless explicitly told to Pull.
+
 ### Fight Simulation (`scoreFighter.ts`)
 A deterministic comparison engine for power scaling.
 **Rules:** It takes two Character objects and compares their attributes: Skills, Equipment, and Conditions. 

@@ -111,6 +111,8 @@ All endpoints are relative to the application origin. The base path is `/api/git
 **Method:** `POST`
 **Purpose:** Updates the contents of a specific file (e.g., a chapter body, event, or character profile JSON file) within a book's cloud directory. Used for granular, high-performance saving without syncing the whole universe (Delta Sync).
 
+**CRITICAL ARCHITECTURE NOTE:** When creating the Git tree for the update, the backend MUST fetch the current commit and use its `tree.sha` as the `base_tree`. Passing the commit's own SHA as the `base_tree` will cause GitHub to silently drop all other files in the repository, leading to catastrophic data loss.
+
 **Request Body (JSON):**
 ```typescript
 {
@@ -130,6 +132,8 @@ All endpoints are relative to the application origin. The base path is `/api/git
 **Endpoint:** `/api/github/updateFiles`
 **Method:** `POST`
 **Purpose:** Updates multiple specific files simultaneously within a book's cloud directory in a single network request. Used when a page edits multiple distinct entities at once (like the World Builder page saving nations, monsters, and treasures simultaneously).
+
+**CRITICAL ARCHITECTURE NOTE:** As with single file updates, the backend MUST use the commit's `tree.sha` as the `base_tree` when building the new tree via the GitHub API to prevent wiping the repository.
 
 **Request Body (JSON):**
 ```typescript
