@@ -172,7 +172,7 @@ export default function AuthPage() {
             style={{
               padding: "12px",
               background: "var(--color-blue)",
-              color: "#fff",
+              color: "var(--bg-app)",
               border: "none",
               borderRadius: 4,
               fontSize: 16,

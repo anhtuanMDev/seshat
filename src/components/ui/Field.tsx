@@ -1,5 +1,5 @@
 import { TextField } from "@mui/material";
-import type { TextFieldProps } from "@mui/material";
+import type { TextFieldProps, InputLabelProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useController } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
@@ -57,17 +57,15 @@ function FieldInner({
   type,
   InputLabelProps,
   InputProps,
+  slotProps,
   ...props
 }: FieldInnerProps & { type?: string }) {
-  console.log("FieldInner InputProps:", InputProps);
   const isDate = type === "date" || type === "datetime-local";
   const shrink = isDate || InputLabelProps?.shrink;
 
   const StyledField = StyledTextField as unknown as React.FC<
     Omit<import("@mui/material").TextFieldProps, "variant"> & {
       variant?: "filled";
-      InputLabelProps?: Partial<import("@mui/material").InputLabelProps>;
-      InputProps?: Partial<import("@mui/material").InputProps>;
     }
   >;
 
@@ -84,13 +82,18 @@ function FieldInner({
       variant="filled"
       fullWidth
       type={type}
-      InputLabelProps={
-        {
+      slotProps={{
+        ...slotProps,
+        input: {
+          ...InputProps,
+          ...slotProps?.input,
+        },
+        inputLabel: {
           ...InputLabelProps,
           shrink: shrink ? true : undefined,
-        } as import("@mui/material").InputLabelProps
-      }
-      InputProps={InputProps as import("@mui/material").InputProps}
+          ...slotProps?.inputLabel,
+        } as InputLabelProps,
+      }}
       {...props}
     />
   );
