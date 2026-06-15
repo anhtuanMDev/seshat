@@ -374,6 +374,7 @@ export interface Draft {
   name: string;
   body: string;
   createdAt: number;
+  isDeleted?: boolean;
 }
 
 export interface Foreshadow {

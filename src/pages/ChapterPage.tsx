@@ -262,6 +262,22 @@ export default function ChapterPage() {
   const pinnedChars = useWatch({ control, name: "pinnedChars" }) || [];
   const pinnedEventIds = useWatch({ control, name: "pinnedEventIds" }) || [];
 
+  const handleDeleteDraft = useCallback((draftId: string) => {
+    if (bookIdx >= 0 && chapterIdx >= 0 && bookId && id) {
+      const currentDrafts = appStore.books[bookIdx].chapters[chapterIdx].drafts.get() || [];
+      const newDrafts = currentDrafts.map(d => d.id === draftId ? { ...d, isDeleted: true } : d);
+      appStore.books[bookIdx].chapters[chapterIdx].drafts.set(newDrafts);
+    }
+  }, [bookIdx, chapterIdx, bookId, id]);
+
+  const handleUndeleteDraft = useCallback((draftId: string) => {
+    if (bookIdx >= 0 && chapterIdx >= 0 && bookId && id) {
+      const currentDrafts = appStore.books[bookIdx].chapters[chapterIdx].drafts.get() || [];
+      const newDrafts = currentDrafts.map(d => d.id === draftId ? { ...d, isDeleted: false } : d);
+      appStore.books[bookIdx].chapters[chapterIdx].drafts.set(newDrafts);
+    }
+  }, [bookIdx, chapterIdx, bookId, id]);
+
   const onSubmit = useCallback(async () => {
     const data = getValues();
     if (bookIdx < 0 || !bookId || !id || chapterIdx < 0) return;
@@ -802,6 +818,8 @@ export default function ChapterPage() {
                 activeDraftId={activeDraftId}
                 onSaveAsDraft={handleSaveAsDraft}
                 onRestoreDraft={handleRestoreDraft}
+                onDeleteDraft={handleDeleteDraft}
+                onUndeleteDraft={handleUndeleteDraft}
               />
             }
             foreshadowsNode={
