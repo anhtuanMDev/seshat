@@ -281,6 +281,14 @@ export default function ChapterPage() {
     }
   }, [bookIdx, chapterIdx, bookId, id]);
 
+  const handleRenameDraft = useCallback(async (draftId: string, newName: string) => {
+    if (bookIdx >= 0 && chapterIdx >= 0 && bookId && id) {
+      const currentDrafts = appStore.books[bookIdx].chapters[chapterIdx].drafts.get() || [];
+      const newDrafts = currentDrafts.map(d => d.id === draftId ? { ...d, name: newName } : d);
+      await saveRef.current(newDrafts);
+    }
+  }, [bookIdx, chapterIdx, bookId, id]);
+
   const onSubmit = useCallback(async (overrideDrafts?: Draft[]): Promise<boolean> => {
     const data = getValues();
     if (bookIdx < 0 || !bookId || !id || chapterIdx < 0) return false;
@@ -826,6 +834,7 @@ export default function ChapterPage() {
                 onRestoreDraft={handleRestoreDraft}
                 onDeleteDraft={handleDeleteDraft}
                 onUndeleteDraft={handleUndeleteDraft}
+                onRenameDraft={handleRenameDraft}
               />
             }
             foreshadowsNode={

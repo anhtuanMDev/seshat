@@ -12,6 +12,7 @@ interface DraftsPanelProps {
   onRestoreDraft: (draft: Draft) => void;
   onDeleteDraft: (draftId: string) => Promise<void> | void;
   onUndeleteDraft: (draftIds: string[]) => Promise<void> | void;
+  onRenameDraft: (draftId: string, newName: string) => Promise<void> | void;
 }
 
 export function DraftsPanel({
@@ -22,6 +23,7 @@ export function DraftsPanel({
   onRestoreDraft,
   onDeleteDraft,
   onUndeleteDraft,
+  onRenameDraft,
 }: DraftsPanelProps) {
   const [showTrash, setShowTrash] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -31,7 +33,11 @@ export function DraftsPanel({
   const [processingDraftId, setProcessingDraftId] = useState<string | null>(
     null,
   );
-  const [selectedDraftIds, setSelectedDraftIds] = useState<Set<string>>(new Set());
+  const [selectedDraftIds, setSelectedDraftIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [draftToRename, setDraftToRename] = useState<Draft | null>(null);
+  const [newDraftName, setNewDraftName] = useState("");
 
   const handleSave = () => {
     setDraftName(`Draft ${drafts.length + 1}`);
@@ -43,6 +49,23 @@ export function DraftsPanel({
       onSaveAsDraft(draftName.trim());
       setShowSaveModal(false);
       setDraftName("");
+    }
+  };
+
+  const confirmRename = async () => {
+    if (
+      draftToRename &&
+      newDraftName.trim() &&
+      newDraftName.trim() !== draftToRename.name
+    ) {
+      const draftId = draftToRename.id;
+      const finalName = newDraftName.trim();
+      setDraftToRename(null);
+      setProcessingDraftId(draftId);
+      await onRenameDraft(draftId, finalName);
+      setProcessingDraftId(null);
+    } else {
+      setDraftToRename(null);
     }
   };
 
@@ -210,7 +233,18 @@ export function DraftsPanel({
                     alignItems: "flex-start",
                   }}
                 >
-                  <div>
+                  <div
+                    onClick={() => {
+                      setDraftToRename(draft);
+                      setNewDraftName(draft.name);
+                    }}
+                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.opacity = "0.7")
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                    title="Click to rename draft"
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -377,67 +411,116 @@ export function DraftsPanel({
                 .map((draft) => {
                   const isSelected = selectedDraftIds.has(draft.id);
                   return (
-                  <div
-                    key={draft.id}
-                    onClick={() => {
-                      if (processingDraftId) return;
-                      const next = new Set(selectedDraftIds);
-                      if (isSelected) next.delete(draft.id);
-                      else next.add(draft.id);
-                      setSelectedDraftIds(next);
-                    }}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      background: isSelected ? "color-mix(in srgb, var(--color-blue) 10%, var(--bg-card))" : "var(--bg-card)",
-                      padding: "12px",
-                      borderRadius: 6,
-                      border: isSelected ? "1px solid var(--color-blue)" : "1px solid var(--border)",
-                      cursor: processingDraftId ? "default" : "pointer",
-                      opacity: processingDraftId === "batch" || processingDraftId === draft.id ? 0.5 : 1,
-                      pointerEvents:
-                        processingDraftId === "batch" || processingDraftId === draft.id ? "none" : "auto",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{
-                        width: 16, height: 16, borderRadius: 4, 
-                        border: isSelected ? "none" : "1px solid var(--text-muted)",
-                        background: isSelected ? "var(--color-blue)" : "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "center"
-                      }}>
-                        {isSelected && <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                      </div>
-                      <div>
+                    <div
+                      key={draft.id}
+                      onClick={() => {
+                        if (processingDraftId) return;
+                        const next = new Set(selectedDraftIds);
+                        if (isSelected) next.delete(draft.id);
+                        else next.add(draft.id);
+                        setSelectedDraftIds(next);
+                      }}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        background: isSelected
+                          ? "color-mix(in srgb, var(--color-blue) 10%, var(--bg-card))"
+                          : "var(--bg-card)",
+                        padding: "12px",
+                        borderRadius: 6,
+                        border: isSelected
+                          ? "1px solid var(--color-blue)"
+                          : "1px solid var(--border)",
+                        cursor: processingDraftId ? "default" : "pointer",
+                        opacity:
+                          processingDraftId === "batch" ||
+                          processingDraftId === draft.id
+                            ? 0.5
+                            : 1,
+                        pointerEvents:
+                          processingDraftId === "batch" ||
+                          processingDraftId === draft.id
+                            ? "none"
+                            : "auto",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                        }}
+                      >
                         <div
                           style={{
-                            fontSize: 13,
-                            fontWeight: "600",
-                            color: "var(--text-primary)",
-                            marginBottom: 4,
+                            width: 16,
+                            height: 16,
+                            borderRadius: 4,
+                            border: isSelected
+                              ? "none"
+                              : "1px solid var(--text-muted)",
+                            background: isSelected
+                              ? "var(--color-blue)"
+                              : "transparent",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
                         >
-                          {draft.name}
+                          {isSelected && (
+                            <svg
+                              width="10"
+                              height="8"
+                              viewBox="0 0 10 8"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M1 4L3.5 6.5L9 1"
+                                stroke="var(--bg-app)"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
                         </div>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                          {new Date(draft.createdAt).toLocaleString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                          })}
-                          {" · "}
-                          <span style={{ color: "var(--text-secondary)" }}>
-                            {draft.body?.length?.toLocaleString() || 0} chars
-                          </span>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: "600",
+                              color: "var(--text-primary)",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {draft.name}
+                          </div>
+                          <div
+                            style={{ fontSize: 11, color: "var(--text-muted)" }}
+                          >
+                            {new Date(draft.createdAt).toLocaleString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: false,
+                              },
+                            )}
+                            {" · "}
+                            <span style={{ color: "var(--text-secondary)" }}>
+                              {draft.body?.length?.toLocaleString() || 0} chars
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )})}
+                  );
+                })}
             </div>
             <div
               style={{
@@ -447,28 +530,37 @@ export function DraftsPanel({
                 marginTop: 24,
               }}
             >
-              <button 
+              <button
                 onClick={async () => {
                   if (selectedDraftIds.size > 0) {
                     setProcessingDraftId("batch");
                     await onUndeleteDraft(Array.from(selectedDraftIds));
                     setProcessingDraftId(null);
                     setSelectedDraftIds(new Set());
-                    if (drafts.filter(d => d.isDeleted).length === selectedDraftIds.size) {
+                    if (
+                      drafts.filter((d) => d.isDeleted).length ===
+                      selectedDraftIds.size
+                    ) {
                       setShowTrash(false);
                     }
                   }
                 }}
-                disabled={selectedDraftIds.size === 0 || processingDraftId === "batch"}
-                style={{ 
-                  ...S.pill, 
-                  background: selectedDraftIds.size > 0 ? "var(--color-blue)" : "var(--bg-card-hover)", 
-                  color: selectedDraftIds.size > 0 ? "#fff" : "var(--text-muted)", 
-                  border: "none", 
+                disabled={
+                  selectedDraftIds.size === 0 || processingDraftId === "batch"
+                }
+                style={{
+                  ...S.pill,
+                  background:
+                    selectedDraftIds.size > 0
+                      ? "var(--color-blue)"
+                      : "var(--bg-card-hover)",
+                  color:
+                    selectedDraftIds.size > 0 ? "var(--bg-app)" : "var(--text-muted)",
+                  border: "none",
                   padding: "6px 20px",
                   transition: "all 0.2s",
                   cursor: selectedDraftIds.size > 0 ? "pointer" : "default",
-                  opacity: processingDraftId === "batch" ? 0.5 : 1
+                  opacity: processingDraftId === "batch" ? 0.5 : 1,
                 }}
               >
                 Restore Selected ({selectedDraftIds.size})
@@ -520,7 +612,7 @@ export function DraftsPanel({
                 style={{
                   ...S.pill,
                   background: "var(--color-blue)",
-                  color: "#fff",
+                  color: "var(--bg-app)",
                   border: "none",
                   padding: "6px 20px",
                 }}
@@ -560,7 +652,7 @@ export function DraftsPanel({
                 style={{
                   ...S.pill,
                   background: "var(--color-red)",
-                  color: "#fff",
+                  color: "var(--bg-app)",
                   border: "none",
                   padding: "6px 20px",
                 }}
@@ -593,12 +685,63 @@ export function DraftsPanel({
                 style={{
                   ...S.pill,
                   background: "var(--color-red)",
-                  color: "#fff",
+                  color: "var(--bg-app)",
                   border: "none",
                   padding: "6px 20px",
                 }}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {draftToRename && (
+        <Modal title="Rename Draft" onClose={() => setDraftToRename(null)}>
+          <div style={{ padding: "0 24px 24px" }}>
+            <p style={{ color: "var(--text-secondary)", marginBottom: 16 }}>
+              Enter a new name for this draft:
+            </p>
+            <input
+              autoFocus
+              value={newDraftName}
+              onChange={(e) => setNewDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmRename();
+              }}
+              style={{
+                ...S.input,
+                padding: "8px 12px",
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                marginBottom: 24,
+              }}
+            />
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
+              <button
+                onClick={() => setDraftToRename(null)}
+                style={{ ...S.ghost, padding: "6px 16px" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRename}
+                disabled={
+                  !newDraftName.trim() ||
+                  newDraftName.trim() === draftToRename.name
+                }
+                style={{
+                  ...S.pill,
+                  background: "var(--color-blue)",
+                  color: "var(--bg-app)",
+                  border: "none",
+                  padding: "6px 20px",
+                }}
+              >
+                Rename
               </button>
             </div>
           </div>
