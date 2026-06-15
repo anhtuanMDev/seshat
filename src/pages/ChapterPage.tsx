@@ -262,25 +262,28 @@ export default function ChapterPage() {
   const pinnedChars = useWatch({ control, name: "pinnedChars" }) || [];
   const pinnedEventIds = useWatch({ control, name: "pinnedEventIds" }) || [];
 
-  const handleDeleteDraft = useCallback((draftId: string) => {
+  // Keep a stable ref for save so RichEditor's onSave doesn't go stale
+  const saveRef = useRef<(overrideDrafts?: Draft[]) => Promise<boolean>>(async () => true);
+
+  const handleDeleteDraft = useCallback(async (draftId: string) => {
     if (bookIdx >= 0 && chapterIdx >= 0 && bookId && id) {
       const currentDrafts = appStore.books[bookIdx].chapters[chapterIdx].drafts.get() || [];
       const newDrafts = currentDrafts.map(d => d.id === draftId ? { ...d, isDeleted: true } : d);
-      appStore.books[bookIdx].chapters[chapterIdx].drafts.set(newDrafts);
+      await saveRef.current(newDrafts);
     }
   }, [bookIdx, chapterIdx, bookId, id]);
 
-  const handleUndeleteDraft = useCallback((draftId: string) => {
+  const handleUndeleteDraft = useCallback(async (draftIds: string[]) => {
     if (bookIdx >= 0 && chapterIdx >= 0 && bookId && id) {
       const currentDrafts = appStore.books[bookIdx].chapters[chapterIdx].drafts.get() || [];
-      const newDrafts = currentDrafts.map(d => d.id === draftId ? { ...d, isDeleted: false } : d);
-      appStore.books[bookIdx].chapters[chapterIdx].drafts.set(newDrafts);
+      const newDrafts = currentDrafts.map(d => draftIds.includes(d.id) ? { ...d, isDeleted: false } : d);
+      await saveRef.current(newDrafts);
     }
   }, [bookIdx, chapterIdx, bookId, id]);
 
-  const onSubmit = useCallback(async () => {
+  const onSubmit = useCallback(async (overrideDrafts?: Draft[]): Promise<boolean> => {
     const data = getValues();
-    if (bookIdx < 0 || !bookId || !id || chapterIdx < 0) return;
+    if (bookIdx < 0 || !bookId || !id || chapterIdx < 0) return false;
     const ch = appStore.books[bookIdx].chapters[chapterIdx];
     ch.number.set(data.number);
     ch.title.set(data.title);
@@ -324,20 +327,18 @@ export default function ChapterPage() {
     if (token) {
       try {
         setIsSaving(true);
-        let currentDrafts = ch.drafts.get() || [];
+        let currentDrafts = overrideDrafts || ch.drafts.get() || [];
         let curActiveDraftId = activeDraftId;
 
         if (currentDrafts.length === 0) {
            const newId = crypto.randomUUID();
            currentDrafts = [{ id: newId, name: "Draft 1", body: data.body, createdAt: Date.now() }];
            curActiveDraftId = newId;
-           ch.drafts.set(currentDrafts);
            setActiveDraftId(newId);
         } else {
            const activeIdx = currentDrafts.findIndex(d => d.id === curActiveDraftId);
            if (activeIdx !== -1) {
               currentDrafts[activeIdx] = { ...currentDrafts[activeIdx], body: data.body };
-              ch.drafts.set(currentDrafts);
            }
         }
 
@@ -352,7 +353,7 @@ export default function ChapterPage() {
           pinnedChars: data.pinnedChars,
           pinnedEventIds: data.pinnedEventIds,
           scenes: data.scenes,
-          drafts: currentDrafts.map(d => ({ id: d.id, name: d.name, createdAt: d.createdAt })), // Without body
+          drafts: currentDrafts.map(d => ({ id: d.id, name: d.name, createdAt: d.createdAt, isDeleted: d.isDeleted })), // Without body
         };
 
         const activeDraftObj = currentDrafts.find(d => d.id === curActiveDraftId);
@@ -380,23 +381,27 @@ export default function ChapterPage() {
         }
 
         await updateFilesOnGitHub(token, bookId, filesToSync);
+        ch.drafts.set(currentDrafts);
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
         reset(data);
+        return true;
       } catch (err) {
         console.error(err);
         showToast("Failed to sync chapter to cloud", "error");
+        return false;
       } finally {
         setIsSaving(false);
       }
     } else {
+      const currentDrafts = overrideDrafts || ch.drafts.get() || [];
+      ch.drafts.set(currentDrafts);
       reset(data);
       showToast("Chapter saved locally", "success");
+      return true;
     }
   }, [bookIdx, bookId, id, chapterIdx, getValues, reset, activeDraftId]);
 
-  // Keep a stable ref for save so RichEditor's onSave doesn't go stale
-  const saveRef = useRef<() => void>(() => {});
   useLayoutEffect(() => {
     saveRef.current = onSubmit;
   }, [onSubmit]);
@@ -420,11 +425,12 @@ export default function ChapterPage() {
         body: getValues("body"),
         createdAt: Date.now(),
       };
-      ch.drafts.set([...currentDrafts, newDraft]);
+      const updatedDrafts = [...currentDrafts, newDraft];
+      ch.drafts.set(updatedDrafts);
       setActiveDraftId(newDraft.id);
       updateLocalActiveDraft(newDraft.id);
-      // Use setTimeout to ensure the store is flushed if there are any async batching
-      setTimeout(() => saveRef.current(), 0);
+      // Wait for onSubmit to finish with the new drafts
+      saveRef.current(updatedDrafts);
     },
     [bookIdx, chapterIdx, getValues, updateLocalActiveDraft],
   );
