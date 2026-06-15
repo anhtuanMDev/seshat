@@ -5,7 +5,7 @@ import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { updateFileOnGitHub, updateFilesOnGitHub, loadFileFromGitHub } from "../lib/githubSync";
+import { updateFilesOnGitHub } from "../lib/githubSync";
 import { computeEventSync } from "../lib/eventSync";
 import {
   useEvents,
@@ -138,14 +138,14 @@ export default function ChapterPage() {
           if (token && bookId) {
             try {
               const { loadFileFromGitHub } = await import("../lib/githubSync");
-              let parsed: any;
+              let parsed: Record<string, unknown>;
               try {
                 parsed = await loadFileFromGitHub(
                   token,
                   bookId,
                   `chapters/chapter_${chapter.id}/metadata.json`,
                 );
-              } catch (err) {
+              } catch {
                 console.warn(`Metadata for chapter ${chapter.id} not found, initializing empty draft array.`);
                 parsed = { drafts: [] };
               }
@@ -169,8 +169,8 @@ export default function ChapterPage() {
               const fullDrafts = await Promise.all(loadedDrafts.map(async (d) => {
                 try {
                   const df = await loadFileFromGitHub(token, bookId, `chapters/chapter_${chapter.id}/${d.id}.json`);
-                  return df as import("../lib/types").Draft;
-                } catch (e) {
+                  return df as unknown as import("../lib/types").Draft;
+                } catch {
                   return { ...d, body: "" };
                 }
               }));

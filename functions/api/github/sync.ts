@@ -261,7 +261,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           if (foundFiles) return;
         }
 
-        const drafts = (c.drafts as any[]) || [];
+        const drafts = (c.drafts as Record<string, unknown>[]) || [];
         treeFiles.push({
           path: `${bDir}/chapters/chapter_${c.id}/metadata.json`,
           mode: "100644",
@@ -277,11 +277,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             pinnedChars: c.pinnedChars,
             pinnedEventIds: c.pinnedEventIds,
             scenes: c.scenes,
-            drafts: drafts.map((d: any) => ({ id: d.id, name: d.name, createdAt: d.createdAt }))
+            drafts: drafts.map((d: Record<string, unknown>) => ({ id: d.id, name: d.name, createdAt: d.createdAt }))
           }, null, 2),
         });
 
-        drafts.forEach((d: any) => {
+        drafts.forEach((d: Record<string, unknown>) => {
           treeFiles.push({
             path: `${bDir}/chapters/chapter_${c.id}/${d.id}.json`,
             mode: "100644",
