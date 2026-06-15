@@ -140,6 +140,7 @@ export const mkBook = (title: string): BookData => ({
 
 export const appStore = observable({
   activeBookId: null as string | null,
+  lastSyncSha: null as string | null,
   books: [] as BookData[],
 });
 

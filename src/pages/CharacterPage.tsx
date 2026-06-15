@@ -137,13 +137,10 @@ export default function CharacterPage() {
 
   useEffect(() => {
     const handleScroll = (e: Event) => {
-      let st: number;
-      if (e.target === document) {
-        st = document.scrollingElement?.scrollTop || document.documentElement?.scrollTop || 0;
-      } else {
-        st = e.target instanceof HTMLElement ? e.target.scrollTop : 0;
+      if (e.target === document || e.target === document.documentElement || e.target === document.body) {
+        const st = document.scrollingElement?.scrollTop || document.documentElement?.scrollTop || 0;
+        setIsFloating(st > 80);
       }
-      setIsFloating(st > 80);
     };
     window.addEventListener("scroll", handleScroll, true);
     return () => window.removeEventListener("scroll", handleScroll, true);

@@ -16,11 +16,12 @@ interface RequestPayload {
   bookId: string;
   path: string; // e.g., "chapters/chapter_xyz.json"
   content: string; // stringified JSON content
+  lastKnownSha?: string;
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    const { token, bookId, path, content } =
+    const { token, bookId, path, content, lastKnownSha } =
       (await context.request.json()) as RequestPayload;
     const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, AUTH_SECRET } =
       context.env;
@@ -63,6 +64,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       throw new Error("Branch not found. Please do a full sync first.");
     const branchData = (await branchRes.json()) as { object: { sha: string } };
     const branchSha = branchData.object.sha;
+
+    if (lastKnownSha && branchSha !== lastKnownSha) {
+      return new Response(
+        JSON.stringify({
+          error: "Conflict: Server has new changes. Please Pull before pushing.",
+          conflict: true,
+        }),
+        { status: 409, headers: { "Content-Type": "application/json" } },
+      ) as unknown as CloudflareResponse;
+    }
 
     // Get the tree SHA from the current commit
     const commitFetchRes = await fetch(`${baseUrl}/git/commits/${branchSha}`, { headers });

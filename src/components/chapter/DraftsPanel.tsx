@@ -6,11 +6,13 @@ import { Modal } from "../ui/Modal";
 
 interface DraftsPanelProps {
   drafts: Draft[];
+  currentBody?: string;
+  activeDraftId?: string | null;
   onSaveAsDraft: (name: string) => void;
   onRestoreDraft: (draft: Draft) => void;
 }
 
-export function DraftsPanel({ drafts, onSaveAsDraft, onRestoreDraft }: DraftsPanelProps) {
+export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft, onRestoreDraft }: DraftsPanelProps) {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [draftToRestore, setDraftToRestore] = useState<Draft | null>(null);
@@ -62,35 +64,74 @@ export function DraftsPanel({ drafts, onSaveAsDraft, onRestoreDraft }: DraftsPan
           </p>
         )}
         
-        {[...drafts].sort((a, b) => b.createdAt - a.createdAt).map((draft) => (
-          <div
-            key={draft.id}
-            style={{
-              background: "var(--bg-panel)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 12,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 13, fontWeight: "bold", color: "var(--text-primary)", marginBottom: 4 }}>
-                {draft.name}
-              </div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                {new Date(draft.createdAt).toLocaleString()} · {draft.body.length.toLocaleString()} chars
-              </div>
-            </div>
-            <button
-              onClick={() => handleRestore(draft)}
-              style={{ ...S.ghost, color: "var(--color-blue)", fontSize: 11 }}
+        {(() => {
+          const sortedDrafts = [...drafts].sort((a, b) => b.createdAt - a.createdAt);
+          const inferredDraftId = activeDraftId || (currentBody !== undefined ? sortedDrafts.find(d => d.body === currentBody)?.id : undefined);
+
+          return sortedDrafts.map((draft) => {
+            const isLineage = inferredDraftId === draft.id;
+            const isExact = currentBody !== undefined && draft.body === currentBody;
+            const isActive = isLineage;
+            const isModified = isActive && !isExact;
+
+          return (
+            <div
+              key={draft.id}
+              style={{
+                background: isActive ? "var(--bg-active)" : "var(--bg-card)",
+                border: isActive ? "1px solid var(--color-blue)" : "1px solid var(--border)",
+                borderLeft: isActive ? "4px solid var(--color-blue)" : "1px solid var(--border)",
+                borderRadius: 6,
+                padding: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
             >
-              Restore
-            </button>
-          </div>
-        ))}
+              <div>
+                <div style={{ fontSize: 13, fontWeight: "600", color: isActive ? "var(--color-blue)" : "var(--text-primary)", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                  {draft.name}
+                  {isActive && (
+                    <span
+                      style={{
+                        fontSize: 10,
+                        background: "var(--bg-app)",
+                        color: isModified ? "var(--color-orange)" : "var(--color-blue)",
+                        border: `1px solid ${isModified ? "var(--color-orange)" : "var(--color-blue)"}`,
+                        padding: "2px 6px",
+                        borderRadius: 12,
+                        fontWeight: "600",
+                        letterSpacing: 0.5,
+                        lineHeight: 1
+                      }}
+                    >
+                      {isModified ? "MODIFIED" : "ACTIVE"}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  {new Date(draft.createdAt).toLocaleString()} · {draft.body?.length?.toLocaleString() || 0} chars
+                </div>
+              </div>
+              <button
+                onClick={() => handleRestore(draft)}
+                disabled={isActive && !isModified}
+                style={{
+                  ...S.ghost,
+                  color: isActive && !isModified ? "var(--text-muted)" : "var(--color-blue)",
+                  fontSize: 11,
+                  fontWeight: "600",
+                  padding: "4px 8px",
+                  borderRadius: 4,
+                  border: isActive && !isModified ? "1px solid transparent" : "1px solid var(--color-blue)",
+                  opacity: isActive && !isModified ? 0.6 : 1
+                }}
+              >
+                {isActive && !isModified ? "Loaded" : "Restore"}
+              </button>
+            </div>
+          );
+        })})()}
       </div>
 
       {showSaveModal && (

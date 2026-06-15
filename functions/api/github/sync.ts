@@ -29,6 +29,7 @@ interface BookPayload {
 
 interface RequestPayload {
   token?: string;
+  lastKnownSha?: string;
   data?: {
     books?: BookPayload[];
   };
@@ -38,7 +39,7 @@ import { verifyToken } from "./authUtils";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    const { token, data } = (await context.request.json()) as RequestPayload;
+    const { token, data, lastKnownSha } = (await context.request.json()) as RequestPayload;
     const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, AUTH_SECRET } =
       context.env;
 
@@ -94,6 +95,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         object: { sha: string };
       };
       branchSha = branchData.object.sha;
+
+      if (lastKnownSha && branchSha !== lastKnownSha) {
+        return new Response(
+          JSON.stringify({
+            error: "Conflict: Server has new changes. Please Pull before pushing.",
+            conflict: true,
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ) as unknown as CloudflareResponse;
+      }
     } else {
       // Create branch from default branch
       const defBranchRes = await fetch(
@@ -319,7 +330,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     );
     if (!updateRefRes.ok) throw new Error("Failed to update branch reference");
 
-    return new Response(JSON.stringify({ success: true, branch: branchName }), {
+    return new Response(JSON.stringify({ success: true, branch: branchName, sha: newCommitData.sha }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     }) as unknown as CloudflareResponse;

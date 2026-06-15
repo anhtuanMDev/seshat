@@ -59,12 +59,14 @@ All endpoints are relative to the application origin. The base path is `/api/git
 ```typescript
 {
   "token": "string",  // User's auth token
+  "lastKnownSha": "string", // Optimistic Concurrency Control: The last seen commit SHA. Rejects if branch has advanced.
   "data": "object"    // The full serializable state of the appStore
 }
 ```
 
 **Response:**
-- `200 OK` on success.
+- `200 OK` on success, returns `{ "success": true, "branch": "user-xxx", "sha": "new_commit_sha" }`.
+- `409 Conflict` if the branch has advanced beyond `lastKnownSha` (returns `{ "error": "Conflict: Server has new changes...", "conflict": true }`).
 
 ---
 
@@ -80,7 +82,8 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `200 OK` with JSON:
   ```typescript
   {
-    "books": Array<BookData> // Array of BookData objects (stripped of heavy body content)
+    "books": Array<BookData>, // Array of BookData objects (stripped of heavy body content)
+    "branchSha": "string"     // The current commit SHA of the branch (used for OCC)
   }
   ```
 
@@ -99,8 +102,8 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `200 OK` with JSON:
   ```typescript
   {
-    "book": BookData // The partially loaded book object
-    // Note: Legacy implementations may wrap this in { "books": [BookData] }
+    "book": BookData, // The partially loaded book object
+    "branchSha": "string" // The current commit SHA of the branch (used for OCC)
   }
   ```
 
@@ -119,12 +122,14 @@ All endpoints are relative to the application origin. The base path is `/api/git
   "token": "string",
   "bookId": "string",
   "path": "string",     // Relative path within the book directory (e.g., "chapters/chapter_123.json")
-  "content": "string"   // The stringified JSON content to write
+  "content": "string",  // The stringified JSON content to write
+  "lastKnownSha": "string" // Optimistic Concurrency Control
 }
 ```
 
 **Response:**
-- `200 OK` on success.
+- `200 OK` on success, returns `{ "success": true, "sha": "new_commit_sha" }`.
+- `409 Conflict` if `lastKnownSha` does not match the current branch head.
 
 ---
 
@@ -145,12 +150,14 @@ All endpoints are relative to the application origin. The base path is `/api/git
       "path": "string",
       "content": "string"
     }
-  ]
+  ],
+  "lastKnownSha": "string" // Optimistic Concurrency Control
 }
 ```
 
 **Response:**
-- `200 OK` on success.
+- `200 OK` on success, returns `{ "success": true, "sha": "new_commit_sha" }`.
+- `409 Conflict` if `lastKnownSha` does not match the current branch head.
 
 ---
 
@@ -182,8 +189,8 @@ This section maps the Seshat application's pages and features to the APIs they c
 - **Context & Why:** The dashboard where users see all their created "Worlds/Books". `loadFromGitHub` is called on mount to fetch the lightweight list of books for the user. When a user creates or deletes a book, `syncToGitHub` is fired. Because creating a book requires establishing an entirely new folder structure on GitHub, `syncToGitHub` handles the heavy initialization instantly.
 
 ### 3. Chapter Editor Feature (`ChapterPage.tsx`)
-- **APIs Used:** `loadFileFromGitHub`, `updateFileOnGitHub`
-- **Context & Why:** This is the core word processor interface. Because `loadBookFromGitHub` intentionally strips the massive `body` and `notes` properties to save RAM during app initialization, `ChapterPage.tsx` must call `loadFileFromGitHub` to lazily fetch the full JSON string for that exact chapter when the user clicks on it. When the user saves their prose, the app calls `updateFileOnGitHub` to write the delta back to `chapters/chapter_{id}.json`. This ensures atomic saves, avoiding race conditions and saving bandwidth instead of re-uploading the whole book.
+- **APIs Used:** `loadFileFromGitHub`, `updateFilesOnGitHub`
+- **Context & Why:** This is the core word processor interface. Because `loadBookFromGitHub` intentionally strips the massive `body` and `notes` properties to save RAM during app initialization, `ChapterPage.tsx` must call `loadFileFromGitHub` to lazily fetch the `metadata.json` and the corresponding active `draft_{id}.json` for that exact chapter when the user clicks on it. When the user saves their prose, the app calls `updateFilesOnGitHub` to simultaneously write the delta to `chapters/chapter_{id}/metadata.json` and the currently active `draft_{id}.json`. This ensures atomic saves for both the chapter's metadata and its prose, avoiding race conditions and saving bandwidth instead of re-uploading the whole book.
 
 ### 4. Character Editor Feature (`CharacterPage.tsx`)
 - **APIs Used:** `updateFileOnGitHub`

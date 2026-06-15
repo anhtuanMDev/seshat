@@ -978,7 +978,8 @@ Data inside the Git repository is broken down into modular JSON files rather tha
 - `books/book_{id}/index.json` (manifest mapping IDs to titles)
 - `books/book_{id}/characters/char_{id}.json`
 - `books/book_{id}/events/event_{id}.json`
-- `books/book_{id}/chapters/chapter_{id}.json`
+- `books/book_{id}/chapters/chapter_{id}/metadata.json` (chapter metadata and draft index)
+- `books/book_{id}/chapters/chapter_{id}/{draft_id}.json` (individual draft bodies)
 - `books/book_{id}/world/world.json` (and subdirectories for nations, monsters, etc.)
 
 ### Delta Syncing

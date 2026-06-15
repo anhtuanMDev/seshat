@@ -127,7 +127,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }
     }
 
-    return new Response(JSON.stringify({ books: Object.values(booksMap) }), {
+    return new Response(JSON.stringify({ books: Object.values(booksMap), branchSha: branchData.object.sha }), {
       status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" }
     }) as unknown as CloudflareResponse;
 

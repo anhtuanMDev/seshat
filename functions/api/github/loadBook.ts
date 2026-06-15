@@ -123,7 +123,7 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
       }
     }
 
-    return new Response(JSON.stringify({ book }), {
+    return new Response(JSON.stringify({ book, branchSha: branchData.object.sha }), {
       status: 200,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" },
     });

@@ -5,7 +5,7 @@ import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { updateFileOnGitHub } from "../lib/githubSync";
+import { updateFileOnGitHub, updateFilesOnGitHub, loadFileFromGitHub } from "../lib/githubSync";
 import { computeEventSync } from "../lib/eventSync";
 import {
   useEvents,
@@ -75,6 +75,7 @@ export default function ChapterPage() {
     | "foreshadows"
     | "continuity"
   >("chars");
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isFloating, setIsFloating] = useState(false);
 
@@ -140,10 +141,32 @@ export default function ChapterPage() {
               const parsed = await loadFileFromGitHub(
                 token,
                 bookId,
-                `chapters/chapter_${chapter.id}.json`,
+                `chapters/chapter_${chapter.id}/metadata.json`,
               );
               
-              const fetchedBody = (parsed.body as string) || "";
+              let loadedDrafts = (parsed.drafts as import("../lib/types").Draft[]) || [];
+              
+              const localDraftsStr = localStorage.getItem("seshat-active-drafts");
+              const localDrafts = localDraftsStr ? JSON.parse(localDraftsStr) : {};
+              let actId = localDrafts[chapter.id];
+
+              if (!actId && loadedDrafts.length > 0) {
+                // Fallback to Draft 1 (oldest)
+                const sorted = [...loadedDrafts].sort((a, b) => a.createdAt - b.createdAt);
+                actId = sorted[0].id;
+              }
+
+              const fullDrafts = await Promise.all(loadedDrafts.map(async (d) => {
+                try {
+                  const df = await loadFileFromGitHub(token, bookId, `chapters/chapter_${chapter.id}/${d.id}.json`);
+                  return df as import("../lib/types").Draft;
+                } catch (e) {
+                  return { ...d, body: "" };
+                }
+              }));
+              
+              const activeDraft = fullDrafts.find(d => d.id === actId) || fullDrafts[0] || { body: "" };
+              const fetchedBody = activeDraft.body || "";
               const fetchedNotes = (parsed.notes as string) || "";
 
               // Update appStore with the missing massive text fields
@@ -155,10 +178,15 @@ export default function ChapterPage() {
                 appStore.books[bookIdx].chapters[chapterIdx].notes.set(
                   fetchedNotes,
                 );
-              if (parsed.drafts)
-                appStore.books[bookIdx].chapters[chapterIdx].drafts.set(
-                  parsed.drafts as import("../lib/types").Draft[],
-                );
+              
+              appStore.books[bookIdx].chapters[chapterIdx].drafts.set(fullDrafts);
+              if (actId) {
+                appStore.books[bookIdx].chapters[chapterIdx].activeDraftId?.set(actId);
+                setActiveDraftId(actId);
+                // Ensure it's in local storage
+                localDrafts[chapter.id] = actId;
+                localStorage.setItem("seshat-active-drafts", JSON.stringify(localDrafts));
+              }
 
               // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
               reset({
@@ -252,35 +280,62 @@ export default function ChapterPage() {
     if (token) {
       try {
         setIsSaving(true);
-        const payload = {
+        let currentDrafts = ch.drafts.get() || [];
+        let curActiveDraftId = activeDraftId;
+
+        if (currentDrafts.length === 0) {
+           const newId = crypto.randomUUID();
+           currentDrafts = [{ id: newId, name: "Draft 1", body: data.body, createdAt: Date.now() }];
+           curActiveDraftId = newId;
+           ch.drafts.set(currentDrafts);
+           setActiveDraftId(newId);
+        } else {
+           const activeIdx = currentDrafts.findIndex(d => d.id === curActiveDraftId);
+           if (activeIdx !== -1) {
+              currentDrafts[activeIdx] = { ...currentDrafts[activeIdx], body: data.body };
+              ch.drafts.set(currentDrafts);
+           }
+        }
+
+        const metadataPayload = {
           id: id,
           order: ch.order.get(),
           number: data.number,
           title: data.title,
           timeRef: data.timeRef,
           synopsis: data.synopsis,
-          body: data.body,
           notes: data.notes,
           pinnedChars: data.pinnedChars,
           pinnedEventIds: data.pinnedEventIds,
           scenes: data.scenes,
-          drafts: ch.drafts.get() || [],
+          drafts: currentDrafts.map(d => ({ id: d.id, name: d.name, createdAt: d.createdAt })), // Without body
         };
-        // Execute sequentially to avoid GitHub branch reference race conditions
-        await updateFileOnGitHub(
-          token,
-          bookId,
-          `chapters/chapter_${id}.json`,
-          JSON.stringify(payload, null, 2),
-        );
-        for (const ep of eventPayloadsToSync) {
-          await updateFileOnGitHub(
-            token,
-            bookId,
-            `events/event_${ep.eventId}.json`,
-            ep.payloadStr,
-          );
+
+        const activeDraftObj = currentDrafts.find(d => d.id === curActiveDraftId);
+
+        const filesToSync = [
+          {
+            path: `chapters/chapter_${id}/metadata.json`,
+            content: JSON.stringify(metadataPayload, null, 2),
+          }
+        ];
+
+        if (activeDraftObj) {
+          filesToSync.push({
+            path: `chapters/chapter_${id}/${activeDraftObj.id}.json`,
+            content: JSON.stringify(activeDraftObj, null, 2),
+          });
         }
+        
+        // Also push eventPayloads
+        for (const ep of eventPayloadsToSync) {
+          filesToSync.push({
+            path: `events/event_${ep.eventId}.json`,
+            content: ep.payloadStr,
+          });
+        }
+
+        await updateFilesOnGitHub(token, bookId, filesToSync);
         showToast("Chapter synced to cloud", "success");
         // Reset the form with the saved data to clear the dirty state
         reset(data);
@@ -294,13 +349,21 @@ export default function ChapterPage() {
       reset(data);
       showToast("Chapter saved locally", "success");
     }
-  }, [bookIdx, bookId, id, chapterIdx, getValues, reset]);
+  }, [bookIdx, bookId, id, chapterIdx, getValues, reset, activeDraftId]);
 
   // Keep a stable ref for save so RichEditor's onSave doesn't go stale
   const saveRef = useRef<() => void>(() => {});
   useLayoutEffect(() => {
     saveRef.current = onSubmit;
   }, [onSubmit]);
+
+  const updateLocalActiveDraft = useCallback((draftId: string) => {
+    if (!id) return;
+    const localDraftsStr = localStorage.getItem("seshat-active-drafts");
+    const localDrafts = localDraftsStr ? JSON.parse(localDraftsStr) : {};
+    localDrafts[id] = draftId;
+    localStorage.setItem("seshat-active-drafts", JSON.stringify(localDrafts));
+  }, [id]);
 
   const handleSaveAsDraft = useCallback(
     (name: string) => {
@@ -314,16 +377,21 @@ export default function ChapterPage() {
         createdAt: Date.now(),
       };
       ch.drafts.set([...currentDrafts, newDraft]);
-      saveRef.current();
+      setActiveDraftId(newDraft.id);
+      updateLocalActiveDraft(newDraft.id);
+      // Use setTimeout to ensure the store is flushed if there are any async batching
+      setTimeout(() => saveRef.current(), 0);
     },
-    [bookIdx, chapterIdx, getValues],
+    [bookIdx, chapterIdx, getValues, updateLocalActiveDraft],
   );
 
   const handleRestoreDraft = useCallback(
     (draft: Draft) => {
       setValue("body", draft.body, { shouldDirty: true });
+      setActiveDraftId(draft.id);
+      updateLocalActiveDraft(draft.id);
     },
-    [setValue],
+    [setValue, updateLocalActiveDraft],
   );
 
   const allChapters = useSelector(() =>
@@ -561,13 +629,79 @@ export default function ChapterPage() {
 
         {/* ── Rich editor — all context props wired ── */}
         {isLoading ? (
-          <div style={{ marginTop: 24, padding: "0 12px" }}>
-            <Skeleton animation="wave" height={24} width="100%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
-            <Skeleton animation="wave" height={24} width="92%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
-            <Skeleton animation="wave" height={24} width="96%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
-            <Skeleton animation="wave" height={24} width="85%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
-            <Skeleton animation="wave" height={24} width="90%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
-            <Skeleton animation="wave" height={24} width="70%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.5 }} />
+          <div style={{ marginTop: 24 }}>
+            {/* Toolbar skeleton */}
+            <div
+              style={{
+                display: "flex",
+                gap: 4,
+                padding: "6px 0",
+                borderBottom: "1px solid var(--border)",
+                marginBottom: "var(--space-3)",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "space-between"
+              }}
+            >
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                
+                <div style={{ width: 1, height: 16, background: "var(--border)", margin: "0 4px" }} />
+                
+                <Skeleton animation="wave" variant="rounded" width={24} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={24} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={24} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                
+                <div style={{ width: 1, height: 16, background: "var(--border)", margin: "0 4px" }} />
+                
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                <Skeleton animation="wave" variant="rounded" width={16} height={20} sx={{ bgcolor: "var(--bg-hover)" }} />
+                
+                <div style={{ width: 1, height: 16, background: "var(--border)", margin: "0 4px" }} />
+                
+                <Skeleton animation="wave" variant="rounded" width={90} height={22} sx={{ bgcolor: "var(--bg-hover)", borderRadius: 12, ml: 1 }} />
+              </div>
+              <Skeleton animation="wave" width={30} height={16} sx={{ bgcolor: "var(--bg-hover)" }} />
+            </div>
+
+            {/* Prose skeleton */}
+            <div style={{ padding: "0 0 12px 0" }}>
+              {/* Paragraph 1 */}
+              <div style={{ marginBottom: 28 }}>
+                <Skeleton animation="wave" height={22} width="95%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="90%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="75%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)" }} />
+              </div>
+              
+              {/* Paragraph 2 - short */}
+              <div style={{ marginBottom: 28 }}>
+                <Skeleton animation="wave" height={22} width="45%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)" }} />
+              </div>
+
+              {/* Paragraph 3 */}
+              <div style={{ marginBottom: 28 }}>
+                <Skeleton animation="wave" height={22} width="100%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="88%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="92%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="60%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)" }} />
+              </div>
+
+              {/* Paragraph 4 - single line */}
+              <div style={{ marginBottom: 28 }}>
+                <Skeleton animation="wave" height={22} width="80%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)" }} />
+              </div>
+              
+              {/* Paragraph 5 */}
+              <div style={{ marginBottom: 28 }}>
+                <Skeleton animation="wave" height={22} width="94%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="85%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)", mb: 1.2 }} />
+                <Skeleton animation="wave" height={22} width="30%" sx={{ bgcolor: "var(--bg-hover)", transform: "scale(1)" }} />
+              </div>
+            </div>
           </div>
         ) : (
           <RichEditor
@@ -636,6 +770,8 @@ export default function ChapterPage() {
             draftsNode={
               <DraftsPanel
                 drafts={chapter?.drafts || []}
+                currentBody={body}
+                activeDraftId={activeDraftId}
                 onSaveAsDraft={handleSaveAsDraft}
                 onRestoreDraft={handleRestoreDraft}
               />

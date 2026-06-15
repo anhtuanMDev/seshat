@@ -397,6 +397,7 @@ export interface Chapter {
   pinnedEventIds?: string[];
   scenes?: SceneCard[];
   drafts?: Draft[];
+  activeDraftId?: string;
 }
 
 export interface Treasure {

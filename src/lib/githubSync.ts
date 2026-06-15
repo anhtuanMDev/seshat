@@ -9,12 +9,17 @@ export const syncToGitHub = async (token: string): Promise<void> => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token, data }),
+      body: JSON.stringify({ token, data, lastKnownSha: appStore.lastSyncSha.get() }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const resData = await response.json().catch(() => ({})) as { sha?: string };
+    if (resData.sha) {
+      appStore.lastSyncSha.set(resData.sha);
     }
 
     console.log("Successfully synced to GitHub via token!");
@@ -77,7 +82,10 @@ export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    const data = await response.json() as { books: BookData[] };
+    const data = await response.json() as { books: BookData[]; branchSha?: string };
+    if (data.branchSha) {
+      appStore.lastSyncSha.set(data.branchSha);
+    }
     return data.books;
   } catch (error) {
     console.error("Failed to load from GitHub:", error);
@@ -92,7 +100,10 @@ export const loadBookFromGitHub = async (token: string, bookId: string): Promise
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    const data = (await response.json()) as { book?: BookData; books?: BookData[] };
+    const data = (await response.json()) as { book?: BookData; books?: BookData[]; branchSha?: string };
+    if (data.branchSha) {
+      appStore.lastSyncSha.set(data.branchSha);
+    }
     const bookData = data.book || (data.books && data.books[0]);
     if (!bookData) throw new Error("No book data found in response");
     bookData.isFullyLoaded = true;
@@ -110,12 +121,17 @@ export const updateFileOnGitHub = async (token: string, bookId: string, path: st
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token, bookId, path, content }),
+      body: JSON.stringify({ token, bookId, path, content, lastKnownSha: appStore.lastSyncSha.get() }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const resData = await response.json().catch(() => ({})) as { sha?: string };
+    if (resData.sha) {
+      appStore.lastSyncSha.set(resData.sha);
     }
   } catch (error) {
     console.error(`Failed to update ${path} on GitHub:`, error);
@@ -130,12 +146,17 @@ export const updateFilesOnGitHub = async (token: string, bookId: string, files: 
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token, bookId, files }),
+      body: JSON.stringify({ token, bookId, files, lastKnownSha: appStore.lastSyncSha.get() }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const resData = await response.json().catch(() => ({})) as { sha?: string };
+    if (resData.sha) {
+      appStore.lastSyncSha.set(resData.sha);
     }
   } catch (error) {
     console.error(`Failed to update files on GitHub:`, error);

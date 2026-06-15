@@ -668,10 +668,7 @@ export default function App() {
             </button>
           </div>
 
-          <div style={{ padding: "20px 24px 4px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
-            World Building
-          </div>
-          <div style={{ padding: "0 24px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ padding: "24px 24px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
               style={{
@@ -710,13 +707,9 @@ export default function App() {
             style={{
               height: 1,
               background: "var(--border)",
-              margin: "12px 0 0",
+              margin: "8px 0 20px",
             }}
           />
-
-          <div style={{ padding: "16px 24px 4px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
-            Drafting
-          </div>
 
           {/* ── Chapters section ── */}
           <div
@@ -758,7 +751,7 @@ export default function App() {
           </div>
 
           {openSections.chapters && (
-            <div style={{ maxHeight: "30vh", overflowY: "auto", overflowX: "hidden" }}>
+            <div>
               {sortedChapters.map((ch: Chapter) => (
                 <SideItem
                   key={ch.id}
@@ -788,18 +781,10 @@ export default function App() {
             </div>
           )}
 
-          <div
-            style={{
-              height: 1,
-              background: "var(--border)",
-              margin: "4px 0 10px",
-            }}
-          />
-
           {/* ── Timeline section ── */}
           <div
             style={{
-              padding: "0 24px 8px",
+              padding: "16px 24px 8px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
@@ -836,7 +821,7 @@ export default function App() {
           </div>
 
           {openSections.timeline && (
-            <div style={{ maxHeight: "30vh", overflowY: "auto", overflowX: "hidden" }}>
+            <div>
               {sortedEvt.map((e: Event) => {
                 const dateTag = [
                   e.startDate && e.startDate.replace("T", " "),
@@ -880,14 +865,11 @@ export default function App() {
             style={{
               height: 1,
               background: "var(--border)",
-              margin: "12px 0 20px",
+              margin: "16px 0 20px",
             }}
           />
 
           {/* ── Characters section ── */}
-          <div style={{ padding: "16px 24px 4px", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-muted)" }}>
-            Characters
-          </div>
           <div
             style={{
               padding: "0 24px 8px",
@@ -927,7 +909,7 @@ export default function App() {
           </div>
 
           {openSections.characters && (
-            <div style={{ maxHeight: "30vh", overflowY: "auto", overflowX: "hidden" }}>
+            <div>
               {characters.map((c: Character) => (
                 <SideItem
                   key={c.id}
