@@ -5,7 +5,7 @@ import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { updateFilesOnGitHub } from "../lib/githubSync";
+import { updateFileOnGitHub, updateFilesOnGitHub } from "../lib/githubSync";
 import { computeEventSync } from "../lib/eventSync";
 import {
   useEvents,
@@ -113,6 +113,24 @@ export default function ChapterPage() {
               pinnedEventIds: chapter.pinnedEventIds || [],
               scenes: chapter.scenes || [],
             });
+          }
+
+          const localDraftsStr = localStorage.getItem("seshat-active-drafts");
+          const localDrafts = localDraftsStr ? JSON.parse(localDraftsStr) : {};
+          let actId = localDrafts[chapter.id];
+
+          if (!actId && chapter.drafts && chapter.drafts.length > 0) {
+            const sorted = [...chapter.drafts].sort((a, b) => a.createdAt - b.createdAt);
+            actId = sorted[0].id;
+          }
+
+          if (actId) {
+            appStore.books[bookIdx].chapters[chapterIdx].activeDraftId?.set(actId);
+            setActiveDraftId(actId);
+            localDrafts[chapter.id] = actId;
+            localStorage.setItem("seshat-active-drafts", JSON.stringify(localDrafts));
+          } else {
+            setActiveDraftId(null);
           }
         } else {
           // Body is missing (stripped by loadBook.ts to save RAM), fetch it lazily
