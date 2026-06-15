@@ -1002,3 +1002,198 @@ Any component that triggers an asynchronous workflow (API calls for load, sync, 
 ### The `S` Utility Object
 Global style presets (like grids, input fields, layout wrappers) are centralized in the `S` object within `src/lib/utils.ts`. 
 **Rule:** The object must be typed using `satisfies Record<string, React.CSSProperties>` rather than cast loosely. This ensures strict type safety and enables accurate IDE autocomplete for consumers (preventing silent fallbacks of undefined styles).
+
+---
+
+## 17. Core Domain Model — Full Type Reference
+
+Every piece of author data is organized under a **BookData** tree. `isFullyLoaded` is a runtime flag — never persisted to GitHub — that tells the app whether the full book has been fetched from the cloud.
+
+```
+BookData
+├── id, title, synopsis, setting, themes, rules
+├── isFullyLoaded?: boolean     ← runtime only; not saved to GitHub
+├── events: Event[]
+├── characters: Character[]
+├── chapters: Chapter[]
+├── nations: Nation[]
+├── techniques: Technique[]
+├── ingredients: Ingredient[]
+├── monsters: Monster[]
+├── treasures: Treasure[]
+└── foreshadows: Foreshadow[]
+```
+
+### Character (most complex entity)
+```
+Character
+├── Core psychology: role, archetype, coreWound, coreFear, coreDesire, philosophy, secrets
+├── color: string                               # hex color for sidebar / card accent
+├── arcs: CharacterArc[]                        # Narrative arc with lie/truth/breaking-point
+│     └── { arcType, arcLie, arcTruth, arcBreakingPoint,
+│             arcFromEventId, arcToEventId, arcFromTime, arcToTime,
+│             arcStart, arcEnd }
+├── statusTimeline: StatusEntry[]               # Power level + emotional/physical state over time
+│     └── { eventId, startDate, endDate, power, arcStage,
+│             role, archetype, emotionalState, physicalState, note }
+├── traumas: Trauma[]
+│     └── { title, when, description, trigger, manifestation }
+├── relationships: Relationship[]               # (with RelTimelineEntry[])
+│     └── { withId, feel, timeline: [{ time, dynamic }] }
+├── branch: Branch[]                            # Pre-story / backstory events
+│     └── { time, title, type, description, impact, crossings: [{ withId, note }] }
+├── attributes: Record<eventId, EventAttributes>  # Per-event snapshot (read by EventPage + export)
+│     └── { power, difficulty, arcStage, emotionalState, physicalState,
+│             sceneMotive, knowledge, beliefs, secret,
+│             traumaActive, notes, arcBefore, arcAfter }
+├── conditions: Condition[]
+│     └── { type: CondType, name, atTime, atEventId, why, description, effects, isActive }
+├── skills: Skill[]
+│     └── { name, atTime, atEventId, howGained, source, appearance, attitude,
+│             stats, cost, costDescription, uses, cooldown, upside, downside,
+│             requirement, notes }
+├── equipment: Equipment[]
+│     └── { slot: EquipSlot, name, atTime, atEventId, stats, curses, unbindCondition,
+│             uses, creator, createdWhy, ingredients, lore,
+│             accessState: EquipAccess, accessNote }
+├── achievements: Achievement[]
+│     └── { title, atTime, atEventId, description, gained }
+└── losses: Loss[]
+      └── { title, atTime, atEventId, description }
+```
+
+### Event
+```
+Event
+├── id, time (T-value integer), title
+├── type: EventType
+├── startDate, endDate (ISO strings)
+├── setting, description, consequence
+├── characters: string[]    # character IDs — auto-managed by computeEventSync()
+├── chapters: string[]      # chapter IDs — auto-managed by computeEventSync()
+└── subplot?: string        # optional subplot tag (used by TimelinePage filtering)
+```
+
+### Chapter
+```
+Chapter
+├── id, number, title, timeRef (→ Event.id as string), synopsis, notes, order
+├── pinnedChars: string[]         # character IDs pinned for the reference panel
+├── pinnedEventIds: string[]      # event IDs pinned for the pinned-context strip
+├── scenes: SceneCard[]           # scene outline cards
+│     └── { id, title, pov, goal, conflict, outcome }
+├── drafts: Draft[]               # versioned prose drafts
+│     └── { id, name, body, createdAt, isDeleted? }
+└── activeDraftId: string
+```
+
+### Foreshadow
+```
+Foreshadow
+├── id
+├── plantChapterId: string
+├── payoffChapterId: string
+├── description: string
+└── status: "Planted" | "Payoffed" | "Abandoned"
+```
+
+---
+
+## 18. All Enum Types
+
+```
+PowerTier:    Latent | Awakening | Capable | Skilled | Elite | Peak | Transcendent
+EventType:    Story | Trauma | Revelation | Conflict | Bond | Loss | Growth | Mystery
+ArcStage:     Unaware | Questioning | Resisting | Breaking | Transforming | Integrated
+CondType:     Physical | Mental | Social | Spiritual | Cursed | Blessed | Wounded | Enhanced
+EquipSlot:    Weapon | Offhand | Armor | Helmet | Boots | Gloves | Accessory | Relic | Mount | Other
+EquipAccess:  Equipped | Stored | No Access
+TechType:     Blacksmithing | Martial Art | Technology | Biology | Alchemy | Runic | Forbidden | Other
+MonsterTier:  Minion | Common | Elite | Champion | Boss | Legendary | World-Threat
+NationType:   Kingdom | Empire | Tribe | Republic | Theocracy | Nomadic | Hidden | Ruin
+Rarity:       Common | Uncommon | Rare | Epic | Legendary | Unique | Mythic
+Difficulty:   Trivial | Minor | Moderate | Significant | Severe | Catastrophic
+```
+
+Constants arrays for all the above are exported from `src/lib/constants.ts` (e.g. `POWER_TIERS`, `EVENT_TYPES`, `ARC_STAGES`, `COND_TYPES`, `EQUIP_SLOTS`, `EQUIP_ACCESS`, `TECH_TYPES`, `MON_TIERS`, `NAT_TYPES`, `RARITY`, `DIFFICULTY`, `NATION_CONNECTION_TYPES`, `CHAR_COLORS`).
+
+---
+
+## 19. GitHub-as-Storage: File Layout & Conflict Detection
+
+### Conflict Detection (`lastSyncSha`)
+- `appStore.lastSyncSha: string | null` stores the last known commit SHA of the user's branch.
+- Every `sync`, `updateFile`, and `updateFiles` call passes `lastKnownSha` to the backend.
+- If the branch HEAD has advanced beyond `lastKnownSha`, the API returns `409 { conflict: true }`.
+- A successful response updates `appStore.lastSyncSha` with the new commit SHA.
+- **localStorage isolation**: `lastSyncSha` from `localhost` ≠ `lastSyncSha` from production. Users must Pull when switching environments.
+
+### Complete GitHub File Layout
+```
+users.json                                  # flat user registry on main branch
+                                            # { username: { accessCode, email } }
+books/
+└── book_<bookId>/
+    ├── book.json                           # title, synopsis, setting, themes, rules
+    ├── index.json                          # { characters: [{id,name}], events: [{id,title}], chapters: [{id,title}] }
+    ├── world/
+    │   ├── world.json                      # { id, title }
+    │   ├── nations/nation_<id>.json
+    │   ├── techniques/technique_<id>.json
+    │   ├── ingredients/ingredient_<id>.json
+    │   ├── monsters/monster_<id>.json
+    │   └── treasures/treasure_<id>.json
+    ├── characters/char_<id>.json           # full character object
+    ├── events/event_<id>.json             # full event object
+    └── chapters/chapter_<id>/
+        ├── metadata.json                  # everything EXCEPT draft body content
+        └── <draftId>.json                 # each draft as its own file (includes body)
+```
+
+### GitHub API Usage (Two Distinct APIs)
+
+#### REST API — writes, tree ops, branch management
+- `GET /repos/{owner}/{repo}` — get repo metadata / default branch
+- `GET /repos/{owner}/{repo}/git/ref/heads/{branch}` — get branch HEAD SHA
+- `POST /repos/{owner}/{repo}/git/refs` — create branch from another
+- `PATCH /repos/{owner}/{repo}/git/refs/heads/{branch}` — update branch ref (force push)
+- `GET /repos/{owner}/{repo}/git/commits/{sha}` — get commit (to extract tree SHA)
+- `GET /repos/{owner}/{repo}/git/trees/{sha}?recursive=1` — list all blobs in tree
+- `POST /repos/{owner}/{repo}/git/trees` — create new tree
+- `POST /repos/{owner}/{repo}/git/commits` — create commit
+- `GET/PUT /repos/{owner}/{repo}/contents/users.json` — read/write users registry
+
+#### GitHub GraphQL API — batch blob reads (load.ts, loadBook.ts)
+Used to fetch up to 100 file contents in a single request:
+```graphql
+query {
+  repository(owner: "...", name: "...") {
+    blob0: object(oid: "<sha>") { ... on Blob { text } }
+    blob1: object(oid: "<sha>") { ... on Blob { text } }
+    # up to 100 per query
+  }
+}
+```
+- Endpoint: `POST https://api.github.com/graphql`
+- Auth: `Authorization: Bearer <GITHUB_TOKEN>`
+
+---
+
+## 20. Key Library Functions Reference
+
+| Function | File | Purpose |
+|---|---|---|
+| `buildExport(state)` | `lib/export.ts` | Generates a plain-text AI context dump with all world/character/event data |
+| `resolveStatusAt(char, events, contextDate?, contextEventTime?, contextWindowStart?)` | `lib/resolveStatus.ts` | Finds the correct `StatusEntry` for a character at a chapter's time context (3-path algorithm: window → date fallback → T-value fallback → last entry) |
+| `chapterContext(pinnedEvents)` | `lib/resolveStatus.ts` | Extracts `{ contextDate, contextWindowStart, contextEventTime }` from pinned events |
+| `scoreFighter(char, events, atEventId?)` | `lib/scoreFighter.ts` | Computes a numeric combat score (power tier × 3 + skills × 1.2 + equipment − curses − conditions + arc mod + emotional mod) |
+| `computeEventSync(bookIdx, eventId, chapterId, newTimeRef, newPinnedChars)` | `lib/eventSync.ts` | Keeps `event.characters` and `event.chapters` consistent with chapter pinning (called on chapter save) |
+| `syncToGitHub(token)` | `lib/githubSync.ts` | Full push of all books (replaces entire branch tree) |
+| `loadFromGitHub(token)` | `lib/githubSync.ts` | Loads lightweight book list (only `book.json` per book) |
+| `loadBookFromGitHub(token, bookId)` | `lib/githubSync.ts` | Loads a single full book (all entities except draft bodies) |
+| `updateFileOnGitHub(token, bookId, path, content)` | `lib/githubSync.ts` | Patches a single file in one Git commit |
+| `updateFilesOnGitHub(token, bookId, files[])` | `lib/githubSync.ts` | Patches multiple files atomically in one commit |
+| `loadFileFromGitHub(token, bookId, path)` | `lib/githubSync.ts` | Lazy-loads a single raw file (e.g., draft body) |
+| `mkChar / mkEvent / mkBranch / mkTrauma / mkCond / mkSkill / mkEquip / ...` | `lib/utils.ts` | Factory functions creating blank entities with `uid()` IDs |
+| `uid()` | `lib/utils.ts` | `Math.random().toString(36).slice(2, 8)` — 6-char alphanumeric ID |
+| `S` (style object) | `lib/utils.ts` | Shared `React.CSSProperties` presets using CSS variables |
