@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { appStore, mkBook } from "../store/appStore";
 import { S } from "../lib/utils";
-import { AutoStoriesIcon, AddIcon, LightModeIcon, DarkModeIcon, CloseIcon } from "../components/ui/icons";
+import { AutoStoriesIcon, AddIcon, LightModeIcon, DarkModeIcon, CloseIcon, BugReportIcon } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { useTheme } from "../hooks/useTheme";
 import { useBooks, useActiveBookId } from "../hooks/useWorldStore";
@@ -185,11 +185,18 @@ export default function BookListPage() {
       color: "var(--text-primary)",
       padding: 40,
     }}>
-      <div style={{ position: "absolute", top: 20, right: 24 }}>
+      <div style={{ position: "absolute", top: 20, right: 24, display: "flex", alignItems: "center", gap: 16 }}>
+        <button
+          onClick={() => navigate("/issues")}
+          style={{ ...S.ghost, fontSize: 13, opacity: 0.8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", cursor: "pointer" }}
+        >
+          <BugReportIcon sx={{ fontSize: 16 }} />
+          Forum
+        </button>
         <button
           onClick={toggle}
           title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          style={{ ...S.ghost, fontSize: 15, opacity: 0.7 }}
+          style={{ ...S.ghost, fontSize: 15, opacity: 0.7, cursor: "pointer" }}
         >
           {theme === "light" ? <LightModeIcon sx={{ fontSize: 16 }} /> : <DarkModeIcon sx={{ fontSize: 16 }} />}
         </button>

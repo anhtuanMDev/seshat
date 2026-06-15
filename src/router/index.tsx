@@ -12,6 +12,8 @@ import FightPage from "../pages/FightPage";
 import ChapterPage from "../pages/ChapterPage";
 import ChapterListPage from "../pages/ChapterListPage";
 import LoreWebPage from "../pages/LoreWebPage";
+import IssuesPage from "../pages/IssuesPage";
+import IssueDetailPage from "../pages/IssueDetailPage";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +29,8 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <BookListPage /> },
+      { path: "issues", element: <IssuesPage /> },
+      { path: "issues/:number", element: <IssueDetailPage /> },
       {
         path: "book/:bookId",
         children: [

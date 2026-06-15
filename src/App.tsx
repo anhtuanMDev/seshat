@@ -25,6 +25,7 @@ import {
   CloudSyncIcon,
   MenuIcon,
   SearchIcon,
+  BugReportIcon,
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState, useMemo } from "react";
@@ -700,6 +701,20 @@ export default function App() {
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Lore Web
+            </button>
+            <button
+              onClick={() => navigate("/issues")}
+              style={{
+                ...navBtnStyle(
+                  location.pathname.startsWith("/issues"),
+                ),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <BugReportIcon sx={{ fontSize: 14 }} />
+              Issues & Forum
             </button>
           </div>
 
