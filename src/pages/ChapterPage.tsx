@@ -138,13 +138,23 @@ export default function ChapterPage() {
           if (token && bookId) {
             try {
               const { loadFileFromGitHub } = await import("../lib/githubSync");
-              const parsed = await loadFileFromGitHub(
-                token,
-                bookId,
-                `chapters/chapter_${chapter.id}/metadata.json`,
-              );
+              let parsed: any;
+              try {
+                parsed = await loadFileFromGitHub(
+                  token,
+                  bookId,
+                  `chapters/chapter_${chapter.id}/metadata.json`,
+                );
+              } catch (err) {
+                console.warn(`Metadata for chapter ${chapter.id} not found, initializing empty draft array.`);
+                parsed = { drafts: [] };
+              }
               
               let loadedDrafts = (parsed.drafts as import("../lib/types").Draft[]) || [];
+              if (loadedDrafts.length === 0) {
+                const newId = crypto.randomUUID();
+                loadedDrafts = [{ id: newId, name: "Draft 1", body: "", createdAt: Date.now() }];
+              }
               
               const localDraftsStr = localStorage.getItem("seshat-active-drafts");
               const localDrafts = localDraftsStr ? JSON.parse(localDraftsStr) : {};

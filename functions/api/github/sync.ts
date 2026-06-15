@@ -244,26 +244,50 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
       book.chapters?.forEach((c) => {
         indexChapters.push({ id: c.id, title: c.title });
-        const filePath = `${bDir}/chapters/chapter_${c.id}.json`;
-
+        
         if (c.body === undefined) {
-          const oldSha = existingFiles.get(filePath);
-          if (oldSha) {
-            treeFiles.push({
-              path: filePath,
-              mode: "100644",
-              type: "blob",
-              sha: oldSha,
-            });
-            return;
+          let foundFiles = false;
+          for (const [p, sha] of existingFiles.entries()) {
+            if (p.startsWith(`${bDir}/chapters/chapter_${c.id}/`) || p === `${bDir}/chapters/chapter_${c.id}.json`) {
+              treeFiles.push({
+                path: p,
+                mode: "100644",
+                type: "blob",
+                sha,
+              });
+              foundFiles = true;
+            }
           }
+          if (foundFiles) return;
         }
 
+        const drafts = (c.drafts as any[]) || [];
         treeFiles.push({
-          path: filePath,
+          path: `${bDir}/chapters/chapter_${c.id}/metadata.json`,
           mode: "100644",
           type: "blob",
-          content: JSON.stringify(c, null, 2),
+          content: JSON.stringify({
+            id: c.id,
+            order: c.order,
+            number: c.number,
+            title: c.title,
+            timeRef: c.timeRef,
+            synopsis: c.synopsis,
+            notes: c.notes,
+            pinnedChars: c.pinnedChars,
+            pinnedEventIds: c.pinnedEventIds,
+            scenes: c.scenes,
+            drafts: drafts.map((d: any) => ({ id: d.id, name: d.name, createdAt: d.createdAt }))
+          }, null, 2),
+        });
+
+        drafts.forEach((d: any) => {
+          treeFiles.push({
+            path: `${bDir}/chapters/chapter_${c.id}/${d.id}.json`,
+            mode: "100644",
+            type: "blob",
+            content: JSON.stringify(d, null, 2),
+          });
         });
       });
 

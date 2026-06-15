@@ -136,19 +136,19 @@ function ChapterCard({
       style={{
         padding: "20px 24px",
         cursor: "pointer",
-        position: "relative",
         transition: "all 0.2s ease",
         borderBottom: "1px solid var(--border)",
         borderLeft: `3px solid var(--color-purple)`,
         borderLeftColor: hover ? "var(--color-purple)" : "color-mix(in srgb, var(--color-purple) 40%, transparent)",
         background: hover ? "var(--bg-hover)" : "transparent",
+        display: "flex",
+        alignItems: "center"
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <div className="seshat-flex-align">
-        {/* Chapter Number Column */}
-        <div style={{ width: 80, flexShrink: 0 }}>
+      {/* Chapter Number Column */}
+      <div style={{ width: 80, flexShrink: 0, alignSelf: "flex-start", paddingTop: 2 }}>
           {c.number ? (
             <span
               style={{
@@ -167,97 +167,110 @@ function ChapterCard({
           )}
         </div>
 
-        {/* Title & Connector & Meta */}
-        <div className="seshat-flex-align" style={{ flex: 1 }}>
+        {/* Info Column (stretches, and shrinks on hover via flex) */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="seshat-flex-align" style={{ width: "100%" }}>
+            <span
+              style={{
+                fontSize: 14,
+                color: c.title ? "var(--text-primary)" : "var(--text-muted)",
+                fontStyle: c.title ? "normal" : "italic",
+                letterSpacing: 0.3,
+                fontFamily: c.title ? "serif" : "inherit",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis"
+              }}
+            >
+              {c.title || "Untitled chapter"}
+            </span>
+
+            {c.timeRef && (
+              <span
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-secondary)",
+                  background: "var(--bg-entry)",
+                  border: "1px solid var(--border-field)",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                  marginLeft: 12,
+                  letterSpacing: 0.5,
+                  flexShrink: 0,
+                }}
+              >
+                {c.timeRef}
+              </span>
+            )}
+
+            <div
+              className="toc-connector"
+              style={{
+                flex: 1,
+                borderBottom: "1px dotted var(--text-muted)",
+                margin: "0 16px",
+                opacity: hover ? 0.8 : 0.3,
+                transition: "opacity 0.2s ease",
+              }}
+            />
+
+            {wordCount > 0 && (
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  fontVariantNumeric: "tabular-nums",
+                  background: "var(--bg-active)",
+                  padding: "2px 8px",
+                  borderRadius: "12px",
+                  flexShrink: 0,
+                }}
+              >
+                {wordCount >= 1000 ? `${(wordCount / 1000).toFixed(1)}k` : wordCount}
+              </span>
+            )}
+          </div>
+
+          {c.synopsis && (
+            <div style={{ marginTop: 8, paddingRight: 24 }}>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                  fontStyle: "italic",
+                }}
+              >
+                {c.synopsis}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Icon Column (shows on hover) */}
+        <div style={{
+           width: hover ? 24 : 0, 
+           opacity: hover ? 1 : 0, 
+           overflow: "hidden", 
+           transition: "all 0.2s ease",
+           display: "flex",
+           alignItems: "center",
+           justifyContent: "flex-end",
+           flexShrink: 0,
+           marginLeft: hover ? 16 : 0
+        }}>
           <span
             style={{
               fontSize: 14,
-              color: c.title ? "var(--text-primary)" : "var(--text-muted)",
-              fontStyle: c.title ? "normal" : "italic",
-              letterSpacing: 0.3,
-              fontFamily: c.title ? "serif" : "inherit",
+              color: "var(--color-purple)",
+              transform: hover ? "translateX(0)" : "translateX(-8px)",
+              transition: "transform 0.2s ease",
             }}
           >
-            {c.title || "Untitled chapter"}
+            →
           </span>
-
-          {c.timeRef && (
-            <span
-              style={{
-                fontSize: 10,
-                color: "var(--text-secondary)",
-                background: "var(--bg-entry)",
-                border: "1px solid var(--border-field)",
-                padding: "2px 8px",
-                borderRadius: "12px",
-                marginLeft: 12,
-                letterSpacing: 0.5,
-              }}
-            >
-              {c.timeRef}
-            </span>
-          )}
-
-          <div
-            className="toc-connector"
-            style={{
-              flex: 1,
-              borderBottom: "1px dotted var(--text-muted)",
-              margin: "0 16px",
-              opacity: hover ? 0.8 : 0.3,
-              transition: "opacity 0.2s ease",
-            }}
-          />
-
-          {wordCount > 0 && (
-            <span
-              style={{
-                fontSize: 12,
-                color: "var(--text-muted)",
-                fontVariantNumeric: "tabular-nums",
-                background: "var(--bg-active)",
-                padding: "2px 8px",
-                borderRadius: "12px",
-              }}
-            >
-              {wordCount >= 1000 ? `${(wordCount / 1000).toFixed(1)}k` : wordCount}
-            </span>
-          )}
         </div>
-      </div>
-
-      {c.synopsis && (
-        <div style={{ paddingLeft: 80, paddingRight: 60, marginTop: 8 }}>
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              lineHeight: 1.6,
-              margin: 0,
-              fontStyle: "italic",
-            }}
-          >
-            {c.synopsis}
-          </p>
-        </div>
-      )}
-
-      {/* Hover arrow indicator */}
-      <span
-        className="hover-arrow"
-        style={{
-          position: "absolute",
-          right: 24,
-          top: "50%",
-          transform: hover ? "translateY(-50%) translateX(0)" : "translateY(-50%) translateX(-8px)",
-          fontSize: 14,
-          color: "var(--color-purple)",
-          opacity: hover ? 1 : 0,
-          transition: "all 0.2s ease",
-        }}
-      >
-        →
-      </span>
     </div>
   );
 }

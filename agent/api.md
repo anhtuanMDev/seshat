@@ -92,7 +92,7 @@ All endpoints are relative to the application origin. The base path is `/api/git
 ### 5. Load Specific Book (Deep Fetch)
 **Endpoint:** `/api/github/loadBook`
 **Method:** `GET`
-**Purpose:** Lazily fetches the data structure for a specific book when the user opens it. The backend intentionally strips out massive text fields like `chapter.body` and `chapter.notes` before sending it to the client to prevent the initial app load from crashing the browser if the book is massive.
+**Purpose:** Lazily fetches the data structure for a specific book when the user opens it. The backend intentionally strips out massive text fields like `chapter.body` and `chapter.notes` before sending it to the client to prevent the initial app load from crashing the browser if the book is massive. It maps the chapters from `metadata.json` while ignoring `draft_id.json` files to prevent drafts from polluting the master chapter index.
 
 **Query Parameters:**
 - `token`: `string` (URL Encoded)
