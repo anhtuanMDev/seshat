@@ -30,8 +30,17 @@ export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft,
     }
   };
 
+  const sortedDrafts = [...drafts].sort((a, b) => b.createdAt - a.createdAt);
+  const inferredDraftId = activeDraftId || (currentBody !== undefined ? sortedDrafts.find(d => d.body === currentBody)?.id : undefined);
+  const globalActiveDraft = sortedDrafts.find(d => d.id === inferredDraftId);
+  const isGloballyModified = globalActiveDraft ? currentBody !== undefined && globalActiveDraft.body !== currentBody : false;
+
   const handleRestore = (draft: Draft) => {
-    setDraftToRestore(draft);
+    if (!isGloballyModified) {
+      onRestoreDraft(draft);
+    } else {
+      setDraftToRestore(draft);
+    }
   };
 
   const confirmRestore = () => {
@@ -66,9 +75,6 @@ export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft,
         )}
         
         {(() => {
-          const sortedDrafts = [...drafts].sort((a, b) => b.createdAt - a.createdAt);
-          const inferredDraftId = activeDraftId || (currentBody !== undefined ? sortedDrafts.find(d => d.body === currentBody)?.id : undefined);
-
           return sortedDrafts.map((draft) => {
             const isLineage = inferredDraftId === draft.id;
             const isExact = currentBody !== undefined && draft.body === currentBody;
@@ -81,7 +87,7 @@ export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft,
               style={{
                 background: isActive ? "var(--bg-active)" : "var(--bg-card)",
                 border: "1px solid",
-                borderColor: isActive ? "var(--color-blue)" : "var(--border)",
+                borderColor: isActive ? (isModified ? "var(--color-orange)" : "var(--color-blue)") : "var(--border)",
                 borderRadius: 6,
                 padding: "12px 16px",
                 display: "flex",
@@ -91,29 +97,15 @@ export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft,
               }}
             >
               {isActive && (
-                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "var(--color-blue)" }} />
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: isModified ? "var(--color-orange)" : "var(--color-blue)" }} />
               )}
               
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: "600", color: isActive ? "var(--color-blue)" : "var(--text-primary)" }}>
+                    <span style={{ fontSize: 13, fontWeight: "600", color: isActive ? (isModified ? "var(--color-orange)" : "var(--color-blue)") : "var(--text-primary)" }}>
                       {draft.name}
                     </span>
-                    {isActive && (
-                      <span style={{
-                        fontSize: 9,
-                        background: isModified ? "color-mix(in srgb, var(--color-orange) 15%, transparent)" : "color-mix(in srgb, var(--color-blue) 15%, transparent)",
-                        color: isModified ? "var(--color-orange)" : "var(--color-blue)",
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        fontWeight: "700",
-                        letterSpacing: 0.5,
-                        textTransform: "uppercase"
-                      }}>
-                        {isModified ? "Unsaved Changes" : "Current"}
-                      </span>
-                    )}
                   </div>
                   <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 0.2 }}>
                     {new Date(draft.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
