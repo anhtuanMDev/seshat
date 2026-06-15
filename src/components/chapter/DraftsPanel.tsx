@@ -44,16 +44,17 @@ export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft,
   return (
     <div style={{ padding: "0 24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <p style={{ ...S.h2, margin: 0, fontSize: 13, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}>
+        <p title="Version History" style={{ ...S.h2, margin: 0, fontSize: 12, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", textTransform: "none" }}>
           <HistoryIcon sx={{ fontSize: 14 }} />
-          Version History ({drafts.length})
+          Drafts ({drafts.length})
         </p>
         <button
           type="button"
           onClick={handleSave}
-          style={{ ...S.ghost, fontSize: 11, display: "flex", alignItems: "center", gap: 3, color: "var(--text-secondary)" }}
+          title="Save current editor content as a new draft"
+          style={{ ...S.ghost, fontSize: 11, display: "flex", alignItems: "center", gap: 3, color: "var(--color-blue)", padding: "4px 8px", background: "color-mix(in srgb, var(--color-blue) 10%, transparent)", borderRadius: 4 }}
         >
-          <AddIcon sx={{ fontSize: 13 }} /> save current as draft
+          <AddIcon sx={{ fontSize: 14 }} /> Draft
         </button>
       </div>
 
@@ -79,56 +80,81 @@ export function DraftsPanel({ drafts, currentBody, activeDraftId, onSaveAsDraft,
               key={draft.id}
               style={{
                 background: isActive ? "var(--bg-active)" : "var(--bg-card)",
-                border: isActive ? "1px solid var(--color-blue)" : "1px solid var(--border)",
-                borderLeft: isActive ? "4px solid var(--color-blue)" : "1px solid var(--border)",
+                border: "1px solid",
+                borderColor: isActive ? "var(--color-blue)" : "var(--border)",
                 borderRadius: 6,
-                padding: 12,
+                padding: "12px 16px",
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
+                flexDirection: "column",
+                position: "relative",
+                overflow: "hidden"
               }}
             >
-              <div>
-                <div style={{ fontSize: 13, fontWeight: "600", color: isActive ? "var(--color-blue)" : "var(--text-primary)", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
-                  {draft.name}
-                  {isActive && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        background: "var(--bg-app)",
-                        color: isModified ? "var(--color-orange)" : "var(--color-blue)",
-                        border: `1px solid ${isModified ? "var(--color-orange)" : "var(--color-blue)"}`,
-                        padding: "2px 6px",
-                        borderRadius: 12,
-                        fontWeight: "600",
-                        letterSpacing: 0.5,
-                        lineHeight: 1
-                      }}
-                    >
-                      {isModified ? "MODIFIED" : "ACTIVE"}
+              {isActive && (
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "var(--color-blue)" }} />
+              )}
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: "600", color: isActive ? "var(--color-blue)" : "var(--text-primary)" }}>
+                      {draft.name}
                     </span>
-                  )}
+                    {isActive && (
+                      <span style={{
+                        fontSize: 9,
+                        background: isModified ? "color-mix(in srgb, var(--color-orange) 15%, transparent)" : "color-mix(in srgb, var(--color-blue) 15%, transparent)",
+                        color: isModified ? "var(--color-orange)" : "var(--color-blue)",
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        fontWeight: "700",
+                        letterSpacing: 0.5,
+                        textTransform: "uppercase"
+                      }}>
+                        {isModified ? "Unsaved Changes" : "Current"}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: 0.2 }}>
+                    {new Date(draft.createdAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {" · "}
+                    <span style={{ color: "var(--text-secondary)" }}>{draft.body?.length?.toLocaleString() || 0} chars</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  {new Date(draft.createdAt).toLocaleString()} · {draft.body?.length?.toLocaleString() || 0} chars
-                </div>
+
+                {!isActive ? (
+                  <button
+                    onClick={() => handleRestore(draft)}
+                    style={{
+                      ...S.ghost,
+                      fontSize: 11,
+                      color: "var(--color-blue)",
+                      fontWeight: "600",
+                      padding: "4px 10px",
+                      border: "1px solid color-mix(in srgb, var(--color-blue) 30%, transparent)",
+                      borderRadius: 4
+                    }}
+                  >
+                    Load
+                  </button>
+                ) : isModified ? (
+                  <button
+                    onClick={() => handleRestore(draft)}
+                    style={{
+                      ...S.ghost,
+                      fontSize: 11,
+                      color: "var(--color-orange)",
+                      fontWeight: "600",
+                      padding: "4px 10px",
+                      border: "1px solid color-mix(in srgb, var(--color-orange) 30%, transparent)",
+                      borderRadius: 4
+                    }}
+                    title="Discard current unsaved changes and revert to this draft"
+                  >
+                    Revert
+                  </button>
+                ) : null}
               </div>
-              <button
-                onClick={() => handleRestore(draft)}
-                disabled={isActive && !isModified}
-                style={{
-                  ...S.ghost,
-                  color: isActive && !isModified ? "var(--text-muted)" : "var(--color-blue)",
-                  fontSize: 11,
-                  fontWeight: "600",
-                  padding: "4px 8px",
-                  borderRadius: 4,
-                  border: isActive && !isModified ? "1px solid transparent" : "1px solid var(--color-blue)",
-                  opacity: isActive && !isModified ? 0.6 : 1
-                }}
-              >
-                {isActive && !isModified ? "Loaded" : "Restore"}
-              </button>
             </div>
           );
         })})()}

@@ -32,6 +32,7 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
         }}
       >
         <p
+          title="Beat Sheet & Scene Outline"
           style={{
             ...S.h2,
             margin: 0,
@@ -43,7 +44,7 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
           }}
         >
           <CenterFocusStrongIcon sx={{ fontSize: 14 }} />
-          Beat Sheet / Scene Outline ({fields.length})
+          Scene Outline ({fields.length})
         </p>
         <button
           type="button"
