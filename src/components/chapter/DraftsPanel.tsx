@@ -106,7 +106,7 @@ export function DraftsPanel({
   };
 
   return (
-    <div style={{ padding: "0 24px" }}>
+    <div style={{ padding: "0 8px 0 0" }}>
       <div
         style={{
           display: "flex",
@@ -555,7 +555,9 @@ export function DraftsPanel({
                       ? "var(--color-blue)"
                       : "var(--bg-card-hover)",
                   color:
-                    selectedDraftIds.size > 0 ? "var(--bg-app)" : "var(--text-muted)",
+                    selectedDraftIds.size > 0
+                      ? "var(--bg-app)"
+                      : "var(--text-muted)",
                   border: "none",
                   padding: "6px 20px",
                   transition: "all 0.2s",

@@ -84,16 +84,7 @@ export default function WorldPage() {
   const ref = useAnimateIn();
   const [isFloating, setIsFloating] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      if (e.target === document || e.target === document.documentElement || e.target === document.body) {
-        const st = document.scrollingElement?.scrollTop || document.documentElement?.scrollTop || 0;
-        setIsFloating(st > 80);
-      }
-    };
-    window.addEventListener("scroll", handleScroll, true);
-    return () => window.removeEventListener("scroll", handleScroll, true);
-  }, []);
+
 
   const nations = useWatch({ control, name: "nations" }) || [];
   const techniques = useWatch({ control, name: "techniques" }) || [];
@@ -240,6 +231,7 @@ export default function WorldPage() {
       <div 
         ref={ref} 
         className="seshat-page-container"
+        onScroll={(e) => setIsFloating(e.currentTarget.scrollTop > 80)}
       >
       <div
         className="seshat-flex-between"
