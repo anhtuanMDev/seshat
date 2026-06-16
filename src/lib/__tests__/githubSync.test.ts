@@ -13,7 +13,11 @@ import {
 // Mock appStore to prevent real data from being read
 vi.mock("../../store/appStore", () => ({
   appStore: {
-    get: vi.fn(() => ({ testData: true }))
+    get: vi.fn(() => ({ testData: true })),
+    lastSyncSha: {
+      get: vi.fn(() => "mock-sha"),
+      set: vi.fn()
+    }
   }
 }));
 
@@ -69,7 +73,7 @@ describe("githubSync APIs", () => {
     
     expect(global.fetch).toHaveBeenCalledWith("/api/github/sync", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ token: "token123", data: { testData: true } })
+      body: JSON.stringify({ token: "token123", data: { testData: true }, lastKnownSha: "mock-sha" })
     }));
   });
 
@@ -82,7 +86,7 @@ describe("githubSync APIs", () => {
     
     const books = await loadFromGitHub("token123");
     expect(books).toEqual(mockBooks);
-    expect(global.fetch).toHaveBeenCalledWith("/api/github/load?token=token123");
+    expect(global.fetch).toHaveBeenCalledWith("/api/github/load?token=token123", { cache: "no-store" });
   });
 
   it("loadBookFromGitHub returns book and sets isFullyLoaded", async () => {
@@ -106,7 +110,7 @@ describe("githubSync APIs", () => {
     await updateFileOnGitHub("token", "bookId", "path.json", '{"a":1}');
     expect(global.fetch).toHaveBeenCalledWith("/api/github/updateFile", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ token: "token", bookId: "bookId", path: "path.json", content: '{"a":1}' })
+      body: JSON.stringify({ token: "token", bookId: "bookId", path: "path.json", content: '{"a":1}', lastKnownSha: "mock-sha" })
     }));
   });
 
@@ -120,7 +124,7 @@ describe("githubSync APIs", () => {
     await updateFilesOnGitHub("token", "bookId", files);
     expect(global.fetch).toHaveBeenCalledWith("/api/github/updateFiles", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ token: "token", bookId: "bookId", files })
+      body: JSON.stringify({ token: "token", bookId: "bookId", files, lastKnownSha: "mock-sha" })
     }));
   });
 

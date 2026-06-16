@@ -24,6 +24,7 @@ vi.mock("../../store/toastStore", () => ({
 
 vi.mock("../../lib/githubSync", () => ({
   updateFileOnGitHub: vi.fn(),
+  updateFilesOnGitHub: vi.fn(),
   loadFileFromGitHub: vi.fn(),
 }));
 
@@ -123,15 +124,29 @@ describe("ChapterPage Edge-to-Edge", () => {
     localStorage.setItem("seshat-auth-token", "valid-token");
     setupStoreWithChapter(false); // No body
     
-    vi.mocked(loadFileFromGitHub).mockResolvedValue({
-      body: "<p>Lazy loaded body</p>",
-      notes: "Lazy loaded notes",
+    vi.mocked(loadFileFromGitHub).mockImplementation(async (_token, _bookId, path) => {
+      if (path.endsWith("metadata.json")) {
+        return {
+          notes: "Lazy loaded notes",
+          drafts: [{ id: "draft-123", name: "Draft 1", createdAt: Date.now() }]
+        };
+      }
+      if (path.endsWith("draft-123.json")) {
+        return {
+          id: "draft-123",
+          name: "Draft 1",
+          body: "<p>Lazy loaded body</p>",
+          createdAt: Date.now()
+        };
+      }
+      return {};
     });
 
     render(<ChapterPage />);
 
     await waitFor(() => {
-      expect(loadFileFromGitHub).toHaveBeenCalledWith("valid-token", "book-123", "chapters/chapter_chap-456.json");
+      expect(loadFileFromGitHub).toHaveBeenCalledWith("valid-token", "book-123", "chapters/chapter_chap-456/metadata.json");
+      expect(loadFileFromGitHub).toHaveBeenCalledWith("valid-token", "book-123", "chapters/chapter_chap-456/draft-123.json");
       const currentBody = appStore.books[0].chapters[0].body.get();
       expect(currentBody).toBe("<p>Lazy loaded body</p>");
       expect(appStore.books[0].chapters[0].notes.get()).toBe("Lazy loaded notes");
@@ -162,7 +177,8 @@ describe("ChapterPage Edge-to-Edge", () => {
     localStorage.setItem("seshat-auth-token", "valid-token");
     setupStoreWithChapter(true);
 
-    vi.mocked(updateFileOnGitHub).mockResolvedValue();
+    const { updateFilesOnGitHub } = await import("../../lib/githubSync");
+    vi.mocked(updateFilesOnGitHub).mockResolvedValue();
     vi.mocked(computeEventSync).mockImplementation((_bookIdx, eventId) => ({
       eventId,
       payloadStr: `{"mockPayloadFor": "${eventId}"}`
@@ -174,24 +190,24 @@ describe("ChapterPage Edge-to-Edge", () => {
     fireEvent.click(screen.getByTestId("mock-editor-save"));
 
     await waitFor(() => {
-      // It should sync the chapter itself
-      expect(updateFileOnGitHub).toHaveBeenCalledWith(
+      // It should sync the files using updateFilesOnGitHub
+      expect(updateFilesOnGitHub).toHaveBeenCalledWith(
         "valid-token",
         "book-123",
-        "chapters/chapter_chap-456.json",
-        expect.stringContaining("Cloud Title")
-      );
-
-      // It should compute event syncs for timeRef (event-1) and pinnedEvents (event-2)
-      expect(computeEventSync).toHaveBeenCalledWith(0, "event-1", "chap-456", "event-1", ["char-1"]);
-      expect(computeEventSync).toHaveBeenCalledWith(0, "event-2", "chap-456", "event-1", ["char-1"]);
-
-      // It should sync those events
-      expect(updateFileOnGitHub).toHaveBeenCalledWith(
-        "valid-token",
-        "book-123",
-        "events/event_event-1.json",
-        `{"mockPayloadFor": "event-1"}`
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: "chapters/chapter_chap-456/metadata.json",
+            content: expect.stringContaining("Cloud Title")
+          }),
+          expect.objectContaining({
+            path: "events/event_event-1.json",
+            content: `{"mockPayloadFor": "event-1"}`
+          }),
+          expect.objectContaining({
+            path: "events/event_event-2.json",
+            content: `{"mockPayloadFor": "event-2"}`
+          })
+        ])
       );
 
       expect(showToast).toHaveBeenCalledWith("Chapter synced to cloud", "success");
