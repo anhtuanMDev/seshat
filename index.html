@@ -8,6 +8,24 @@
     <meta name="description" content="Seshat helps fiction authors organize characters, timelines, locations, and lore in one place." />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://seshat.pages.dev" />
+    <script>
+      (function () {
+        try {
+          const stored = localStorage.getItem("seshat-theme");
+          const isDark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          const theme = isDark ? "dark" : "light";
+          document.documentElement.setAttribute("data-theme", theme);
+          
+          // Inject immediate background styling to prevent white flash before stylesheets are loaded
+          const bg = isDark ? "#141312" : "#fdfcfb";
+          const color = isDark ? "#eceae8" : "#2b2927";
+          const style = document.createElement("style");
+          style.id = "seshat-theme-fallback";
+          style.innerHTML = `html, body { background-color: ${bg}; color: ${color}; }`;
+          document.head.appendChild(style);
+        } catch (e) {}
+      })();
+    </script>
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Seshat – World Building Tool for Novel Authors" />
