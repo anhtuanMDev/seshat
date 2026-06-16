@@ -370,22 +370,7 @@ export default function App() {
   // If there's no bookId in the URL, we're likely on the root path (BookListPage)
   if (!bookId) {
     return (
-      <Suspense fallback={
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          width: "100vw",
-          background: "var(--bg-app)",
-          color: "var(--text-secondary)",
-          fontSize: 13,
-          letterSpacing: 2,
-          textTransform: "uppercase"
-        }}>
-          Loading list...
-        </div>
-      }>
+      <Suspense fallback={<div style={styles.loaderWrapper}>Loading list...</div>}>
         <Outlet />
       </Suspense>
     );
@@ -393,83 +378,48 @@ export default function App() {
 
   // If we have a bookId but it's not fully loaded yet (or not even in memory), show loading
   if (!isFullyLoaded || !isInsideBook) {
-    return (
-      <div
-        style={{
-          ...S.app,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "var(--text-secondary)",
-          letterSpacing: 2,
-          fontSize: 13,
-          textTransform: "uppercase",
-        }}
-      >
-        Loading universe...
-      </div>
-    );
+    return <div style={styles.loaderUniverse}>Loading universe...</div>;
   }
 
   return (
     <div style={S.app} className="seshat-app">
       {/* ── Top bar ── */}
       <div style={S.top} className="seshat-top">
-        <div style={{ display: "flex", alignItems: "center", gap: 32, flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={styles.topHeaderLeft}>
+          <div style={styles.logoContainer}>
             <button
               className="seshat-mobile-only"
               onClick={() => setShowSidebar(!showSidebar)}
-              style={{ ...S.ghost, padding: 0 }}
+              style={styles.mobileMenuBtn}
             >
               <MenuIcon />
             </button>
             <span
-              style={{ ...S.logo, cursor: "pointer" }}
+              style={styles.desktopLogo}
               className="seshat-desktop-only"
               onClick={() => navigate("/")}
             >
               Seshat
             </span>
           </div>
-          <div
-            style={{
-              flex: 1,
-              maxWidth: 500,
-              opacity: isWorldPage ? 0 : 1,
-              pointerEvents: isWorldPage ? "none" : "auto",
-              transform: isWorldPage ? "translateY(8px)" : "translateY(0)",
-              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-              fontSize: 15,
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-              padding: "4px 0",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              userSelect: "none"
-            }}
-          >
+          <div style={styles.titleContainer(isWorldPage)}>
             {title || "Untitled World"}
           </div>
         </div>
-        <div
-          className="seshat-top-actions"
-          style={{ display: "flex", alignItems: "center", gap: 20, position: "relative", height: "100%" }}
-        >
+        <div className="seshat-top-actions" style={styles.topActions}>
           <button
             onClick={() => setShowSearch(true)}
-            style={{ ...S.ghost, padding: 8, color: "var(--text-secondary)" }}
+            style={styles.searchBtn}
             title="Global Search & Replace"
           >
             <SearchIcon sx={{ fontSize: 20 }} />
           </button>
 
-          <div className="seshat-desktop-only" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div className="seshat-desktop-only" style={styles.desktopActions}>
             <button
               onClick={handlePull}
               disabled={isSyncing}
-              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", opacity: isSyncing ? 0.5 : 1 }}
+              style={styles.pullBtn(isSyncing)}
               title="Pull latest data from Cloud (overwrite local changes)"
             >
               <CloudSyncIcon sx={{ fontSize: 16, transform: "rotate(180deg)" }} />
@@ -478,7 +428,7 @@ export default function App() {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", opacity: isSyncing ? 0.5 : 1 }}
+              style={styles.syncBtn(isSyncing)}
               title="Push local data to Cloud"
             >
               <CloudSyncIcon sx={{ fontSize: 16 }} />
@@ -486,21 +436,21 @@ export default function App() {
             </button>
             <button
               onClick={() => setShowExport(true)}
-              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)" }}
+              style={styles.exportBtn}
             >
               <FileDownloadIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>Export for AI</span>
             </button>
             <button
               onClick={() => navigate(`/book/${bookId}/fight`)}
-              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", gap: 6, color: location.pathname === `/book/${bookId}/fight` ? "var(--color-red)" : "var(--text-secondary)" }}
+              style={styles.fightBtn(location.pathname === `/book/${bookId}/fight`)}
             >
               <SportsKabaddiIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>Fight</span>
             </button>
             <button
               onClick={toggle}
-              style={{ ...S.ghost, padding: 8, display: "flex", alignItems: "center", color: "var(--text-secondary)" }}
+              style={styles.themeBtn}
               title={theme === "light" ? "Dark Mode" : "Light Mode"}
             >
               {theme === "light" ? <DarkModeIcon sx={{ fontSize: 16 }} /> : <LightModeIcon sx={{ fontSize: 16 }} />}
@@ -508,150 +458,74 @@ export default function App() {
           </div>
 
           {/* More Menu Toggle (Mobile/Tablet) */}
-          <div className="seshat-mobile-only" style={{ position: "relative", height: "100%", alignItems: "center" }}>
+          <div className="seshat-mobile-only" style={styles.mobileMoreBtnContainer}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              style={{
-                ...S.ghost,
-                letterSpacing: 2,
-                fontSize: 15,
-                display: "flex",
-                alignItems: "center",
-                color: "var(--text-secondary)",
-              }}
+              style={styles.mobileMoreBtn}
             >
               More ▾
             </button>
             {showMoreMenu && (
               <>
-                <div
-                  style={{
-                    position: "fixed",
-                    top: 48,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 90,
-                  }}
-                  onClick={() => setShowMoreMenu(false)}
-                />
-                <div
-                  className="seshat-more-dropdown"
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  background: "var(--bg-card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 4,
-                  padding: "8px 0",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  minWidth: 140,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                  zIndex: 100,
-                }}
-              >
-                <button
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    navigate(`/book/${bookId}/fight`);
-                  }}
-                  style={{
-                    ...S.ghost,
-                    width: "100%",
-                    justifyContent: "flex-start",
-                    padding: "8px 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    color: location.pathname === `/book/${bookId}/fight` ? "var(--color-red)" : "inherit",
-                  }}
-                >
-                  <SportsKabaddiIcon sx={{ fontSize: 14 }} />
-                  Fight Mode
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    setShowExport(true);
-                  }}
-                  style={{
-                    ...S.ghost,
-                    width: "100%",
-                    justifyContent: "flex-start",
-                    padding: "8px 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <FileDownloadIcon sx={{ fontSize: 14 }} />
-                  Export for AI
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handlePull();
-                  }}
-                  disabled={isSyncing}
-                  style={{
-                    ...S.ghost,
-                    width: "100%",
-                    justifyContent: "flex-start",
-                    padding: "8px 16px",
-                    opacity: isSyncing ? 0.5 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <CloudSyncIcon sx={{ fontSize: 14, transform: "rotate(180deg)" }} />
-                  Pull
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleSync();
-                  }}
-                  disabled={isSyncing}
-                  style={{
-                    ...S.ghost,
-                    width: "100%",
-                    justifyContent: "flex-start",
-                    padding: "8px 16px",
-                    opacity: isSyncing ? 0.5 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <CloudSyncIcon sx={{ fontSize: 14 }} />
-                  {isSyncing ? "Syncing..." : "Sync"}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    toggle();
-                  }}
-                  style={{
-                    ...S.ghost,
-                    width: "100%",
-                    justifyContent: "flex-start",
-                    padding: "8px 16px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  {theme === "light" ? (
-                    <LightModeIcon sx={{ fontSize: 16 }} />
-                  ) : (
-                    <DarkModeIcon sx={{ fontSize: 16 }} />
-                  )}
-                  {theme === "light" ? "Dark Mode" : "Light Mode"}
-                </button>
-              </div>
+                <div style={styles.moreMenuOverlay} onClick={() => setShowMoreMenu(false)} />
+                <div className="seshat-more-dropdown" style={styles.moreMenuDropdown}>
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      navigate(`/book/${bookId}/fight`);
+                    }}
+                    style={styles.moreMenuBtn(location.pathname === `/book/${bookId}/fight`)}
+                  >
+                    <SportsKabaddiIcon sx={{ fontSize: 14 }} />
+                    Fight Mode
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setShowExport(true);
+                    }}
+                    style={styles.moreMenuBtn(false)}
+                  >
+                    <FileDownloadIcon sx={{ fontSize: 14 }} />
+                    Export for AI
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handlePull();
+                    }}
+                    disabled={isSyncing}
+                    style={styles.moreMenuBtn(false)}
+                  >
+                    <CloudSyncIcon sx={{ fontSize: 14, transform: "rotate(180deg)" }} />
+                    Pull
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleSync();
+                    }}
+                    disabled={isSyncing}
+                    style={styles.moreMenuBtn(false)}
+                  >
+                    <CloudSyncIcon sx={{ fontSize: 14 }} />
+                    {isSyncing ? "Syncing..." : "Sync"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      toggle();
+                    }}
+                    style={styles.moreMenuBtn(false)}
+                  >
+                    {theme === "light" ? (
+                      <LightModeIcon sx={{ fontSize: 16 }} />
+                    ) : (
+                      <DarkModeIcon sx={{ fontSize: 16 }} />
+                    )}
+                    {theme === "light" ? "Dark Mode" : "Light Mode"}
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -666,120 +540,66 @@ export default function App() {
         />
 
         {/* ── Sidebar ── */}
-        <div
-          style={S.side}
-          className={`seshat-side ${showSidebar ? "open" : ""}`}
-        >
-          <div
-            className="seshat-mobile-only"
-            style={{ padding: "20px 24px 16px" }}
-          >
+        <div style={S.side} className={`seshat-side ${showSidebar ? "open" : ""}`}>
+          <div className="seshat-mobile-only" style={styles.mobileBackToBooksContainer}>
             <button
               onClick={() => navigate("/")}
-              style={{
-                ...navBtnStyle(false),
-                color: "var(--color-purple)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+              style={styles.mobileBackToBooksBtn}
             >
               ← Back to Books
             </button>
           </div>
 
-          <div style={{ padding: "24px 24px 12px", display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={styles.navContainer}>
             <button
               onClick={() => navigate(`/book/${bookId}/world`)}
-              style={{
-                ...navBtnStyle(
-                  location.pathname === `/book/${bookId}/world` ||
-                    (location.pathname === `/book/${bookId}` &&
-                      !selChar &&
-                      !selEvent &&
-                      !selChapter),
-                ),
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+              style={navBtnStyle(
+                location.pathname === `/book/${bookId}/world` ||
+                  (location.pathname === `/book/${bookId}` &&
+                    !selChar &&
+                    !selEvent &&
+                    !selChapter)
+              )}
             >
               <PublicIcon sx={{ fontSize: 14 }} />
               {worldCount > 0 ? `World (${worldCount})` : "World"}
             </button>
             <button
               onClick={() => navigate(`/book/${bookId}/lore-web`)}
-              style={{
-                ...navBtnStyle(
-                  location.pathname === `/book/${bookId}/lore-web`,
-                ),
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+              style={navBtnStyle(location.pathname === `/book/${bookId}/lore-web`)}
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Lore Web
             </button>
             <button
               onClick={() => navigate("/issues")}
-              style={{
-                ...navBtnStyle(
-                  location.pathname.startsWith("/issues"),
-                ),
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
+              style={navBtnStyle(location.pathname.startsWith("/issues"))}
             >
               <BugReportIcon sx={{ fontSize: 14 }} />
               Issues & Forum
             </button>
           </div>
 
-          <div
-            style={{
-              height: 1,
-              background: "var(--border)",
-              margin: "8px 0 20px",
-            }}
-          />
+          <div style={styles.dividerLine} />
 
           {/* ── Chapters section ── */}
-          <div
-            style={{
-              padding: "0 24px 8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={styles.navSectionHeader}>
+            <div style={styles.navSectionTitleContainer}>
               <button
                 onClick={() => setOpenSections((s) => ({ ...s, chapters: !s.chapters }))}
-                style={{ ...S.ghost, padding: 0, fontSize: 10, color: "var(--text-muted)" }}
+                style={styles.sectionToggleBtn}
               >
                 {openSections.chapters ? "▼" : "▶"}
               </button>
               <button
                 onClick={() => navigate(`/book/${bookId}/chapters`)}
-                style={{
-                  ...navBtnStyle(
-                    location.pathname.startsWith(`/book/${bookId}/chapters`),
-                  ),
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                style={navBtnStyle(location.pathname.startsWith(`/book/${bookId}/chapters`))}
               >
                 <AutoStoriesIcon sx={{ fontSize: 14 }} />
                 Chapters ({sortedChapters.length})
               </button>
             </div>
-            <button
-              onClick={addChapter}
-              style={{ ...S.ghost, fontSize: 16, display: "flex" }}
-            >
+            <button onClick={addChapter} style={styles.sectionAddBtn}>
               <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
@@ -790,9 +610,7 @@ export default function App() {
                 <SideItem
                   key={ch.id}
                   label={ch.title || "Untitled chapter"}
-                  sub={
-                    [ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined
-                  }
+                  sub={[ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined}
                   active={selChapter === ch.id}
                   onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
                   onDelete={() => delChapter(ch.id)}
@@ -800,14 +618,9 @@ export default function App() {
               ))}
 
               {sortedChapters.length === 0 && (
-                <div style={{ padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-                  <p style={{ ...S.dim, fontSize: 13, fontStyle: "italic", margin: 0 }}>
-                    No chapters yet.
-                  </p>
-                  <button 
-                    onClick={addChapter}
-                    style={{ ...S.ghost, fontSize: 12, padding: "4px 8px", background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: 4, width: "100%" }}
-                  >
+                <div style={styles.emptySectionContainer}>
+                  <p style={styles.emptySectionText}>No chapters yet.</p>
+                  <button onClick={addChapter} style={styles.createSectionBtn}>
                     + Create Chapter
                   </button>
                 </div>
@@ -816,40 +629,23 @@ export default function App() {
           )}
 
           {/* ── Timeline section ── */}
-          <div
-            style={{
-              padding: "16px 24px 8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={styles.navSectionHeaderTimeline}>
+            <div style={styles.navSectionTitleContainer}>
               <button
                 onClick={() => setOpenSections((s) => ({ ...s, timeline: !s.timeline }))}
-                style={{ ...S.ghost, padding: 0, fontSize: 10, color: "var(--text-muted)" }}
+                style={styles.sectionToggleBtn}
               >
                 {openSections.timeline ? "▼" : "▶"}
               </button>
               <button
                 onClick={() => navigate(`/book/${bookId}/events`)}
-                style={{
-                  ...navBtnStyle(
-                    location.pathname.startsWith(`/book/${bookId}/events`),
-                  ),
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                style={navBtnStyle(location.pathname.startsWith(`/book/${bookId}/events`))}
               >
                 <TimelineIcon sx={{ fontSize: 14 }} />
                 Timeline
               </button>
             </div>
-            <button
-              onClick={addEvent}
-              style={{ ...S.ghost, fontSize: 16, display: "flex" }}
-            >
+            <button onClick={addEvent} style={styles.sectionAddBtn}>
               <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
@@ -863,9 +659,7 @@ export default function App() {
                 ]
                   .filter(Boolean)
                   .join(" ");
-                const chTag = (e.chapters || []).length
-                  ? `Ch. ${e.chapters.join(", ")}`
-                  : "";
+                const chTag = (e.chapters || []).length ? `Ch. ${e.chapters.join(", ")}` : "";
                 const tag = [chTag, dateTag].filter(Boolean).join(" · ");
                 return (
                   <SideItem
@@ -878,16 +672,11 @@ export default function App() {
                   />
                 );
               })}
-              
+
               {sortedEvt.length === 0 && (
-                <div style={{ padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-                  <p style={{ ...S.dim, fontSize: 13, fontStyle: "italic", margin: 0 }}>
-                    No events mapped.
-                  </p>
-                  <button 
-                    onClick={addEvent}
-                    style={{ ...S.ghost, fontSize: 12, padding: "4px 8px", background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: 4, width: "100%" }}
-                  >
+                <div style={styles.emptySectionContainer}>
+                  <p style={styles.emptySectionText}>No events mapped.</p>
+                  <button onClick={addEvent} style={styles.createSectionBtn}>
                     + Create Event
                   </button>
                 </div>
@@ -895,49 +684,26 @@ export default function App() {
             </div>
           )}
 
-          <div
-            style={{
-              height: 1,
-              background: "var(--border)",
-              margin: "16px 0 20px",
-            }}
-          />
+          <div style={styles.dividerLineSecondary} />
 
           {/* ── Characters section ── */}
-          <div
-            style={{
-              padding: "0 24px 8px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={styles.navSectionHeader}>
+            <div style={styles.navSectionTitleContainer}>
               <button
                 onClick={() => setOpenSections((s) => ({ ...s, characters: !s.characters }))}
-                style={{ ...S.ghost, padding: 0, fontSize: 10, color: "var(--text-muted)" }}
+                style={styles.sectionToggleBtn}
               >
                 {openSections.characters ? "▼" : "▶"}
               </button>
               <button
                 onClick={() => navigate(`/book/${bookId}/characters`)}
-                style={{
-                  ...navBtnStyle(
-                    location.pathname.startsWith(`/book/${bookId}/characters`),
-                  ),
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+                style={navBtnStyle(location.pathname.startsWith(`/book/${bookId}/characters`))}
               >
                 <PeopleIcon sx={{ fontSize: 14 }} />
                 Characters
               </button>
             </div>
-            <button
-              onClick={addChar}
-              style={{ ...S.ghost, fontSize: 16, display: "flex" }}
-            >
+            <button onClick={addChar} style={styles.sectionAddBtn}>
               <AddIcon sx={{ fontSize: 16 }} />
             </button>
           </div>
@@ -948,9 +714,7 @@ export default function App() {
                 <SideItem
                   key={c.id}
                   label={c.name}
-                  sub={
-                    [c.role, c.archetype].filter(Boolean).join(" · ") || undefined
-                  }
+                  sub={[c.role, c.archetype].filter(Boolean).join(" · ") || undefined}
                   color={c.color}
                   active={selChar === c.id}
                   onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
@@ -959,14 +723,9 @@ export default function App() {
               ))}
 
               {characters.length === 0 && (
-                <div style={{ padding: "8px 24px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-                  <p style={{ ...S.dim, fontSize: 13, fontStyle: "italic", margin: 0 }}>
-                    No characters created.
-                  </p>
-                  <button 
-                    onClick={addChar}
-                    style={{ ...S.ghost, fontSize: 12, padding: "4px 8px", background: "var(--bg-card)", border: "1px dashed var(--border)", borderRadius: 4, width: "100%" }}
-                  >
+                <div style={styles.emptySectionContainer}>
+                  <p style={styles.emptySectionText}>No characters created.</p>
+                  <button onClick={addChar} style={styles.createSectionBtn}>
                     + Create Character
                   </button>
                 </div>
@@ -977,20 +736,7 @@ export default function App() {
 
         {/* ── Main content ── */}
         <div style={S.main} className="seshat-main" ref={mainRef}>
-          <Suspense fallback={
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-              width: "100%",
-              color: "var(--text-secondary)",
-              fontSize: 13,
-              letterSpacing: 1,
-            }}>
-              Loading page...
-            </div>
-          }>
+          <Suspense fallback={<div style={styles.mainLoaderContainer}>Loading page...</div>}>
             <Outlet />
           </Suspense>
         </div>
@@ -998,47 +744,18 @@ export default function App() {
 
       {/* ── Export modal ── */}
       {showExport && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "var(--bg-export)",
-            zIndex: 50,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(2px)",
-          }}
-        >
-          <div
-            style={{
-              width: "min(700px,92vw)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+        <div style={styles.exportOverlay}>
+          <div style={styles.exportContent}>
+            <div style={styles.exportHeader}>
               <span style={S.h2}>Export for AI</span>
-              <div style={{ display: "flex", gap: 20 }}>
+              <div style={styles.exportActions}>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(text);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  style={{
-                    ...S.ghost,
-                    color: copied
-                      ? "var(--color-green)"
-                      : "var(--text-secondary)",
-                  }}
+                  style={styles.exportCopyBtn(copied)}
                 >
                   {copied ? "Copied!" : "Copy all"}
                 </button>
@@ -1048,35 +765,313 @@ export default function App() {
               </div>
             </div>
             <p style={S.dim}>
-              Paste into your AI's system prompt. Full psychology, conditions,
-              skills, equipment, achievements, losses, relationships, world
-              entities, and behavioral guidance.
+              Paste into your AI's system prompt. Full psychology, conditions, skills, equipment,
+              achievements, losses, relationships, world entities, and behavioral guidance.
             </p>
-            <textarea
-              readOnly
-              value={text}
-              style={{
-                ...S.textarea,
-                border: "none",
-                background: "var(--bg-export-ta)",
-                padding: 20,
-                borderRadius: 4,
-                height: 460,
-                resize: "none",
-                fontFamily: "monospace",
-                fontSize: 15,
-                lineHeight: 1.7,
-              }}
-            />
+            <textarea readOnly value={text} style={styles.exportTextarea} />
           </div>
         </div>
       )}
 
-      <GlobalSearchModal
-        open={showSearch}
-        onClose={() => setShowSearch(false)}
-        bookId={bookId || ""}
-      />
+      <GlobalSearchModal open={showSearch} onClose={() => setShowSearch(false)} bookId={bookId || ""} />
     </div>
   );
 }
+
+const styles = {
+  loaderWrapper: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
+    width: "100vw",
+    background: "var(--bg-app)",
+    color: "var(--text-secondary)",
+    fontSize: 13,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  } as React.CSSProperties,
+  loaderUniverse: {
+    ...S.app,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--text-secondary)",
+    letterSpacing: 2,
+    fontSize: 13,
+    textTransform: "uppercase",
+  } as React.CSSProperties,
+  topHeaderLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 32,
+    flex: 1,
+  } as React.CSSProperties,
+  logoContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  } as React.CSSProperties,
+  mobileMenuBtn: {
+    ...S.ghost,
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+  } as React.CSSProperties,
+  desktopLogo: {
+    ...S.logo,
+    cursor: "pointer",
+  } as React.CSSProperties,
+  titleContainer: (isWorldPage: boolean) => ({
+    flex: 1,
+    maxWidth: 500,
+    opacity: isWorldPage ? 0 : 1,
+    pointerEvents: isWorldPage ? "none" : "auto",
+    transform: isWorldPage ? "translateY(8px)" : "translateY(0)",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    fontSize: 15,
+    fontWeight: 500,
+    color: "var(--text-secondary)",
+    padding: "4px 0",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    userSelect: "none",
+  } as React.CSSProperties),
+  topActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 20,
+    position: "relative",
+    height: "100%",
+  } as React.CSSProperties,
+  searchBtn: {
+    ...S.ghost,
+    padding: 8,
+    color: "var(--text-secondary)",
+    display: "flex",
+    alignItems: "center",
+  } as React.CSSProperties,
+  desktopActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+  } as React.CSSProperties,
+  pullBtn: (isSyncing: boolean) => ({
+    ...S.ghost,
+    padding: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "var(--text-secondary)",
+    opacity: isSyncing ? 0.5 : 1,
+  } as React.CSSProperties),
+  syncBtn: (isSyncing: boolean) => ({
+    ...S.ghost,
+    padding: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "var(--text-secondary)",
+    opacity: isSyncing ? 0.5 : 1,
+  } as React.CSSProperties),
+  exportBtn: {
+    ...S.ghost,
+    padding: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "var(--text-secondary)",
+  } as React.CSSProperties,
+  fightBtn: (isActive: boolean) => ({
+    ...S.ghost,
+    padding: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: isActive ? "var(--color-red)" : "var(--text-secondary)",
+  } as React.CSSProperties),
+  themeBtn: {
+    ...S.ghost,
+    padding: 8,
+    display: "flex",
+    alignItems: "center",
+    color: "var(--text-secondary)",
+  } as React.CSSProperties,
+  mobileMoreBtnContainer: {
+    position: "relative",
+    height: "100%",
+    alignItems: "center",
+    display: "flex",
+  } as React.CSSProperties,
+  mobileMoreBtn: {
+    ...S.ghost,
+    letterSpacing: 2,
+    fontSize: 15,
+    display: "flex",
+    alignItems: "center",
+    color: "var(--text-secondary)",
+  } as React.CSSProperties,
+  moreMenuOverlay: {
+    position: "fixed",
+    top: 48,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 90,
+  } as React.CSSProperties,
+  moreMenuDropdown: {
+    position: "absolute",
+    top: "100%",
+    background: "var(--bg-card)",
+    border: "1px solid var(--border)",
+    borderRadius: 4,
+    padding: "8px 0",
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    minWidth: 140,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    zIndex: 100,
+  } as React.CSSProperties,
+  moreMenuBtn: (isActive: boolean) => ({
+    ...S.ghost,
+    width: "100%",
+    justifyContent: "flex-start",
+    padding: "8px 16px",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    color: isActive ? "var(--color-red)" : "inherit",
+  } as React.CSSProperties),
+  mobileBackToBooksContainer: {
+    padding: "20px 24px 16px",
+  } as React.CSSProperties,
+  mobileBackToBooksBtn: {
+    ...S.ghost,
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: "uppercase" as const,
+    color: "var(--color-primary)",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 0",
+  } as React.CSSProperties,
+  navContainer: {
+    padding: "24px 24px 12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  } as React.CSSProperties,
+  navSectionHeader: {
+    padding: "0 24px 8px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  } as React.CSSProperties,
+  navSectionTitleContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  } as React.CSSProperties,
+  sectionToggleBtn: {
+    ...S.ghost,
+    padding: 0,
+    fontSize: 10,
+    color: "var(--text-muted)",
+  } as React.CSSProperties,
+  sectionAddBtn: {
+    ...S.ghost,
+    fontSize: 16,
+    display: "flex",
+  } as React.CSSProperties,
+  emptySectionContainer: {
+    padding: "8px 24px 16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  } as React.CSSProperties,
+  emptySectionText: {
+    ...S.dim,
+    fontSize: 13,
+    fontStyle: "italic",
+    margin: 0,
+  } as React.CSSProperties,
+  createSectionBtn: {
+    ...S.ghost,
+    fontSize: 12,
+    padding: "4px 8px",
+    background: "var(--bg-card)",
+    border: "1px dashed var(--border)",
+    borderRadius: 4,
+    width: "100%",
+  } as React.CSSProperties,
+  navSectionHeaderTimeline: {
+    padding: "16px 24px 8px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  } as React.CSSProperties,
+  dividerLine: {
+    height: 1,
+    background: "var(--border)",
+    margin: "8px 0 20px",
+  } as React.CSSProperties,
+  dividerLineSecondary: {
+    height: 1,
+    background: "var(--border)",
+    margin: "16px 0 20px",
+  } as React.CSSProperties,
+  mainLoaderContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+    width: "100%",
+    color: "var(--text-secondary)",
+    fontSize: 13,
+    letterSpacing: 1,
+  } as React.CSSProperties,
+  exportOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "var(--bg-export)",
+    zIndex: 50,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backdropFilter: "blur(2px)",
+  } as React.CSSProperties,
+  exportContent: {
+    width: "min(700px,92vw)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  } as React.CSSProperties,
+  exportHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  } as React.CSSProperties,
+  exportActions: {
+    display: "flex",
+    gap: 20,
+  } as React.CSSProperties,
+  exportCopyBtn: (copied: boolean) => ({
+    ...S.ghost,
+    color: copied ? "var(--color-green)" : "var(--text-secondary)",
+  } as React.CSSProperties),
+  exportTextarea: {
+    ...S.textarea,
+    border: "none",
+    background: "var(--bg-export-ta)",
+    padding: 20,
+    borderRadius: 4,
+    height: 460,
+    resize: "none",
+    fontFamily: "monospace",
+    fontSize: 15,
+    lineHeight: 1.7,
+  } as React.CSSProperties,
+};

@@ -13,6 +13,9 @@ export const syncToGitHub = async (token: string): Promise<void> => {
     });
 
     if (!response.ok) {
+      if (response.status === 409) {
+        throw new Error("Git conflict: The remote repository contains changes that conflict with your local edits. Please Pull the latest changes first to merge.");
+      }
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
@@ -125,6 +128,9 @@ export const updateFileOnGitHub = async (token: string, bookId: string, path: st
     });
 
     if (!response.ok) {
+      if (response.status === 409) {
+        throw new Error("Git conflict: The remote repository contains changes that conflict with your local edits. Please Pull the latest changes first to merge.");
+      }
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
@@ -150,6 +156,9 @@ export const updateFilesOnGitHub = async (token: string, bookId: string, files: 
     });
 
     if (!response.ok) {
+      if (response.status === 409) {
+        throw new Error("Git conflict: The remote repository contains changes that conflict with your local edits. Please Pull the latest changes first to merge.");
+      }
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
