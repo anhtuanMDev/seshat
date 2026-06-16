@@ -9,7 +9,7 @@ import {
   useWorldTitle,
   useActiveBookIdx,
 } from "./hooks/useWorldStore";
-import { S, mkChar, mkEvent, uid } from "./lib/utils";
+import { S, mkChar, mkEvent, getLatestEventDates, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import {
@@ -138,7 +138,8 @@ export default function App() {
   const addEvent = () => {
     if (bookIdx < 0) return;
     const maxT = events.reduce((m: number, e: Event) => Math.max(m, e.time), 0);
-    const e = { ...mkEvent(), time: maxT + 1 };
+    const defaultDates = getLatestEventDates(events);
+    const e = { ...mkEvent(), ...defaultDates, time: maxT + 1 };
     appStore.books[bookIdx].events.push(e);
     navigate(`/book/${bookId}/events/${e.id}`);
   };
@@ -187,7 +188,10 @@ export default function App() {
 
   const isWorldPage =
     location.pathname === `/book/${bookId}/world` ||
-    (location.pathname === `/book/${bookId}` && !selChar && !selEvent && !selChapter);
+    (location.pathname === `/book/${bookId}` &&
+      !selChar &&
+      !selEvent &&
+      !selChapter);
 
   const sortedEvt = [...(events || [])].sort((a, b) => a.time - b.time);
   const sortedChapters = [...(chapters || [])].sort(
@@ -256,7 +260,10 @@ export default function App() {
         showToast("Successfully pulled latest data!", "success");
       }
     } catch (err) {
-      showToast("Failed to pull from cloud: " + (err as Error).message, "error");
+      showToast(
+        "Failed to pull from cloud: " + (err as Error).message,
+        "error",
+      );
     } finally {
       setIsSyncing(false);
     }
@@ -350,14 +357,6 @@ export default function App() {
     }
   }, [location.pathname]);
 
-  const navBtnStyle = (active: boolean) => ({
-    ...S.ghost,
-    padding: "6px 0",
-    fontSize: 12,
-    letterSpacing: 2,
-    textTransform: "uppercase" as const,
-    color: active ? "var(--text-primary)" : "var(--text-muted)",
-  });
 
   const isFullyLoaded = useSelector(() => {
     const activeId = appStore.activeBookId.get();
@@ -370,7 +369,9 @@ export default function App() {
   // If there's no bookId in the URL, we're likely on the root path (BookListPage)
   if (!bookId) {
     return (
-      <Suspense fallback={<div style={styles.loaderWrapper}>Loading list...</div>}>
+      <Suspense
+        fallback={<div style={styles.loaderWrapper}>Loading list...</div>}
+      >
         <Outlet />
       </Suspense>
     );
@@ -422,7 +423,9 @@ export default function App() {
               style={styles.pullBtn(isSyncing)}
               title="Pull latest data from Cloud (overwrite local changes)"
             >
-              <CloudSyncIcon sx={{ fontSize: 16, transform: "rotate(180deg)" }} />
+              <CloudSyncIcon
+                sx={{ fontSize: 16, transform: "rotate(180deg)" }}
+              />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>Pull</span>
             </button>
             <button
@@ -432,18 +435,24 @@ export default function App() {
               title="Push local data to Cloud"
             >
               <CloudSyncIcon sx={{ fontSize: 16 }} />
-              <span style={{ fontSize: 13, letterSpacing: 1 }}>{isSyncing ? "Syncing..." : "Sync"}</span>
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>
+                {isSyncing ? "Syncing..." : "Sync"}
+              </span>
             </button>
             <button
               onClick={() => setShowExport(true)}
               style={styles.exportBtn}
             >
               <FileDownloadIcon sx={{ fontSize: 16 }} />
-              <span style={{ fontSize: 13, letterSpacing: 1 }}>Export for AI</span>
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>
+                Export for AI
+              </span>
             </button>
             <button
               onClick={() => navigate(`/book/${bookId}/fight`)}
-              style={styles.fightBtn(location.pathname === `/book/${bookId}/fight`)}
+              style={styles.fightBtn(
+                location.pathname === `/book/${bookId}/fight`,
+              )}
             >
               <SportsKabaddiIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>Fight</span>
@@ -453,12 +462,19 @@ export default function App() {
               style={styles.themeBtn}
               title={theme === "light" ? "Dark Mode" : "Light Mode"}
             >
-              {theme === "light" ? <DarkModeIcon sx={{ fontSize: 16 }} /> : <LightModeIcon sx={{ fontSize: 16 }} />}
+              {theme === "light" ? (
+                <DarkModeIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <LightModeIcon sx={{ fontSize: 16 }} />
+              )}
             </button>
           </div>
 
           {/* More Menu Toggle (Mobile/Tablet) */}
-          <div className="seshat-mobile-only" style={styles.mobileMoreBtnContainer}>
+          <div
+            className="seshat-mobile-only"
+            style={styles.mobileMoreBtnContainer}
+          >
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
               style={styles.mobileMoreBtn}
@@ -467,14 +483,22 @@ export default function App() {
             </button>
             {showMoreMenu && (
               <>
-                <div style={styles.moreMenuOverlay} onClick={() => setShowMoreMenu(false)} />
-                <div className="seshat-more-dropdown" style={styles.moreMenuDropdown}>
+                <div
+                  style={styles.moreMenuOverlay}
+                  onClick={() => setShowMoreMenu(false)}
+                />
+                <div
+                  className="seshat-more-dropdown"
+                  style={styles.moreMenuDropdown}
+                >
                   <button
                     onClick={() => {
                       setShowMoreMenu(false);
                       navigate(`/book/${bookId}/fight`);
                     }}
-                    style={styles.moreMenuBtn(location.pathname === `/book/${bookId}/fight`)}
+                    style={styles.moreMenuBtn(
+                      location.pathname === `/book/${bookId}/fight`,
+                    )}
                   >
                     <SportsKabaddiIcon sx={{ fontSize: 14 }} />
                     Fight Mode
@@ -497,7 +521,9 @@ export default function App() {
                     disabled={isSyncing}
                     style={styles.moreMenuBtn(false)}
                   >
-                    <CloudSyncIcon sx={{ fontSize: 14, transform: "rotate(180deg)" }} />
+                    <CloudSyncIcon
+                      sx={{ fontSize: 14, transform: "rotate(180deg)" }}
+                    />
                     Pull
                   </button>
                   <button
@@ -540,8 +566,14 @@ export default function App() {
         />
 
         {/* ── Sidebar ── */}
-        <div style={S.side} className={`seshat-side ${showSidebar ? "open" : ""}`}>
-          <div className="seshat-mobile-only" style={styles.mobileBackToBooksContainer}>
+        <div
+          style={S.side}
+          className={`seshat-side ${showSidebar ? "open" : ""}`}
+        >
+          <div
+            className="seshat-mobile-only"
+            style={styles.mobileBackToBooksContainer}
+          >
             <button
               onClick={() => navigate("/")}
               style={styles.mobileBackToBooksBtn}
@@ -558,7 +590,7 @@ export default function App() {
                   (location.pathname === `/book/${bookId}` &&
                     !selChar &&
                     !selEvent &&
-                    !selChapter)
+                    !selChapter),
               )}
             >
               <PublicIcon sx={{ fontSize: 14 }} />
@@ -566,7 +598,9 @@ export default function App() {
             </button>
             <button
               onClick={() => navigate(`/book/${bookId}/lore-web`)}
-              style={navBtnStyle(location.pathname === `/book/${bookId}/lore-web`)}
+              style={navBtnStyle(
+                location.pathname === `/book/${bookId}/lore-web`,
+              )}
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Lore Web
@@ -586,14 +620,18 @@ export default function App() {
           <div style={styles.navSectionHeader}>
             <div style={styles.navSectionTitleContainer}>
               <button
-                onClick={() => setOpenSections((s) => ({ ...s, chapters: !s.chapters }))}
+                onClick={() =>
+                  setOpenSections((s) => ({ ...s, chapters: !s.chapters }))
+                }
                 style={styles.sectionToggleBtn}
               >
                 {openSections.chapters ? "▼" : "▶"}
               </button>
               <button
                 onClick={() => navigate(`/book/${bookId}/chapters`)}
-                style={navBtnStyle(location.pathname.startsWith(`/book/${bookId}/chapters`))}
+                style={navBtnStyle(
+                  location.pathname.startsWith(`/book/${bookId}/chapters`),
+                )}
               >
                 <AutoStoriesIcon sx={{ fontSize: 14 }} />
                 Chapters ({sortedChapters.length})
@@ -610,7 +648,10 @@ export default function App() {
                 <SideItem
                   key={ch.id}
                   label={ch.title || "Untitled chapter"}
-                  sub={[ch.number, ch.timeRef].filter(Boolean).join(" · ") || undefined}
+                  sub={
+                    [ch.number, ch.timeRef].filter(Boolean).join(" · ") ||
+                    undefined
+                  }
                   active={selChapter === ch.id}
                   onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
                   onDelete={() => delChapter(ch.id)}
@@ -632,14 +673,18 @@ export default function App() {
           <div style={styles.navSectionHeaderTimeline}>
             <div style={styles.navSectionTitleContainer}>
               <button
-                onClick={() => setOpenSections((s) => ({ ...s, timeline: !s.timeline }))}
+                onClick={() =>
+                  setOpenSections((s) => ({ ...s, timeline: !s.timeline }))
+                }
                 style={styles.sectionToggleBtn}
               >
                 {openSections.timeline ? "▼" : "▶"}
               </button>
               <button
                 onClick={() => navigate(`/book/${bookId}/events`)}
-                style={navBtnStyle(location.pathname.startsWith(`/book/${bookId}/events`))}
+                style={navBtnStyle(
+                  location.pathname.startsWith(`/book/${bookId}/events`),
+                )}
               >
                 <TimelineIcon sx={{ fontSize: 14 }} />
                 Timeline
@@ -659,7 +704,9 @@ export default function App() {
                 ]
                   .filter(Boolean)
                   .join(" ");
-                const chTag = (e.chapters || []).length ? `Ch. ${e.chapters.join(", ")}` : "";
+                const chTag = (e.chapters || []).length
+                  ? `Ch. ${e.chapters.join(", ")}`
+                  : "";
                 const tag = [chTag, dateTag].filter(Boolean).join(" · ");
                 return (
                   <SideItem
@@ -690,14 +737,18 @@ export default function App() {
           <div style={styles.navSectionHeader}>
             <div style={styles.navSectionTitleContainer}>
               <button
-                onClick={() => setOpenSections((s) => ({ ...s, characters: !s.characters }))}
+                onClick={() =>
+                  setOpenSections((s) => ({ ...s, characters: !s.characters }))
+                }
                 style={styles.sectionToggleBtn}
               >
                 {openSections.characters ? "▼" : "▶"}
               </button>
               <button
                 onClick={() => navigate(`/book/${bookId}/characters`)}
-                style={navBtnStyle(location.pathname.startsWith(`/book/${bookId}/characters`))}
+                style={navBtnStyle(
+                  location.pathname.startsWith(`/book/${bookId}/characters`),
+                )}
               >
                 <PeopleIcon sx={{ fontSize: 14 }} />
                 Characters
@@ -714,7 +765,10 @@ export default function App() {
                 <SideItem
                   key={c.id}
                   label={c.name}
-                  sub={[c.role, c.archetype].filter(Boolean).join(" · ") || undefined}
+                  sub={
+                    [c.role, c.archetype].filter(Boolean).join(" · ") ||
+                    undefined
+                  }
                   color={c.color}
                   active={selChar === c.id}
                   onClick={() => navigate(`/book/${bookId}/characters/${c.id}`)}
@@ -736,7 +790,11 @@ export default function App() {
 
         {/* ── Main content ── */}
         <div style={S.main} className="seshat-main" ref={mainRef}>
-          <Suspense fallback={<div style={styles.mainLoaderContainer}>Loading page...</div>}>
+          <Suspense
+            fallback={
+              <div style={styles.mainLoaderContainer}>Loading page...</div>
+            }
+          >
             <Outlet />
           </Suspense>
         </div>
@@ -765,18 +823,36 @@ export default function App() {
               </div>
             </div>
             <p style={S.dim}>
-              Paste into your AI's system prompt. Full psychology, conditions, skills, equipment,
-              achievements, losses, relationships, world entities, and behavioral guidance.
+              Paste into your AI's system prompt. Full psychology, conditions,
+              skills, equipment, achievements, losses, relationships, world
+              entities, and behavioral guidance.
             </p>
             <textarea readOnly value={text} style={styles.exportTextarea} />
           </div>
         </div>
       )}
 
-      <GlobalSearchModal open={showSearch} onClose={() => setShowSearch(false)} bookId={bookId || ""} />
+      <GlobalSearchModal
+        open={showSearch}
+        onClose={() => setShowSearch(false)}
+        bookId={bookId || ""}
+      />
     </div>
   );
 }
+
+const navBtnStyle = (active: boolean): React.CSSProperties => ({
+  ...S.ghost,
+  padding: "6px 0",
+  fontSize: 12,
+  letterSpacing: 2,
+  justifyContent: "center",
+  gap: 8,
+  display: "flex",
+  flexDirection: "row",
+  textTransform: "uppercase",
+  color: active ? "var(--text-primary)" : "var(--text-muted)",
+});
 
 const styles = {
   loaderWrapper: {
@@ -822,22 +898,23 @@ const styles = {
     ...S.logo,
     cursor: "pointer",
   } as React.CSSProperties,
-  titleContainer: (isWorldPage: boolean) => ({
-    flex: 1,
-    maxWidth: 500,
-    opacity: isWorldPage ? 0 : 1,
-    pointerEvents: isWorldPage ? "none" : "auto",
-    transform: isWorldPage ? "translateY(8px)" : "translateY(0)",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    fontSize: 15,
-    fontWeight: 500,
-    color: "var(--text-secondary)",
-    padding: "4px 0",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    userSelect: "none",
-  } as React.CSSProperties),
+  titleContainer: (isWorldPage: boolean) =>
+    ({
+      flex: 1,
+      maxWidth: 500,
+      opacity: isWorldPage ? 0 : 1,
+      pointerEvents: isWorldPage ? "none" : "auto",
+      transform: isWorldPage ? "translateY(8px)" : "translateY(0)",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      fontSize: 15,
+      fontWeight: 500,
+      color: "var(--text-secondary)",
+      padding: "4px 0",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      userSelect: "none",
+    }) as React.CSSProperties,
   topActions: {
     display: "flex",
     alignItems: "center",
@@ -857,24 +934,26 @@ const styles = {
     alignItems: "center",
     gap: 16,
   } as React.CSSProperties,
-  pullBtn: (isSyncing: boolean) => ({
-    ...S.ghost,
-    padding: 8,
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    color: "var(--text-secondary)",
-    opacity: isSyncing ? 0.5 : 1,
-  } as React.CSSProperties),
-  syncBtn: (isSyncing: boolean) => ({
-    ...S.ghost,
-    padding: 8,
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    color: "var(--text-secondary)",
-    opacity: isSyncing ? 0.5 : 1,
-  } as React.CSSProperties),
+  pullBtn: (isSyncing: boolean) =>
+    ({
+      ...S.ghost,
+      padding: 8,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      color: "var(--text-secondary)",
+      opacity: isSyncing ? 0.5 : 1,
+    }) as React.CSSProperties,
+  syncBtn: (isSyncing: boolean) =>
+    ({
+      ...S.ghost,
+      padding: 8,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      color: "var(--text-secondary)",
+      opacity: isSyncing ? 0.5 : 1,
+    }) as React.CSSProperties,
   exportBtn: {
     ...S.ghost,
     padding: 8,
@@ -883,14 +962,15 @@ const styles = {
     gap: 6,
     color: "var(--text-secondary)",
   } as React.CSSProperties,
-  fightBtn: (isActive: boolean) => ({
-    ...S.ghost,
-    padding: 8,
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    color: isActive ? "var(--color-red)" : "var(--text-secondary)",
-  } as React.CSSProperties),
+  fightBtn: (isActive: boolean) =>
+    ({
+      ...S.ghost,
+      padding: 8,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      color: isActive ? "var(--color-red)" : "var(--text-secondary)",
+    }) as React.CSSProperties,
   themeBtn: {
     ...S.ghost,
     padding: 8,
@@ -934,16 +1014,17 @@ const styles = {
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     zIndex: 100,
   } as React.CSSProperties,
-  moreMenuBtn: (isActive: boolean) => ({
-    ...S.ghost,
-    width: "100%",
-    justifyContent: "flex-start",
-    padding: "8px 16px",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    color: isActive ? "var(--color-red)" : "inherit",
-  } as React.CSSProperties),
+  moreMenuBtn: (isActive: boolean) =>
+    ({
+      ...S.ghost,
+      width: "100%",
+      justifyContent: "flex-start",
+      padding: "8px 16px",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      color: isActive ? "var(--color-red)" : "inherit",
+    }) as React.CSSProperties,
   mobileBackToBooksContainer: {
     padding: "20px 24px 16px",
   } as React.CSSProperties,
@@ -962,6 +1043,8 @@ const styles = {
     padding: "24px 24px 12px",
     display: "flex",
     flexDirection: "column",
+    alignItems: "start",
+    justifyContent: "center",
     gap: 8,
   } as React.CSSProperties,
   navSectionHeader: {
@@ -1058,10 +1141,11 @@ const styles = {
     display: "flex",
     gap: 20,
   } as React.CSSProperties,
-  exportCopyBtn: (copied: boolean) => ({
-    ...S.ghost,
-    color: copied ? "var(--color-green)" : "var(--text-secondary)",
-  } as React.CSSProperties),
+  exportCopyBtn: (copied: boolean) =>
+    ({
+      ...S.ghost,
+      color: copied ? "var(--color-green)" : "var(--text-secondary)",
+    }) as React.CSSProperties,
   exportTextarea: {
     ...S.textarea,
     border: "none",

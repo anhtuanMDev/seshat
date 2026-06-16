@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { MenuItem } from "@mui/material";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
@@ -13,14 +14,12 @@ import { Field, Section } from "../components/ui";
 import { CharacterAttrsBlock } from "../components/event/CharacterAttrsBlock";
 import {
   SaveIcon,
-  ScheduleIcon,
-  CalendarTodayIcon,
   LocationOnIcon,
   AutoStoriesIcon,
   InfoIcon,
 } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import type { EventAttributes, EventType } from "../lib/types";
 import { EVENT_TYPES } from "../lib/constants";
@@ -39,6 +38,23 @@ interface EventForm {
   characters: string[];
   subplot: string;
 }
+
+const formatDatetimeLocal = (val?: string) => {
+  if (!val) return "";
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(val)) return val;
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "";
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  } catch {
+    return "";
+  }
+};
 
 export default function EventPage() {
   const { id } = useParams();
@@ -84,39 +100,45 @@ export default function EventPage() {
     },
   });
 
+  const lastEventIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (event) {
-      // Derive linked chapters STRICTLY from Chapter.timeRef (Takes Place At)
-      const validLinkedIds = allChapters
-        .filter((c) => c.timeRef === event.id)
-        .map((c) => c.id);
+      const isDifferentEvent = lastEventIdRef.current !== event.id;
+      lastEventIdRef.current = event.id;
 
-      reset({
-        title: event.title || "",
-        time: event.time,
-        type: event.type,
-        chapters: validLinkedIds,
-        startDate: event.startDate || "",
-        endDate: event.endDate || "",
-        setting: event.setting || "",
-        description: event.description || "",
-        consequence: event.consequence || "",
-        characters: event.characters || [],
-        subplot: event.subplot || "",
-      });
-      const attrs: Record<string, EventAttributes> = {};
-      if (bookIdx >= 0) {
-        appStore.books[bookIdx].characters.get().forEach((c) => {
-          if (c.attributes?.[event.id]) {
-            attrs[c.id] = { ...c.attributes[event.id] };
-          }
+      if (isDifferentEvent || (!isDirty && !isAttrsDirty)) {
+        // Derive linked chapters STRICTLY from Chapter.timeRef (Takes Place At)
+        const validLinkedIds = allChapters
+          .filter((c) => c.timeRef === event.id)
+          .map((c) => c.id);
+
+        reset({
+          title: event.title || "",
+          time: event.time,
+          type: event.type,
+          chapters: validLinkedIds,
+          startDate: formatDatetimeLocal(event.startDate),
+          endDate: formatDatetimeLocal(event.endDate),
+          setting: event.setting || "",
+          description: event.description || "",
+          consequence: event.consequence || "",
+          characters: event.characters || [],
+          subplot: event.subplot || "",
         });
+        const attrs: Record<string, EventAttributes> = {};
+        if (bookIdx >= 0) {
+          appStore.books[bookIdx].characters.get().forEach((c) => {
+            if (c.attributes?.[event.id]) {
+              attrs[c.id] = { ...c.attributes[event.id] };
+            }
+          });
+        }
+        setCharAttrs(attrs);
+        setIsAttrsDirty(false);
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCharAttrs(attrs);
-      setIsAttrsDirty(false);
     }
-  }, [event, event?.id, reset, bookIdx, allChapters]);
+  }, [event, event?.id, reset, bookIdx, allChapters, isDirty, isAttrsDirty]);
 
   const ref = useAnimateIn();
   const [isFloating, setIsFloating] = useState(false);
@@ -157,7 +179,7 @@ export default function EventPage() {
     if (bookIdx < 0 || eventIdx < 0) return;
     const ev = appStore.books[bookIdx].events[eventIdx];
     ev.title.set(data.title);
-    ev.time.set(data.time);
+    ev.time.set(Number(data.time) || 0);
     ev.type.set(data.type as EventType);
     ev.chapters.set(data.chapters);
     ev.startDate.set(data.startDate);
@@ -191,7 +213,7 @@ export default function EventPage() {
         const payload = {
           id: id,
           title: data.title,
-          time: data.time,
+          time: Number(data.time) || 0,
           type: data.type,
           chapters: data.chapters,
           startDate: data.startDate,
@@ -218,6 +240,43 @@ export default function EventPage() {
         setIsSaving(false);
       }
     }
+  };
+
+  const setStartToNow = () => {
+    setValue("startDate", formatDatetimeLocal(new Date().toISOString()), {
+      shouldDirty: true,
+    });
+  };
+
+  const copyEndToStart = () => {
+    const val = getValues("endDate");
+    if (val) setValue("startDate", val, { shouldDirty: true });
+  };
+
+  const addHourToEnd = () => {
+    const base = getValues("startDate") || getValues("endDate") || new Date().toISOString();
+    const d = new Date(base);
+    d.setHours(d.getHours() + 1);
+    setValue("endDate", formatDatetimeLocal(d.toISOString()), { shouldDirty: true });
+  };
+
+  const addThreeHoursToEnd = () => {
+    const base = getValues("startDate") || getValues("endDate") || new Date().toISOString();
+    const d = new Date(base);
+    d.setHours(d.getHours() + 3);
+    setValue("endDate", formatDatetimeLocal(d.toISOString()), { shouldDirty: true });
+  };
+
+  const addDayToEnd = () => {
+    const base = getValues("startDate") || getValues("endDate") || new Date().toISOString();
+    const d = new Date(base);
+    d.setDate(d.getDate() + 1);
+    setValue("endDate", formatDatetimeLocal(d.toISOString()), { shouldDirty: true });
+  };
+
+  const copyStartToEnd = () => {
+    const val = getValues("startDate");
+    if (val) setValue("endDate", val, { shouldDirty: true });
   };
 
   const getSaveBtnStyle = (active: boolean) => {
@@ -276,56 +335,96 @@ export default function EventPage() {
         </div>
 
         <div className="seshat-event-meta-grid">
+          <Field
+            label="Time"
+            name="time"
+            control={control}
+            type="number"
+          />
+
+          <Field
+            select
+            label="Type"
+            name="type"
+            control={control}
+          >
+            {EVENT_TYPES.map((o) => (
+              <MenuItem key={o} value={o}>
+                {o}
+              </MenuItem>
+            ))}
+          </Field>
+
           <div>
-            <label style={S.label}>
-              <ScheduleIcon sx={styles.metaIcon} />
-              Time
-            </label>
-            <input
-              type="number"
-              {...register("time", { valueAsNumber: true })}
-              style={styles.timeInput}
+            <Field
+              label="Start Date"
+              name="startDate"
+              control={control}
+              type="datetime-local"
             />
-          </div>
-          <div>
-            <label style={S.label}>Type</label>
-            <select {...register("type")} style={S.select}>
-              {EVENT_TYPES.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
+            <div className="seshat-date-shortcuts">
+              <button
+                type="button"
+                className="seshat-date-shortcut-btn"
+                onClick={setStartToNow}
+              >
+                Now
+              </button>
+              <button
+                type="button"
+                className="seshat-date-shortcut-btn"
+                onClick={copyEndToStart}
+              >
+                Copy End
+              </button>
+            </div>
           </div>
 
           <div>
-            <label style={S.label}>
-              <CalendarTodayIcon sx={styles.metaIcon} />
-              Start
-            </label>
-            <input
+            <Field
+              label="End Date"
+              name="endDate"
+              control={control}
               type="datetime-local"
-              {...register("startDate")}
-              style={styles.datetimeInput}
             />
+            <div className="seshat-date-shortcuts">
+              <button
+                type="button"
+                className="seshat-date-shortcut-btn"
+                onClick={addHourToEnd}
+              >
+                +1h
+              </button>
+              <button
+                type="button"
+                className="seshat-date-shortcut-btn"
+                onClick={addThreeHoursToEnd}
+              >
+                +3h
+              </button>
+              <button
+                type="button"
+                className="seshat-date-shortcut-btn"
+                onClick={addDayToEnd}
+              >
+                +1d
+              </button>
+              <button
+                type="button"
+                className="seshat-date-shortcut-btn"
+                onClick={copyStartToEnd}
+              >
+                Copy Start
+              </button>
+            </div>
           </div>
-          <div>
-            <label style={S.label}>
-              <CalendarTodayIcon sx={styles.metaIcon} />
-              End
-            </label>
-            <input
-              type="datetime-local"
-              {...register("endDate")}
-              style={styles.datetimeInput}
-            />
-          </div>
-          <div>
-            <label style={S.label}>Subplot</label>
-            <input
-              {...register("subplot")}
-              placeholder="e.g. A-Plot, B-Plot"
-              style={styles.subplotInput}
-            />
-          </div>
+
+          <Field
+            label="Subplot"
+            name="subplot"
+            control={control}
+            placeholder="e.g. A-Plot, B-Plot"
+          />
         </div>
 
         <Section
@@ -488,20 +587,6 @@ const styles = {
     fontSize: 10,
     marginRight: 3,
     verticalAlign: "middle",
-  },
-  timeInput: {
-    ...S.input,
-    width: 52,
-  },
-  datetimeInput: {
-    ...S.input,
-    width: "100%",
-    fontSize: 12,
-  },
-  subplotInput: {
-    ...S.input,
-    width: "100%",
-    fontSize: 12,
   },
   infoIconBtn: {
     ...S.ghost,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { uid, mkChar, mkEvent, mkCond, mkEquip, mkSkill, S } from "../utils";
+import { uid, mkChar, mkEvent, getLatestEventDates, mkCond, mkEquip, mkSkill, S } from "../utils";
 
 describe("uid", () => {
   it("generates a 6-char string", () => {
@@ -66,6 +66,35 @@ describe("mkEvent", () => {
     expect(e.startDate).toBe("");
     expect(e.endDate).toBe("");
     expect(e.chapters).toEqual([]);
+  });
+});
+
+describe("getLatestEventDates", () => {
+  it("returns empty strings for empty lists", () => {
+    expect(getLatestEventDates([])).toEqual({ startDate: "", endDate: "" });
+  });
+
+  it("extracts start and end dates from the chronologically latest event", () => {
+    const events = [
+      { ...mkEvent(), time: 1, startDate: "2026-06-16T10:00", endDate: "2026-06-16T11:00" },
+      { ...mkEvent(), time: 3, startDate: "2026-06-16T14:00", endDate: "2026-06-16T15:00" },
+      { ...mkEvent(), time: 2, startDate: "2026-06-16T12:00", endDate: "2026-06-16T13:00" },
+    ];
+    expect(getLatestEventDates(events)).toEqual({
+      startDate: "2026-06-16T15:00",
+      endDate: "2026-06-16T15:00",
+    });
+  });
+
+  it("falls back to startDate if endDate is empty in latest event", () => {
+    const events = [
+      { ...mkEvent(), time: 1, startDate: "2026-06-16T10:00", endDate: "2026-06-16T11:00" },
+      { ...mkEvent(), time: 2, startDate: "2026-06-16T12:00", endDate: "" },
+    ];
+    expect(getLatestEventDates(events)).toEqual({
+      startDate: "2026-06-16T12:00",
+      endDate: "2026-06-16T12:00",
+    });
   });
 });
 

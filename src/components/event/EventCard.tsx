@@ -75,8 +75,7 @@ export function EventCard({ event: e, characters, onClick }: EventCardProps) {
 
   const nodeStyle = {
     ...styles.node,
-    border: `2px solid ${typeColor}`,
-    color: typeColor,
+    border: `2.5px solid ${typeColor}`,
   };
 
   const typeBadgeStyle = {
@@ -89,22 +88,22 @@ export function EventCard({ event: e, characters, onClick }: EventCardProps) {
   return (
     <div
       onClick={onClick}
+      className="seshat-event-card-container"
       style={styles.container}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Time bubble */}
+      {/* Time bubble (now an elegant minimal node ring) */}
       <div style={styles.timeCol}>
-        <div className="event-node" style={nodeStyle}>
-          <span style={styles.nodeText}>T{e.time}</span>
-        </div>
+        <div className="event-node" style={nodeStyle} />
       </div>
 
       {/* Card body */}
-      <div className="event-card-inner" style={styles.cardBody}>
+      <div className="event-card-inner seshat-event-card-inner" style={styles.cardBody}>
         {/* Header Row */}
-        <div className="seshat-flex-between" style={styles.cardHeader}>
-          <div style={styles.titleWrapper}>
+        <div className="seshat-event-card-header" style={styles.cardHeader}>
+          <div className="seshat-event-card-title-wrapper" style={styles.titleWrapper}>
+            <span style={styles.timeTag}>T{e.time}</span>
             <span style={styles.eventTitle}>
               {e.title || "Untitled event"}
             </span>
@@ -112,7 +111,7 @@ export function EventCard({ event: e, characters, onClick }: EventCardProps) {
           </div>
 
           {dateTag && (
-            <span style={styles.dateBadge}>{dateTag}</span>
+            <span className="seshat-event-card-date" style={styles.dateBadge}>{dateTag}</span>
           )}
         </div>
 
@@ -134,8 +133,12 @@ export function EventCard({ event: e, characters, onClick }: EventCardProps) {
             )}
 
             {e.consequence && (
-              <p style={styles.consequenceText}>
-                <span style={{ color: typeColor }}>↳</span>
+              <p
+                style={{
+                  ...styles.consequenceText,
+                  borderLeft: `2.5px solid ${typeColor}`,
+                }}
+              >
                 {e.consequence.length > 150
                   ? e.consequence.slice(0, 147) + "…"
                   : e.consequence}
@@ -180,8 +183,6 @@ export function EventCard({ event: e, characters, onClick }: EventCardProps) {
 
 const styles = {
   container: {
-    display: "flex",
-    gap: "var(--space-6)",
     cursor: "pointer",
     position: "relative",
   },
@@ -193,45 +194,32 @@ const styles = {
     justifyContent: "center",
   },
   node: {
-    width: 36,
-    height: 36,
+    width: 12,
+    height: 12,
     borderRadius: "50%",
     background: "var(--bg-app)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
     flexShrink: 0,
     zIndex: 1,
-    transition: "all 0.2s ease",
-    marginTop: 16,
+    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+    marginTop: 24,
     alignSelf: "flex-start",
   },
-  nodeText: {
-    fontSize: 10,
+  timeTag: {
+    fontFamily: "monospace",
+    fontSize: 11,
     fontWeight: 600,
+    color: "var(--text-secondary)",
+    background: "var(--bg-hover)",
+    border: "1px solid var(--border)",
+    padding: "2px 6px",
+    borderRadius: 4,
     letterSpacing: 0.5,
-    color: "inherit",
   },
   cardBody: {
-    flex: 1,
-    padding: "var(--space-5) var(--space-6)",
-    background: "var(--bg-entry)",
-    borderRadius: "8px",
-    border: "1px solid transparent",
-    transition: "all 0.2s ease",
     position: "relative",
-    display: "flex",
-    flexDirection: "column",
-    gap: "var(--space-3)",
   },
-  cardHeader: {
-    gap: "var(--space-2)",
-  },
-  titleWrapper: {
-    display: "flex",
-    alignItems: "center",
-    gap: "var(--space-3)",
-  },
+  cardHeader: {},
+  titleWrapper: {},
   eventTitle: {
     fontSize: "var(--text-sm)",
     fontWeight: 500,
@@ -246,15 +234,7 @@ const styles = {
     padding: "3px 10px",
     borderRadius: "12px",
   },
-  dateBadge: {
-    fontSize: 12,
-    color: "var(--text-muted)",
-    fontFamily: "monospace",
-    letterSpacing: -0.2,
-    background: "var(--bg-side)",
-    padding: "2px 8px",
-    borderRadius: "4px",
-  },
+  dateBadge: {},
   contentCol: {
     display: "flex",
     flexDirection: "column",
@@ -275,12 +255,12 @@ const styles = {
     margin: 0,
   },
   consequenceText: {
-    fontSize: 12,
+    fontSize: 12.5,
     color: "var(--text-muted)",
-    margin: "4px 0 0 0",
+    margin: "8px 0 0 0",
     fontStyle: "italic",
-    display: "flex",
-    gap: 6,
+    paddingLeft: 12,
+    lineHeight: 1.5,
   },
   charactersRow: {
     display: "flex",

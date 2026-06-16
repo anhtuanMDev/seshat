@@ -92,6 +92,22 @@ export const mkEvent = (): Event => ({
   setting: "",
   characters: [],
 });
+
+export const getLatestEventDates = (eventsList: Event[]) => {
+  if (!eventsList || eventsList.length === 0) {
+    return { startDate: "", endDate: "" };
+  }
+  const latestEvent = eventsList.reduce((latest, current) => {
+    return current.time > latest.time ? current : latest;
+  }, eventsList[0]);
+
+  const defaultDate = latestEvent.endDate || latestEvent.startDate || "";
+  return {
+    startDate: defaultDate,
+    endDate: defaultDate,
+  };
+};
+
 export const mkBranch = () => ({
   id: uid(),
   time: 1,
