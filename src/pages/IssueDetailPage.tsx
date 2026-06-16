@@ -96,7 +96,7 @@ export default function IssueDetailPage() {
   return (
     <div style={styles.container}>
       {/* ── Global Header ── */}
-      <div style={styles.header}>
+      <div className="seshat-forum-header" style={styles.header}>
         <div style={styles.headerLeft}>
           <span style={styles.headerLogo} onClick={() => navigate("/")}>
             Seshat
@@ -111,6 +111,7 @@ export default function IssueDetailPage() {
         <div style={styles.headerRight}>
           {activeBookId && (
             <button
+              className="seshat-forum-back-btn"
               onClick={() => navigate(`/book/${activeBookId}/world`)}
               style={styles.backToBookBtn}
             >
@@ -135,7 +136,7 @@ export default function IssueDetailPage() {
       </div>
 
       {/* ── Main Details Container ── */}
-      <div ref={animRef} style={styles.mainContainer}>
+      <div ref={animRef} className="seshat-forum-main" style={styles.mainContainer}>
         <div style={styles.contentWrapper}>
           {isLoading ? (
             <div style={styles.loadingWrapper}>
@@ -144,7 +145,7 @@ export default function IssueDetailPage() {
           ) : activeIssue ? (
             <div style={styles.detailsCol}>
               {/* Header card info */}
-              <div style={styles.infoCard}>
+              <div className="seshat-forum-info-card" style={styles.infoCard}>
                 <div style={styles.infoCardHeader}>
                   <span
                     style={{
@@ -168,7 +169,7 @@ export default function IssueDetailPage() {
                   </a>
                 </div>
 
-                <h1 style={styles.infoCardTitle}>{activeIssue.title}</h1>
+                <h1 className="seshat-forum-detail-title" style={styles.infoCardTitle}>{activeIssue.title}</h1>
 
                 <div style={styles.infoCardAuthorRow}>
                   Opened by{" "}
@@ -180,7 +181,7 @@ export default function IssueDetailPage() {
               </div>
 
               {/* Issue Description */}
-              <div style={styles.issueBodyContainer}>{activeIssue.body}</div>
+              <div className="seshat-forum-body" style={styles.issueBodyContainer}>{activeIssue.body}</div>
 
               {/* Discussion Thread */}
               <h3 style={styles.discussionHeader}>
@@ -189,7 +190,7 @@ export default function IssueDetailPage() {
 
               <div style={styles.commentsList}>
                 {comments.map((comment) => (
-                  <div key={comment.id} style={styles.commentCard}>
+                  <div key={comment.id} className="seshat-forum-comment-card" style={styles.commentCard}>
                     <div style={styles.commentHeader}>
                       <span>
                         Posted by{" "}

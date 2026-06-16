@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import {
-  fetchIssues,
-  createIssue,
-} from "../lib/githubIssues";
+import { fetchIssues, createIssue } from "../lib/githubIssues";
 import { S } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import {
@@ -40,13 +37,17 @@ export default function IssuesPage() {
   // Modal form state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [newType, setNewType] = useState<"bug" | "recommendation" | "discussion">(
-    "discussion",
-  );
+  const [newType, setNewType] = useState<
+    "bug" | "recommendation" | "discussion"
+  >("discussion");
   const [newBody, setNewBody] = useState("");
 
   // 1. Fetch issue list with React Query caching
-  const { data: issues = [], isLoading: isLoadingList, error } = useQuery({
+  const {
+    data: issues = [],
+    isLoading: isLoadingList,
+    error,
+  } = useQuery({
     queryKey: ["issues", token],
     queryFn: () => fetchIssues(token!),
     enabled: !!token,
@@ -113,15 +114,28 @@ export default function IssuesPage() {
     return iss.type === filter;
   });
 
+  const getTypeAccent = (type: "bug" | "recommendation" | "discussion") => {
+    switch (type) {
+      case "bug":
+        return "#d32f2f";
+      case "recommendation":
+        return "#0288d1";
+      default:
+        return "#009688";
+    }
+  };
+
   const getFilterStyle = (active: boolean) => ({
-    background: active ? "var(--bg-active)" : "transparent",
-    color: active ? "var(--text-primary)" : "var(--text-secondary)",
-    border: active ? "1px solid var(--border-field)" : "1px solid transparent",
+    background: active ? "var(--color-primary)" : "var(--bg-surface)",
+    color: active ? "var(--bg-app)" : "var(--text-secondary)",
+    border: "none",
     borderRadius: 20,
-    padding: "6px 16px",
-    fontSize: 13,
+    padding: "6px 14px",
+    fontSize: 12,
+    fontWeight: active ? 600 : 400,
     cursor: "pointer",
-    textTransform: "capitalize" as const,
+    whiteSpace: "nowrap" as const,
+    flexShrink: 0,
     transition: "all 0.15s ease",
   });
 
@@ -136,31 +150,36 @@ export default function IssuesPage() {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    cursor: disabled ? "default" : "pointer" as const,
+    cursor: disabled ? "default" : ("pointer" as const),
     opacity: disabled ? 0.6 : 1,
   });
 
   return (
     <div style={styles.container}>
       {/* ── Global Header ── */}
-      <div style={styles.header}>
+      <div className="seshat-forum-header" style={styles.header}>
         <div style={styles.headerLeft}>
           <span style={styles.headerLogo} onClick={() => navigate("/")}>
             Seshat
           </span>
           <span style={styles.headerDivider}>/</span>
-          <span style={styles.headerTitle}>Forum & Feedback</span>
+          <span style={styles.headerTitle}>Forum</span>
         </div>
         <div style={styles.headerRight}>
           {activeBookId && (
             <button
+              className="seshat-forum-back-btn"
               onClick={() => navigate(`/book/${activeBookId}/world`)}
               style={styles.backToBookBtn}
             >
-              ← Back to Book
+              ← Book
             </button>
           )}
-          <button onClick={() => navigate("/")} style={styles.myBooksBtn}>
+          <button
+            className="seshat-forum-my-books-btn"
+            onClick={() => navigate("/")}
+            style={styles.myBooksBtn}
+          >
             My Books
           </button>
           <button
@@ -178,20 +197,30 @@ export default function IssuesPage() {
       </div>
 
       {/* ── Main List Container ── */}
-      <div ref={animRef} style={styles.mainContainer}>
+      <div
+        ref={animRef}
+        className="seshat-forum-main"
+        style={styles.mainContainer}
+      >
         <div style={styles.contentWrapper}>
           {/* Dashboard Header Section */}
-          <div style={styles.dashboardHeader}>
+          <div
+            className="seshat-forum-dashboard-header"
+            style={styles.dashboardHeader}
+          >
             <div>
-              <h1 style={styles.dashboardTitle}>
-                Community Forum & Bug Reports
+              <h1 className="seshat-forum-title" style={styles.dashboardTitle}>
+                Community Forum
               </h1>
-              <p style={styles.dashboardSubtitle}>
-                Ask questions, report issues, and discuss new feature ideas for
-                Seshat.
+              <p
+                className="seshat-forum-subtitle"
+                style={styles.dashboardSubtitle}
+              >
+                Ask questions, report bugs, and suggest features.
               </p>
             </div>
             <button
+              className="seshat-forum-new-btn"
               onClick={() => setShowCreateModal(true)}
               style={styles.newDiscussionBtn}
               onMouseEnter={(e) => {
@@ -201,44 +230,84 @@ export default function IssuesPage() {
                 e.currentTarget.style.opacity = "1";
               }}
             >
-              + New Discussion
+              + New
             </button>
           </div>
 
-          {/* Type filters */}
+          {/* Type filters — outer div owns the border/margin, inner div handles horizontal scroll */}
           <div style={styles.filtersRow}>
-            {(["all", "bug", "recommendation", "discussion"] as FilterType[]).map(
-              (t) => {
-                const active = filter === t;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => setFilter(t)}
-                    style={getFilterStyle(active)}
-                    onMouseEnter={(e) => {
-                      if (!active) e.currentTarget.style.background = "var(--bg-hover)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    {t === "all"
-                      ? "All Topics"
-                      : t === "bug"
-                      ? "Bugs"
+            <div className="seshat-forum-filters" style={styles.filtersScroll}>
+              {(
+                ["all", "bug", "recommendation", "discussion"] as FilterType[]
+              ).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setFilter(t)}
+                  style={getFilterStyle(filter === t)}
+                >
+                  {t === "all"
+                    ? "All"
+                    : t === "bug"
+                      ? "🐛 Bugs"
                       : t === "recommendation"
-                      ? "Recommendations"
-                      : "Discussions"}
-                  </button>
-                );
-              },
-            )}
+                        ? "💡 Ideas"
+                        : "💬 Discussion"}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* List Content */}
           {isLoadingList ? (
-            <div style={styles.loadingWrapper}>
-              <CircularProgress size={28} sx={styles.loadingProgress} />
+            <div style={styles.issuesList}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={styles.skeletonCard}>
+                  <div
+                    style={{
+                      ...styles.skeletonLine,
+                      width: "15%",
+                      height: 14,
+                      marginBottom: 12,
+                      animationDelay: `${i * 0.15}s`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      ...styles.skeletonLine,
+                      width: "75%",
+                      height: 17,
+                      marginBottom: 8,
+                      animationDelay: `${i * 0.15 + 0.05}s`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      ...styles.skeletonLine,
+                      width: "90%",
+                      height: 12,
+                      marginBottom: 4,
+                      animationDelay: `${i * 0.15 + 0.1}s`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      ...styles.skeletonLine,
+                      width: "60%",
+                      height: 12,
+                      marginBottom: 14,
+                      animationDelay: `${i * 0.15 + 0.15}s`,
+                    }}
+                  />
+                  <div
+                    style={{
+                      ...styles.skeletonLine,
+                      width: "28%",
+                      height: 11,
+                      animationDelay: `${i * 0.15 + 0.2}s`,
+                    }}
+                  />
+                </div>
+              ))}
             </div>
           ) : filteredIssues.length === 0 ? (
             <div style={styles.emptyContainer}>
@@ -264,51 +333,55 @@ export default function IssuesPage() {
                     ? iss.body.slice(0, 180) + "..."
                     : iss.body;
 
-                const badgeStyle = {
-                  ...styles.badgeBase,
-                  background: badge.bg,
-                  color: badge.text,
-                };
-
                 return (
                   <div
                     key={iss.number}
+                    className="seshat-forum-card"
                     onClick={() => navigate(`/issues/${iss.number}`)}
-                    style={styles.issueCard}
+                    style={{
+                      ...styles.issueCard,
+                      borderLeft: `3px solid ${getTypeAccent(iss.type)}`,
+                    }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "var(--text-secondary)";
                       e.currentTarget.style.transform = "translateY(-1px)";
                       e.currentTarget.style.boxShadow =
-                        "0 4px 16px rgba(0,0,0,0.06)";
+                        "0 4px 16px rgba(0,0,0,0.08)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "var(--border)";
                       e.currentTarget.style.transform = "none";
                       e.currentTarget.style.boxShadow =
-                        "0 2px 8px rgba(0,0,0,0.02)";
+                        "0 1px 4px rgba(0,0,0,0.04)";
                     }}
                   >
                     <div style={styles.cardHeader}>
-                      <div style={styles.cardHeaderLeft}>
-                        <span style={badgeStyle}>{iss.type}</span>
-                        <span style={styles.issueNumber}>#{iss.number}</span>
-                      </div>
+                      <span
+                        style={{
+                          ...styles.badgeBase,
+                          background: badge.bg,
+                          color: badge.text,
+                        }}
+                      >
+                        {iss.type}
+                      </span>
                       <span style={styles.issueDate}>
                         {formatDate(iss.createdAt)}
                       </span>
                     </div>
 
-                    <h3 style={styles.issueTitle}>{iss.title}</h3>
-
+                    <h3
+                      className="seshat-forum-card-title"
+                      style={styles.issueTitle}
+                    >
+                      {iss.title}
+                    </h3>
                     <p style={styles.issueBodyPreview}>{bodyPreview}</p>
 
                     <div style={styles.cardFooter}>
-                      <span>
-                        Started by <b>{iss.author}</b>
+                      <span style={styles.issueNumber}>
+                        by {iss.author} · #{iss.number}
                       </span>
                       <span style={styles.commentsCountSpan}>
-                        💬 {iss.commentsCount} comment
-                        {iss.commentsCount !== 1 ? "s" : ""}
+                        💬 {iss.commentsCount}
                       </span>
                     </div>
                   </div>
@@ -394,6 +467,14 @@ export default function IssuesPage() {
           </div>
         </Modal>
       )}
+      {/* Mobile FAB — replaces the top "+ New" button on small screens */}
+      <button
+        className="seshat-forum-fab"
+        onClick={() => setShowCreateModal(true)}
+        aria-label="New discussion"
+      >
+        +
+      </button>
     </div>
   );
 }
@@ -506,17 +587,21 @@ const styles = {
     borderRadius: 20,
     fontSize: 13,
     fontWeight: 600,
-    letterSpacing: 0.5,
-    padding: "8px 20px",
+    letterSpacing: 0.3,
+    padding: "7px 18px",
     cursor: "pointer",
     transition: "opacity 0.15s",
+    flexShrink: 0,
   },
   filtersRow: {
-    display: "flex",
-    gap: 8,
-    marginBottom: 24,
+    paddingBottom: 12,
     borderBottom: "1px solid var(--border)",
-    paddingBottom: 16,
+  },
+  filtersScroll: {
+    display: "flex",
+    gap: 6,
+    overflowX: "auto",
+    scrollbarWidth: "none",
   },
   loadingWrapper: {
     display: "flex",
@@ -527,6 +612,18 @@ const styles = {
   },
   loadingProgress: {
     color: "var(--text-secondary)",
+  },
+  skeletonCard: {
+    padding: "16px 20px",
+    borderRadius: 8,
+    background: "var(--bg-main)",
+    border: "1px solid var(--border)",
+    borderLeft: "3px solid var(--border)",
+  },
+  skeletonLine: {
+    background: "var(--border)",
+    borderRadius: 4,
+    animation: "seshat-shimmer 1.4s ease-in-out infinite",
   },
   emptyContainer: {
     textAlign: "center",
@@ -567,13 +664,14 @@ const styles = {
     gap: 12,
   },
   issueCard: {
-    padding: "20px 24px",
-    borderRadius: 10,
+    padding: "16px 20px",
+    borderRadius: 8,
     cursor: "pointer",
     background: "var(--bg-main)",
     border: "1px solid var(--border)",
-    transition: "all 0.15s ease",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+    borderLeft: "3px solid var(--border)",
+    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
   },
   cardHeader: {
     display: "flex",

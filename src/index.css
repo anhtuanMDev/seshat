@@ -1,5 +1,11 @@
 @import "./styles/theme.css";
 
+@keyframes seshat-shimmer {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -722,4 +728,112 @@ svg circle {
     right: 24px;
     z-index: 60;
   }
+}
+
+/* ── Forum / Issues pages — mobile ─────────────────────────────────────── */
+@media (max-width: 640px) {
+  .seshat-forum-header {
+    padding: 0 14px !important;
+  }
+
+  /* "Back to Book" hidden — phone users have OS back gesture */
+  .seshat-forum-back-btn {
+    display: none !important;
+  }
+
+  .seshat-forum-my-books-btn {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+  }
+
+  .seshat-forum-main {
+    padding: 16px 14px 80px !important; /* bottom pad for FAB */
+  }
+
+  /* Stack title and button; hide the "+ New" button (FAB replaces it) */
+  .seshat-forum-dashboard-header {
+    margin-bottom: 16px !important;
+  }
+
+  .seshat-forum-new-btn {
+    display: none !important;
+  }
+
+  .seshat-forum-title {
+    font-size: 19px !important;
+  }
+
+  .seshat-forum-subtitle {
+    font-size: 12px !important;
+    margin-top: 2px !important;
+  }
+
+  /* Filters: inner scroll row */
+  .seshat-forum-filters {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px !important;
+  }
+  .seshat-forum-filters::-webkit-scrollbar { display: none; }
+
+  /* Cards */
+  .seshat-forum-card {
+    padding: 12px 14px !important;
+  }
+
+  .seshat-forum-card-title {
+    font-size: 14px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Detail page */
+  .seshat-forum-info-card {
+    padding: 14px 16px !important;
+  }
+
+  .seshat-forum-detail-title {
+    font-size: 17px !important;
+  }
+
+  .seshat-forum-body {
+    padding: 14px 16px !important;
+    font-size: 14px !important;
+  }
+
+  .seshat-forum-comment-card {
+    padding: 12px 14px !important;
+  }
+
+  /* FAB — floating action button for new discussion, mobile only */
+  .seshat-forum-fab {
+    display: flex !important;
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    right: 20px;
+    z-index: 200;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: var(--bg-app);
+    border: none;
+    font-size: 24px;
+    font-weight: 300;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .seshat-forum-fab:active {
+    transform: scale(0.93);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+}
+
+/* FAB hidden by default on desktop */
+.seshat-forum-fab {
+  display: none;
 }
