@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   fetchIssueDetail,
   createComment,
-  type SeshatIssue,
-  type SeshatComment,
 } from "../lib/githubIssues";
 import { S } from "../lib/utils";
 import { DarkModeIcon, LightModeIcon } from "../components/ui/icons";
@@ -26,66 +25,44 @@ export default function IssueDetailPage() {
     sessionStorage.getItem("seshat-auth-token");
 
   // State
-  const [activeIssue, setActiveIssue] = useState<SeshatIssue | null>(null);
-  const [comments, setComments] = useState<SeshatComment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [commentText, setCommentText] = useState("");
+  const queryClient = useQueryClient();
+  const queryNum = number ? parseInt(number, 10) : 0;
 
-  // Fetch issue details & comments
+  // Fetch issue details & comments with React Query caching
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["issueDetail", queryNum, token],
+    queryFn: () => fetchIssueDetail(token!, queryNum),
+    enabled: !!token && !!queryNum,
+  });
+
+  const activeIssue = data?.issue || null;
+  const comments = data?.comments || [];
+
   useEffect(() => {
-    let isMounted = true;
-    const loadIssueDetail = async () => {
-      if (!token || !number) {
-        navigate("/issues");
-        return;
-      }
-      if (isMounted) setIsLoading(true);
-      try {
-        const data = await fetchIssueDetail(token, parseInt(number, 10));
-        if (isMounted) {
-          setActiveIssue(data.issue);
-          setComments(data.comments);
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.error(err);
-          showToast(
-            "Failed to load discussion: " + (err as Error).message,
-            "error",
-          );
-          navigate("/issues");
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    loadIssueDetail();
-    return () => {
-      isMounted = false;
-    };
-  }, [token, number, navigate]);
+    if (error) {
+      showToast("Failed to load discussion: " + (error as Error).message, "error");
+      navigate("/issues");
+    }
+  }, [error, navigate]);
 
   // Handle Submit Comment
-  const handleSubmitComment = async () => {
-    if (!token || !number || !commentText.trim()) return;
+  const handleSubmitComment = async (text: string) => {
+    if (!token || !number) return;
 
-    setIsSubmittingComment(true);
     try {
-      const newComment = await createComment(
+      await createComment(
         token,
         parseInt(number, 10),
-        commentText.trim(),
+        text,
       );
-      setComments((prev) => [...prev, newComment]);
-      setCommentText("");
       showToast("Comment added successfully!", "success");
+      
+      // Invalidate the query to fetch fresh comments in the background
+      queryClient.invalidateQueries({ queryKey: ["issueDetail", queryNum, token] });
     } catch (err) {
       console.error(err);
       showToast("Failed to add comment: " + (err as Error).message, "error");
-    } finally {
-      setIsSubmittingComment(false);
+      throw err;
     }
   };
 
@@ -114,18 +91,7 @@ export default function IssueDetailPage() {
     }
   };
 
-  const postBtnStyle = (disabled: boolean) => ({
-    background: "var(--color-primary)",
-    color: "var(--bg-app)",
-    border: "none",
-    borderRadius: 6,
-    padding: "10px 24px",
-    fontWeight: 600,
-    fontSize: 13,
-    cursor: disabled ? "default" : "pointer" as const,
-    opacity: disabled ? 0.6 : 1,
-    transition: "opacity 0.2s",
-  });
+
 
   return (
     <div style={styles.container}>
@@ -247,26 +213,7 @@ export default function IssueDetailPage() {
               </div>
 
               {/* Comment Editor */}
-              <div style={styles.commentEditorWrapper}>
-                <h4 style={styles.addCommentHeader}>Add a comment</h4>
-                <textarea
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Share your feedback, ideas, or questions with the community..."
-                  rows={5}
-                  disabled={isSubmittingComment}
-                  style={styles.commentTextarea}
-                />
-                <div style={styles.commentFooterRow}>
-                  <button
-                    onClick={handleSubmitComment}
-                    disabled={isSubmittingComment || !commentText.trim()}
-                    style={postBtnStyle(isSubmittingComment || !commentText.trim())}
-                  >
-                    {isSubmittingComment ? "Posting..." : "Post Comment"}
-                  </button>
-                </div>
-              </div>
+              <CommentEditor onSubmit={handleSubmitComment} />
             </div>
           ) : (
             <div style={styles.notFoundWrapper}>
@@ -278,6 +225,67 @@ export default function IssueDetailPage() {
     </div>
   );
 }
+
+interface CommentEditorProps {
+  onSubmit: (text: string) => Promise<void>;
+}
+
+function CommentEditor({ onSubmit }: CommentEditorProps) {
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    const trimmed = commentText.trim();
+    if (!trimmed) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit(trimmed);
+      setCommentText("");
+    } catch {
+      // toast shown in parent
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const isDisabled = isSubmitting || !commentText.trim();
+
+  return (
+    <div style={styles.commentEditorWrapper}>
+      <h4 style={styles.addCommentHeader}>Add a comment</h4>
+      <textarea
+        value={commentText}
+        onChange={(e) => setCommentText(e.target.value)}
+        placeholder="Share your feedback, ideas, or questions with the community..."
+        rows={5}
+        disabled={isSubmitting}
+        style={styles.commentTextarea}
+      />
+      <div style={styles.commentFooterRow}>
+        <button
+          onClick={handleSubmit}
+          disabled={isDisabled}
+          style={postBtnStyle(isDisabled)}
+        >
+          {isSubmitting ? "Posting..." : "Post Comment"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const postBtnStyle = (disabled: boolean) => ({
+  background: "var(--color-primary)",
+  color: "var(--bg-app)",
+  border: "none",
+  borderRadius: 6,
+  padding: "10px 24px",
+  fontWeight: 600,
+  fontSize: 13,
+  cursor: disabled ? "default" : "pointer" as const,
+  opacity: disabled ? 0.6 : 1,
+  transition: "opacity 0.2s",
+});
 
 const styles = {
   container: {

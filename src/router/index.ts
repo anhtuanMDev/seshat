@@ -38,6 +38,49 @@ const PageLoading = createElement(
   "Loading page..."
 );
 
+// Prefetch all dynamic modules when the browser is idle to ensure instant navigation
+export const preloadPages = () => {
+  const preloads = [
+    () => import("../pages/WorldPage"),
+    () => import("../pages/CharacterListPage"),
+    () => import("../pages/CharacterPage"),
+    () => import("../pages/TimelinePage"),
+    () => import("../pages/EventPage"),
+    () => import("../pages/ChapterListPage"),
+    () => import("../pages/ChapterPage"),
+    () => import("../pages/LoreWebPage"),
+    () => import("../pages/FightPage"),
+    () => import("../pages/IssuesPage"),
+    () => import("../pages/IssueDetailPage"),
+  ];
+
+  const runPreloads = () => {
+    preloads.forEach((p) => {
+      try {
+        p();
+      } catch {
+        // ignore prefetch errors gracefully
+      }
+    });
+  };
+
+  if (typeof window !== "undefined") {
+    const initPreloads = () => {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(() => runPreloads());
+      } else {
+        setTimeout(runPreloads, 1500);
+      }
+    };
+
+    if (document.readyState === "complete") {
+      initPreloads();
+    } else {
+      window.addEventListener("load", initPreloads);
+    }
+  }
+};
+
 export const router = createBrowserRouter([
   {
     path: "/auth",

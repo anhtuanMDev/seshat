@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   fetchIssues,
   createIssue,
-  type SeshatIssue,
 } from "../lib/githubIssues";
 import { S } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
@@ -31,9 +31,8 @@ export default function IssuesPage() {
     sessionStorage.getItem("seshat-auth-token");
 
   // State
-  const [issues, setIssues] = useState<SeshatIssue[]>([]);
-  const [isLoadingList, setIsLoadingList] = useState(false);
   const [isCreatingIssue, setIsCreatingIssue] = useState(false);
+  const queryClient = useQueryClient();
 
   // Filters
   const [filter, setFilter] = useState<FilterType>("all");
@@ -46,29 +45,18 @@ export default function IssuesPage() {
   );
   const [newBody, setNewBody] = useState("");
 
-  // 1. Fetch issue list
+  // 1. Fetch issue list with React Query caching
+  const { data: issues = [], isLoading: isLoadingList, error } = useQuery({
+    queryKey: ["issues", token],
+    queryFn: () => fetchIssues(token!),
+    enabled: !!token,
+  });
+
   useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      if (!token) return;
-      if (isMounted) setIsLoadingList(true);
-      try {
-        const data = await fetchIssues(token);
-        if (isMounted) setIssues(data);
-      } catch (err) {
-        if (isMounted) {
-          console.error(err);
-          showToast("Failed to load issues: " + (err as Error).message, "error");
-        }
-      } finally {
-        if (isMounted) setIsLoadingList(false);
-      }
-    };
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
+    if (error) {
+      showToast("Failed to load issues: " + (error as Error).message, "error");
+    }
+  }, [error]);
 
   // 3. Handle Submit Issue
   const handleSubmitIssue = async () => {
@@ -86,9 +74,8 @@ export default function IssuesPage() {
       setNewBody("");
       setNewType("discussion");
 
-      // Reload list and go to new issue
-      const data = await fetchIssues(token);
-      setIssues(data);
+      // Invalidate queries to trigger background reload and redirect
+      queryClient.invalidateQueries({ queryKey: ["issues", token] });
       navigate(`/issues/${newIssue.number}`);
     } catch (err) {
       console.error(err);
