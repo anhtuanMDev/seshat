@@ -34,12 +34,12 @@ export function NationBlock({ control, index, onDelete, connections, onAddConnec
       </div>
 
       <hr style={S.rule} />
-      <p style={{ ...S.h2, display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+      <p style={styles.diplomacyHeader}>
         Diplomacy & Alliances
       </p>
       <Field label="Alliance logic / diplomatic landscape" name={`nations.${index}.allianceLogic` as const} control={control} multi rows={2} placeholder="Who holds power? What treaties define the region?" />
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <p style={{ ...S.dim, margin: 0 }}>Connections ({connections.length})</p>
+      <div style={styles.connectionsHeaderRow}>
+        <p style={styles.connectionsCountText}>Connections ({connections.length})</p>
         <GhostButton onClick={onAddConnection}>+ add connection</GhostButton>
       </div>
       {connections.map((conn: NationConnection, ci: number) => (
@@ -51,7 +51,7 @@ export function NationBlock({ control, index, onDelete, connections, onAddConnec
           onDelete={() => onDelConnection(conn.id)}
         />
       ))}
-      {!connections.length && <p style={{ ...S.dim, fontStyle: "italic" }}>No connections yet.</p>}
+      {!connections.length && <p style={styles.noConnectionsText}>No connections yet.</p>}
 
       <hr style={S.rule} />
       <Field label="Hidden secrets" name={`nations.${index}.secrets` as const} control={control} multi rows={2} placeholder="The emperor is already dead. The throne is controlled by…" />
@@ -59,3 +59,27 @@ export function NationBlock({ control, index, onDelete, connections, onAddConnec
     </EntryBlock>
   );
 }
+
+const styles = {
+  diplomacyHeader: {
+    ...S.h2,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 8,
+  },
+  connectionsHeaderRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  connectionsCountText: {
+    ...S.dim,
+    margin: 0,
+  },
+  noConnectionsText: {
+    ...S.dim,
+    fontStyle: "italic",
+  },
+} satisfies Record<string, React.CSSProperties>;

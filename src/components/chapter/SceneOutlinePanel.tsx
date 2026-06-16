@@ -22,92 +22,36 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
   });
 
   return (
-    <div style={{ marginBottom: 32, paddingRight: 12 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <p
-          title="Beat Sheet & Scene Outline"
-          style={{
-            ...S.h2,
-            margin: 0,
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            color: "var(--text-secondary)",
-          }}
-        >
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <p title="Beat Sheet & Scene Outline" style={styles.title}>
           <CenterFocusStrongIcon sx={{ fontSize: 14 }} />
           Scene Outline ({fields.length})
         </p>
         <button
           type="button"
           onClick={() => append(mkSceneCard())}
-          style={{
-            ...S.ghost,
-            fontSize: 11,
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            color: "var(--text-secondary)",
-          }}
+          style={styles.addBtn}
         >
           <AddIcon sx={{ fontSize: 13 }} /> add scene card
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={styles.list}>
         {fields.map((item, index) => (
-          <div
-            key={item.id}
-            style={{
-              background: "var(--bg-panel)",
-              border: "1px solid var(--border)",
-              borderRadius: 6,
-              padding: 16,
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                marginBottom: 12,
-              }}
-            >
-              <div style={{ flex: 1, marginRight: 16 }}>
+          <div key={item.id} style={styles.card}>
+            <div style={styles.cardHeader}>
+              <div style={styles.inputTitleWrapper}>
                 <input
                   {...control.register(`scenes.${index}.title` as const)}
                   placeholder={`Scene ${index + 1} Name...`}
-                  style={{
-                    ...S.input,
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    border: "none",
-                    padding: 0,
-                    width: "100%",
-                    background: "transparent",
-                    color: "var(--text-primary)",
-                  }}
+                  style={styles.inputTitle}
                 />
               </div>
               <button
                 type="button"
                 onClick={() => remove(index)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--text-muted)",
-                  padding: 4,
-                }}
+                style={styles.deleteBtn}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.color = "var(--color-red)")
                 }
@@ -119,19 +63,11 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               </button>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
+            <div style={styles.grid2Col}>
               <div>
                 <Field
                   label={
-                    <span
-                      style={{ display: "flex", alignItems: "center", gap: 4 }}
-                    >
+                    <span style={styles.fieldLabelSpan}>
                       <PsychologyIcon sx={{ fontSize: 12 }} /> POV Character
                     </span>
                   }
@@ -143,9 +79,7 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               <div>
                 <Field
                   label={
-                    <span
-                      style={{ display: "flex", alignItems: "center", gap: 4 }}
-                    >
+                    <span style={styles.fieldLabelSpan}>
                       <FlagIcon sx={{ fontSize: 12 }} /> Scene Goal
                     </span>
                   }
@@ -156,14 +90,7 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginTop: 8,
-              }}
-            >
+            <div style={styles.grid2ColMargin}>
               <Field
                 label="Conflict / Obstacle"
                 name={`scenes.${index}.conflict` as const}
@@ -185,15 +112,98 @@ export function SceneOutlinePanel({ control }: SceneOutlinePanelProps) {
         ))}
       </div>
 
-      {fields.length > 0 && (
-        <hr
-          style={{
-            border: "none",
-            borderTop: "1px dashed var(--border)",
-            margin: "24px 0",
-          }}
-        />
-      )}
+      {fields.length > 0 && <hr style={styles.hr} />}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    marginBottom: 32,
+    paddingRight: 12,
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  title: {
+    ...S.h2,
+    margin: 0,
+    fontSize: 13,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "var(--text-secondary)",
+  },
+  addBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    color: "var(--text-secondary)",
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+  card: {
+    background: "var(--bg-panel)",
+    border: "1px solid var(--border)",
+    borderRadius: 6,
+    padding: 16,
+    position: "relative",
+  },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  inputTitleWrapper: {
+    flex: 1,
+    marginRight: 16,
+  },
+  inputTitle: {
+    ...S.input,
+    fontSize: 16,
+    fontWeight: "bold",
+    border: "none",
+    padding: 0,
+    width: "100%",
+    background: "transparent",
+    color: "var(--text-primary)",
+  },
+  deleteBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "var(--text-muted)",
+    padding: 4,
+    transition: "color 0.2s ease",
+  },
+  grid2Col: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16,
+  },
+  grid2ColMargin: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16,
+    marginTop: 8,
+  },
+  fieldLabelSpan: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  hr: {
+    border: "none",
+    borderTop: "1px dashed var(--border)",
+    margin: "24px 0",
+  },
+} satisfies Record<string, React.CSSProperties>;

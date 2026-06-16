@@ -12,9 +12,7 @@ import { Field, Section } from "../components/ui";
 import { StatusBlock } from "../components/character/StatusBlock";
 import { Modal } from "../components/ui/Modal";
 import {
-  AddIcon,
   BadgeIcon,
-  CloseIcon,
   CrisisAlertIcon,
   EmojiEventsIcon,
   HeartBrokenIcon,
@@ -53,8 +51,9 @@ import {
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
 import { updateFileOnGitHub } from "../lib/githubSync";
-
 import { ArcBlock } from "../components/character/ArcBlock";
+import { GhostAddButton } from "../components/character/GhostAddButton";
+import { ArrayItemCard } from "../components/character/ArrayItemCard";
 
 // ── Modal state type ──────────────────────────────────────────────────────
 type ModalKind =
@@ -66,29 +65,6 @@ type ModalKind =
   | { type: "status"; idx: number | null; isNew?: boolean }
   | { type: "arc"; idx: number | null; isNew?: boolean }
   | null;
-
-function GhostAddButton({
-  onClick,
-}: {
-  onClick: (e: React.MouseEvent) => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        ...S.ghost,
-        fontSize: "11px",
-        display: "flex",
-        alignItems: "center",
-        gap: "var(--space-1)",
-        color: "var(--text-secondary)",
-      }}
-    >
-      <AddIcon sx={{ fontSize: 13 }} />
-      add
-    </button>
-  );
-}
 
 export default function CharacterPage() {
   const { id } = useParams();
@@ -213,7 +189,7 @@ export default function CharacterPage() {
 
   if (!char) {
     return (
-      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
+      <div style={styles.notFound}>
         Character not found.
       </div>
     );
@@ -371,6 +347,17 @@ export default function CharacterPage() {
     onSubmit();
   };
 
+  const colorDotStyle = {
+    ...styles.colorDot,
+    background: char.color,
+  };
+
+  const activeSaveStyle = {
+    ...styles.saveBtnActive,
+    cursor: isSaving ? "default" : "pointer",
+    opacity: isSaving ? 0.7 : 1,
+  };
+
   return (
     <>
       <div
@@ -381,64 +368,24 @@ export default function CharacterPage() {
         {/* ── Header ── */}
         <div
           className="seshat-flex-between"
-          style={{
-            marginBottom: "var(--space-6)",
-            gap: "var(--space-4)",
-          }}
+          style={styles.header}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--space-3)",
-              flex: 1,
-            }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: char.color,
-                display: "inline-block",
-                flexShrink: 0,
-              }}
-            />
+          <div style={styles.nameContainer}>
+            <span style={colorDotStyle} />
             <input
               {...register("name")}
               data-testid="character-name-input"
-              style={{
-                ...S.input,
-                fontSize: "var(--text-3xl)",
-                fontFamily: "var(--font-serif)",
-                border: "none",
-                padding: 0,
-                flex: 1,
-                color: "var(--text-primary)",
-                letterSpacing: 0.3,
-              }}
+              style={styles.nameInput}
             />
           </div>
           <div
             ref={dockedButtonsRef}
-            style={{ display: "flex", gap: "var(--space-3)" }}
+            style={styles.buttonsContainer}
           >
             <button
               onClick={() => setShowExport(true)}
               data-testid="character-export-btn"
-              style={{
-                ...S.ghost,
-                fontSize: "var(--text-xs)",
-                letterSpacing: 1,
-                color: "var(--color-purple)",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                gap: 3,
-                padding: "6px 14px",
-                borderRadius: 4,
-                border: "1px solid transparent",
-              }}
+              style={styles.exportBtn}
             >
               <ArticleIcon sx={{ fontSize: 12 }} />
               export
@@ -447,41 +394,7 @@ export default function CharacterPage() {
               onClick={onSubmit}
               disabled={!isDirty || isSaving}
               data-testid="character-save-btn"
-              style={
-                isDirty
-                  ? {
-                      background: "var(--color-green)",
-                      color: "var(--bg-app)",
-                      border: "1px solid var(--color-green)",
-                      borderRadius: 4,
-                      padding: "6px 14px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      letterSpacing: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      cursor: isSaving ? "default" : "pointer",
-                      opacity: isSaving ? 0.7 : 1,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    }
-                  : {
-                      ...S.ghost,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      letterSpacing: 1,
-                      color: "var(--color-green)",
-                      flexShrink: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "6px 14px",
-                      borderRadius: 4,
-                      border: "1px solid transparent",
-                      opacity: 0.5,
-                      cursor: "default",
-                    }
-              }
+              style={isDirty ? activeSaveStyle : styles.saveBtnInactive}
             >
               <SaveIcon sx={{ fontSize: 14 }} />
               {isSaving ? "saving..." : "save"}
@@ -499,18 +412,12 @@ export default function CharacterPage() {
           }
           action={<GhostAddButton onClick={() => openAdd("status")} />}
         >
-          <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+          <p style={styles.sectionSub}>
             Track how their physical state, emotions, and roles shift over time
             and events.
           </p>
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-2)",
-            }}
-          >
+          <div style={styles.listContainer}>
             {statusTimeline
               .map((s, i) => ({ s, i }))
               .sort((a, b) => {
@@ -557,7 +464,7 @@ export default function CharacterPage() {
               })}
           </div>
           {!statusTimeline.length && (
-            <p style={{ ...S.dim, fontStyle: "italic" }}>
+            <p style={styles.sectionSubItalic}>
               No status entries recorded.
             </p>
           )}
@@ -573,7 +480,7 @@ export default function CharacterPage() {
               </>
             }
           >
-            <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+            <p style={styles.sectionSub}>
               Core defining roles. These can be overridden for specific events
               in the timeline above as the character evolves.
             </p>
@@ -648,32 +555,16 @@ export default function CharacterPage() {
             {/* Traumas */}
             <div
               className="seshat-flex-between"
-              style={{
-                marginBottom: "var(--space-4)",
-              }}
+              style={styles.sectionTitleRow}
             >
-              <p
-                style={{
-                  ...S.h2,
-                  margin: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "var(--space-1)",
-                }}
-              >
+              <p style={styles.titleTextWithIcon}>
                 <CrisisAlertIcon sx={{ fontSize: 12 }} />
                 Traumas ({traumas.length})
               </p>
               <GhostAddButton onClick={() => openAdd("trauma")} />
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--space-2)",
-              }}
-            >
+            <div style={styles.listContainer}>
               {traumas.map((t: Trauma, i: number) => (
                 <ArrayItemCard
                   key={t.id}
@@ -693,7 +584,7 @@ export default function CharacterPage() {
               ))}
             </div>
             {!traumas.length && (
-              <p style={{ ...S.dim, fontStyle: "italic" }}>
+              <p style={styles.sectionSubItalic}>
                 No traumas recorded.
               </p>
             )}
@@ -717,7 +608,7 @@ export default function CharacterPage() {
             />
           }
         >
-          <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+          <p style={styles.sectionSub}>
             Where they begin and where they end. The transformation the story
             puts them through.
           </p>
@@ -753,7 +644,7 @@ export default function CharacterPage() {
             })}
           </div>
           {!arcs.length && (
-            <p style={{ ...S.dim, fontStyle: "italic" }}>No arcs recorded.</p>
+            <p style={styles.sectionSubItalic}>No arcs recorded.</p>
           )}
         </Section>
 
@@ -767,16 +658,10 @@ export default function CharacterPage() {
           }
           action={<GhostAddButton onClick={() => openAdd("condition")} />}
         >
-          <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+          <p style={styles.sectionSub}>
             Current physical, mental, social, or spiritual states.
           </p>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-2)",
-            }}
-          >
+          <div style={styles.listContainer}>
             {conditions.map((cd: Condition, i: number) => (
               <ArrayItemCard
                 key={cd.id}
@@ -806,38 +691,21 @@ export default function CharacterPage() {
             </>
           }
         >
-          <p style={{ ...S.dim, marginBottom: "var(--space-5)" }}>
+          <p style={styles.sectionSubMb5}>
             What they've gained and lost over the course of the story.
           </p>
 
           <div
             className="seshat-flex-between"
-            style={{
-              marginBottom: "var(--space-3)",
-            }}
+            style={styles.sectionTitleRowMb3}
           >
-            <p
-              style={{
-                ...S.h2,
-                margin: 0,
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-1)",
-              }}
-            >
+            <p style={styles.titleTextWithIcon}>
               <EmojiEventsIcon sx={{ fontSize: 12 }} />
               Achievements ({achievements.length})
             </p>
             <GhostAddButton onClick={() => openAdd("achievement")} />
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-2)",
-              marginBottom: "var(--space-6)",
-            }}
-          >
+          <div style={styles.listContainerMb6}>
             {achievements.map((a: Achievement, i: number) => (
               <ArrayItemCard
                 key={a.id}
@@ -856,38 +724,22 @@ export default function CharacterPage() {
             ))}
           </div>
           {!achievements.length && (
-            <p style={{ ...S.dim, marginBottom: 20 }}>No achievements yet.</p>
+            <p style={styles.sectionSubMb20}>No achievements yet.</p>
           )}
 
           <hr style={S.rule} />
 
           <div
             className="seshat-flex-between"
-            style={{
-              marginBottom: "var(--space-3)",
-            }}
+            style={styles.sectionTitleRowMb3}
           >
-            <p
-              style={{
-                ...S.h2,
-                margin: 0,
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-1)",
-              }}
-            >
+            <p style={styles.titleTextWithIcon}>
               <HeartBrokenIcon sx={{ fontSize: 12 }} />
               Losses ({losses.length})
             </p>
             <GhostAddButton onClick={() => openAdd("loss")} />
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-2)",
-            }}
-          >
+          <div style={styles.listContainer}>
             {losses.map((ls: Loss, i: number) => (
               <ArrayItemCard
                 key={ls.id}
@@ -913,23 +765,17 @@ export default function CharacterPage() {
           }
           action={<GhostAddButton onClick={() => openAdd("relationship")} />}
         >
-          <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+          <p style={styles.sectionSub}>
             How this character relates to others over time.
           </p>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-2)",
-            }}
-          >
+          <div style={styles.listContainer}>
             {relationships.map((rel: Relationship, i: number) => {
               const otherChar = allCharacters.find((c) => c.id === rel.withId);
               const title = otherChar ? otherChar.name : "Unknown Character";
               return (
                 <ArrayItemCard
                   key={rel.id}
-                  color="var(--color-purple)"
+                  color="var(--color-primary)"
                   title={title}
                   subtitle={rel.feel ? `[${rel.feel}]` : undefined}
                   body={
@@ -956,15 +802,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -987,15 +825,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -1019,15 +849,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -1050,15 +872,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -1081,15 +895,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -1113,15 +919,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -1145,15 +943,7 @@ export default function CharacterPage() {
             footer={
               <button
                 onClick={handleSaveModal}
-                style={{
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                }}
+                style={styles.doneBtn}
               >
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
@@ -1176,7 +966,7 @@ export default function CharacterPage() {
             title={`Export ${char.name || "Character"}`}
             onClose={() => setShowExport(false)}
             footer={
-              <div style={{ display: "flex", gap: 12 }}>
+              <div style={styles.exportModalFooter}>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(exportText);
@@ -1187,7 +977,7 @@ export default function CharacterPage() {
                     ...S.ghost,
                     color: copied
                       ? "var(--color-green)"
-                      : "var(--color-purple)",
+                      : "var(--color-primary)",
                   }}
                 >
                   {copied ? "Copied!" : "Copy text"}
@@ -1198,8 +988,8 @@ export default function CharacterPage() {
               </div>
             }
           >
-            <div style={{ padding: 12 }}>
-              <p style={{ ...S.dim, marginBottom: 16 }}>
+            <div style={styles.exportModalBody}>
+              <p style={styles.sectionSubMb16}>
                 Paste into your AI's system prompt. Includes full psychological
                 profile, history, state, and relationships for this character.
                 Includes any unsaved changes you just made!
@@ -1207,19 +997,7 @@ export default function CharacterPage() {
               <textarea
                 readOnly
                 value={exportText}
-                style={{
-                  ...S.textarea,
-                  border: "none",
-                  background: "var(--bg-export-ta)",
-                  padding: 16,
-                  borderRadius: 4,
-                  height: 360,
-                  width: 500,
-                  resize: "none",
-                  fontFamily: "monospace",
-                  fontSize: 13,
-                  outline: "none",
-                }}
+                style={styles.exportTextarea}
                 onFocus={(e) => e.target.select()}
               />
             </div>
@@ -1232,19 +1010,7 @@ export default function CharacterPage() {
           <button
             onClick={() => setShowExport(true)}
             data-testid="character-export-btn-floating"
-            style={{
-              ...S.ghost,
-              fontSize: "var(--text-xs)",
-              letterSpacing: 1,
-              color: "var(--color-purple)",
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 3,
-              padding: "6px 14px",
-              borderRadius: 4,
-              border: "1px solid transparent",
-            }}
+            style={styles.exportBtn}
           >
             <ArticleIcon sx={{ fontSize: 12 }} />
             export
@@ -1253,39 +1019,7 @@ export default function CharacterPage() {
             disabled={!isDirty || isSaving}
             onClick={onSubmit}
             title="Save changes"
-            style={
-              isDirty
-                ? {
-                    background: "var(--color-green)",
-                    color: "var(--bg-app)",
-                    border: "1px solid var(--color-green)",
-                    borderRadius: 4,
-                    padding: "6px 14px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    cursor: isSaving ? "default" : "pointer",
-                    opacity: isSaving ? 0.7 : 1,
-                  }
-                : {
-                    ...S.ghost,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: 1,
-                    color: "var(--color-green)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "6px 14px",
-                    borderRadius: 4,
-                    border: "1px solid transparent",
-                    opacity: 0.5,
-                    cursor: "default",
-                  }
-            }
+            style={isDirty ? activeSaveStyle : styles.saveBtnInactive}
           >
             <SaveIcon sx={{ fontSize: 14 }} />
             {isSaving ? "saving..." : "save"}
@@ -1296,135 +1030,156 @@ export default function CharacterPage() {
   );
 }
 
-// ── Read-only array item card ─────────────────────────────────────────────
-interface ArrayItemCardProps {
-  color: string;
-  title: string;
-  subtitle?: string;
-  body?: string;
-  tags?: string[];
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function ArrayItemCard({
-  color,
-  title,
-  subtitle,
-  body,
-  tags,
-  onEdit,
-  onDelete,
-}: ArrayItemCardProps) {
-  const [hover, setHover] = useState(false);
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 0,
-        border: `1px solid ${hover ? "var(--border-field)" : "var(--border)"}`,
-        borderLeft: `3px solid ${color}`,
-        background: hover ? "var(--bg-hover)" : "var(--bg-entry)",
-        boxShadow: hover ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
-        transition: "background 0.1s, border 0.1s, box-shadow 0.1s",
-        cursor: "pointer",
-        borderRadius: "4px",
-      }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onClick={onEdit}
-    >
-      <div style={{ flex: 1, padding: "12px 16px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 10,
-            marginBottom: body || (tags && tags.length) ? 6 : 0,
-          }}
-        >
-          <span style={{ fontSize: 14, color: "var(--text-primary)" }}>
-            {title}
-          </span>
-          {subtitle && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--text-muted)",
-                letterSpacing: 0.5,
-              }}
-            >
-              {subtitle}
-            </span>
-          )}
-        </div>
-        {body && (
-          <p
-            style={{
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              margin: "0 0 4px",
-              lineHeight: 1.55,
-            }}
-          >
-            {body.length > 120 ? body.slice(0, 117) + "…" : body}
-          </p>
-        )}
-        {tags && tags.length > 0 && (
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {tags.map((tag, i) => (
-              <span
-                key={i}
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  fontStyle: "italic",
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Action buttons — shown on hover */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          padding: "0 12px",
-          opacity: hover ? 1 : 0,
-          transition: "opacity 0.15s",
-        }}
-      >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "4px",
-            color: "var(--text-muted)",
-            display: "flex",
-          }}
-          title="Delete item"
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.color = "var(--color-red)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.color = "var(--text-muted)")
-          }
-        >
-          <CloseIcon sx={{ fontSize: 14 }} />
-        </button>
-      </div>
-    </div>
-  );
-}
+const styles = {
+  notFound: {
+    padding: "40px",
+    color: "var(--text-secondary)",
+  },
+  header: {
+    marginBottom: "var(--space-6)",
+    gap: "var(--space-4)",
+  },
+  nameContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-3)",
+    flex: 1,
+  },
+  colorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  nameInput: {
+    ...S.input,
+    fontSize: "var(--text-3xl)",
+    fontFamily: "var(--font-serif)",
+    border: "none",
+    padding: 0,
+    flex: 1,
+    color: "var(--text-primary)",
+    letterSpacing: 0.3,
+  },
+  buttonsContainer: {
+    display: "flex",
+    gap: "var(--space-3)",
+  },
+  exportBtn: {
+    ...S.ghost,
+    fontSize: "var(--text-xs)",
+    letterSpacing: 1,
+    color: "var(--color-primary)",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    padding: "6px 14px",
+    borderRadius: 4,
+    border: "1px solid transparent",
+  },
+  saveBtnActive: {
+    background: "var(--color-green)",
+    color: "var(--bg-app)",
+    border: "1px solid var(--color-green)",
+    borderRadius: 4,
+    padding: "6px 14px",
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: 1,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+  },
+  saveBtnInactive: {
+    ...S.ghost,
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: 1,
+    color: "var(--color-green)",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "6px 14px",
+    borderRadius: 4,
+    border: "1px solid transparent",
+    opacity: 0.5,
+    cursor: "default",
+  },
+  sectionSub: {
+    ...S.dim,
+    marginBottom: "var(--space-3)",
+  },
+  sectionSubMb5: {
+    ...S.dim,
+    marginBottom: "var(--space-5)",
+  },
+  sectionSubMb16: {
+    ...S.dim,
+    marginBottom: 16,
+  },
+  sectionSubMb20: {
+    ...S.dim,
+    marginBottom: 20,
+  },
+  sectionSubItalic: {
+    ...S.dim,
+    fontStyle: "italic",
+  },
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "var(--space-2)",
+  },
+  listContainerMb6: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "var(--space-2)",
+    marginBottom: "var(--space-6)",
+  },
+  sectionTitleRow: {
+    marginBottom: "var(--space-4)",
+  },
+  sectionTitleRowMb3: {
+    marginBottom: "var(--space-3)",
+  },
+  titleTextWithIcon: {
+    ...S.h2,
+    margin: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-1)",
+  },
+  doneBtn: {
+    ...S.ghost,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: "var(--color-green)",
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+  },
+  exportModalFooter: {
+    display: "flex",
+    gap: 12,
+  },
+  exportModalBody: {
+    padding: 12,
+  },
+  exportTextarea: {
+    ...S.textarea,
+    border: "none",
+    background: "var(--bg-export-ta)",
+    padding: 16,
+    borderRadius: 4,
+    height: 360,
+    width: 500,
+    resize: "none",
+    fontFamily: "monospace",
+    fontSize: 13,
+    outline: "none",
+  },
+} satisfies Record<string, React.CSSProperties>;

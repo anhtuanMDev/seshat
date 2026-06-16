@@ -114,227 +114,99 @@ export default function IssueDetailPage() {
     }
   };
 
+  const postBtnStyle = (disabled: boolean) => ({
+    background: "var(--color-primary)",
+    color: "var(--bg-app)",
+    border: "none",
+    borderRadius: 6,
+    padding: "10px 24px",
+    fontWeight: 600,
+    fontSize: 13,
+    cursor: disabled ? "default" : "pointer" as const,
+    opacity: disabled ? 0.6 : 1,
+    transition: "opacity 0.2s",
+  });
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        width: "100vw",
-        overflow: "hidden",
-        background: "var(--bg-app)",
-        color: "var(--text-primary)",
-      }}
-    >
+    <div style={styles.container}>
       {/* ── Global Header ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 28px",
-          height: 48,
-          borderBottom: "1px solid var(--border)",
-          background: "var(--bg-top)",
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span
-            style={{ ...S.logo, cursor: "pointer" }}
-            onClick={() => navigate("/")}
-          >
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <span style={styles.headerLogo} onClick={() => navigate("/")}>
             Seshat
           </span>
-          <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/</span>
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-            onClick={() => navigate("/issues")}
-          >
+          <span style={styles.headerDivider}>/</span>
+          <span style={styles.headerForumLink} onClick={() => navigate("/issues")}>
             Forum & Feedback
           </span>
-          <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/</span>
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: "var(--text-primary)",
-            }}
-          >
-            Discussion #{number}
-          </span>
+          <span style={styles.headerDivider}>/</span>
+          <span style={styles.headerIssueNumber}>Discussion #{number}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={styles.headerRight}>
           {activeBookId && (
             <button
               onClick={() => navigate(`/book/${activeBookId}/world`)}
-              style={{
-                ...S.ghost,
-                fontSize: 13,
-                color: "var(--color-primary)",
-                border: "1px solid var(--border)",
-                borderRadius: 4,
-                padding: "4px 12px",
-                background: "transparent",
-                cursor: "pointer",
-              }}
+              style={styles.backToBookBtn}
             >
               ← Back to Book
             </button>
           )}
-          <button
-            onClick={() => navigate("/issues")}
-            style={{
-              ...S.ghost,
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-          >
+          <button onClick={() => navigate("/issues")} style={styles.myDiscussionsBtn}>
             All Discussions
           </button>
           <button
             onClick={toggleTheme}
-            style={{
-              ...S.ghost,
-              padding: 8,
-              display: "flex",
-              alignItems: "center",
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
+            style={styles.themeToggleBtn}
             title={theme === "light" ? "Dark Mode" : "Light Mode"}
           >
             {theme === "light" ? (
-              <DarkModeIcon sx={{ fontSize: 16 }} />
+              <DarkModeIcon sx={styles.themeIcon} />
             ) : (
-              <LightModeIcon sx={{ fontSize: 16 }} />
+              <LightModeIcon sx={styles.themeIcon} />
             )}
           </button>
         </div>
       </div>
 
       {/* ── Main Details Container ── */}
-      <div
-        ref={animRef}
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "40px 24px",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 960,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+      <div ref={animRef} style={styles.mainContainer}>
+        <div style={styles.contentWrapper}>
           {isLoading ? (
-            <div
-              style={{
-                display: "flex",
-                flex: 1,
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 300,
-              }}
-            >
-              <CircularProgress
-                size={32}
-                sx={{ color: "var(--text-secondary)" }}
-              />
+            <div style={styles.loadingWrapper}>
+              <CircularProgress size={32} sx={styles.loadingProgress} />
             </div>
           ) : activeIssue ? (
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={styles.detailsCol}>
               {/* Header card info */}
-              <div
-                style={{
-                  padding: "24px 32px",
-                  background: "var(--bg-main)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 12,
-                  marginBottom: 24,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={styles.infoCard}>
+                <div style={styles.infoCardHeader}>
                   <span
                     style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      letterSpacing: 0.5,
-                      textTransform: "uppercase",
-                      padding: "3px 8px",
-                      borderRadius: 4,
+                      ...styles.badgeBase,
                       background: getBadgeColors(activeIssue.type).bg,
                       color: getBadgeColors(activeIssue.type).text,
                     }}
                   >
                     {activeIssue.type}
                   </span>
-                  <span
-                    style={{
-                      fontSize: 13,
-                      color: "var(--text-muted)",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <span style={styles.infoCardIssueNum}>
                     Issue #{activeIssue.number}
                   </span>
                   <a
                     href={activeIssue.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                      marginLeft: "auto",
-                      fontSize: 12,
-                      color: "var(--color-blue)",
-                      textDecoration: "underline",
-                      fontWeight: 500,
-                    }}
+                    style={styles.viewOnGitHubLink}
                   >
                     View on GitHub
                   </a>
                 </div>
 
-                <h1
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 600,
-                    margin: "6px 0 0",
-                    color: "var(--text-primary)",
-                    lineHeight: 1.3,
-                    fontFamily: "var(--font-serif)",
-                  }}
-                >
-                  {activeIssue.title}
-                </h1>
+                <h1 style={styles.infoCardTitle}>{activeIssue.title}</h1>
 
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "var(--text-secondary)",
-                    borderTop: "1px solid var(--border)",
-                    paddingTop: 12,
-                    marginTop: 4,
-                  }}
-                >
+                <div style={styles.infoCardAuthorRow}>
                   Opened by{" "}
-                  <span
-                    style={{ color: "var(--text-primary)", fontWeight: 600 }}
-                  >
+                  <span style={styles.infoCardAuthorName}>
                     {activeIssue.author}
                   </span>{" "}
                   on {formatDate(activeIssue.createdAt)}
@@ -342,102 +214,32 @@ export default function IssueDetailPage() {
               </div>
 
               {/* Issue Description */}
-              <div
-                style={{
-                  padding: "24px 32px",
-                  background: "var(--bg-side)",
-                  borderRadius: 12,
-                  border: "1px solid var(--border)",
-                  marginBottom: 40,
-                  whiteSpace: "pre-wrap",
-                  fontSize: 16,
-                  lineHeight: 1.6,
-                  color: "var(--text-primary)",
-                }}
-              >
-                {activeIssue.body}
-              </div>
+              <div style={styles.issueBodyContainer}>{activeIssue.body}</div>
 
               {/* Discussion Thread */}
-              <h3
-                style={{
-                  ...S.h2,
-                  borderBottom: "1px solid var(--border)",
-                  paddingBottom: 12,
-                  marginBottom: 20,
-                  fontSize: 18,
-                  fontWeight: 600,
-                }}
-              >
+              <h3 style={styles.discussionHeader}>
                 Discussion ({comments.length})
               </h3>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                  marginBottom: 40,
-                }}
-              >
+              <div style={styles.commentsList}>
                 {comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    style={{
-                      padding: "20px 24px",
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 10,
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 10,
-                        fontSize: 12,
-                        color: "var(--text-secondary)",
-                      }}
-                    >
+                  <div key={comment.id} style={styles.commentCard}>
+                    <div style={styles.commentHeader}>
                       <span>
                         Posted by{" "}
-                        <span
-                          style={{
-                            color: "var(--text-primary)",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <span style={styles.commentAuthorName}>
                           {comment.author}
                         </span>
                       </span>
                       <span>{formatDate(comment.createdAt)}</span>
                     </div>
-                    <div
-                      style={{
-                        fontSize: 15,
-                        lineHeight: 1.5,
-                        color: "var(--text-primary)",
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      {comment.body}
-                    </div>
+                    <div style={styles.commentBody}>{comment.body}</div>
                   </div>
                 ))}
 
                 {comments.length === 0 && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "48px 24px",
-                      border: "1px dashed var(--border)",
-                      borderRadius: 12,
-                      background: "var(--bg-side)",
-                    }}
-                  >
-                    <p style={{ ...S.dim, fontStyle: "italic", margin: 0 }}>
+                  <div style={styles.emptyCommentsContainer}>
+                    <p style={styles.emptyCommentsText}>
                       No comments yet. Start the conversation below!
                     </p>
                   </div>
@@ -445,50 +247,21 @@ export default function IssueDetailPage() {
               </div>
 
               {/* Comment Editor */}
-              <div
-                style={{
-                  borderTop: "1px solid var(--border)",
-                  paddingTop: 32,
-                  marginBottom: 40,
-                }}
-              >
-                <h4 style={{ ...S.h2, marginBottom: 16, fontSize: 16 }}>
-                  Add a comment
-                </h4>
+              <div style={styles.commentEditorWrapper}>
+                <h4 style={styles.addCommentHeader}>Add a comment</h4>
                 <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Share your feedback, ideas, or questions with the community..."
                   rows={5}
                   disabled={isSubmittingComment}
-                  style={{
-                    ...S.textarea,
-                    marginBottom: 16,
-                    padding: "12px 16px",
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
+                  style={styles.commentTextarea}
                 />
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <div style={styles.commentFooterRow}>
                   <button
                     onClick={handleSubmitComment}
                     disabled={isSubmittingComment || !commentText.trim()}
-                    style={{
-                      background: "var(--color-primary)",
-                      color: "var(--bg-app)",
-                      border: "none",
-                      borderRadius: 6,
-                      padding: "10px 24px",
-                      fontWeight: 600,
-                      fontSize: 13,
-                      cursor:
-                        isSubmittingComment || !commentText.trim()
-                          ? "default"
-                          : "pointer",
-                      opacity:
-                        isSubmittingComment || !commentText.trim() ? 0.6 : 1,
-                      transition: "opacity 0.2s",
-                    }}
+                    style={postBtnStyle(isSubmittingComment || !commentText.trim())}
                   >
                     {isSubmittingComment ? "Posting..." : "Post Comment"}
                   </button>
@@ -496,8 +269,8 @@ export default function IssueDetailPage() {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: 40 }}>
-              <p style={{ color: "var(--text-secondary)" }}>Issue not found.</p>
+            <div style={styles.notFoundWrapper}>
+              <p style={styles.notFoundText}>Issue not found.</p>
             </div>
           )}
         </div>
@@ -505,3 +278,253 @@ export default function IssueDetailPage() {
     </div>
   );
 }
+
+const styles = {
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100vh",
+    width: "100vw",
+    overflow: "hidden",
+    background: "var(--bg-app)",
+    color: "var(--text-primary)",
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 28px",
+    height: 48,
+    borderBottom: "1px solid var(--border)",
+    background: "var(--bg-top)",
+    flexShrink: 0,
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+  },
+  headerLogo: {
+    ...S.logo,
+    cursor: "pointer",
+  },
+  headerDivider: {
+    color: "var(--text-muted)",
+    fontSize: 13,
+  },
+  headerForumLink: {
+    fontSize: 14,
+    fontWeight: 500,
+    color: "var(--text-secondary)",
+    cursor: "pointer",
+  },
+  headerIssueNumber: {
+    fontSize: 14,
+    fontWeight: 500,
+    color: "var(--text-primary)",
+  },
+  headerRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+  },
+  backToBookBtn: {
+    ...S.ghost,
+    fontSize: 13,
+    color: "var(--color-primary)",
+    border: "1px solid var(--border)",
+    borderRadius: 4,
+    padding: "4px 12px",
+    background: "transparent",
+    cursor: "pointer",
+  },
+  myDiscussionsBtn: {
+    ...S.ghost,
+    fontSize: 13,
+    color: "var(--text-secondary)",
+    cursor: "pointer",
+  },
+  themeToggleBtn: {
+    ...S.ghost,
+    padding: 8,
+    display: "flex",
+    alignItems: "center",
+    color: "var(--text-secondary)",
+    cursor: "pointer",
+  },
+  themeIcon: {
+    fontSize: 16,
+  },
+  mainContainer: {
+    flex: 1,
+    overflowY: "auto",
+    padding: "40px 24px",
+    display: "flex",
+    justifyContent: "center",
+  },
+  contentWrapper: {
+    width: "100%",
+    maxWidth: 960,
+    display: "flex",
+    flexDirection: "column",
+  },
+  loadingWrapper: {
+    display: "flex",
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 300,
+  },
+  loadingProgress: {
+    color: "var(--text-secondary)",
+  },
+  detailsCol: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  infoCard: {
+    padding: "24px 32px",
+    background: "var(--bg-main)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    marginBottom: 24,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+  },
+  infoCardHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
+  infoCardIssueNum: {
+    fontSize: 13,
+    color: "var(--text-muted)",
+    fontWeight: 500,
+  },
+  viewOnGitHubLink: {
+    marginLeft: "auto",
+    fontSize: 12,
+    color: "var(--color-blue)",
+    textDecoration: "underline",
+    fontWeight: 500,
+  },
+  infoCardTitle: {
+    fontSize: 24,
+    fontWeight: 600,
+    margin: "6px 0 0",
+    color: "var(--text-primary)",
+    lineHeight: 1.3,
+    fontFamily: "var(--font-serif)",
+  },
+  infoCardAuthorRow: {
+    fontSize: 13,
+    color: "var(--text-secondary)",
+    borderTop: "1px solid var(--border)",
+    paddingTop: 12,
+    marginTop: 4,
+  },
+  infoCardAuthorName: {
+    color: "var(--text-primary)",
+    fontWeight: 600,
+  },
+  issueBodyContainer: {
+    padding: "24px 32px",
+    background: "var(--bg-side)",
+    borderRadius: 12,
+    border: "1px solid var(--border)",
+    marginBottom: 40,
+    whiteSpace: "pre-wrap",
+    fontSize: 16,
+    lineHeight: 1.6,
+    color: "var(--text-primary)",
+  },
+  discussionHeader: {
+    ...S.h2,
+    borderBottom: "1px solid var(--border)",
+    paddingBottom: 12,
+    marginBottom: 20,
+    fontSize: 18,
+    fontWeight: 600,
+  },
+  commentsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    marginBottom: 40,
+  },
+  commentCard: {
+    padding: "20px 24px",
+    background: "var(--bg-card)",
+    border: "1px solid var(--border)",
+    borderRadius: 10,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+  },
+  commentHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+    fontSize: 12,
+    color: "var(--text-secondary)",
+  },
+  commentAuthorName: {
+    color: "var(--text-primary)",
+    fontWeight: 600,
+  },
+  commentBody: {
+    fontSize: 15,
+    lineHeight: 1.5,
+    color: "var(--text-primary)",
+    whiteSpace: "pre-wrap",
+  },
+  emptyCommentsContainer: {
+    textAlign: "center",
+    padding: "48px 24px",
+    border: "1px dashed var(--border)",
+    borderRadius: 12,
+    background: "var(--bg-side)",
+  },
+  emptyCommentsText: {
+    ...S.dim,
+    fontStyle: "italic",
+    margin: 0,
+  },
+  commentEditorWrapper: {
+    borderTop: "1px solid var(--border)",
+    paddingTop: 32,
+    marginBottom: 40,
+  },
+  addCommentHeader: {
+    ...S.h2,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  commentTextarea: {
+    ...S.textarea,
+    marginBottom: 16,
+    padding: "12px 16px",
+    borderRadius: 8,
+    fontSize: 14,
+  },
+  commentFooterRow: {
+    display: "flex",
+    justifyContent: "flex-end",
+  },
+  notFoundWrapper: {
+    textAlign: "center",
+    padding: 40,
+  },
+  notFoundText: {
+    color: "var(--text-secondary)",
+  },
+  badgeBase: {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    padding: "3px 8px",
+    borderRadius: 4,
+  },
+} satisfies Record<string, React.CSSProperties>;

@@ -13,24 +13,46 @@ export const SnapshotCard = memo(function SnapshotCard({ color, event, power }: 
   return (
     <div
       style={{
-        padding: "var(--space-2) var(--space-3)",
-        background: "var(--bg-status)",
-        borderRadius: "var(--space-1)",
+        ...styles.container,
         borderLeft: `3px solid ${color}`,
       }}
     >
-      <p style={{ ...S.dim, marginBottom: "var(--space-1)", display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
-        <CameraAltIcon sx={{ fontSize: 11 }} />Snapshot</p>
-      <p style={{ fontSize: "var(--text-xs)", color: "var(--text-primary)" }}>
+      <p style={styles.header}>
+        <CameraAltIcon sx={{ fontSize: 11 }} />Snapshot
+      </p>
+      <p style={styles.eventText}>
         {event
           ? `T${event.time} — ${event.title}`
           : "No timeline data"}
       </p>
       {power && (
-        <p style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+        <p style={styles.powerText}>
           Power: {power}
         </p>
       )}
     </div>
   );
 });
+
+const styles = {
+  container: {
+    padding: "var(--space-2) var(--space-3)",
+    background: "var(--bg-status)",
+    borderRadius: "var(--space-1)",
+  },
+  header: {
+    ...S.dim,
+    marginBottom: "var(--space-1)",
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-1)",
+  },
+  eventText: {
+    fontSize: "var(--text-xs)",
+    color: "var(--text-primary)",
+  },
+  powerText: {
+    fontSize: "11px",
+    color: "var(--text-secondary)",
+  },
+} satisfies Record<string, React.CSSProperties>;

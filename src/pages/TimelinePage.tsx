@@ -8,19 +8,9 @@ import {
 import { S, mkEvent } from "../lib/utils";
 import { TimelineIcon, AddIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import type { Event, Character } from "../lib/types";
+import type { Event } from "../lib/types";
 import { useCallback, useState } from "react";
-
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  Story: "var(--color-blue)",
-  Trauma: "var(--color-red)",
-  Revelation: "var(--color-purple)",
-  Conflict: "var(--color-orange)",
-  Bond: "var(--color-green)",
-  Loss: "var(--color-red)",
-  Growth: "var(--color-teal)",
-  Mystery: "var(--color-dark)",
-};
+import { EventCard } from "../components/event/EventCard";
 
 export default function TimelinePage() {
   const { bookId } = useParams();
@@ -52,67 +42,26 @@ export default function TimelinePage() {
   return (
     <div ref={ref} className="seshat-page-container">
       {/* Header */}
-      <div
-        className="seshat-flex-between"
-        style={{
-          marginBottom: "var(--space-8)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-          <TimelineIcon sx={{ fontSize: 14, color: "var(--text-muted)" }} />
-          <span
-            style={{
-              fontSize: "var(--text-xs)",
-              letterSpacing: 3,
-              textTransform: "uppercase",
-              color: "var(--text-secondary)",
-            }}
-          >
+      <div className="seshat-flex-between" style={styles.header}>
+        <div style={styles.headerTitleRow}>
+          <TimelineIcon sx={styles.headerIcon} />
+          <span style={styles.headerText}>
             Timeline ({events.length})
           </span>
         </div>
-        <button
-          onClick={add}
-          style={{
-            ...S.ghost,
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-1)",
-            fontSize: "var(--text-xs)",
-            color: "var(--text-secondary)",
-          }}
-        >
+        <button onClick={add} style={styles.addBtn}>
           <AddIcon sx={{ fontSize: 14 }} />
           add event
         </button>
       </div>
 
       {uniqueSubplots.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            gap: "var(--space-2)",
-            marginBottom: "var(--space-5)",
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "var(--text-xs)",
-              color: "var(--text-muted)",
-              textTransform: "uppercase",
-              letterSpacing: 1,
-            }}
-          >
-            Subplots:
-          </span>
+        <div style={styles.subplotsRow}>
+          <span style={styles.subplotsLabel}>Subplots:</span>
           <button
             onClick={() => setSubplotFilter(null)}
             style={{
-              ...S.ghost,
-              fontSize: 12,
-              padding: "2px 8px",
+              ...styles.filterBtn,
               background:
                 subplotFilter === null ? "var(--bg-hover)" : "transparent",
               color:
@@ -128,9 +77,7 @@ export default function TimelinePage() {
               key={sp}
               onClick={() => setSubplotFilter(sp)}
               style={{
-                ...S.ghost,
-                fontSize: 12,
-                padding: "2px 8px",
+                ...styles.filterBtn,
                 background:
                   subplotFilter === sp ? "var(--bg-hover)" : "transparent",
                 color:
@@ -146,24 +93,13 @@ export default function TimelinePage() {
       )}
 
       {/* Timeline */}
-      <div style={{ position: "relative", marginLeft: 8 }}>
+      <div style={styles.timelineWrapper}>
         {/* Vertical line */}
         {sortedEvents.length > 1 && (
-          <div
-            style={{
-              position: "absolute",
-              left: 18,
-              top: 36,
-              bottom: 36,
-              width: 2,
-              background: "linear-gradient(to bottom, var(--border), var(--border-field), var(--border))",
-              transform: "translateX(-50%)",
-              zIndex: 0,
-            }}
-          />
+          <div style={styles.verticalLine} />
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+        <div style={styles.eventsList}>
           {filteredEvents.map((e: Event) => (
             <EventCard
               key={e.id}
@@ -176,15 +112,7 @@ export default function TimelinePage() {
       </div>
 
       {!events.length && (
-        <div
-          style={{
-            paddingTop: 60,
-            textAlign: "center",
-            color: "var(--text-muted)",
-            fontSize: 13,
-            fontStyle: "italic",
-          }}
-        >
+        <div style={styles.emptyContainer}>
           No events yet. Add one to begin.
         </div>
       )}
@@ -192,283 +120,76 @@ export default function TimelinePage() {
   );
 }
 
-function EventCard({
-  event: e,
-  characters,
-  onClick,
-}: {
-  event: Event;
-  characters: Character[];
-  onClick: () => void;
-}) {
-  const typeColor = EVENT_TYPE_COLORS[e.type] || "var(--text-muted)";
-  const presentChars = (e.characters || [])
-    .map((id: string) => characters.find((c: Character) => c.id === id))
-    .filter(Boolean) as Character[];
-
-  const dateTag = [
-    e.startDate && e.startDate.replace("T", " "),
-    e.endDate && `→ ${e.endDate.replace("T", " ")}`,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        display: "flex",
-        gap: "var(--space-6)",
-        cursor: "pointer",
-        position: "relative",
-      }}
-      onMouseEnter={(e) => {
-        const card = e.currentTarget.querySelector(".event-card-inner") as HTMLElement;
-        const node = e.currentTarget.querySelector(".event-node") as HTMLElement;
-        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
-        if (card) {
-          card.style.background = "var(--bg-hover)";
-          card.style.borderColor = "var(--border)";
-          card.style.transform = "translateY(-2px)";
-          card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
-        }
-        if (node) {
-          node.style.boxShadow = `0 0 12px ${typeColor}88`;
-          node.style.background = typeColor;
-          node.style.color = "#000";
-        }
-        if (arrow) {
-          arrow.style.opacity = "1";
-          arrow.style.transform = "translateY(-50%) translateX(4px)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        const card = e.currentTarget.querySelector(".event-card-inner") as HTMLElement;
-        const node = e.currentTarget.querySelector(".event-node") as HTMLElement;
-        const arrow = e.currentTarget.querySelector(".hover-arrow") as HTMLElement;
-        if (card) {
-          card.style.background = "var(--bg-entry)";
-          card.style.borderColor = "transparent";
-          card.style.transform = "translateY(0)";
-          card.style.boxShadow = "none";
-        }
-        if (node) {
-          node.style.boxShadow = "none";
-          node.style.background = `var(--bg-app)`;
-          node.style.color = typeColor;
-        }
-        if (arrow) {
-          arrow.style.opacity = "0";
-          arrow.style.transform = "translateY(-50%)";
-        }
-      }}
-    >
-      {/* Time bubble */}
-      <div style={{ position: "relative", width: 36, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div
-          className="event-node"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: "var(--bg-app)",
-            border: `2px solid ${typeColor}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            zIndex: 1,
-            transition: "all 0.2s ease",
-            marginTop: 16,
-            alignSelf: "flex-start",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: 0.5,
-              color: "inherit",
-            }}
-          >
-            T{e.time}
-          </span>
-        </div>
-      </div>
-
-      {/* Card body */}
-      <div
-        className="event-card-inner"
-        style={{
-          flex: 1,
-          padding: "var(--space-5) var(--space-6)",
-          background: "var(--bg-entry)",
-          borderRadius: "8px",
-          border: "1px solid transparent",
-          transition: "all 0.2s ease",
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-3)",
-        }}
-      >
-        {/* Header Row */}
-        <div
-          className="seshat-flex-between"
-          style={{
-            gap: "var(--space-2)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-            <span
-              style={{
-                fontSize: "var(--text-sm)",
-                fontWeight: 500,
-                color: "var(--text-primary)",
-                letterSpacing: 0.2,
-              }}
-            >
-              {e.title || "Untitled event"}
-            </span>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: 1,
-                textTransform: "uppercase",
-                color: typeColor,
-                background: `${typeColor}15`,
-                padding: "3px 10px",
-                borderRadius: "12px",
-                border: `1px solid ${typeColor}33`,
-              }}
-            >
-              {e.type}
-            </span>
-          </div>
-          
-          {dateTag && (
-            <span
-              style={{
-                fontSize: 12,
-                color: "var(--text-muted)",
-                fontFamily: "monospace",
-                letterSpacing: -0.2,
-                background: "var(--bg-side)",
-                padding: "2px 8px",
-                borderRadius: "4px",
-              }}
-            >
-              {dateTag}
-            </span>
-          )}
-        </div>
-
-        {/* Content Row */}
-        {(e.subplot || e.description || e.consequence) && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {e.subplot && (
-              <div>
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: "2px 6px",
-                    borderRadius: 4,
-                    background: "var(--bg-hover)",
-                    color: "var(--text-secondary)",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Plot: {e.subplot}
-                </span>
-              </div>
-            )}
-
-            {e.description && (
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "var(--text-secondary)",
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}
-              >
-                {e.description.length > 200
-                  ? e.description.slice(0, 197) + "…"
-                  : e.description}
-              </p>
-            )}
-
-            {e.consequence && (
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-muted)",
-                  margin: "4px 0 0 0",
-                  fontStyle: "italic",
-                  display: "flex",
-                  gap: 6,
-                }}
-              >
-                <span style={{ color: typeColor }}>↳</span>
-                {e.consequence.length > 150
-                  ? e.consequence.slice(0, 147) + "…"
-                  : e.consequence}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Characters Row */}
-        {presentChars.length > 0 && (
-          <div
-            style={{ 
-              display: "flex", 
-              gap: 6, 
-              flexWrap: "wrap",
-              marginTop: "auto",
-              paddingTop: 8,
-            }}
-          >
-            {presentChars.map((c: Character) => (
-              <span
-                key={c.id}
-                style={{
-                  fontSize: 11,
-                  color: c.color,
-                  background: `${c.color}11`,
-                  border: `1px solid ${c.color}33`,
-                  padding: "2px 8px",
-                  borderRadius: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <span style={{ width: 4, height: 4, borderRadius: "50%", background: c.color }} />
-                {c.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Hover arrow indicator */}
-        <span
-          className="hover-arrow"
-          style={{
-            position: "absolute",
-            right: 20,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: 14,
-            color: "var(--text-muted)",
-            opacity: 0,
-            transition: "opacity 0.2s, transform 0.2s",
-          }}
-        >
-          →
-        </span>
-      </div>
-    </div>
-  );
-}
+const styles = {
+  header: {
+    marginBottom: "var(--space-8)",
+  },
+  headerTitleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-2)",
+  },
+  headerIcon: {
+    fontSize: 14,
+    color: "var(--text-muted)",
+  },
+  headerText: {
+    fontSize: "var(--text-xs)",
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    color: "var(--text-secondary)",
+  },
+  addBtn: {
+    ...S.ghost,
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-1)",
+    fontSize: "var(--text-xs)",
+    color: "var(--text-secondary)",
+  },
+  subplotsRow: {
+    display: "flex",
+    gap: "var(--space-2)",
+    marginBottom: "var(--space-5)",
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  subplotsLabel: {
+    fontSize: "var(--text-xs)",
+    color: "var(--text-muted)",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  filterBtn: {
+    ...S.ghost,
+    fontSize: 12,
+    padding: "2px 8px",
+  },
+  timelineWrapper: {
+    position: "relative",
+    marginLeft: 8,
+  },
+  verticalLine: {
+    position: "absolute",
+    left: 18,
+    top: 36,
+    bottom: 36,
+    width: 2,
+    background:
+      "linear-gradient(to bottom, var(--border), var(--border-field), var(--border))",
+    transform: "translateX(-50%)",
+    zIndex: 0,
+  },
+  eventsList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "var(--space-4)",
+  },
+  emptyContainer: {
+    paddingTop: 60,
+    textAlign: "center",
+    color: "var(--text-muted)",
+    fontSize: 13,
+    fontStyle: "italic",
+  },
+} satisfies Record<string, React.CSSProperties>;

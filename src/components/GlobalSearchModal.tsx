@@ -37,8 +37,6 @@ export function GlobalSearchModal({ open, onClose }: Props) {
   // Find how many chapters are unloaded
   const unloadedCount = chapters.filter((c) => c.body === undefined).length;
 
-
-
   const results = useMemo(() => {
     if (!query || query.length < 2) return [];
     
@@ -59,7 +57,6 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       c.traumas?.forEach(t => {
         if (t.description?.toLowerCase().includes(term)) hits.push({ type: "Character Trauma", name: c.name, snippet: t.description });
       });
-      // ... we could do a deep scan
       const dump = JSON.stringify(c).toLowerCase();
       if (dump.includes(term) && !hits.find(h => h.name === c.name)) {
         hits.push({ type: "Character", name: c.name, snippet: "(Matched in notes/lore)" });
@@ -112,9 +109,8 @@ export function GlobalSearchModal({ open, onClose }: Props) {
     setIsReplacing(true);
     try {
       const bookData = appStore.books[bookIdx].get();
-      const regex = new RegExp(query, 'gi'); // Case-insensitive global replace
+      const regex = new RegExp(query, 'gi');
 
-      // Safe recursive replace that only affects string values, never keys or IDs
       const deepReplace = (obj: unknown): unknown => {
         if (typeof obj === 'string') {
           return obj.replace(regex, replaceStr);
@@ -136,8 +132,6 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       };
 
       const newBookData = deepReplace(bookData) as BookData;
-      
-      // 3. Set the new book data back into the store
       appStore.books[bookIdx].set(newBookData);
       
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
@@ -165,71 +159,161 @@ export function GlobalSearchModal({ open, onClose }: Props) {
 
   return (
     <Modal title="Global Search & Replace" onClose={onClose}>
-      <div className="seshat-flex-col" style={{ padding: "0 var(--space-5) var(--space-5)", gap: "var(--space-4)" }}>
-        <p style={{ ...S.dim, margin: 0, fontSize: 13 }}>
+      <div className="seshat-flex-col" style={styles.content}>
+        <p style={styles.helpText}>
           Search across all loaded characters, events, items, world glossary, and chapters. 
           {unloadedCount > 0 && (
-            <span style={{ color: "var(--color-orange)", display: "block", marginTop: 8 }}>
+            <span style={styles.warningText}>
               ⚠️ {unloadedCount} chapters are unloaded to save memory. Their body text will not be searched or replaced until they are visited.
             </span>
           )}
         </p>
 
-        <div style={{ display: "flex", gap: "var(--space-2)" }}>
+        <div style={styles.inputsRow}>
           <input
-            style={{ ...S.input, flex: 1 }}
+            style={styles.input}
             placeholder="Search for..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
           <input
-            style={{ ...S.input, flex: 1 }}
+            style={styles.input}
             placeholder="Replace with..."
             value={replaceStr}
             onChange={(e) => setReplaceStr(e.target.value)}
           />
         </div>
 
-        <div className="seshat-flex-end" style={{ gap: "var(--space-2)" }}>
+        <div className="seshat-flex-end" style={styles.actionsRow}>
           <button style={S.ghost} onClick={onClose}>Cancel</button>
           {!showConfirm ? (
             <button 
-              style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} 
+              style={styles.replaceBtn} 
               onClick={handleReplaceClick}
               disabled={!query || !replaceStr || isReplacing}
             >
               {isReplacing ? "Replacing..." : "Replace All"}
             </button>
           ) : (
-            <div className="seshat-flex-align" style={{ gap: "var(--space-2)", background: "var(--bg-panel)", padding: "var(--space-1) var(--space-2)", borderRadius: 4, border: "1px solid var(--color-red)" }}>
-              <span style={{ fontSize: 12, color: "var(--color-red)" }}>Are you sure?</span>
-              <button style={{ ...S.ghost, color: "var(--text-muted)" }} onClick={() => setShowConfirm(false)}>No</button>
-              <button style={{ ...S.pill, background: "var(--color-red)", color: "white", border: "none" }} onClick={executeReplaceAll}>Yes, replace all</button>
+            <div className="seshat-flex-align" style={styles.confirmBox}>
+              <span style={styles.confirmWarningText}>Are you sure?</span>
+              <button style={styles.confirmNoBtn} onClick={() => setShowConfirm(false)}>No</button>
+              <button style={styles.replaceBtn} onClick={executeReplaceAll}>Yes, replace all</button>
             </div>
           )}
         </div>
 
-        <div style={{ maxHeight: 300, overflowY: "auto", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+        <div style={styles.resultsContainer}>
           {results.length > 0 ? (
-            <div className="seshat-flex-col" style={{ gap: "var(--space-2)" }}>
-              <span style={{ ...S.dim, fontSize: 12 }}>Found {results.length} matches:</span>
+            <div className="seshat-flex-col" style={styles.resultsList}>
+              <span style={styles.resultsHeader}>Found {results.length} matches:</span>
               {results.slice(0, 50).map((r, i) => (
-                <div key={i} style={{ padding: 8, background: "var(--bg-panel)", borderRadius: 4 }}>
-                  <div style={{ fontSize: 11, color: "var(--color-purple)", fontWeight: "bold" }}>{r.type}</div>
-                  <div style={{ fontWeight: "bold", fontSize: 14 }}>{r.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
+                <div key={i} style={styles.resultCard}>
+                  <div style={styles.resultType}>{r.type}</div>
+                  <div style={styles.resultName}>{r.name}</div>
+                  <div style={styles.resultSnippet}>
                     "...{r.snippet.length > 60 ? r.snippet.substring(0, 60) + "..." : r.snippet}..."
                   </div>
                 </div>
               ))}
-              {results.length > 50 && <div style={{ textAlign: "center", ...S.dim }}>+ {results.length - 50} more</div>}
+              {results.length > 50 && <div style={styles.moreResults}>+ {results.length - 50} more</div>}
             </div>
           ) : query.length >= 2 ? (
-            <div style={{ textAlign: "center", ...S.dim, padding: 20 }}>No matches found.</div>
+            <div style={styles.noResults}>No matches found.</div>
           ) : null}
         </div>
       </div>
     </Modal>
   );
 }
+
+const styles = {
+  content: {
+    padding: "0 var(--space-5) var(--space-5)",
+    gap: "var(--space-4)",
+  },
+  helpText: {
+    ...S.dim,
+    margin: 0,
+    fontSize: 13,
+  },
+  warningText: {
+    color: "var(--color-orange)",
+    display: "block",
+    marginTop: 8,
+  },
+  inputsRow: {
+    display: "flex",
+    gap: "var(--space-2)",
+  },
+  input: {
+    ...S.input,
+    flex: 1,
+  },
+  actionsRow: {
+    gap: "var(--space-2)",
+  },
+  replaceBtn: {
+    ...S.pill,
+    background: "var(--color-red)",
+    color: "white",
+    border: "none",
+  },
+  confirmBox: {
+    gap: "var(--space-2)",
+    background: "var(--bg-panel)",
+    padding: "var(--space-1) var(--space-2)",
+    borderRadius: 4,
+    border: "1px solid var(--color-red)",
+  },
+  confirmWarningText: {
+    fontSize: 12,
+    color: "var(--color-red)",
+  },
+  confirmNoBtn: {
+    ...S.ghost,
+    color: "var(--text-muted)",
+  },
+  resultsContainer: {
+    maxHeight: 300,
+    overflowY: "auto",
+    borderTop: "1px solid var(--border)",
+    paddingTop: 10,
+  },
+  resultsList: {
+    gap: "var(--space-2)",
+  },
+  resultsHeader: {
+    ...S.dim,
+    fontSize: 12,
+  },
+  resultCard: {
+    padding: 8,
+    background: "var(--bg-panel)",
+    borderRadius: 4,
+  },
+  resultType: {
+    fontSize: 11,
+    color: "var(--color-primary)",
+    fontWeight: "bold",
+  },
+  resultName: {
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  resultSnippet: {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    marginTop: 4,
+  },
+  moreResults: {
+    textAlign: "center",
+    ...S.dim,
+  },
+  noResults: {
+    textAlign: "center",
+    ...S.dim,
+    padding: 20,
+  },
+} satisfies Record<string, React.CSSProperties>;

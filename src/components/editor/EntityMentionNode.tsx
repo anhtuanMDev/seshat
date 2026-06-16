@@ -10,7 +10,6 @@ function MentionNodeView(props: NodeViewProps) {
   const { id, trigger, label } = node.attrs;
 
   const entity = useSelector(() => {
-    // Find the active book
     const activeBookId = appStore.activeBookId.get();
     if (!activeBookId) return null;
     const bookIdx = appStore.books
@@ -43,7 +42,7 @@ function MentionNodeView(props: NodeViewProps) {
   let color = "inherit";
   if (entity) {
     if (trigger === "@" && "color" in entity) color = entity.color || "inherit";
-    else if (trigger === "#") color = "#5e35b1";
+    else if (trigger === "#") color = "#00acc1"; // Teal
     else if (trigger === "%") color = "#d32f2f";
     else if (trigger === "~") color = "#388e3c";
     else if (trigger === "^") color = "#0288d1";
@@ -57,11 +56,8 @@ function MentionNodeView(props: NodeViewProps) {
       data-id={id}
       data-trigger={trigger}
       style={{
+        ...styles.nodeWrapper,
         color,
-        cursor: "pointer",
-        display: "inline-block",
-        fontWeight: 500,
-        transition: "color 0.2s",
       }}
     >
       {trigger}
@@ -119,3 +115,12 @@ export const EntityMention = Node.create({
     return ReactNodeViewRenderer(MentionNodeView);
   },
 });
+
+const styles = {
+  nodeWrapper: {
+    cursor: "pointer",
+    display: "inline-block",
+    fontWeight: 500,
+    transition: "color 0.2s",
+  },
+} satisfies Record<string, React.CSSProperties>;

@@ -84,8 +84,6 @@ export default function WorldPage() {
   const ref = useAnimateIn();
   const [isFloating, setIsFloating] = useState(false);
 
-
-
   const nations = useWatch({ control, name: "nations" }) || [];
   const techniques = useWatch({ control, name: "techniques" }) || [];
   const ingredients = useWatch({ control, name: "ingredients" }) || [];
@@ -233,23 +231,10 @@ export default function WorldPage() {
         className="seshat-page-container"
         onScroll={(e) => setIsFloating(e.currentTarget.scrollTop > 80)}
       >
-      <div
-        className="seshat-flex-between"
-        style={{
-          marginBottom: "var(--space-6)",
-          gap: "var(--space-4)",
-        }}
-      >
+      <div className="seshat-flex-between" style={styles.header}>
         <input
           {...register("title")}
-          style={{
-            ...S.input,
-            fontSize: "var(--text-2xl)",
-            border: "none",
-            padding: 0,
-            flex: 1,
-            color: "var(--text-primary)",
-          }}
+          style={styles.titleInput}
         />
         <button
           disabled={!isDirty || isSaving}
@@ -258,40 +243,17 @@ export default function WorldPage() {
           style={
             isDirty
               ? {
-                  background: "var(--color-green)",
-                  color: "var(--bg-app)",
-                  border: "none",
-                  borderRadius: 4,
-                  padding: "6px 14px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
+                  ...styles.saveBtnActive,
                   cursor: isSaving ? "default" : "pointer",
                   opacity: isSaving ? 0.7 : 1,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }
-              : {
-                  ...S.ghost,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                  color: "var(--color-green)",
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  opacity: 0.5,
-                  cursor: "default",
-                }
+              : styles.saveBtnInactive
           }
         >
           <SaveIcon sx={{ fontSize: 14 }} />
           {isSaving ? "saving..." : "save"}
         </button>
       </div>
-
-
 
       <Field
         label="Synopsis / premise"
@@ -340,7 +302,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+        <p style={styles.sectionSubtitle}>
           Kingdoms, empires, tribes, hidden societies. The political landscape
           your characters live inside.
         </p>
@@ -372,7 +334,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+        <p style={styles.sectionSubtitle}>
           Martial arts, blacksmithing schools, biological arts, forbidden
           knowledge. How things are made and mastered in this world.
         </p>
@@ -401,7 +363,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+        <p style={styles.sectionSubtitle}>
           Materials, herbs, minerals, essences. The raw stuff of your world —
           what things are made from.
         </p>
@@ -430,7 +392,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+        <p style={styles.sectionSubtitle}>
           Creatures, beasts, horrors. What hunts your characters — and what
           drops when they die.
         </p>
@@ -459,7 +421,7 @@ export default function WorldPage() {
         }
         defaultOpen={false}
       >
-        <p style={{ ...S.dim, marginBottom: "var(--space-3)" }}>
+        <p style={styles.sectionSubtitle}>
           World-level relics, legendary items not yet held by anyone. When a
           character claims one, add it to their equipment too.
         </p>
@@ -484,30 +446,11 @@ export default function WorldPage() {
             style={
               isDirty
                 ? {
-                    background: "var(--color-green)",
-                    color: "var(--bg-app)",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "6px 14px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
+                    ...styles.saveBtnActive,
                     cursor: isSaving ? "default" : "pointer",
                     opacity: isSaving ? 0.7 : 1,
                   }
-                : {
-                    ...S.ghost,
-                    fontSize: 12,
-                    letterSpacing: 1,
-                    color: "var(--color-green)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: 0.5,
-                    cursor: "default",
-                  }
+                : styles.saveBtnInactive
             }
           >
             <SaveIcon sx={{ fontSize: 14 }} />
@@ -518,3 +461,47 @@ export default function WorldPage() {
     </>
   );
 }
+
+const styles = {
+  header: {
+    marginBottom: "var(--space-6)",
+    gap: "var(--space-4)",
+  },
+  titleInput: {
+    ...S.input,
+    fontSize: "var(--text-2xl)",
+    border: "none",
+    padding: 0,
+    flex: 1,
+    color: "var(--text-primary)",
+  },
+  saveBtnActive: {
+    background: "var(--color-green)",
+    color: "var(--bg-app)",
+    border: "none",
+    borderRadius: 4,
+    padding: "6px 14px",
+    fontSize: 12,
+    fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+  },
+  saveBtnInactive: {
+    ...S.ghost,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: "var(--color-green)",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    opacity: 0.5,
+    cursor: "default",
+  },
+  sectionSubtitle: {
+    ...S.dim,
+    marginBottom: "var(--space-3)",
+  },
+} satisfies Record<string, React.CSSProperties>;

@@ -98,7 +98,7 @@ export function DraftsPanel({
   const confirmDelete = async () => {
     if (draftToDelete) {
       const draftId = draftToDelete.id;
-      setDraftToDelete(null); // Hide modal immediately
+      setDraftToDelete(null);
       setProcessingDraftId(draftId);
       await onDeleteDraft(draftId);
       setProcessingDraftId(null);
@@ -106,28 +106,9 @@ export function DraftsPanel({
   };
 
   return (
-    <div style={{ padding: "0 8px 0 0" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <p
-          title="Version History"
-          style={{
-            ...S.h2,
-            margin: 0,
-            fontSize: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            color: "var(--text-secondary)",
-            textTransform: "none",
-          }}
-        >
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <p title="Version History" style={styles.title}>
           <HistoryIcon sx={{ fontSize: 14 }} />
           Drafts ({drafts.filter((d) => !d.isDeleted).length})
         </p>
@@ -135,33 +116,15 @@ export function DraftsPanel({
           type="button"
           onClick={handleSave}
           title="Save current editor content as a new draft"
-          style={{
-            ...S.ghost,
-            fontSize: 11,
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            color: "var(--color-blue)",
-            padding: "4px 8px",
-            background:
-              "color-mix(in srgb, var(--color-blue) 10%, transparent)",
-            borderRadius: 4,
-          }}
+          style={styles.addDraftBtn}
         >
           <AddIcon sx={{ fontSize: 14 }} /> Draft
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={styles.list}>
         {drafts.filter((d) => !d.isDeleted).length === 0 && (
-          <p
-            style={{
-              fontSize: 12,
-              color: "var(--text-muted)",
-              fontStyle: "italic",
-              margin: 0,
-            }}
-          >
+          <p style={styles.emptyText}>
             No drafts saved yet.
           </p>
         )}
@@ -192,33 +155,24 @@ export function DraftsPanel({
               <div
                 key={draft.id}
                 style={{
+                  ...styles.cardBase,
                   background: isActive ? "var(--bg-active)" : "var(--bg-card)",
-                  border: "1px solid",
                   borderColor: isActive
                     ? isModified
                       ? "var(--color-orange)"
                       : "var(--color-blue)"
                     : "var(--border)",
-                  borderRadius: 6,
-                  padding: "12px 16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  position: "relative",
-                  overflow: "hidden",
-                  opacity: processingDraftId === draft.id ? 0.5 : 1,
+                  borderWidth: 1,
+                  borderStyle: "solid",
                   pointerEvents:
                     processingDraftId === draft.id ? "none" : "auto",
-                  transition: "opacity 0.2s",
+                  opacity: processingDraftId === draft.id ? 0.5 : 1,
                 }}
               >
                 {isActive && (
                   <div
                     style={{
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: 3,
+                      ...styles.lineIndicator,
                       background: isModified
                         ? "var(--color-orange)"
                         : "var(--color-blue)",
@@ -226,37 +180,23 @@ export function DraftsPanel({
                   />
                 )}
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
+                <div style={styles.cardHeader}>
                   <div
                     onClick={() => {
                       setDraftToRename(draft);
                       setNewDraftName(draft.name);
                     }}
-                    style={{ cursor: "pointer", transition: "opacity 0.2s" }}
+                    style={styles.renameTrigger}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.opacity = "0.7")
                     }
                     onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                     title="Click to rename draft"
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        marginBottom: 4,
-                      }}
-                    >
+                    <div style={styles.draftHeaderRow}>
                       <span
                         style={{
-                          fontSize: 13,
-                          fontWeight: "600",
+                          ...styles.draftName,
                           color: isActive
                             ? isModified
                               ? "var(--color-orange)"
@@ -267,13 +207,7 @@ export function DraftsPanel({
                         {draft.name}
                       </span>
                     </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "var(--text-muted)",
-                        letterSpacing: 0.2,
-                      }}
-                    >
+                    <div style={styles.draftMeta}>
                       {new Date(draft.createdAt).toLocaleString(undefined, {
                         month: "short",
                         day: "numeric",
@@ -282,45 +216,25 @@ export function DraftsPanel({
                         hour12: false,
                       })}
                       {" · "}
-                      <span style={{ color: "var(--text-secondary)" }}>
+                      <span style={styles.charCount}>
                         {draft.body?.length?.toLocaleString() || 0} chars
                       </span>
                     </div>
                   </div>
 
-                  <div
-                    style={{ display: "flex", gap: 8, alignItems: "center" }}
-                  >
+                  <div style={styles.actionRow}>
                     <>
                       {!isActive ? (
                         <button
                           onClick={() => handleRestore(draft)}
-                          style={{
-                            ...S.ghost,
-                            fontSize: 11,
-                            color: "var(--color-blue)",
-                            fontWeight: "600",
-                            padding: "4px 10px",
-                            border:
-                              "1px solid color-mix(in srgb, var(--color-blue) 30%, transparent)",
-                            borderRadius: 4,
-                          }}
+                          style={styles.loadBtn}
                         >
                           Load
                         </button>
                       ) : isModified ? (
                         <button
                           onClick={() => handleRestore(draft)}
-                          style={{
-                            ...S.ghost,
-                            fontSize: 11,
-                            color: "var(--color-orange)",
-                            fontWeight: "600",
-                            padding: "4px 10px",
-                            border:
-                              "1px solid color-mix(in srgb, var(--color-orange) 30%, transparent)",
-                            borderRadius: 4,
-                          }}
+                          style={styles.revertBtn}
                           title="Discard current unsaved changes and revert to this draft"
                         >
                           Revert
@@ -332,12 +246,7 @@ export function DraftsPanel({
                             onClick={() => {
                               setDraftToDelete(draft);
                             }}
-                            style={{
-                              ...S.ghost,
-                              color: "var(--text-muted)",
-                              padding: 4,
-                              borderRadius: 4,
-                            }}
+                            style={styles.deleteBtn}
                             title="Move to trash"
                             onMouseEnter={(e) =>
                               (e.currentTarget.style.color = "var(--color-red)")
@@ -360,22 +269,13 @@ export function DraftsPanel({
       </div>
 
       {drafts.some((d) => d.isDeleted) && (
-        <div
-          style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}
-        >
+        <div style={styles.trashTriggerWrapper}>
           <button
             onClick={() => {
               setSelectedDraftIds(new Set());
               setShowTrash(true);
             }}
-            style={{
-              ...S.ghost,
-              fontSize: 11,
-              color: "var(--text-muted)",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            style={styles.trashTriggerBtn}
           >
             <DeleteIcon sx={{ fontSize: 12 }} />
             Trash Bin ({drafts.filter((d) => d.isDeleted).length})
@@ -385,26 +285,12 @@ export function DraftsPanel({
 
       {showTrash && (
         <Modal title="Trash Bin" onClose={() => setShowTrash(false)}>
-          <div style={{ padding: "0 24px 24px" }}>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                marginBottom: 16,
-                fontSize: 13,
-              }}
-            >
+          <div style={styles.modalContent}>
+            <p style={styles.modalSubText}>
               Deleted drafts are preserved here. Restoring a draft will return
               it to your active history.
             </p>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                maxHeight: "50vh",
-                overflowY: "auto",
-              }}
-            >
+            <div style={styles.trashList}>
               {drafts
                 .filter((d) => d.isDeleted)
                 .sort((a, b) => b.createdAt - a.createdAt)
@@ -421,18 +307,13 @@ export function DraftsPanel({
                         setSelectedDraftIds(next);
                       }}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
+                        ...styles.trashRowBase,
                         background: isSelected
                           ? "color-mix(in srgb, var(--color-blue) 10%, var(--bg-card))"
                           : "var(--bg-card)",
-                        padding: "12px",
-                        borderRadius: 6,
                         border: isSelected
                           ? "1px solid var(--color-blue)"
                           : "1px solid var(--border)",
-                        cursor: processingDraftId ? "default" : "pointer",
                         opacity:
                           processingDraftId === "batch" ||
                           processingDraftId === draft.id
@@ -443,30 +324,18 @@ export function DraftsPanel({
                           processingDraftId === draft.id
                             ? "none"
                             : "auto",
-                        transition: "all 0.2s",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                        }}
-                      >
+                      <div style={styles.trashRowLeft}>
                         <div
                           style={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: 4,
+                            ...styles.trashCheckbox,
                             border: isSelected
                               ? "none"
                               : "1px solid var(--text-muted)",
                             background: isSelected
                               ? "var(--color-blue)"
                               : "transparent",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
                           }}
                         >
                           {isSelected && (
@@ -488,19 +357,10 @@ export function DraftsPanel({
                           )}
                         </div>
                         <div>
-                          <div
-                            style={{
-                              fontSize: 13,
-                              fontWeight: "600",
-                              color: "var(--text-primary)",
-                              marginBottom: 4,
-                            }}
-                          >
+                          <div style={styles.trashDraftName}>
                             {draft.name}
                           </div>
-                          <div
-                            style={{ fontSize: 11, color: "var(--text-muted)" }}
-                          >
+                          <div style={styles.trashDraftMeta}>
                             {new Date(draft.createdAt).toLocaleString(
                               undefined,
                               {
@@ -512,7 +372,7 @@ export function DraftsPanel({
                               },
                             )}
                             {" · "}
-                            <span style={{ color: "var(--text-secondary)" }}>
+                            <span style={styles.charCount}>
                               {draft.body?.length?.toLocaleString() || 0} chars
                             </span>
                           </div>
@@ -522,14 +382,7 @@ export function DraftsPanel({
                   );
                 })}
             </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 24,
-              }}
-            >
+            <div style={styles.trashFooterRow}>
               <button
                 onClick={async () => {
                   if (selectedDraftIds.size > 0) {
@@ -549,7 +402,7 @@ export function DraftsPanel({
                   selectedDraftIds.size === 0 || processingDraftId === "batch"
                 }
                 style={{
-                  ...S.pill,
+                  ...styles.restoreSelectedBtnBase,
                   background:
                     selectedDraftIds.size > 0
                       ? "var(--color-blue)"
@@ -558,9 +411,6 @@ export function DraftsPanel({
                     selectedDraftIds.size > 0
                       ? "var(--bg-app)"
                       : "var(--text-muted)",
-                  border: "none",
-                  padding: "6px 20px",
-                  transition: "all 0.2s",
                   cursor: selectedDraftIds.size > 0 ? "pointer" : "default",
                   opacity: processingDraftId === "batch" ? 0.5 : 1,
                 }}
@@ -569,7 +419,7 @@ export function DraftsPanel({
               </button>
               <button
                 onClick={() => setShowTrash(false)}
-                style={{ ...S.ghost, padding: "6px 16px" }}
+                style={styles.closeBtn}
               >
                 Close
               </button>
@@ -580,8 +430,8 @@ export function DraftsPanel({
 
       {showSaveModal && (
         <Modal title="Save Draft" onClose={() => setShowSaveModal(false)}>
-          <div style={{ padding: "0 24px 24px" }}>
-            <p style={{ color: "var(--text-secondary)", marginBottom: 16 }}>
+          <div style={styles.modalContent}>
+            <p style={styles.modalSubText}>
               Name this draft (e.g., 'First Draft', 'Editor Polish'):
             </p>
             <input
@@ -591,33 +441,19 @@ export function DraftsPanel({
               onKeyDown={(e) => {
                 if (e.key === "Enter") confirmSave();
               }}
-              style={{
-                ...S.input,
-                padding: "8px 12px",
-                border: "1px solid var(--border)",
-                borderRadius: 4,
-                marginBottom: 24,
-              }}
+              style={styles.inputField}
             />
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
-            >
+            <div style={styles.modalButtonsRow}>
               <button
                 onClick={() => setShowSaveModal(false)}
-                style={{ ...S.ghost, padding: "6px 16px" }}
+                style={styles.closeBtn}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmSave}
                 disabled={!draftName.trim()}
-                style={{
-                  ...S.pill,
-                  background: "var(--color-blue)",
-                  color: "var(--bg-app)",
-                  border: "none",
-                  padding: "6px 20px",
-                }}
+                style={styles.savePillBtn}
               >
                 Save
               </button>
@@ -628,37 +464,20 @@ export function DraftsPanel({
 
       {draftToRestore && (
         <Modal title="Restore Draft" onClose={() => setDraftToRestore(null)}>
-          <div style={{ padding: "0 24px 24px" }}>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                marginBottom: 24,
-                lineHeight: 1.5,
-              }}
-            >
+          <div style={styles.modalContent}>
+            <p style={styles.modalSubTextLong}>
               Are you sure you want to restore '{draftToRestore.name}'? Your
               current unsaved text will be replaced. You can save it as a draft
               first if you want to keep it.
             </p>
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
-            >
+            <div style={styles.modalButtonsRow}>
               <button
                 onClick={() => setDraftToRestore(null)}
-                style={{ ...S.ghost, padding: "6px 16px" }}
+                style={styles.closeBtn}
               >
                 Cancel
               </button>
-              <button
-                onClick={confirmRestore}
-                style={{
-                  ...S.pill,
-                  background: "var(--color-red)",
-                  color: "var(--bg-app)",
-                  border: "none",
-                  padding: "6px 20px",
-                }}
-              >
+              <button onClick={confirmRestore} style={styles.redPillBtn}>
                 Restore
               </button>
             </div>
@@ -668,30 +487,19 @@ export function DraftsPanel({
 
       {draftToDelete && (
         <Modal title="Move to Trash" onClose={() => setDraftToDelete(null)}>
-          <div style={{ padding: "0 24px 24px" }}>
-            <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
+          <div style={styles.modalContent}>
+            <p style={styles.modalSubTextLong}>
               Are you sure you want to move '{draftToDelete.name}' to the trash
               bin?
             </p>
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
-            >
+            <div style={styles.modalButtonsRow}>
               <button
                 onClick={() => setDraftToDelete(null)}
-                style={{ ...S.ghost, padding: "6px 16px" }}
+                style={styles.closeBtn}
               >
                 Cancel
               </button>
-              <button
-                onClick={confirmDelete}
-                style={{
-                  ...S.pill,
-                  background: "var(--color-red)",
-                  color: "var(--bg-app)",
-                  border: "none",
-                  padding: "6px 20px",
-                }}
-              >
+              <button onClick={confirmDelete} style={styles.redPillBtn}>
                 Delete
               </button>
             </div>
@@ -701,8 +509,8 @@ export function DraftsPanel({
 
       {draftToRename && (
         <Modal title="Rename Draft" onClose={() => setDraftToRename(null)}>
-          <div style={{ padding: "0 24px 24px" }}>
-            <p style={{ color: "var(--text-secondary)", marginBottom: 16 }}>
+          <div style={styles.modalContent}>
+            <p style={styles.modalSubText}>
               Enter a new name for this draft:
             </p>
             <input
@@ -712,20 +520,12 @@ export function DraftsPanel({
               onKeyDown={(e) => {
                 if (e.key === "Enter") confirmRename();
               }}
-              style={{
-                ...S.input,
-                padding: "8px 12px",
-                border: "1px solid var(--border)",
-                borderRadius: 4,
-                marginBottom: 24,
-              }}
+              style={styles.inputField}
             />
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
-            >
+            <div style={styles.modalButtonsRow}>
               <button
                 onClick={() => setDraftToRename(null)}
-                style={{ ...S.ghost, padding: "6px 16px" }}
+                style={styles.closeBtn}
               >
                 Cancel
               </button>
@@ -736,11 +536,17 @@ export function DraftsPanel({
                   newDraftName.trim() === draftToRename.name
                 }
                 style={{
-                  ...S.pill,
-                  background: "var(--color-blue)",
-                  color: "var(--bg-app)",
-                  border: "none",
-                  padding: "6px 20px",
+                  ...styles.renameBtnBase,
+                  cursor:
+                    !newDraftName.trim() ||
+                    newDraftName.trim() === draftToRename.name
+                      ? "default"
+                      : "pointer",
+                  opacity:
+                    !newDraftName.trim() ||
+                    newDraftName.trim() === draftToRename.name
+                      ? 0.5
+                      : 1,
                 }}
               >
                 Rename
@@ -752,3 +558,234 @@ export function DraftsPanel({
     </div>
   );
 }
+
+const styles = {
+  container: {
+    padding: "0 8px 0 0",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  title: {
+    ...S.h2,
+    margin: 0,
+    fontSize: 12,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "var(--text-secondary)",
+    textTransform: "none",
+  },
+  addDraftBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    color: "var(--color-blue)",
+    padding: "4px 8px",
+    background: "color-mix(in srgb, var(--color-blue) 10%, transparent)",
+    borderRadius: 4,
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    fontStyle: "italic",
+    margin: 0,
+  },
+  cardBase: {
+    borderRadius: 6,
+    padding: "12px 16px",
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+    overflow: "hidden",
+    transition: "opacity 0.2s",
+  },
+  lineIndicator: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+  },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  renameTrigger: {
+    cursor: "pointer",
+    transition: "opacity 0.2s",
+  },
+  draftHeaderRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
+  draftName: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  draftMeta: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    letterSpacing: 0.2,
+  },
+  charCount: {
+    color: "var(--text-secondary)",
+  },
+  actionRow: {
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+  },
+  loadBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    color: "var(--color-blue)",
+    fontWeight: "600",
+    padding: "4px 10px",
+    border: "1px solid color-mix(in srgb, var(--color-blue) 30%, transparent)",
+    borderRadius: 4,
+  },
+  revertBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    color: "var(--color-orange)",
+    fontWeight: "600",
+    padding: "4px 10px",
+    border: "1px solid color-mix(in srgb, var(--color-orange) 30%, transparent)",
+    borderRadius: 4,
+  },
+  deleteBtn: {
+    ...S.ghost,
+    color: "var(--text-muted)",
+    padding: 4,
+    borderRadius: 4,
+  },
+  trashTriggerWrapper: {
+    marginTop: 16,
+    display: "flex",
+    justifyContent: "flex-end",
+  },
+  trashTriggerBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    color: "var(--text-muted)",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  modalContent: {
+    padding: "0 24px 24px",
+  },
+  modalSubText: {
+    color: "var(--text-secondary)",
+    marginBottom: 16,
+    fontSize: 13,
+  },
+  modalSubTextLong: {
+    color: "var(--text-secondary)",
+    marginBottom: 24,
+    lineHeight: 1.5,
+  },
+  trashList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    maxHeight: "50vh",
+    overflowY: "auto",
+  },
+  trashRowBase: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "12px",
+    borderRadius: 6,
+    cursor: "pointer",
+    transition: "all 0.2s",
+  },
+  trashRowLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
+  trashCheckbox: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  trashDraftName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "var(--text-primary)",
+    marginBottom: 4,
+  },
+  trashDraftMeta: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  },
+  trashFooterRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 24,
+  },
+  restoreSelectedBtnBase: {
+    ...S.pill,
+    border: "none",
+    padding: "6px 20px",
+    transition: "all 0.2s",
+  },
+  closeBtn: {
+    ...S.ghost,
+    padding: "6px 16px",
+  },
+  inputField: {
+    ...S.input,
+    padding: "8px 12px",
+    border: "1px solid var(--border)",
+    borderRadius: 4,
+    marginBottom: 24,
+  },
+  modalButtonsRow: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  savePillBtn: {
+    ...S.pill,
+    background: "var(--color-blue)",
+    color: "var(--bg-app)",
+    border: "none",
+    padding: "6px 20px",
+  },
+  redPillBtn: {
+    ...S.pill,
+    background: "var(--color-red)",
+    color: "var(--bg-app)",
+    border: "none",
+    padding: "6px 20px",
+  },
+  renameBtnBase: {
+    ...S.pill,
+    background: "var(--color-blue)",
+    color: "var(--bg-app)",
+    border: "none",
+    padding: "6px 20px",
+    transition: "opacity 0.2s, cursor 0.2s",
+  },
+} satisfies Record<string, React.CSSProperties>;

@@ -109,17 +109,8 @@ export function ReferencePanel({
   return (
     <div className={`seshat-chapter-panel seshat-flex-col ${isOpen ? "open" : ""}`}>
       <div
-        style={{
-          display: "flex",
-          gap: 12,
-          borderBottom: "1px solid var(--border)",
-          paddingBottom: 8,
-          overflowX: "auto",
-          scrollbarWidth: "none", // For Firefox
-          msOverflowStyle: "none", // For IE/Edge
-          flexShrink: 0,
-        }}
-        className="no-scrollbar" // Assuming we might have a utility class, but inline works for basics
+        style={styles.tabContainer}
+        className="no-scrollbar"
       >
         <style>
           {`
@@ -160,10 +151,7 @@ export function ReferencePanel({
               key={tab}
               onClick={() => onTabChange(tab)}
               style={{
-                ...S.ghost,
-                fontSize: 11,
-                letterSpacing: 2,
-                textTransform: "uppercase",
+                ...styles.tabButton,
                 color:
                   panelTab === tab
                     ? "var(--text-primary)"
@@ -174,11 +162,6 @@ export function ReferencePanel({
                 marginLeft: index === 0 ? "8px" : "0",
                 marginRight: index === arr.length - 1 ? "16px" : "0",
                 marginTop: 12,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                flexShrink: 0,
-                whiteSpace: "nowrap",
               }}
             >
               {icon}
@@ -188,31 +171,24 @@ export function ReferencePanel({
         })}
       </div>
 
-      <div
-        style={{
-          paddingLeft: 12,
-          paddingBottom: 124,
-          flex: 1,
-          overflowY: "auto",
-        }}
-      >
+      <div style={styles.contentContainer}>
         {panelTab === "chars" && (
           <div>
-            <div className="seshat-flex-align" style={{ gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
+            <div className="seshat-flex-align" style={styles.quickPinRow}>
               <input
                 list="unpinned-chars"
                 value={charInput}
                 onChange={(e) => handleCharInput(e.target.value)}
                 onKeyDown={handleQuickAddChar}
                 placeholder="Quick pin character..."
-                style={{ ...S.input, flex: 1, padding: "6px 12px", fontSize: 12 }}
+                style={styles.quickPinInput}
               />
               <datalist id="unpinned-chars">
                 {unpinnedChars.map(c => <option key={c.id} value={c.name} />)}
               </datalist>
               <button 
                 onClick={() => setShowCharModal(true)}
-                style={{ ...S.ghost, padding: "6px" }}
+                style={styles.pinAddBtn}
                 title="Pin multiple characters"
               >
                 <AddIcon sx={{ fontSize: 16 }} />
@@ -220,7 +196,7 @@ export function ReferencePanel({
             </div>
             
             {pinnedCharObjs.length === 0 ? (
-              <p style={{ ...S.dim, marginTop: 10 }}>No characters pinned yet.</p>
+              <p style={styles.noCharsText}>No characters pinned yet.</p>
             ) : (
               pinnedCharObjs.map((c: Character) => (
                 <CharCard key={c.id} char={c} events={events} />
@@ -229,13 +205,7 @@ export function ReferencePanel({
 
             {showCharModal && (
               <Modal title="Pin Characters" onClose={() => setShowCharModal(false)}>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 5,
-                  }}
-                >
+                <div style={styles.tagWrapGrid}>
                   {characters.map((c: Character) => (
                     <ContextTag
                       key={c.id}
@@ -247,8 +217,8 @@ export function ReferencePanel({
                   ))}
                   {!characters.length && <p style={S.dim}>No characters yet.</p>}
                 </div>
-                <div style={{ marginTop: 24, textAlign: "right" }}>
-                  <button style={{ ...S.button, padding: "6px 16px" }} onClick={() => setShowCharModal(false)}>
+                <div style={styles.modalFooter}>
+                  <button style={styles.modalDoneBtn} onClick={() => setShowCharModal(false)}>
                     Done
                   </button>
                 </div>
@@ -259,17 +229,10 @@ export function ReferencePanel({
 
         {panelTab === "events" && (
           <div>
-            <p style={{ ...S.dim, marginBottom: 10 }}>
+            <p style={styles.sectionDimText}>
               Pin timeline events this chapter covers.
             </p>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 5,
-                marginBottom: 16,
-              }}
-            >
+            <div style={styles.tagWrapGridMargin}>
               {sortedEvents.map((e: Event) => (
                 <ContextTag
                   key={e.id}
@@ -296,8 +259,8 @@ export function ReferencePanel({
         )}
 
         {panelTab === "notes" && (
-          <div className="seshat-flex-col" style={{ height: "100%" }}>
-            <p style={{ ...S.dim, marginBottom: 10 }}>
+          <div className="seshat-flex-col" style={styles.fullHeightCol}>
+            <p style={styles.sectionDimText}>
               Private notes, research, and threads to pull later...
             </p>
             {notesNode}
@@ -305,17 +268,98 @@ export function ReferencePanel({
         )}
 
         {panelTab === "drafts" && (
-          <div style={{ paddingTop: 12 }}>{draftsNode}</div>
+          <div style={styles.paddingTop12}>{draftsNode}</div>
         )}
 
         {panelTab === "foreshadows" && (
-          <div style={{ paddingTop: 12 }}>{foreshadowsNode}</div>
+          <div style={styles.paddingTop12}>{foreshadowsNode}</div>
         )}
 
         {panelTab === "continuity" && (
-          <div style={{ paddingTop: 12, height: "100%" }}>{continuityNode}</div>
+          <div style={styles.paddingTop12FullHeight}>{continuityNode}</div>
         )}
       </div>
     </div>
   );
 }
+
+const styles = {
+  tabContainer: {
+    display: "flex",
+    gap: 12,
+    borderBottom: "1px solid var(--border)",
+    paddingBottom: 8,
+    overflowX: "auto",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+    flexShrink: 0,
+  },
+  tabButton: {
+    ...S.ghost,
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+  },
+  contentContainer: {
+    paddingLeft: 12,
+    paddingBottom: 124,
+    flex: 1,
+    overflowY: "auto",
+  },
+  quickPinRow: {
+    gap: "var(--space-2)",
+    marginBottom: "var(--space-4)",
+  },
+  quickPinInput: {
+    ...S.input,
+    flex: 1,
+    padding: "6px 12px",
+    fontSize: 12,
+  },
+  pinAddBtn: {
+    ...S.ghost,
+    padding: "6px",
+  },
+  noCharsText: {
+    ...S.dim,
+    marginTop: 10,
+  },
+  tagWrapGrid: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 5,
+  },
+  tagWrapGridMargin: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 5,
+    marginBottom: 16,
+  },
+  modalFooter: {
+    marginTop: 24,
+    textAlign: "right",
+  },
+  modalDoneBtn: {
+    ...S.button,
+    padding: "6px 16px",
+  },
+  sectionDimText: {
+    ...S.dim,
+    marginBottom: 10,
+  },
+  fullHeightCol: {
+    height: "100%",
+  },
+  paddingTop12: {
+    paddingTop: 12,
+  },
+  paddingTop12FullHeight: {
+    paddingTop: 12,
+    height: "100%",
+  },
+} satisfies Record<string, React.CSSProperties>;

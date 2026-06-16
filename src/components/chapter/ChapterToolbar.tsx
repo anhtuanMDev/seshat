@@ -20,21 +20,19 @@ export function ChapterToolbar({
   isDirty,
   isFloating,
 }: ChapterToolbarProps) {
+  const isSaveDisabled = !isDirty || isSaving;
+
   return (
     <div className={`seshat-chapter-toolbar ${showPanel ? "panel-open" : ""} ${isFloating ? "floating" : ""}`}>
       <button
         onClick={onSave}
         title="Save changes"
-        disabled={!isDirty || isSaving}
+        disabled={isSaveDisabled}
         className="seshat-flex-align"
         style={{
-          ...S.ghost,
-          fontSize: 11,
-          letterSpacing: 1,
-          color: "var(--color-green)",
-          gap: 3,
-          opacity: (!isDirty || isSaving) ? 0.5 : 1,
-          cursor: (!isDirty || isSaving) ? "default" : "pointer",
+          ...styles.saveBtn,
+          opacity: isSaveDisabled ? 0.5 : 1,
+          cursor: isSaveDisabled ? "default" : "pointer",
         }}
       >
         <SaveIcon sx={{ fontSize: 12 }} />
@@ -44,12 +42,9 @@ export function ChapterToolbar({
         onClick={onTogglePanel}
         className="seshat-flex-align"
         style={{
-          ...S.ghost,
-          fontSize: 11,
-          letterSpacing: 1,
-          color: showPanel ? "var(--color-purple)" : "var(--text-muted)",
-          borderBottom: showPanel ? "1px solid var(--color-purple)" : "none",
-          gap: 3,
+          ...styles.toggleBtn,
+          color: showPanel ? "var(--color-primary)" : "var(--text-muted)",
+          borderBottom: showPanel ? "1px solid var(--color-primary)" : "none",
         }}
       >
         <ArticleIcon sx={{ fontSize: 12 }} />
@@ -59,13 +54,7 @@ export function ChapterToolbar({
         onClick={onExport}
         title="Export to plain text DOCX"
         className="seshat-flex-align"
-        style={{
-          ...S.ghost,
-          fontSize: 11,
-          letterSpacing: 1,
-          color: "var(--text-muted)",
-          gap: 3,
-        }}
+        style={styles.exportBtn}
       >
         <FileDownloadIcon sx={{ fontSize: 12 }} />
         export
@@ -73,3 +62,26 @@ export function ChapterToolbar({
     </div>
   );
 }
+
+const styles = {
+  saveBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: "var(--color-green)",
+    gap: 3,
+  },
+  toggleBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    letterSpacing: 1,
+    gap: 3,
+  },
+  exportBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: "var(--text-muted)",
+    gap: 3,
+  },
+} satisfies Record<string, React.CSSProperties>;

@@ -12,7 +12,7 @@ interface ScoreBreakdownProps {
 export function ScoreBreakdown({ name, color, score, notes }: ScoreBreakdownProps) {
   return (
     <div>
-      <p style={{ ...S.h2, color, marginBottom: "var(--space-2)" }}>
+      <p style={{ ...styles.header, color }}>
         {name} — score: {Math.round(score * 10) / 10}
       </p>
       {notes.map((n, i) => (
@@ -24,3 +24,10 @@ export function ScoreBreakdown({ name, color, score, notes }: ScoreBreakdownProp
     </div>
   );
 }
+
+const styles = {
+  header: {
+    ...S.h2,
+    marginBottom: "var(--space-2)",
+  },
+} satisfies Record<string, React.CSSProperties>;

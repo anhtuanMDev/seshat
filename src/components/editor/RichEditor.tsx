@@ -21,7 +21,7 @@ import { EntityMention } from "./EntityMentionNode";
 import { PinPointExtension } from "./PinPointExtension";
 import CharMentionTooltip from "./CharMentionTooltip";
 import UnsavedGuard from "./UnsavedGuard";
-import MentionHelpButton from "./MentionHelpButton";
+import { MenuBar } from "./MenuBar";
 
 interface RichEditorProps<T extends FieldValues = FieldValues> {
   content?: string;
@@ -36,297 +36,6 @@ interface RichEditorProps<T extends FieldValues = FieldValues> {
   isDirty?: boolean;
   onSave?: () => void;
   bookId?: string;
-}
-
-// ── MenuBar ───────────────────────────────────────────────────────────────────
-function MenuBar({
-  editor,
-  showMentionHelp,
-}: {
-  editor: Editor;
-  showMentionHelp: boolean;
-}) {
-  const btn = useCallback(
-    (label: string, action: () => void, active?: boolean, title?: string) => (
-      <button
-        type="button"
-        title={title}
-        onClick={action}
-        style={{
-          background: active ? "var(--bg-active)" : "transparent",
-          border: "none",
-          borderRadius: 2,
-          cursor: "pointer",
-          fontSize: 12,
-          padding: "2px 6px",
-          color: "var(--text-secondary)",
-          fontFamily: "var(--font-serif)",
-          lineHeight: "20px",
-        }}
-      >
-        {label}
-      </button>
-    ),
-    [],
-  );
-
-  const [showPinpointModal, setShowPinpointModal] = useState(false);
-  const [pinpointComment, setPinpointComment] = useState("");
-
-  const handleAddPinpoint = useCallback(() => {
-    setShowPinpointModal(true);
-    setPinpointComment("");
-  }, []);
-
-  return (
-    <div
-      className="seshat-flex-align"
-      style={{
-        gap: 1,
-        padding: "6px 0",
-        borderBottom: "1px solid var(--border)",
-        marginBottom: "var(--space-3)",
-        flexWrap: "wrap",
-      }}
-    >
-      {btn(
-        "B",
-        () => editor.chain().focus().toggleBold().run(),
-        editor.isActive("bold"),
-      )}
-      {btn(
-        "I",
-        () => editor.chain().focus().toggleItalic().run(),
-        editor.isActive("italic"),
-      )}
-      {btn(
-        "U",
-        () => editor.chain().focus().toggleUnderline().run(),
-        editor.isActive("underline"),
-      )}
-      {btn(
-        "S",
-        () => editor.chain().focus().toggleStrike().run(),
-        editor.isActive("strike"),
-      )}
-      <span
-        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
-      />
-      {btn(
-        "H1",
-        () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-        editor.isActive("heading", { level: 1 }),
-      )}
-      {btn(
-        "H2",
-        () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-        editor.isActive("heading", { level: 2 }),
-      )}
-      {btn(
-        "H3",
-        () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-        editor.isActive("heading", { level: 3 }),
-      )}
-      <span
-        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
-      />
-      {btn(
-        "•",
-        () => editor.chain().focus().toggleBulletList().run(),
-        editor.isActive("bulletList"),
-      )}
-      {btn(
-        "1.",
-        () => editor.chain().focus().toggleOrderedList().run(),
-        editor.isActive("orderedList"),
-      )}
-      {btn(
-        "❝",
-        () => editor.chain().focus().toggleBlockquote().run(),
-        editor.isActive("blockquote"),
-      )}
-      <span
-        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
-      />
-      {btn(
-        "≡",
-        () => editor.chain().focus().toggleCodeBlock().run(),
-        editor.isActive("codeBlock"),
-      )}
-      {btn(
-        "🔗",
-        () => {
-          const url = prompt("Link URL:");
-          if (url) editor.chain().focus().setLink({ href: url }).run();
-        },
-        editor.isActive("link"),
-      )}
-      {btn(
-        "⬜",
-        () => editor.chain().focus().toggleHighlight().run(),
-        editor.isActive("highlight"),
-      )}
-      <span
-        style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
-      />
-      {btn("📍", handleAddPinpoint, false, "Add Pinpoint Comment")}
-
-      {/* @ mention help button — always shown when characters exist */}
-      {showMentionHelp && (
-        <>
-          <span
-            style={{ width: 1, background: "var(--border)", margin: "0 4px" }}
-          />
-          <MentionHelpButton />
-        </>
-      )}
-
-      {/* Removed Continuity AI Checker */}
-
-      <div style={{ flex: 1 }} />
-      <WordCountDisplay editor={editor} />
-
-      {showPinpointModal &&
-        createPortal(
-          <div
-            className="seshat-flex-center"
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 2000,
-              backgroundColor: "rgba(0,0,0,0.5)",
-            }}
-            onClick={() => setShowPinpointModal(false)}
-          >
-            <div
-              style={{
-                background: "var(--bg-app)",
-                padding: 24,
-                borderRadius: 8,
-                width: 400,
-                border: "1px solid var(--border)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 style={{ margin: "0 0 16px 0", fontSize: 16 }}>
-                Add Pinpoint
-              </h3>
-              <textarea
-                autoFocus
-                rows={3}
-                style={{
-                  width: "100%",
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 4,
-                  padding: 8,
-                  color: "inherit",
-                  resize: "none",
-                  marginBottom: 16,
-                  outline: "none",
-                  fontFamily: "inherit",
-                }}
-                value={pinpointComment}
-                onChange={(e) => setPinpointComment(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (pinpointComment.trim()) {
-                      editor
-                        .chain()
-                        .focus()
-                        .setPinPoint({
-                          id: crypto.randomUUID(),
-                          comment: pinpointComment.trim(),
-                        })
-                        .run();
-                    }
-                    setShowPinpointModal(false);
-                  } else if (e.key === "Escape") {
-                    setShowPinpointModal(false);
-                  }
-                }}
-                placeholder="What are your thoughts?"
-              />
-              <div className="seshat-flex-end" style={{ gap: "var(--space-3)" }}>
-                <button
-                  onClick={() => setShowPinpointModal(false)}
-                  style={{
-                    padding: "6px 12px",
-                    background: "transparent",
-                    border: "1px solid var(--border)",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (pinpointComment.trim()) {
-                      editor
-                        .chain()
-                        .focus()
-                        .setPinPoint({
-                          id: crypto.randomUUID(),
-                          comment: pinpointComment.trim(),
-                        })
-                        .run();
-                    }
-                    setShowPinpointModal(false);
-                  }}
-                  style={{
-                    padding: "6px 12px",
-                    background: "var(--color-primary)",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    color: "var(--bg-app)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
-    </div>
-  );
-}
-
-// ── Word Count ────────────────────────────────────────────────────────────────
-
-function WordCountDisplay({ editor }: { editor: Editor }) {
-  const [, forceUpdate] = useState({});
-
-  useEffect(() => {
-    const handleUpdate = () => forceUpdate({});
-    editor.on("update", handleUpdate);
-    return () => {
-      editor.off("update", handleUpdate);
-    };
-  }, [editor]);
-
-  const text = editor.getText().trim();
-  const wordCount = text === "" ? 0 : text.split(/\s+/).length;
-
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        color: "var(--text-muted)",
-        letterSpacing: 1,
-        paddingRight: 4,
-        fontFamily: "var(--font-serif)",
-      }}
-    >
-      {wordCount.toLocaleString()} w
-    </span>
-  );
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
@@ -357,7 +66,6 @@ function RichEditorCore({
   } | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
-  const isSyncingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pinpoints, setPinpoints] = useState<
     { id: string; comment: string; top: number; node: HTMLElement }[]
@@ -500,7 +208,6 @@ function RichEditorCore({
     ],
     content,
     onUpdate: ({ editor }) => {
-      if (isSyncingRef.current) return;
       onChange?.(editor.getHTML());
       updatePinpoints(editor);
     },
@@ -581,8 +288,16 @@ function RichEditorCore({
 
   if (!editor) return null;
 
+  const tooltipStyle = tooltip
+    ? {
+        ...styles.tooltipWrapper,
+        top: tooltip.y,
+        left: Math.min(tooltip.x, window.innerWidth - 300),
+      }
+    : undefined;
+
   return (
-    <div style={{ position: "relative" }}>
+    <div ref={containerRef} style={styles.container}>
       <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
       <EditorContent editor={editor} />
 
@@ -590,12 +305,7 @@ function RichEditorCore({
         createPortal(
           <div
             className="char-mention-tooltip"
-            style={{
-              position: "fixed",
-              top: tooltip.y,
-              left: Math.min(tooltip.x, window.innerWidth - 300),
-              zIndex: 1000,
-            }}
+            style={tooltipStyle}
             onMouseEnter={() => {
               if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
             }}
@@ -635,17 +345,7 @@ function RichEditorCore({
       )}
 
       {pinpoints.length > 0 && (
-        <div
-          className="seshat-pinpoints-layer"
-          style={{
-            position: "absolute",
-            top: 0,
-            right: -32,
-            bottom: 0,
-            width: 24,
-            zIndex: 10,
-          }}
-        >
+        <div className="seshat-pinpoints-layer" style={styles.pinpointsLayer}>
           {pinpoints.map((p) => (
             <div
               key={p.id}
@@ -654,16 +354,8 @@ function RichEditorCore({
                 p.node.scrollIntoView({ behavior: "smooth", block: "center" });
               }}
               style={{
-                position: "absolute",
+                ...styles.pinpointDot,
                 top: `${p.top}px`,
-                left: 0,
-                width: 16,
-                height: 16,
-                backgroundColor: "var(--color-purple)",
-                borderRadius: "50%",
-                cursor: "pointer",
-                transform: "translateY(-50%)",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
               }}
             />
           ))}
@@ -672,6 +364,35 @@ function RichEditorCore({
     </div>
   );
 }
+
+const styles = {
+  container: {
+    position: "relative",
+  },
+  tooltipWrapper: {
+    position: "fixed",
+    zIndex: 1000,
+  },
+  pinpointsLayer: {
+    position: "absolute",
+    top: 0,
+    right: -32,
+    bottom: 0,
+    width: 24,
+    zIndex: 10,
+  },
+  pinpointDot: {
+    position: "absolute",
+    left: 0,
+    width: 16,
+    height: 16,
+    backgroundColor: "var(--color-primary)",
+    borderRadius: "50%",
+    cursor: "pointer",
+    transform: "translateY(-50%)",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+  },
+} satisfies Record<string, React.CSSProperties>;
 
 // ── Controlled wrapper ────────────────────────────────────────────────────────
 function ControlledRichEditor<T extends FieldValues>({

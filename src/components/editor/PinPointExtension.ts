@@ -12,6 +12,8 @@ declare module '@tiptap/core' {
   }
 }
 
+const PINPOINT_STYLE = 'color: var(--color-primary); font-size: 14px; cursor: pointer; user-select: none;';
+
 export const PinPointExtension = Node.create<PinPointOptions>({
   name: 'pinpoint',
   inline: true,
@@ -35,7 +37,7 @@ export const PinPointExtension = Node.create<PinPointOptions>({
     return [
       'span',
       mergeAttributes(
-        { 'data-pinpoint': 'true', class: 'seshat-pinpoint-node', style: 'color: var(--color-purple); font-size: 14px; cursor: pointer; user-select: none;' },
+        { 'data-pinpoint': 'true', class: 'seshat-pinpoint-node', style: PINPOINT_STYLE },
         { 'data-id': HTMLAttributes.id, 'data-comment': HTMLAttributes.comment }
       ),
       '📍'

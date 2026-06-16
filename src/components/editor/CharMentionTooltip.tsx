@@ -15,7 +15,6 @@ export default function CharMentionTooltip({
   pinnedEvents,
   onClose,
 }: CharMentionTooltipProps) {
-  // Resolve the character's status at the chapter's time context
   const { contextDate, contextWindowStart, contextEventTime } =
     chapterContext(pinnedEvents);
   const status = resolveStatusAt(
@@ -26,81 +25,25 @@ export default function CharMentionTooltip({
     contextWindowStart,
   );
 
-  // Events this character is present in, sorted by time
   const charEvents = events
     .filter((e) => (e.characters || []).includes(char.id))
     .sort((a, b) => a.time - b.time);
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        background: "var(--bg-side)",
-        border: "1px solid var(--border)",
-        borderRadius: 4,
-        padding: "14px 16px",
-        boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-        zIndex: 1000,
-        maxWidth: 280,
-        pointerEvents: "auto",
-      }}
-    >
+    <div style={styles.tooltipContainer}>
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 12,
-          paddingBottom: 10,
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
+      <div style={styles.headerRow}>
         <span
           style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
+            ...styles.colorIndicator,
             background: char.color,
-            display: "inline-block",
-            flexShrink: 0,
           }}
         />
         <div>
-          <div
-            style={{
-              fontSize: 14,
-              color: "var(--text-primary)",
-              fontWeight: 400,
-            }}
-          >
-            {char.name}
-          </div>
-          {char.role && (
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--text-muted)",
-                fontStyle: "italic",
-              }}
-            >
-              {char.role}
-            </div>
-          )}
+          <div style={styles.nameText}>{char.name}</div>
+          {char.role && <div style={styles.roleText}>{char.role}</div>}
         </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "var(--text-muted)",
-            padding: "2px 4px",
-            marginLeft: "auto",
-            fontSize: 14,
-            lineHeight: 1,
-          }}
-        >
+        <button onClick={onClose} style={styles.closeBtn}>
           ×
         </button>
       </div>
@@ -109,38 +52,21 @@ export default function CharMentionTooltip({
       {status && (
         <div
           style={{
-            marginBottom: 10,
-            padding: "8px 10px",
-            background: "var(--bg-status)",
+            ...styles.statusBox,
             borderLeft: `2px solid ${char.color}`,
-            borderRadius: "0 2px 2px 0",
           }}
         >
-          <div
-            style={{
-              fontSize: 10,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              marginBottom: 5,
-            }}
-          >
+          <div style={styles.statusSectionLabel}>
             {contextDate || contextEventTime != null
               ? "Status at this point"
               : "Latest status"}
           </div>
           {status.power && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                marginBottom: 2,
-              }}
-            >
-              <span style={{ color: "var(--text-muted)" }}>power: </span>
+            <div style={styles.statusItem}>
+              <span style={styles.textMuted}>power: </span>
               {status.power}
               {status.arcStage && (
-                <span style={{ color: "var(--text-muted)" }}>
+                <span style={styles.textMuted}>
                   {" · "}
                   {status.arcStage}
                 </span>
@@ -148,38 +74,19 @@ export default function CharMentionTooltip({
             </div>
           )}
           {status.emotionalState && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                marginBottom: 2,
-              }}
-            >
-              <span style={{ color: "var(--text-muted)" }}>feeling: </span>
+            <div style={styles.statusItem}>
+              <span style={styles.textMuted}>feeling: </span>
               {status.emotionalState}
             </div>
           )}
           {status.physicalState && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                marginBottom: 2,
-              }}
-            >
-              <span style={{ color: "var(--text-muted)" }}>physical: </span>
+            <div style={styles.statusItem}>
+              <span style={styles.textMuted}>physical: </span>
               {status.physicalState}
             </div>
           )}
           {status.note && (
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--text-muted)",
-                fontStyle: "italic",
-                marginTop: 4,
-              }}
-            >
+            <div style={styles.statusNoteText}>
               {status.note}
             </div>
           )}
@@ -188,36 +95,24 @@ export default function CharMentionTooltip({
 
       {/* Psych quick-ref */}
       {(char.coreWound || char.coreFear || char.coreDesire) && (
-        <div style={{ marginBottom: 10 }}>
+        <div style={styles.psychSection}>
           {char.coreWound && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                marginBottom: 3,
-              }}
-            >
-              <span style={{ color: "var(--text-muted)" }}>wound: </span>
+            <div style={styles.psychItem}>
+              <span style={styles.textMuted}>wound: </span>
               {char.coreWound.length > 80
                 ? char.coreWound.slice(0, 77) + "…"
                 : char.coreWound}
             </div>
           )}
           {char.coreFear && (
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                marginBottom: 3,
-              }}
-            >
-              <span style={{ color: "var(--text-muted)" }}>fear: </span>
+            <div style={styles.psychItem}>
+              <span style={styles.textMuted}>fear: </span>
               {char.coreFear}
             </div>
           )}
           {char.coreDesire && (
-            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              <span style={{ color: "var(--text-muted)" }}>wants: </span>
+            <div style={styles.psychWants}>
+              <span style={styles.textMuted}>wants: </span>
               {char.coreDesire}
             </div>
           )}
@@ -227,34 +122,17 @@ export default function CharMentionTooltip({
       {/* Events this character appears in */}
       {charEvents.length > 0 && (
         <div>
-          <div
-            style={{
-              fontSize: 10,
-              letterSpacing: 2,
-              textTransform: "uppercase",
-              color: "var(--text-muted)",
-              marginBottom: 5,
-            }}
-          >
+          <div style={styles.timelineHeader}>
             Timeline ({charEvents.length})
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <div style={styles.timelineList}>
             {charEvents.slice(0, 6).map((e) => (
-              <span
-                key={e.id}
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-secondary)",
-                  border: "1px solid var(--border)",
-                  padding: "1px 6px",
-                  borderRadius: 2,
-                }}
-              >
+              <span key={e.id} style={styles.timelineBadge}>
                 T{e.time}
               </span>
             ))}
             {charEvents.length > 6 && (
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              <span style={styles.timelineMoreText}>
                 +{charEvents.length - 6} more
               </span>
             )}
@@ -264,3 +142,114 @@ export default function CharMentionTooltip({
     </div>
   );
 }
+
+const styles = {
+  tooltipContainer: {
+    position: "fixed",
+    background: "var(--bg-side)",
+    border: "1px solid var(--border)",
+    borderRadius: 4,
+    padding: "14px 16px",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+    zIndex: 1000,
+    maxWidth: 280,
+    pointerEvents: "auto",
+  },
+  headerRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+    paddingBottom: 10,
+    borderBottom: "1px solid var(--border)",
+  },
+  colorIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  nameText: {
+    fontSize: 14,
+    color: "var(--text-primary)",
+    fontWeight: 400,
+  },
+  roleText: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    fontStyle: "italic",
+  },
+  closeBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "var(--text-muted)",
+    padding: "2px 4px",
+    marginLeft: "auto",
+    fontSize: 14,
+    lineHeight: 1,
+  },
+  statusBox: {
+    marginBottom: 10,
+    padding: "8px 10px",
+    background: "var(--bg-status)",
+    borderRadius: "0 2px 2px 0",
+  },
+  statusSectionLabel: {
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: "var(--text-muted)",
+    marginBottom: 5,
+  },
+  statusItem: {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    marginBottom: 2,
+  },
+  textMuted: {
+    color: "var(--text-muted)",
+  },
+  statusNoteText: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    fontStyle: "italic",
+    marginTop: 4,
+  },
+  psychSection: {
+    marginBottom: 10,
+  },
+  psychItem: {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    marginBottom: 3,
+  },
+  psychWants: {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+  },
+  timelineHeader: {
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: "var(--text-muted)",
+    marginBottom: 5,
+  },
+  timelineList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  timelineBadge: {
+    fontSize: 11,
+    color: "var(--text-secondary)",
+    border: "1px solid var(--border)",
+    padding: "1px 6px",
+    borderRadius: 2,
+  },
+  timelineMoreText: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  },
+} satisfies Record<string, React.CSSProperties>;

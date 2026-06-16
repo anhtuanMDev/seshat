@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { appStore, mkBook } from "../store/appStore";
 import { S } from "../lib/utils";
-import { AutoStoriesIcon, AddIcon, LightModeIcon, DarkModeIcon, CloseIcon, BugReportIcon } from "../components/ui/icons";
+import {
+  AutoStoriesIcon,
+  AddIcon,
+  LightModeIcon,
+  DarkModeIcon,
+  CloseIcon,
+  BugReportIcon,
+} from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { useTheme } from "../hooks/useTheme";
 import { useBooks, useActiveBookId } from "../hooks/useWorldStore";
@@ -24,7 +31,9 @@ export default function BookListPage() {
   const [isLoadingBooks, setIsLoadingBooks] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+  const token =
+    localStorage.getItem("seshat-auth-token") ||
+    sessionStorage.getItem("seshat-auth-token");
 
   useEffect(() => {
     let cancelled = false;
@@ -41,25 +50,26 @@ export default function BookListPage() {
             appStore.books.set((prevBooks) => {
               const newBooks = [...(prevBooks || [])].filter(Boolean); // Filter out any corrupt undefined/null items
               for (const cb of cloudBooks) {
-                const existingIdx = newBooks.findIndex(b => b && b.id === cb.id);
+                const existingIdx = newBooks.findIndex((b) => b && b.id === cb.id);
                 if (existingIdx >= 0) {
                   // Merge basic metadata, keep local characters/events/etc
-                  newBooks[existingIdx] = { 
-                    ...newBooks[existingIdx], 
-                    title: cb.title
+                  newBooks[existingIdx] = {
+                    ...newBooks[existingIdx],
+                    title: cb.title,
                   };
                 } else {
                   // Initialize a complete BookData structure, but mark it as NOT fully loaded
-                  newBooks.push({ 
-                    ...mkBook(cb.title), 
+                  newBooks.push({
+                    ...mkBook(cb.title),
                     id: cb.id,
-                    isFullyLoaded: false
+                    isFullyLoaded: false,
                   });
                 }
               }
               return newBooks;
             });
-            if (isFirstLoad && !cancelled) showToast("Books loaded from cloud.", "success");
+            if (isFirstLoad && !cancelled)
+              showToast("Books loaded from cloud.", "success");
           }
         } catch (error) {
           if (cancelled) return;
@@ -71,7 +81,9 @@ export default function BookListPage() {
       }
     };
     loadBooks();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [token]); // Re-run if token changes
 
   const confirmCreateBook = async () => {
@@ -79,14 +91,16 @@ export default function BookListPage() {
     if (!title) return;
 
     // Check for uniqueness
-    if (books.some(b => b.title.toLowerCase() === title.toLowerCase())) {
+    if (books.some((b) => b.title.toLowerCase() === title.toLowerCase())) {
       showToast("A book with this name already exists.", "error");
       return;
     }
 
     try {
       setIsCreating(true);
-      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      const token =
+        localStorage.getItem("seshat-auth-token") ||
+        sessionStorage.getItem("seshat-auth-token");
       if (!token) {
         showToast("Please log in to create a book.", "error");
         navigate("/auth");
@@ -94,17 +108,20 @@ export default function BookListPage() {
       }
       const book = mkBook(title);
       appStore.books.push(book);
-      
+
       // Initialize the book directory in GitHub instantly
       await syncToGitHub(token);
       showToast("Book initialized securely in the cloud!", "success");
-      
+
       setShowCreateModal(false);
       setNewBookTitle("");
       navigate(`/book/${book.id}/world`);
     } catch (error) {
       console.error("Failed to initialize book in cloud:", error);
-      showToast("Failed to initialize book in cloud: " + (error as Error).message, "error");
+      showToast(
+        "Failed to initialize book in cloud: " + (error as Error).message,
+        "error",
+      );
     } finally {
       setIsCreating(false);
     }
@@ -117,7 +134,9 @@ export default function BookListPage() {
     appStore.books.set((prev) => prev.filter((b) => b.id !== bookId));
     setConfirmDelete(null);
 
-    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    const token =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
     if (token) {
       setIsSyncing(true);
       try {
@@ -125,7 +144,10 @@ export default function BookListPage() {
         showToast("Book deleted from cloud.", "success");
       } catch (error) {
         console.error("Failed to sync deletion:", error);
-        showToast("Failed to sync deletion: " + (error as Error).message, "error");
+        showToast(
+          "Failed to sync deletion: " + (error as Error).message,
+          "error",
+        );
       } finally {
         setIsSyncing(false);
       }
@@ -145,7 +167,13 @@ export default function BookListPage() {
       if (idx >= 0) {
         const currentTitle = books[idx].title;
         if (currentTitle !== newTitle) {
-          if (books.some(b => b.id !== editingId && b.title.toLowerCase() === newTitle.toLowerCase())) {
+          if (
+            books.some(
+              (b) =>
+                b.id !== editingId &&
+                b.title.toLowerCase() === newTitle.toLowerCase(),
+            )
+          ) {
             showToast("A book with this name already exists.", "error");
             return;
           }
@@ -158,7 +186,9 @@ export default function BookListPage() {
     setEditValue("");
 
     if (didRename) {
-      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      const token =
+        localStorage.getItem("seshat-auth-token") ||
+        sessionStorage.getItem("seshat-auth-token");
       if (token) {
         setIsSyncing(true);
         try {
@@ -174,163 +204,165 @@ export default function BookListPage() {
     }
   };
 
+  const deleteBtnStyle = (disabled: boolean) => ({
+    ...S.pill,
+    ...styles.deleteConfirmBtn,
+    opacity: disabled ? 0.5 : 1,
+    cursor: disabled ? "default" : "pointer" as const,
+  });
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "var(--bg-app)",
-      color: "var(--text-primary)",
-      padding: 40,
-    }}>
-      <div style={{ position: "absolute", top: 20, right: 24, display: "flex", alignItems: "center", gap: 16 }}>
-        <button
-          onClick={() => navigate("/issues")}
-          style={{ ...S.ghost, fontSize: 13, opacity: 0.8, display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", cursor: "pointer" }}
-        >
-          <BugReportIcon sx={{ fontSize: 16 }} />
+    <div style={styles.container}>
+      <div style={styles.topBar}>
+        <button onClick={() => navigate("/issues")} style={styles.forumBtn}>
+          <BugReportIcon sx={styles.bugIcon} />
           Forum
         </button>
         <button
           onClick={toggle}
           title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          style={{ ...S.ghost, fontSize: 15, opacity: 0.7, cursor: "pointer" }}
+          style={styles.themeToggleBtn}
         >
-          {theme === "light" ? <LightModeIcon sx={{ fontSize: 16 }} /> : <DarkModeIcon sx={{ fontSize: 16 }} />}
+          {theme === "light" ? (
+            <LightModeIcon sx={styles.toggleIcon} />
+          ) : (
+            <DarkModeIcon sx={styles.toggleIcon} />
+          )}
         </button>
       </div>
 
-      <AutoStoriesIcon sx={{ fontSize: 48, marginBottom: 8, color: "var(--text-logo)" }} />
-      <h1 style={{ fontSize: 22, letterSpacing: 8, textTransform: "uppercase", color: "var(--text-logo)", margin: "0 0 4px", fontWeight: 400 }}>Seshat</h1>
-      <p style={{ color: "var(--text-secondary)", fontSize: 15, marginBottom: 32 }}>World-building for writers and game designers</p>
+      <AutoStoriesIcon sx={styles.logoIcon} />
+      <h1 style={styles.title}>Seshat</h1>
+      <p style={styles.subtitle}>
+        World-building for writers and game designers
+      </p>
 
       {isLoadingBooks ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 24 }}>
-          <CircularProgress size={24} sx={{ color: "var(--text-secondary)" }} />
-          <p style={{ ...S.dim }}>Loading books from cloud...</p>
+        <div style={styles.loadingContainer}>
+          <CircularProgress size={24} sx={styles.loadingProgress} />
+          <p style={styles.loadingText}>Loading books from cloud...</p>
         </div>
       ) : books.length === 0 ? (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ ...S.dim, fontStyle: "italic", marginBottom: 20 }}>No books yet. Create one to get started.</p>
-          <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-primary)", color: "var(--bg-app)", border: "none", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
-            <AddIcon sx={{ fontSize: 16 }} />
+        <div style={styles.emptyContainer}>
+          <p style={styles.emptyText}>
+            No books yet. Create one to get started.
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={styles.newBookBtn}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = "0.9";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1";
+            }}
+          >
+            <AddIcon sx={styles.addIcon} />
             New book
           </button>
         </div>
       ) : (
-        <div style={{ width: "100%", maxWidth: 480 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <p style={{ ...S.h2, margin: 0 }}>My books</p>
-            <button onClick={() => setShowCreateModal(true)} style={{ background: "var(--color-primary)", color: "var(--bg-app)", border: "none", borderRadius: 20, display: "flex", alignItems: "center", gap: 4, fontSize: 13, letterSpacing: 1, padding: "8px 20px", cursor: "pointer", transition: "opacity 0.15s" }} onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"} onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}>
-              <AddIcon sx={{ fontSize: 14 }} />
+        <div style={styles.booksWrapper}>
+          <div style={styles.booksHeader}>
+            <p style={styles.booksTitle}>My books</p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              style={styles.newBookBtn}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.9";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              <AddIcon sx={styles.addIcon} />
               New book
             </button>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={styles.booksList}>
             {books.map((book: { id: string; title: string }) => {
               if (!book) return null;
               return (
-              <div key={book.id}>
-                <div
-                  onClick={() => {
-                    if (editingId !== book.id) {
-                      navigate(`/book/${book.id}/world`);
-                    }
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "16px 20px",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    background: "var(--bg-main)",
-                    transition: "border-color 0.15s, box-shadow 0.15s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--text-secondary)";
-                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  {editingId === book.id ? (
-                    <input
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onBlur={commitRename}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") commitRename();
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                      autoFocus
-                      disabled={isSyncing}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        ...S.input,
-                        flex: 1,
-                        fontSize: 15,
-                        padding: "4px 8px",
-                        border: "1px solid var(--border)",
-                        borderRadius: 4,
-                        background: "var(--bg-main)",
-                        color: "var(--text-primary)",
-                      }}
-                    />
-                  ) : (
-                    <span
-                      style={{ fontSize: 15, color: "var(--text-primary)", cursor: "text" }}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        startRename(book);
-                      }}
-                      title="Double-click to rename"
-                    >
-                      {book.title}
-                    </span>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDelete(book.id);
+                <div key={book.id}>
+                  <div
+                    onClick={() => {
+                      if (editingId !== book.id) {
+                        navigate(`/book/${book.id}/world`);
+                      }
                     }}
-                    style={{ ...S.ghost, fontSize: 18, lineHeight: 1, opacity: 0.4, padding: "0 4px", display: "flex" }}
-                    title="Delete book"
+                    style={styles.bookCard}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "var(--text-secondary)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 16px rgba(0,0,0,0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
                   >
-                    <CloseIcon sx={{ fontSize: 16 }} />
-                  </button>
-                </div>
-                {confirmDelete === book.id && (
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "8px 16px",
-                    fontSize: 13,
-                    color: "var(--text-secondary)",
-                  }}>
-                    <span>Delete "{book.title}"? This cannot be undone.</span>
+                    {editingId === book.id ? (
+                      <input
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={commitRename}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") commitRename();
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        autoFocus
+                        disabled={isSyncing}
+                        onClick={(e) => e.stopPropagation()}
+                        style={styles.renameInput}
+                      />
+                    ) : (
+                      <span
+                        style={styles.bookTitleText}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          startRename(book);
+                        }}
+                        title="Double-click to rename"
+                      >
+                        {book.title}
+                      </span>
+                    )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); deleteBook(book.id); }}
-                      disabled={isSyncing}
-                      style={{ ...S.pill, fontSize: 12, padding: "4px 12px", background: "#d32f2f", color: "#fff", border: "none", opacity: isSyncing ? 0.5 : 1, cursor: isSyncing ? "default" : "pointer" }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDelete(book.id);
+                      }}
+                      style={styles.deleteBtn}
+                      title="Delete book"
                     >
-                      {isSyncing ? "Deleting..." : "Delete"}
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
-                      style={{ ...S.ghost, fontSize: 12 }}
-                    >
-                      Cancel
+                      <CloseIcon sx={styles.closeIcon} />
                     </button>
                   </div>
-                )}
-              </div>
+                  {confirmDelete === book.id && (
+                    <div style={styles.deleteConfirmRow}>
+                      <span>Delete "{book.title}"? This cannot be undone.</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteBook(book.id);
+                        }}
+                        disabled={isSyncing}
+                        style={deleteBtnStyle(isSyncing)}
+                      >
+                        {isSyncing ? "Deleting..." : "Delete"}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDelete(null);
+                        }}
+                        style={styles.cancelDeleteBtn}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -338,10 +370,14 @@ export default function BookListPage() {
       )}
 
       {showCreateModal && (
-        <Modal title="Create New Book" onClose={() => !isCreating && setShowCreateModal(false)}>
-          <div style={{ padding: "0 24px 24px" }}>
-            <p style={{ ...S.dim, marginBottom: 16 }}>
-              Enter a name for your new world. This will initialize a dedicated folder in your cloud backup.
+        <Modal
+          title="Create New Book"
+          onClose={() => !isCreating && setShowCreateModal(false)}
+        >
+          <div style={styles.modalBody}>
+            <p style={styles.modalSub}>
+              Enter a name for your new world. This will initialize a dedicated
+              folder in your cloud backup.
             </p>
             <input
               autoFocus
@@ -352,22 +388,24 @@ export default function BookListPage() {
               }}
               placeholder="e.g. The Lord of the Rings"
               disabled={isCreating}
-              style={{ ...S.input, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 4, marginBottom: 24 }}
+              style={styles.newBookInput}
             />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-              <button 
-                onClick={() => setShowCreateModal(false)} 
+            <div style={styles.modalFooter}>
+              <button
+                onClick={() => setShowCreateModal(false)}
                 disabled={isCreating}
-                style={{ ...S.ghost, padding: "6px 16px" }}
+                style={styles.modalCancelBtn}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={confirmCreateBook}
                 disabled={!newBookTitle.trim() || isCreating}
-                style={{ ...S.pill, padding: "6px 20px", display: "flex", alignItems: "center", gap: 8 }}
+                style={styles.modalCreateBtn}
               >
-                {isCreating ? <CircularProgress size={14} color="inherit" /> : null}
+                {isCreating ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : null}
                 {isCreating ? "Initializing..." : "Create"}
               </button>
             </div>
@@ -377,3 +415,207 @@ export default function BookListPage() {
     </div>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "var(--bg-app)",
+    color: "var(--text-primary)",
+    padding: 40,
+  },
+  topBar: {
+    position: "absolute",
+    top: 20,
+    right: 24,
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+  },
+  forumBtn: {
+    ...S.ghost,
+    fontSize: 13,
+    opacity: 0.8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "var(--text-secondary)",
+    cursor: "pointer",
+  },
+  bugIcon: {
+    fontSize: 16,
+  },
+  themeToggleBtn: {
+    ...S.ghost,
+    fontSize: 15,
+    opacity: 0.7,
+    cursor: "pointer",
+  },
+  toggleIcon: {
+    fontSize: 16,
+  },
+  logoIcon: {
+    fontSize: 48,
+    marginBottom: 8,
+    color: "var(--text-logo)",
+  },
+  title: {
+    fontSize: 22,
+    letterSpacing: 8,
+    textTransform: "uppercase",
+    color: "var(--text-logo)",
+    margin: "0 0 4px",
+    fontWeight: 400,
+  },
+  subtitle: {
+    color: "var(--text-secondary)",
+    fontSize: 15,
+    marginBottom: 32,
+  },
+  loadingContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 24,
+  },
+  loadingProgress: {
+    color: "var(--text-secondary)",
+  },
+  loadingText: {
+    ...S.dim,
+  },
+  emptyContainer: {
+    textAlign: "center",
+  },
+  emptyText: {
+    ...S.dim,
+    fontStyle: "italic",
+    marginBottom: 20,
+  },
+  newBookBtn: {
+    background: "var(--color-primary)",
+    color: "var(--bg-app)",
+    border: "none",
+    borderRadius: 20,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 13,
+    letterSpacing: 1,
+    padding: "8px 20px",
+    cursor: "pointer",
+    transition: "opacity 0.15s",
+  },
+  addIcon: {
+    fontSize: 16,
+  },
+  booksWrapper: {
+    width: "100%",
+    maxWidth: 480,
+  },
+  booksHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  booksTitle: {
+    ...S.h2,
+    margin: 0,
+  },
+  booksList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  bookCard: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 20px",
+    border: "1px solid var(--border)",
+    borderRadius: 8,
+    cursor: "pointer",
+    background: "var(--bg-main)",
+    transition: "border-color 0.15s, box-shadow 0.15s",
+  },
+  renameInput: {
+    ...S.input,
+    flex: 1,
+    fontSize: 15,
+    padding: "4px 8px",
+    border: "1px solid var(--border)",
+    borderRadius: 4,
+    background: "var(--bg-main)",
+    color: "var(--text-primary)",
+  },
+  bookTitleText: {
+    fontSize: 15,
+    color: "var(--text-primary)",
+    cursor: "text",
+  },
+  deleteBtn: {
+    ...S.ghost,
+    fontSize: 18,
+    lineHeight: 1,
+    opacity: 0.4,
+    padding: "0 4px",
+    display: "flex",
+  },
+  closeIcon: {
+    fontSize: 16,
+  },
+  deleteConfirmRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "8px 16px",
+    fontSize: 13,
+    color: "var(--text-secondary)",
+  },
+  deleteConfirmBtn: {
+    fontSize: 12,
+    padding: "4px 12px",
+    background: "#d32f2f",
+    color: "#fff",
+    border: "none",
+  },
+  cancelDeleteBtn: {
+    ...S.ghost,
+    fontSize: 12,
+  },
+  modalBody: {
+    padding: "0 24px 24px",
+  },
+  modalSub: {
+    ...S.dim,
+    marginBottom: 16,
+  },
+  newBookInput: {
+    ...S.input,
+    padding: "8px 12px",
+    border: "1px solid var(--border)",
+    borderRadius: 4,
+    marginBottom: 24,
+  },
+  modalFooter: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  modalCancelBtn: {
+    ...S.ghost,
+    padding: "6px 16px",
+  },
+  modalCreateBtn: {
+    ...S.pill,
+    padding: "6px 20px",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+} satisfies Record<string, React.CSSProperties>;

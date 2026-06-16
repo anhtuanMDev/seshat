@@ -123,8 +123,8 @@ export default function LoreWebPage() {
         position: { x: 0, y: 0 },
         style: {
           background: "var(--bg-main)",
-          color: c.color || "var(--color-purple)",
-          border: `2px solid ${c.color || "var(--color-purple)"}`,
+          color: c.color || "var(--color-primary)",
+          border: `2px solid ${c.color || "var(--color-primary)"}`,
           borderRadius: 20, // circle-ish
           fontWeight: "bold",
         },
@@ -153,10 +153,10 @@ export default function LoreWebPage() {
             dynamicLabel.toLowerCase().includes("love") ||
             dynamicLabel.toLowerCase().includes("hate") ||
             dynamicLabel.toLowerCase().includes("rival"),
-          style: { stroke: c.color || "var(--color-purple)", strokeWidth: 1.5 },
+          style: { stroke: c.color || "var(--color-primary)", strokeWidth: 1.5 },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: c.color || "var(--color-purple)",
+            color: c.color || "var(--color-primary)",
           },
         });
       });
@@ -253,24 +253,10 @@ export default function LoreWebPage() {
           padding: isFullscreen ? "10px 20px" : 0,
         }}
       >
-        <h2 style={{ ...S.h2, margin: 0 }}>Lore & Relationship Web</h2>
+        <h2 style={styles.title}>Lore & Relationship Web</h2>
 
-        <div
-          className="seshat-flex-align"
-          style={{
-            gap: "var(--space-4)",
-            flex: 1,
-            maxWidth: 400,
-            marginLeft: 40,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              fontWeight: "bold",
-            }}
-          >
+        <div className="seshat-flex-align" style={styles.sliderContainer}>
+          <span style={styles.sliderLabel}>
             T{currentTime}
           </span>
           <input
@@ -279,32 +265,20 @@ export default function LoreWebPage() {
             max={maxEventTime}
             value={currentTime}
             onChange={(e) => setCurrentTime(parseInt(e.target.value))}
-            style={{
-              flex: 1,
-              cursor: "pointer",
-              accentColor: "var(--color-purple)",
-            }}
+            style={styles.sliderInput}
             title="Slide to see relationships evolve over time"
           />
         </div>
 
         <button
           onClick={() => setIsFullscreen(!isFullscreen)}
-          style={{ ...S.ghost, color: "var(--text-secondary)" }}
+          style={styles.fullscreenBtn}
         >
           {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
         </button>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          border: "1px solid var(--border)",
-          borderRadius: 8,
-          overflow: "hidden",
-          background: "var(--bg-main)",
-        }}
-      >
+      <div style={styles.flowContainer}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -320,3 +294,37 @@ export default function LoreWebPage() {
     </div>
   );
 }
+
+const styles = {
+  title: {
+    ...S.h2,
+    margin: 0,
+  },
+  sliderContainer: {
+    gap: "var(--space-4)",
+    flex: 1,
+    maxWidth: 400,
+    marginLeft: 40,
+  },
+  sliderLabel: {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    fontWeight: "bold",
+  },
+  sliderInput: {
+    flex: 1,
+    cursor: "pointer",
+    accentColor: "var(--color-primary)",
+  },
+  fullscreenBtn: {
+    ...S.ghost,
+    color: "var(--text-secondary)",
+  },
+  flowContainer: {
+    flex: 1,
+    border: "1px solid var(--border)",
+    borderRadius: 8,
+    overflow: "hidden",
+    background: "var(--bg-main)",
+  },
+} satisfies Record<string, React.CSSProperties>;

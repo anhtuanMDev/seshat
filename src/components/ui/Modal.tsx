@@ -44,14 +44,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
           <button
             onClick={onClose}
             className="seshat-flex-center"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--text-muted)",
-              padding: "2px",
-              lineHeight: 1,
-            }}
+            style={styles.closeBtn}
             onMouseEnter={(e) =>
               (e.currentTarget.style.color = "var(--color-red)")
             }
@@ -64,15 +57,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
         </div>
         <div>{children}</div>
         {footer && (
-          <div
-            className="seshat-flex-end"
-            style={{
-              marginTop: "var(--space-8)",
-              paddingTop: "var(--space-4)",
-              borderTop: "1px solid var(--border)",
-              gap: "var(--space-3)",
-            }}
-          >
+          <div className="seshat-flex-end" style={styles.footer}>
             {footer}
           </div>
         )}
@@ -81,3 +66,20 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
     document.body,
   );
 }
+
+const styles = {
+  closeBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "var(--text-muted)",
+    padding: "2px",
+    lineHeight: 1,
+  },
+  footer: {
+    marginTop: "var(--space-8)",
+    paddingTop: "var(--space-4)",
+    borderTop: "1px solid var(--border)",
+    gap: "var(--space-3)",
+  },
+} satisfies Record<string, React.CSSProperties>;

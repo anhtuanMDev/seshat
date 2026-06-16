@@ -11,6 +11,38 @@ export interface MentionItem {
   role: string;
 }
 
+const POPUP_CSS = `
+  position: fixed;
+  z-index: 9999;
+  background: var(--bg-side, #faf9f7);
+  border: 1px solid var(--border, #e0ddd8);
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  font-family: var(--font-serif);
+  min-width: 180px;
+  max-width: 280px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+`;
+
+const ROW_BASE_CSS = `
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.08s;
+`;
+
+const DOT_BASE_CSS = `
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0; display: inline-block;
+`;
+
+const NAME_CSS = `font-size: 13px; color: var(--text-primary, #1a1a1a);`;
+const ROLE_CSS = `font-size: 11px; color: var(--text-muted, #888); margin-left: auto;`;
+
 // ── Suggestion popup key ──────────────────────────────────────────────────
 const suggestionKey = new PluginKey("mentionSuggestion");
 
@@ -28,20 +60,7 @@ function getPopup(): HTMLElement {
   if (!popupEl) {
     popupEl = document.createElement("div");
     popupEl.id = "seshat-mention-popup";
-    popupEl.style.cssText = `
-      position: fixed;
-      z-index: 9999;
-      background: var(--bg-side, #faf9f7);
-      border: 1px solid var(--border, #e0ddd8);
-      border-radius: 4px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      font-family: var(--font-serif);
-      min-width: 180px;
-      max-width: 280px;
-      max-height: 220px;
-      overflow-y: auto;
-      display: none;
-    `;
+    popupEl.style.cssText = POPUP_CSS;
     document.body.appendChild(popupEl);
   }
   return popupEl;
@@ -71,27 +90,22 @@ function showPopup(
     const row = document.createElement("div");
     row.dataset.idx = String(i);
     row.style.cssText = `
-      padding: 8px 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      ${ROW_BASE_CSS}
       background: ${i === selectedIdx ? "var(--bg-active, #f0ede8)" : "transparent"};
-      transition: background 0.08s;
     `;
 
     const dot = document.createElement("span");
     dot.style.cssText = `
-      width: 7px; height: 7px; border-radius: 50%;
-      background: ${item.color}; flex-shrink: 0; display: inline-block;
+      ${DOT_BASE_CSS}
+      background: ${item.color};
     `;
 
     const nameEl = document.createElement("span");
-    nameEl.style.cssText = `font-size: 13px; color: var(--text-primary, #1a1a1a);`;
+    nameEl.style.cssText = NAME_CSS;
     nameEl.textContent = item.name;
 
     const roleEl = document.createElement("span");
-    roleEl.style.cssText = `font-size: 11px; color: var(--text-muted, #888); margin-left: auto;`;
+    roleEl.style.cssText = ROLE_CSS;
     roleEl.textContent = item.role || "";
 
     row.appendChild(dot);

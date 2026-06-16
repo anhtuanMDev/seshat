@@ -32,38 +32,19 @@ export function CharStatusPanel({
     onChange(statusTimeline.filter((entry) => entry.id !== id));
   };
 
-  const cell = { marginBottom: 10 };
-  const dateInputStyle = {
-    ...S.input,
-    fontSize: 12,
-    color: "var(--text-secondary)",
-    borderBottom: "1px solid var(--border)",
-    paddingBottom: 2,
-  };
-
   return (
     <div
       style={{
-        background: "var(--bg-status)",
-        padding: 16,
-        borderRadius: 2,
-        marginBottom: 24,
+        ...styles.container,
         borderLeft: `3px solid ${color}`,
       }}
     >
-<p
-          style={{
-            fontSize: 13,
-            letterSpacing: 3,
-            textTransform: "uppercase",
-            margin: "0 0 10px",
-            fontWeight: 400,
-            color,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
-        >
+      <p
+        style={{
+          ...styles.header,
+          color,
+        }}
+      >
         <TimelineIcon sx={{ fontSize: 12 }} />Status Timeline
       </p>
 
@@ -73,25 +54,9 @@ export function CharStatusPanel({
         const evEnd = ev?.endDate || "";
 
         return (
-          <div
-            key={entry.id}
-            style={{
-              ...cell,
-              padding: 12,
-              border: "1px solid var(--border)",
-              borderRadius: 2,
-              position: "relative",
-            }}
-          >
+          <div key={entry.id} style={styles.card}>
             {/* ── Event picker row ── */}
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginBottom: 8,
-                alignItems: "end",
-              }}
-            >
+            <div style={styles.cardHeader}>
               <EventPicker
                 label="Event"
                 value={entry.eventId}
@@ -99,14 +64,7 @@ export function CharStatusPanel({
                 events={events}
               />
               {ev && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    whiteSpace: "nowrap",
-                    paddingBottom: 4,
-                  }}
-                >
+                <span style={styles.dateString}>
                   {[evStart && evStart.replace("T", " "), evEnd && `→ ${evEnd.replace("T", " ")}`]
                     .filter(Boolean)
                     .join(" ")}
@@ -114,29 +72,14 @@ export function CharStatusPanel({
               )}
               <button
                 onClick={() => remove(entry.id)}
-                style={{
-                  ...S.ghost,
-                  fontSize: 11,
-                  color: "var(--color-red)",
-                  marginLeft: "auto",
-                  flexShrink: 0,
-                  display: "flex",
-                  alignItems: "center",
-                }}
+                style={styles.deleteBtn}
               >
                 <CloseIcon sx={{ fontSize: 14 }} />
               </button>
             </div>
 
             {/* ── Status date range ── */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "6px 12px",
-                marginBottom: 8,
-              }}
-            >
+            <div style={styles.grid2}>
               <div>
                 <label style={S.label}><CalendarTodayIcon sx={{ fontSize: 9, marginRight: 3, verticalAlign: "middle" }} />From</label>
                 <input
@@ -145,7 +88,7 @@ export function CharStatusPanel({
                   min={evStart || undefined}
                   max={evEnd || undefined}
                   onChange={(e) => patch(entry.id, "startDate", e.target.value)}
-                  style={dateInputStyle}
+                  style={styles.dateInput}
                 />
               </div>
               <div>
@@ -156,20 +99,13 @@ export function CharStatusPanel({
                   min={evStart || undefined}
                   max={evEnd || undefined}
                   onChange={(e) => patch(entry.id, "endDate", e.target.value)}
-                  style={dateInputStyle}
+                  style={styles.dateInput}
                 />
               </div>
             </div>
 
             {/* ── Identity ── */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "6px 12px",
-                marginBottom: 8,
-              }}
-            >
+            <div style={styles.grid2}>
               <div>
                 <label style={S.label}>Role in story</label>
                 <input
@@ -191,14 +127,7 @@ export function CharStatusPanel({
             </div>
 
             {/* ── Power / Arc / Emotional / Physical ── */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "6px 12px",
-                marginBottom: 8,
-              }}
-            >
+            <div style={styles.grid2}>
               <div>
                 <label style={S.label}>Power tier</label>
                 <select
@@ -250,28 +179,94 @@ export function CharStatusPanel({
               onChange={(e) => patch(entry.id, "note", e.target.value)}
               placeholder="How are they doing in this period? What's driving them?"
               rows={2}
-              style={{
-                width: "100%",
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                background: "transparent",
-                border: "none",
-                borderBottom: "1px solid var(--border)",
-                outline: "none",
-                resize: "none",
-                lineHeight: 1.6,
-                padding: "2px 0",
-              }}
+              style={styles.textarea}
             />
           </div>
         );
       })}
 
       {!statusTimeline.length && (
-        <p style={{ color: "var(--text-dim)", fontSize: 12, fontStyle: "italic" }}>
+        <p style={styles.emptyText}>
           No status entries yet. Add one to track this character's state across the timeline.
         </p>
       )}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    background: "var(--bg-status)",
+    padding: 16,
+    borderRadius: 2,
+    marginBottom: 24,
+  },
+  header: {
+    fontSize: 13,
+    letterSpacing: 3,
+    textTransform: "uppercase",
+    margin: "0 0 10px",
+    fontWeight: 400,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  card: {
+    padding: 12,
+    border: "1px solid var(--border)",
+    borderRadius: 2,
+    position: "relative",
+    marginBottom: 10,
+  },
+  cardHeader: {
+    display: "flex",
+    gap: 8,
+    marginBottom: 8,
+    alignItems: "end",
+  },
+  dateString: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    whiteSpace: "nowrap",
+    paddingBottom: 4,
+  },
+  deleteBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    color: "var(--color-red)",
+    marginLeft: "auto",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+  },
+  grid2: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "6px 12px",
+    marginBottom: 8,
+  },
+  dateInput: {
+    ...S.input,
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    borderBottom: "1px solid var(--border)",
+    paddingBottom: 2,
+  },
+  textarea: {
+    width: "100%",
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    background: "transparent",
+    border: "none",
+    borderBottom: "1px solid var(--border)",
+    outline: "none",
+    resize: "none",
+    lineHeight: 1.6,
+    padding: "2px 0",
+  },
+  emptyText: {
+    color: "var(--text-dim)",
+    fontSize: 12,
+    fontStyle: "italic",
+  },
+} satisfies Record<string, React.CSSProperties>;

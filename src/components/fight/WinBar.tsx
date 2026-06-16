@@ -12,63 +12,39 @@ interface WinBarProps {
 
 export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, nameB }: WinBarProps) {
   return (
-    <div style={{ marginBottom: "var(--space-8)" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginBottom: "var(--space-2)",
-        }}
-      >
-        <span style={{ fontSize: "var(--text-sm)", color: colA, fontWeight: 500 }}>
+    <div style={styles.container}>
+      <div style={styles.headerRow}>
+        <span style={{ ...styles.nameLabel, color: colA }}>
           {nameA} — {pctA}%
         </span>
-        <span style={{ fontSize: "var(--text-sm)", color: colB, fontWeight: 500 }}>
+        <span style={{ ...styles.nameLabel, color: colB }}>
           {pctB}% — {nameB}
         </span>
       </div>
-      <div
-        style={{
-          height: "var(--space-8)",
-          borderRadius: "var(--space-1)",
-          overflow: "hidden",
-          display: "flex",
-          background: "var(--bg-active)",
-        }}
-      >
+      <div style={styles.barContainer}>
         <div
           style={{
+            ...styles.barSegment,
             width: `${pctA}%`,
             background: colA,
-            transition: "width 0.4s",
           }}
         />
         <div
           style={{
+            ...styles.barSegment,
             width: `${pctB}%`,
             background: colB,
-            transition: "width 0.4s",
           }}
         />
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginTop: "var(--space-2)",
-        }}
-      >
+      <div style={styles.footerRow}>
         {pctA === pctB ? (
-          <span style={{ ...S.dim, fontSize: "var(--text-xs)" }}>Even match</span>
+          <span style={styles.evenMatchText}>Even match</span>
         ) : (
           <span
             style={{
-              fontSize: "var(--text-xs)",
+              ...styles.edgeText,
               color: pctA > pctB ? colA : colB,
-              fontWeight: 500,
-              background: "var(--bg-status)",
-              padding: "var(--space-1) var(--space-3)",
-              borderRadius: "20px",
             }}
           >
             {pctA > pctB ? nameA : nameB} has the edge (
@@ -79,3 +55,44 @@ export const WinBar = memo(function WinBar({ pctA, pctB, colA, colB, nameA, name
     </div>
   );
 });
+
+const styles = {
+  container: {
+    marginBottom: "var(--space-8)",
+  },
+  headerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginBottom: "var(--space-2)",
+  },
+  nameLabel: {
+    fontSize: "var(--text-sm)",
+    fontWeight: 500,
+  },
+  barContainer: {
+    height: "var(--space-8)",
+    borderRadius: "var(--space-1)",
+    overflow: "hidden",
+    display: "flex",
+    background: "var(--bg-active)",
+  },
+  barSegment: {
+    transition: "width 0.4s",
+  },
+  footerRow: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: "var(--space-2)",
+  },
+  evenMatchText: {
+    ...S.dim,
+    fontSize: "var(--text-xs)",
+  },
+  edgeText: {
+    fontSize: "var(--text-xs)",
+    fontWeight: 500,
+    background: "var(--bg-status)",
+    padding: "var(--space-1) var(--space-3)",
+    borderRadius: "20px",
+  },
+} satisfies Record<string, React.CSSProperties>;

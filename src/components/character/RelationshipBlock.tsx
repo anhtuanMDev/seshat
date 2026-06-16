@@ -27,7 +27,7 @@ export function RelationshipBlock({
     .map((c) => ({ label: c.name, value: c.id }));
 
   return (
-    <EntryBlock color="var(--color-purple)" onDelete={onDelete}>
+    <EntryBlock color="var(--color-primary)" onDelete={onDelete}>
       <div style={S.grid2} className="seshat-grid2">
         <Sel
           label="Other Character"
@@ -43,24 +43,24 @@ export function RelationshipBlock({
         />
       </div>
 
-      <div style={{ marginTop: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <p style={{ ...S.h2, margin: 0, fontSize: 13, color: "var(--text-secondary)" }}>
+      <div style={styles.timelineSection}>
+        <div style={styles.timelineHeaderRow}>
+          <p style={styles.timelineTitle}>
             Evolution Timeline
           </p>
           <button
             type="button"
             onClick={() => append(mkRelTimelineEntry())}
-            style={{ ...S.ghost, fontSize: 11, display: "flex", alignItems: "center", gap: 3, color: "var(--color-purple)" }}
+            style={styles.addEntryBtn}
           >
             <AddIcon sx={{ fontSize: 14 }} /> add timeline entry
           </button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={styles.entriesContainer}>
           {fields.map((item, tIdx) => (
-            <div key={item.id} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-              <div style={{ width: 80 }}>
+            <div key={item.id} style={styles.entryRow}>
+              <div style={styles.timeCol}>
                 <Field
                   label="Time (e.g. 1)"
                   name={`relationships.${index}.timeline.${tIdx}.time` as const}
@@ -68,7 +68,7 @@ export function RelationshipBlock({
                   type="number"
                 />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={styles.dynamicCol}>
                 <Field
                   label="Dynamic (e.g. Rivals, Allies)"
                   name={`relationships.${index}.timeline.${tIdx}.dynamic` as const}
@@ -79,7 +79,7 @@ export function RelationshipBlock({
               <button
                 type="button"
                 onClick={() => remove(tIdx)}
-                style={{ ...S.ghost, padding: "8px", color: "var(--text-muted)", marginBottom: 16 }}
+                style={styles.deleteBtn}
                 onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-red)")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
               >
@@ -88,10 +88,63 @@ export function RelationshipBlock({
             </div>
           ))}
           {fields.length === 0 && (
-            <p style={{ ...S.dim, fontSize: 12, marginTop: 4 }}>No timeline entries. Add one to see the relationship evolve over time!</p>
+            <p style={styles.emptyText}>No timeline entries. Add one to see the relationship evolve over time!</p>
           )}
         </div>
       </div>
     </EntryBlock>
   );
 }
+
+const styles = {
+  timelineSection: {
+    marginTop: 20,
+  },
+  timelineHeaderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  timelineTitle: {
+    ...S.h2,
+    margin: 0,
+    fontSize: 13,
+    color: "var(--text-secondary)",
+  },
+  addEntryBtn: {
+    ...S.ghost,
+    fontSize: 11,
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    color: "var(--color-primary)",
+  },
+  entriesContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  entryRow: {
+    display: "flex",
+    gap: 8,
+    alignItems: "flex-end",
+  },
+  timeCol: {
+    width: 80,
+  },
+  dynamicCol: {
+    flex: 1,
+  },
+  deleteBtn: {
+    ...S.ghost,
+    padding: "8px",
+    color: "var(--text-muted)",
+    marginBottom: 16,
+  },
+  emptyText: {
+    ...S.dim,
+    fontSize: 12,
+    marginTop: 4,
+  },
+} satisfies Record<string, React.CSSProperties>;

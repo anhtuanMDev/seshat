@@ -25,18 +25,9 @@ type ToggleInnerProps = Omit<ToggleProps<FieldValues>, "control" | "name">;
 
 function ToggleInner({ label, value, onChange }: ToggleInnerProps) {
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={styles.container}>
       {label && (
-        <label
-          style={{
-            display: "block",
-            fontSize: 11,
-            letterSpacing: 2,
-            textTransform: "uppercase",
-            color: "var(--text-secondary)",
-            marginBottom: 4,
-          }}
-        >
+        <label style={styles.label}>
           {label}
         </label>
       )}
@@ -72,3 +63,17 @@ export function Toggle<T extends FieldValues = FieldValues>(props: ToggleProps<T
   void name;
   return <ToggleInner {...rest} />;
 }
+
+const styles = {
+  container: {
+    marginBottom: 16,
+  },
+  label: {
+    display: "block",
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: "var(--text-secondary)",
+    marginBottom: 4,
+  },
+} satisfies Record<string, React.CSSProperties>;

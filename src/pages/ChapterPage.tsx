@@ -601,7 +601,7 @@ export default function ChapterPage() {
 
   if (!chapter) {
     return (
-      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
+      <div style={styles.notFound}>
         Chapter not found.
       </div>
     );
@@ -717,18 +717,10 @@ export default function ChapterPage() {
         onScroll={(e) => setIsFloating(e.currentTarget.scrollTop > 120)}
       >
         <div className="seshat-chapter-header">
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={styles.headerFlex1}>
             {isLoading ? (
               <>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-end",
-                    gap: 12,
-                    marginBottom: 12,
-                    marginTop: 6,
-                  }}
-                >
+                <div style={styles.loaderHeaderRow}>
                   <Skeleton
                     animation="wave"
                     variant="rounded"
@@ -754,30 +746,13 @@ export default function ChapterPage() {
               </>
             ) : (
               <>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-end",
-                    gap: 12,
-                    marginBottom: 8,
-                  }}
-                >
+                <div style={styles.headerMetaRow}>
                   <input
                     {...register("number")}
                     placeholder="Ch. 1"
-                    style={{
-                      ...S.input,
-                      width: 64,
-                      fontSize: 11,
-                      letterSpacing: 2,
-                      textTransform: "uppercase",
-                      color: "var(--text-muted)",
-                      border: "none",
-                      borderBottom: "1px solid var(--border)",
-                      padding: "2px 0",
-                    }}
+                    style={styles.numberInput}
                   />
-                  <div style={{ width: 240 }}>
+                  <div style={styles.eventPickerWrapper}>
                     <EventPicker
                       control={control}
                       name="timeRef"
@@ -790,23 +765,14 @@ export default function ChapterPage() {
                 <input
                   {...register("title")}
                   placeholder="Chapter title…"
-                  style={{
-                    ...S.input,
-                    fontSize: 28,
-                    fontFamily: "var(--font-serif)",
-                    fontWeight: 400,
-                    border: "none",
-                    padding: 0,
-                    color: "var(--text-primary)",
-                    letterSpacing: 0.5,
-                  }}
+                  style={styles.titleInput}
                 />
               </>
             )}
           </div>
 
           {isLoading ? (
-            <div style={{ display: "flex", gap: 12 }}>
+            <div style={styles.loaderToolbar}>
               <Skeleton
                 animation="wave"
                 variant="rounded"
@@ -843,7 +809,7 @@ export default function ChapterPage() {
         </div>
 
         {isLoading ? (
-          <div style={{ marginBottom: 28, marginTop: 8 }}>
+          <div style={styles.loaderSynopsis}>
             <Skeleton
               animation="wave"
               variant="rounded"
@@ -864,21 +830,7 @@ export default function ChapterPage() {
             {...register("synopsis")}
             placeholder="Scene note or synopsis for this chapter (not part of the prose)…"
             rows={2}
-            style={{
-              width: "100%",
-              fontSize: 12,
-              color: "var(--text-muted)",
-              fontStyle: "italic",
-              background: "transparent",
-              border: "none",
-              borderBottom: "1px solid var(--border)",
-              outline: "none",
-              resize: "none",
-              lineHeight: 1.6,
-              marginBottom: 28,
-              paddingRight: "24px",
-              padding: "4px 0",
-            }}
+            style={styles.synopsisTextarea}
           />
         )}
 
@@ -907,15 +859,8 @@ export default function ChapterPage() {
 
         {/* ── Scene Outline (Beat Sheet) ── */}
         {isLoading ? (
-          <div style={{ marginBottom: 32, paddingRight: 12 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
+          <div style={styles.loaderOutlineWrapper}>
+            <div style={styles.loaderOutlineHeader}>
               <Skeleton
                 animation="wave"
                 variant="rounded"
@@ -924,14 +869,7 @@ export default function ChapterPage() {
                 sx={{ bgcolor: "var(--bg-hover)" }}
               />
             </div>
-            <div
-              style={{
-                background: "var(--bg-panel)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                padding: 16,
-              }}
-            >
+            <div style={styles.loaderOutlineCard}>
               <Skeleton
                 animation="wave"
                 variant="rounded"
@@ -939,13 +877,7 @@ export default function ChapterPage() {
                 height={20}
                 sx={{ bgcolor: "var(--bg-hover)", marginBottom: 12 }}
               />
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 16,
-                }}
-              >
+              <div style={styles.loaderOutlineGrid}>
                 <Skeleton
                   animation="wave"
                   variant="rounded"
@@ -967,21 +899,10 @@ export default function ChapterPage() {
 
         {/* ── Rich editor — all context props wired ── */}
         {isLoading ? (
-          <div style={{ marginTop: 24 }}>
+          <div style={styles.loaderEditorWrapper}>
             {/* Toolbar skeleton */}
-            <div
-              style={{
-                display: "flex",
-                gap: 4,
-                padding: "6px 0",
-                borderBottom: "1px solid var(--border)",
-                marginBottom: "var(--space-3)",
-                flexWrap: "wrap",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <div style={styles.loaderEditorToolbar}>
+              <div style={styles.loaderEditorToolbarLeft}>
                 <Skeleton
                   animation="wave"
                   variant="rounded"
@@ -1011,14 +932,7 @@ export default function ChapterPage() {
                   sx={{ bgcolor: "var(--bg-hover)" }}
                 />
 
-                <div
-                  style={{
-                    width: 1,
-                    height: 16,
-                    background: "var(--border)",
-                    margin: "0 4px",
-                  }}
-                />
+                <div style={styles.loaderDivider} />
 
                 <Skeleton
                   animation="wave"
@@ -1042,14 +956,7 @@ export default function ChapterPage() {
                   sx={{ bgcolor: "var(--bg-hover)" }}
                 />
 
-                <div
-                  style={{
-                    width: 1,
-                    height: 16,
-                    background: "var(--border)",
-                    margin: "0 4px",
-                  }}
-                />
+                <div style={styles.loaderDivider} />
 
                 <Skeleton
                   animation="wave"
@@ -1073,14 +980,7 @@ export default function ChapterPage() {
                   sx={{ bgcolor: "var(--bg-hover)" }}
                 />
 
-                <div
-                  style={{
-                    width: 1,
-                    height: 16,
-                    background: "var(--border)",
-                    margin: "0 4px",
-                  }}
-                />
+                <div style={styles.loaderDivider} />
 
                 <Skeleton
                   animation="wave"
@@ -1099,9 +999,9 @@ export default function ChapterPage() {
             </div>
 
             {/* Prose skeleton */}
-            <div style={{ padding: "0 0 12px 0" }}>
+            <div style={styles.loaderEditorBody}>
               {/* Paragraph 1 */}
-              <div style={{ marginBottom: 28 }}>
+              <div style={styles.loaderParagraph}>
                 <Skeleton
                   animation="wave"
                   height={22}
@@ -1131,7 +1031,7 @@ export default function ChapterPage() {
               </div>
 
               {/* Paragraph 2 - short */}
-              <div style={{ marginBottom: 28 }}>
+              <div style={styles.loaderParagraph}>
                 <Skeleton
                   animation="wave"
                   height={22}
@@ -1141,7 +1041,7 @@ export default function ChapterPage() {
               </div>
 
               {/* Paragraph 3 */}
-              <div style={{ marginBottom: 28 }}>
+              <div style={styles.loaderParagraph}>
                 <Skeleton
                   animation="wave"
                   height={22}
@@ -1181,7 +1081,7 @@ export default function ChapterPage() {
               </div>
 
               {/* Paragraph 4 - single line */}
-              <div style={{ marginBottom: 28 }}>
+              <div style={styles.loaderParagraph}>
                 <Skeleton
                   animation="wave"
                   height={22}
@@ -1191,7 +1091,7 @@ export default function ChapterPage() {
               </div>
 
               {/* Paragraph 5 */}
-              <div style={{ marginBottom: 28 }}>
+              <div style={styles.loaderParagraph}>
                 <Skeleton
                   animation="wave"
                   height={22}
@@ -1271,18 +1171,7 @@ export default function ChapterPage() {
             <textarea
               {...register("notes")}
               placeholder="Write your notes here..."
-              style={{
-                width: "100%",
-                flex: 1,
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                background: "transparent",
-                border: "none",
-                outline: "none",
-                resize: "none",
-                lineHeight: 1.7,
-                padding: "4px 0",
-              }}
+              style={styles.notesTextarea}
             />
           }
           draftsNode={
@@ -1383,3 +1272,137 @@ export default function ChapterPage() {
     </div>
   );
 }
+
+const styles = {
+  notFound: {
+    padding: "40px",
+    color: "var(--text-secondary)",
+  },
+  headerFlex1: {
+    flex: 1,
+    minWidth: 0,
+  },
+  loaderHeaderRow: {
+    display: "flex",
+    alignItems: "flex-end",
+    gap: 12,
+    marginBottom: 12,
+    marginTop: 6,
+  },
+  headerMetaRow: {
+    display: "flex",
+    alignItems: "flex-end",
+    gap: 12,
+    marginBottom: 8,
+  },
+  numberInput: {
+    ...S.input,
+    width: 64,
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    color: "var(--text-muted)",
+    border: "none",
+    borderBottom: "1px solid var(--border)",
+    padding: "2px 0",
+  },
+  eventPickerWrapper: {
+    width: 240,
+  },
+  titleInput: {
+    ...S.input,
+    fontSize: 28,
+    fontFamily: "var(--font-serif)",
+    fontWeight: 400,
+    border: "none",
+    padding: 0,
+    color: "var(--text-primary)",
+    letterSpacing: 0.5,
+  },
+  loaderToolbar: {
+    display: "flex",
+    gap: 12,
+  },
+  loaderSynopsis: {
+    marginBottom: 28,
+    marginTop: 8,
+  },
+  synopsisTextarea: {
+    width: "100%",
+    fontSize: 12,
+    color: "var(--text-muted)",
+    fontStyle: "italic",
+    background: "transparent",
+    border: "none",
+    borderBottom: "1px solid var(--border)",
+    outline: "none",
+    resize: "none",
+    lineHeight: 1.6,
+    marginBottom: 28,
+    paddingRight: "24px",
+    padding: "4px 0",
+  },
+  loaderOutlineWrapper: {
+    marginBottom: 32,
+    paddingRight: 12,
+  },
+  loaderOutlineHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  loaderOutlineCard: {
+    background: "var(--bg-panel)",
+    border: "1px solid var(--border)",
+    borderRadius: 6,
+    padding: 16,
+  },
+  loaderOutlineGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16,
+  },
+  loaderEditorWrapper: {
+    marginTop: 24,
+  },
+  loaderEditorToolbar: {
+    display: "flex",
+    gap: 4,
+    padding: "6px 0",
+    borderBottom: "1px solid var(--border)",
+    marginBottom: "var(--space-3)",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  loaderEditorToolbarLeft: {
+    display: "flex",
+    gap: 6,
+    alignItems: "center",
+  },
+  loaderDivider: {
+    width: 1,
+    height: 16,
+    background: "var(--border)",
+    margin: "0 4px",
+  },
+  loaderEditorBody: {
+    padding: "0 0 12px 0",
+  },
+  loaderParagraph: {
+    marginBottom: 28,
+  },
+  notesTextarea: {
+    width: "100%",
+    flex: 1,
+    fontSize: 13,
+    color: "var(--text-secondary)",
+    background: "transparent",
+    border: "none",
+    outline: "none",
+    resize: "none",
+    lineHeight: 1.7,
+    padding: "4px 0",
+  },
+} satisfies Record<string, React.CSSProperties>;

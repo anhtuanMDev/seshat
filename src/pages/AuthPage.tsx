@@ -74,31 +74,20 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{ ...S.app, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{
-        background: "var(--bg-main)",
-        border: "1px solid var(--border)",
-        borderRadius: 8,
-        padding: "32px",
-        width: "100%",
-        maxWidth: 400,
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{ ...S.h2, fontSize: 24, marginBottom: 8, color: "var(--text-primary)" }}>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <div style={styles.headerWrapper}>
+          <h1 style={styles.title}>
             {isRegisterMode ? "Create Account" : "Welcome to Seshat"}
           </h1>
-          <p style={{ ...S.dim, fontSize: 14 }}>
+          <p style={styles.subtitle}>
             {isRegisterMode 
               ? "Choose a unique username and a secure password."
               : "Enter your username and access code to continue."}
           </p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={styles.form}>
           <Field
             label="Username (Branch Name)"
             value={loginUser}
@@ -129,7 +118,7 @@ export default function AuthPage() {
                       onMouseDown={(e) => e.preventDefault()}
                       edge="end" 
                       size="small" 
-                      style={{ color: "var(--text-secondary)", marginRight: -8 }}
+                      style={styles.passwordToggleBtn}
                     >
                       {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                     </IconButton>
@@ -145,7 +134,7 @@ export default function AuthPage() {
                     onMouseDown={(e) => e.preventDefault()}
                     edge="end" 
                     size="small" 
-                    style={{ color: "var(--text-secondary)", marginRight: -8 }}
+                    style={styles.passwordToggleBtn}
                   >
                     {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                   </IconButton>
@@ -154,32 +143,25 @@ export default function AuthPage() {
             }}
           />
           
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "var(--text-secondary)", fontSize: 14 }}>
+          <label style={styles.checkboxLabel}>
             <input 
               type="checkbox" 
               checked={rememberMe} 
               onChange={(e) => setRememberMe(e.target.checked)} 
-              style={{ accentColor: "var(--color-blue)", width: 16, height: 16 }}
+              style={styles.checkboxInput}
             />
             Remember me
           </label>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+        <div style={styles.actionsWrapper}>
           <button 
             onClick={submitAuth}
             disabled={isLoading || !loginUser.trim() || !loginCode.trim()}
             style={{
-              padding: "12px",
-              background: "var(--color-blue)",
-              color: "var(--bg-app)",
-              border: "none",
-              borderRadius: 4,
-              fontSize: 16,
-              fontWeight: 600,
+              ...styles.submitBtn,
               cursor: (isLoading || !loginUser.trim() || !loginCode.trim()) ? "default" : "pointer",
               opacity: (isLoading || !loginUser.trim() || !loginCode.trim()) ? 0.6 : 1,
-              transition: "opacity 0.2s"
             }}
           >
             {isLoading ? "Please wait..." : (isRegisterMode ? "Register" : "Login")}
@@ -193,3 +175,76 @@ export default function AuthPage() {
     </div>
   );
 }
+
+const styles = {
+  container: {
+    ...S.app,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  card: {
+    background: "var(--bg-main)",
+    border: "1px solid var(--border)",
+    borderRadius: 8,
+    padding: "32px",
+    width: "100%",
+    maxWidth: 400,
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+  },
+  headerWrapper: {
+    textAlign: "center",
+  },
+  title: {
+    ...S.h2,
+    fontSize: 24,
+    marginBottom: 8,
+    color: "var(--text-primary)",
+  },
+  subtitle: {
+    ...S.dim,
+    fontSize: 14,
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+  passwordToggleBtn: {
+    color: "var(--text-secondary)",
+    marginRight: -8,
+  },
+  checkboxLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    cursor: "pointer",
+    color: "var(--text-secondary)",
+    fontSize: 14,
+  },
+  checkboxInput: {
+    accentColor: "var(--color-blue)",
+    width: 16,
+    height: 16,
+  },
+  actionsWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    marginTop: 8,
+  },
+  submitBtn: {
+    padding: "12px",
+    background: "var(--color-blue)",
+    color: "var(--bg-app)",
+    border: "none",
+    borderRadius: 4,
+    fontSize: 16,
+    fontWeight: 600,
+    transition: "opacity 0.2s",
+  },
+} satisfies Record<string, React.CSSProperties>;

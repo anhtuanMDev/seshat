@@ -54,7 +54,7 @@ function EventPickerInner({ label, placeholder, value, onChange, events, sx }: E
         label={label}
         renderValue={(selected) => {
           if (!selected) {
-            return <span style={{ color: "var(--text-muted)" }}>{placeholder || "— none —"}</span>;
+            return <span style={styles.placeholderText}>{placeholder || "— none —"}</span>;
           }
           const event = events.find((e) => e.id === selected);
           return event ? `T${event.time} · ${event.title}` : (selected as string);
@@ -112,3 +112,9 @@ export function EventPicker<T extends FieldValues = FieldValues>(props: EventPic
   void name;
   return <EventPickerInner {...rest} />;
 }
+
+const styles = {
+  placeholderText: {
+    color: "var(--text-muted)",
+  },
+} satisfies Record<string, React.CSSProperties>;

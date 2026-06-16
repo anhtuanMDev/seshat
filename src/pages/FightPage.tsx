@@ -40,23 +40,12 @@ export default function FightPage() {
 
   return (
     <div ref={ref} className="seshat-page-container" data-testid="fight-page-container">
-      <div style={{ marginBottom: "var(--space-6)" }}>
-        <h1
-          style={{
-            fontSize: "var(--text-2xl)",
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            marginBottom: "var(--space-2)",
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--space-2)",
-            margin: 0,
-          }}
-        >
-          <SportsKabaddiIcon sx={{ fontSize: 24 }} />
+      <div style={styles.headerWrapper}>
+        <h1 style={styles.title}>
+          <SportsKabaddiIcon sx={styles.titleIcon} />
           Fight Simulation
         </h1>
-        <p style={{ ...S.dim, fontSize: "var(--text-sm)", marginTop: "var(--space-2)" }}>
+        <p style={styles.subtitle}>
           Compare two characters at any point in the timeline. Win % is
           calculated from power tier, skills, equipped items, conditions, arc
           stage, and emotional state.
@@ -64,23 +53,14 @@ export default function FightPage() {
       </div>
 
       {chars.length < 2 && (
-        <p style={{ ...S.dim, fontStyle: "italic" }}>
+        <p style={styles.emptyText}>
           Add at least two characters to use the fight simulator.
         </p>
       )}
 
       {chars.length >= 2 && (
         <>
-          <div
-            data-testid="fighter-picker-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 80px 1fr",
-              gap: "0 var(--space-6)",
-              alignItems: "center",
-              marginBottom: "var(--space-6)",
-            }}
-          >
+          <div data-testid="fighter-picker-grid" style={styles.pickerGrid}>
             <div data-testid="fighter-a-container">
               <FighterPicker
                 label="Fighter A"
@@ -93,15 +73,7 @@ export default function FightPage() {
                 selectedChar={charA}
               />
             </div>
-            <div
-              style={{
-                textAlign: "center",
-                paddingTop: "var(--space-4)",
-                fontSize: "var(--text-base)",
-                color: "var(--text-muted)",
-                letterSpacing: 2,
-              }}
-            >
+            <div style={styles.vsDivider}>
               vs
             </div>
             <div data-testid="fighter-b-container">
@@ -119,7 +91,7 @@ export default function FightPage() {
           </div>
 
           {!ready && (
-            <p style={S.dim}>Select two different characters to simulate.</p>
+            <p style={styles.selectPrompt}>Select two different characters to simulate.</p>
           )}
 
           {ready && (
@@ -134,7 +106,7 @@ export default function FightPage() {
               />
 
               <div
-                style={{ ...S.grid2, marginBottom: "var(--space-4)" }}
+                style={styles.snapshotGrid}
                 className="seshat-grid2"
                 data-testid="snapshot-cards"
               >
@@ -150,7 +122,7 @@ export default function FightPage() {
                 />
               </div>
 
-              <div style={S.grid2} className="seshat-grid2" data-testid="score-breakdowns">
+              <div style={styles.scoreBreakdownGrid} className="seshat-grid2" data-testid="score-breakdowns">
                 <ScoreBreakdown
                   name={charA!.name}
                   color={colA}
@@ -165,8 +137,8 @@ export default function FightPage() {
                 />
               </div>
 
-              <hr style={{ ...S.rule, margin: "var(--space-6) 0 var(--space-3)" }} />
-              <p style={{ ...S.dim, fontSize: "var(--text-xs)" }}>
+              <hr style={styles.divider} />
+              <p style={styles.footerRules}>
                 Scoring: power tier (×3), skills (×1.2 each), equipped items
                 (×1, −0.5 per cursed), conditions (varies by type), arc stage
                 (0–2), emotional state (±0.3–1.5), achievements (+0.3 each),
@@ -180,3 +152,63 @@ export default function FightPage() {
     </div>
   );
 }
+
+const styles = {
+  headerWrapper: {
+    marginBottom: "var(--space-6)",
+  },
+  title: {
+    fontSize: "var(--text-2xl)",
+    fontWeight: 600,
+    color: "var(--text-primary)",
+    marginBottom: "var(--space-2)",
+    display: "flex",
+    alignItems: "center",
+    gap: "var(--space-2)",
+    margin: 0,
+  },
+  titleIcon: {
+    fontSize: 24,
+  },
+  subtitle: {
+    ...S.dim,
+    fontSize: "var(--text-sm)",
+    marginTop: "var(--space-2)",
+  },
+  emptyText: {
+    ...S.dim,
+    fontStyle: "italic",
+  },
+  pickerGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 80px 1fr",
+    gap: "0 var(--space-6)",
+    alignItems: "center",
+    marginBottom: "var(--space-6)",
+  },
+  vsDivider: {
+    textAlign: "center",
+    paddingTop: "var(--space-4)",
+    fontSize: "var(--text-base)",
+    color: "var(--text-muted)",
+    letterSpacing: 2,
+  },
+  selectPrompt: {
+    ...S.dim,
+  },
+  snapshotGrid: {
+    ...S.grid2,
+    marginBottom: "var(--space-4)",
+  },
+  scoreBreakdownGrid: {
+    ...S.grid2,
+  },
+  divider: {
+    ...S.rule,
+    margin: "var(--space-6) 0 var(--space-3)",
+  },
+  footerRules: {
+    ...S.dim,
+    fontSize: "var(--text-xs)",
+  },
+} satisfies Record<string, React.CSSProperties>;

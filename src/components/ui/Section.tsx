@@ -29,25 +29,20 @@ export function Section({
 }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ marginBottom: "var(--space-2)" }}>
-      <hr
-        style={{
-          border: "none",
-          borderTop: "1px solid var(--border)",
-          margin: "var(--space-6) 0",
-        }}
-      />
+    <div style={styles.container}>
+      <hr style={styles.hr} />
       <div
         className="seshat-flex-between"
         style={{
+          ...styles.header,
           marginBottom: open ? "var(--space-4)" : 0,
         }}
       >
         <GhostButton onClick={() => setOpen((o) => !o)}>
           {open ? (
-            <ExpandMoreIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: "var(--space-2)" }} />
+            <ExpandMoreIcon sx={styles.expandIcon} />
           ) : (
-            <ChevronRightIcon sx={{ fontSize: 14, color: "var(--text-muted)", marginRight: "var(--space-2)" }} />
+            <ChevronRightIcon sx={styles.expandIcon} />
           )}
           {title}
         </GhostButton>
@@ -55,17 +50,42 @@ export function Section({
       </div>
       <div
         style={{
-          display: "grid",
+          ...styles.transitionWrapper,
           gridTemplateRows: open ? "1fr" : "0fr",
           opacity: open ? 1 : 0,
           transform: open ? "translateY(0)" : "translateY(-4px)",
-          transition: "grid-template-rows 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
         }}
       >
-        <div style={{ overflow: "hidden" }}>
+        <div style={styles.childrenWrapper}>
           {children}
         </div>
       </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    marginBottom: "var(--space-2)",
+  },
+  hr: {
+    border: "none",
+    borderTop: "1px solid var(--border)",
+    margin: "var(--space-6) 0",
+  },
+  expandIcon: {
+    fontSize: 14,
+    color: "var(--text-muted)",
+    marginRight: "var(--space-2)",
+  },
+  header: {
+    // seshat-flex-between class covers flex settings, but keep placeholder/custom overrides if needed
+  },
+  transitionWrapper: {
+    display: "grid",
+    transition: "grid-template-rows 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
+  },
+  childrenWrapper: {
+    overflow: "hidden",
+  },
+} satisfies Record<string, React.CSSProperties>;

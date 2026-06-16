@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { S } from "../../lib/utils";
+import { WorldField } from "./WorldField";
 
 interface WorldTabContentProps {
   synopsis: string;
@@ -7,34 +8,6 @@ interface WorldTabContentProps {
   setting: string;
   rules: string;
 }
-
-const WorldField = memo(function WorldField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  if (!value) return null;
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <p
-        style={{
-          ...S.dim,
-          marginBottom: 4,
-          letterSpacing: 1,
-          textTransform: "uppercase",
-          fontSize: 10,
-        }}
-      >
-        {label}
-      </p>
-      <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-        {value}
-      </p>
-    </div>
-  );
-});
 
 export const WorldTabContent = memo(function WorldTabContent({
   synopsis,
@@ -53,7 +26,7 @@ export const WorldTabContent = memo(function WorldTabContent({
   }
 
   return (
-    <div style={{ lineHeight: 1.65 }}>
+    <div style={styles.container}>
       <WorldField label="Premise" value={synopsis} />
       <WorldField label="Themes" value={themes} />
       <WorldField label="Setting" value={setting} />
@@ -61,3 +34,9 @@ export const WorldTabContent = memo(function WorldTabContent({
     </div>
   );
 });
+
+const styles = {
+  container: {
+    lineHeight: 1.65,
+  },
+} satisfies Record<string, React.CSSProperties>;

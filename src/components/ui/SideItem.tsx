@@ -28,54 +28,33 @@ export function SideItem({
       onMouseLeave={() => setHover(false)}
       className="seshat-flex-between"
       style={{
-        padding: "8px 24px",
-        cursor: "pointer",
+        ...styles.containerBase,
         background: hover ? "var(--bg-hover)" : "transparent",
-        borderLeft: active ? `2px solid ${color || "var(--color-purple)"}` : "2px solid transparent",
-        transition: "background 0.1s, border-left 0.1s",
+        borderLeft: active ? `2px solid ${color || "var(--color-primary)"}` : "2px solid transparent",
       }}
     >
-      <div style={{ minWidth: 0 }}>
+      <div style={styles.contentWrapper}>
         <div
           className="seshat-flex-align"
           style={{
-            fontSize: 14,
+            ...styles.labelRowBase,
             color: color || "var(--text-primary)",
-            gap: 6,
           }}
         >
           {color && (
             <span
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
+                ...styles.colorDot,
                 background: color,
-                display: "inline-block",
-                flexShrink: 0,
               }}
             />
           )}
-          <span
-            style={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <span style={styles.labelText}>
             {label}
           </span>
         </div>
         {sub && (
-          <div
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 13,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
+          <div style={styles.subText}>
             {sub}
           </div>
         )}
@@ -101,3 +80,37 @@ export function SideItem({
     </div>
   );
 }
+
+const styles = {
+  containerBase: {
+    padding: "8px 24px",
+    cursor: "pointer",
+    transition: "background 0.1s, border-left 0.1s",
+  },
+  contentWrapper: {
+    minWidth: 0,
+  },
+  labelRowBase: {
+    fontSize: 14,
+    gap: 6,
+  },
+  colorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: "50%",
+    display: "inline-block",
+    flexShrink: 0,
+  },
+  labelText: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  subText: {
+    color: "var(--text-secondary)",
+    fontSize: 13,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+} satisfies Record<string, React.CSSProperties>;

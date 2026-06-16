@@ -147,7 +147,7 @@ export default function EventPage() {
 
   if (!event)
     return (
-      <div style={{ padding: "40px", color: "var(--text-secondary)" }}>
+      <div style={styles.notFoundWrapper}>
         Event not found.
       </div>
     );
@@ -181,8 +181,6 @@ export default function EventPage() {
       }
     });
 
-    // No need to sync back to chapters since EventPage is read-only for chapters.
-    // API delta sync
     const token =
       localStorage.getItem("seshat-auth-token") ||
       sessionStorage.getItem("seshat-auth-token");
@@ -211,8 +209,6 @@ export default function EventPage() {
           JSON.stringify(payload, null, 2),
         );
 
-        // Event-to-chapter syncing is handled solely by ChapterPage.
-
         showToast("Event synced to cloud", "success");
         reset(data);
         setIsAttrsDirty(false);
@@ -224,6 +220,38 @@ export default function EventPage() {
     }
   };
 
+  const getSaveBtnStyle = (active: boolean) => {
+    if (active) {
+      return {
+        background: "var(--color-green)",
+        color: "var(--bg-app)",
+        border: "none",
+        borderRadius: 4,
+        padding: "6px 14px",
+        fontSize: 12,
+        fontWeight: 600,
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        cursor: isSaving ? "default" : "pointer" as const,
+        opacity: isSaving ? 0.7 : 1,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      };
+    }
+    return {
+      ...S.ghost,
+      fontSize: 12,
+      letterSpacing: 1,
+      color: "var(--color-green)",
+      flexShrink: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: 4,
+      opacity: 0.5,
+      cursor: "default" as const,
+    };
+  };
+
   return (
     <>
       <div
@@ -231,59 +259,16 @@ export default function EventPage() {
         className="seshat-page-container"
         onScroll={(e) => setIsFloating(e.currentTarget.scrollTop > 80)}
       >
-        <div
-          className="seshat-flex-between"
-          style={{
-            marginBottom: "var(--space-4)",
-            gap: "var(--space-4)",
-          }}
-        >
+        <div className="seshat-flex-between" style={styles.headerRow}>
           <input
             {...register("title")}
-            style={{
-              ...S.input,
-              fontSize: 28,
-              fontFamily: "var(--font-serif)",
-              border: "none",
-              padding: 0,
-              flex: 1,
-              color: "var(--text-primary)",
-            }}
+            style={styles.titleInput}
           />
           <button
             onClick={onSubmit}
             title="Save changes"
             disabled={(!isDirty && !isAttrsDirty) || isSaving}
-            style={
-              isDirty || isAttrsDirty
-                ? {
-                    background: "var(--color-green)",
-                    color: "var(--bg-app)",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "6px 14px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    cursor: isSaving ? "default" : "pointer",
-                    opacity: isSaving ? 0.7 : 1,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  }
-                : {
-                    ...S.ghost,
-                    fontSize: 12,
-                    letterSpacing: 1,
-                    color: "var(--color-green)",
-                    flexShrink: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: 0.5,
-                    cursor: "default",
-                  }
-            }
+            style={getSaveBtnStyle(isDirty || isAttrsDirty)}
           >
             <SaveIcon sx={{ fontSize: 14 }} />
             {isSaving ? "saving..." : "save"}
@@ -293,15 +278,13 @@ export default function EventPage() {
         <div className="seshat-event-meta-grid">
           <div>
             <label style={S.label}>
-              <ScheduleIcon
-                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-              />
+              <ScheduleIcon sx={styles.metaIcon} />
               Time
             </label>
             <input
               type="number"
               {...register("time", { valueAsNumber: true })}
-              style={{ ...S.input, width: 52 }}
+              style={styles.timeInput}
             />
           </div>
           <div>
@@ -315,28 +298,24 @@ export default function EventPage() {
 
           <div>
             <label style={S.label}>
-              <CalendarTodayIcon
-                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-              />
+              <CalendarTodayIcon sx={styles.metaIcon} />
               Start
             </label>
             <input
               type="datetime-local"
               {...register("startDate")}
-              style={{ ...S.input, width: "100%", fontSize: 12 }}
+              style={styles.datetimeInput}
             />
           </div>
           <div>
             <label style={S.label}>
-              <CalendarTodayIcon
-                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-              />
+              <CalendarTodayIcon sx={styles.metaIcon} />
               End
             </label>
             <input
               type="datetime-local"
               {...register("endDate")}
-              style={{ ...S.input, width: "100%", fontSize: 12 }}
+              style={styles.datetimeInput}
             />
           </div>
           <div>
@@ -344,7 +323,7 @@ export default function EventPage() {
             <input
               {...register("subplot")}
               placeholder="e.g. A-Plot, B-Plot"
-              style={{ ...S.input, width: "100%", fontSize: 12 }}
+              style={styles.subplotInput}
             />
           </div>
         </div>
@@ -360,12 +339,7 @@ export default function EventPage() {
                   e.stopPropagation();
                   setShowInfoModal(true);
                 }}
-                style={{
-                  ...S.ghost,
-                  padding: "0 4px",
-                  marginLeft: 8,
-                  height: 20,
-                }}
+                style={styles.infoIconBtn}
                 title="How does Chapter Sync work?"
               >
                 <InfoIcon sx={{ fontSize: 14, color: "var(--color-blue)" }} />
@@ -374,69 +348,26 @@ export default function EventPage() {
           }
           defaultOpen={true}
         >
-          <div
-            style={{
-              ...S.input,
-              minHeight: 48,
-              fontSize: 12,
-              padding: "12px",
-              background: "transparent",
-              border: "1px solid var(--border)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 4,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 10,
-                color: "var(--text-muted)",
-                marginBottom: 8,
-                fontStyle: "italic",
-              }}
-            >
+          <div style={styles.chaptersCard}>
+            <span style={styles.chaptersCardSubText}>
               Chapters that take place during this event. To change this, edit
               the chapter's "Takes Place At" field.
             </span>
             {formChapters.length > 0 ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div style={styles.chaptersList}>
                 {allChapters
                   .filter((c) => formChapters.includes(c.id))
                   .map((c) => (
-                    <div
-                      key={c.id}
-                      style={{
-                        ...S.pill,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "4px 8px",
-                        color: "var(--color-blue)",
-                        borderColor: "var(--color-blue)",
-                        background: "rgba(0, 153, 255, 0.05)",
-                      }}
-                    >
-                      <span style={{ fontSize: 11, fontWeight: "bold" }}>
-                        {c.number}
-                      </span>
+                    <div key={c.id} style={styles.chapterPill}>
+                      <span style={styles.chapterNumber}>{c.number}</span>
                       {c.title && (
-                        <span
-                          style={{
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            maxWidth: 150,
-                            fontSize: 11,
-                          }}
-                        >
-                          {c.title}
-                        </span>
+                        <span style={styles.chapterTitle}>{c.title}</span>
                       )}
                     </div>
                   ))}
               </div>
             ) : (
-              <span style={{ color: "var(--text-muted)" }}>
+              <span style={styles.noChaptersText}>
                 No chapters take place here yet.
               </span>
             )}
@@ -447,48 +378,33 @@ export default function EventPage() {
               title="Smart Character Sync"
               onClose={() => setShowInfoModal(false)}
             >
-              <div
-                style={{
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                <p style={{ marginBottom: 12 }}>
+              <div style={styles.modalBody}>
+                <p style={styles.modalParagraph}>
                   <strong>Auto-Add:</strong> When you pin a chapter to this
                   event, all characters currently present in that chapter are
                   automatically added to the event.
                 </p>
-                <p style={{ marginBottom: 12 }}>
+                <p style={styles.modalParagraph}>
                   <strong>Clever Auto-Remove:</strong> If you unpin a chapter,
                   the system will look for characters that belonged{" "}
                   <em>exclusively</em> to that chapter.
                 </p>
-                <p style={{ marginBottom: 12 }}>
+                <p style={styles.modalParagraph}>
                   Before removing an exclusive character, the system checks if
                   you have actively planned for them in this event (e.g., set
                   their "Motive", "Emotional State", or "Power Tier").
                 </p>
-                <div
-                  style={{
-                    ...S.pill,
-                    background: "rgba(0, 153, 255, 0.05)",
-                    borderColor: "var(--color-blue)",
-                    color: "var(--text-primary)",
-                    display: "inline-block",
-                    marginTop: 8,
-                  }}
-                >
+                <div style={styles.modalTldr}>
                   <strong>TL;DR:</strong> If a character's attributes are
                   entirely blank, they will be safely auto-cleaned. If you've
                   modified their event attributes, they are protected from
                   auto-removal, preserving your manual planning!
                 </div>
               </div>
-              <div style={{ marginTop: 24, textAlign: "right" }}>
+              <div style={styles.modalFooter}>
                 <button
                   type="button"
-                  style={{ ...S.button, padding: "6px 16px" }}
+                  style={styles.modalGotItBtn}
                   onClick={() => setShowInfoModal(false)}
                 >
                   Got it
@@ -501,9 +417,7 @@ export default function EventPage() {
         <Field
           label={
             <>
-              <LocationOnIcon
-                sx={{ fontSize: 10, marginRight: 3, verticalAlign: "middle" }}
-              />
+              <LocationOnIcon sx={styles.metaIcon} />
               Setting / location
             </>
           }
@@ -541,34 +455,7 @@ export default function EventPage() {
             disabled={(!isDirty && !isAttrsDirty) || isSaving}
             onClick={onSubmit}
             title="Save changes"
-            style={
-              isDirty || isAttrsDirty
-                ? {
-                    background: "var(--color-green)",
-                    color: "var(--bg-app)",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "6px 14px",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    cursor: isSaving ? "default" : "pointer",
-                    opacity: isSaving ? 0.7 : 1,
-                  }
-                : {
-                    ...S.ghost,
-                    fontSize: 12,
-                    letterSpacing: 1,
-                    color: "var(--color-green)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    opacity: 0.5,
-                    cursor: "default",
-                  }
-            }
+            style={getSaveBtnStyle(isDirty || isAttrsDirty)}
           >
             <SaveIcon sx={{ fontSize: 14 }} />
             {isSaving ? "saving..." : "save"}
@@ -578,3 +465,118 @@ export default function EventPage() {
     </>
   );
 }
+
+const styles = {
+  notFoundWrapper: {
+    padding: "40px",
+    color: "var(--text-secondary)",
+  },
+  headerRow: {
+    marginBottom: "var(--space-4)",
+    gap: "var(--space-4)",
+  },
+  titleInput: {
+    ...S.input,
+    fontSize: 28,
+    fontFamily: "var(--font-serif)",
+    border: "none",
+    padding: 0,
+    flex: 1,
+    color: "var(--text-primary)",
+  },
+  metaIcon: {
+    fontSize: 10,
+    marginRight: 3,
+    verticalAlign: "middle",
+  },
+  timeInput: {
+    ...S.input,
+    width: 52,
+  },
+  datetimeInput: {
+    ...S.input,
+    width: "100%",
+    fontSize: 12,
+  },
+  subplotInput: {
+    ...S.input,
+    width: "100%",
+    fontSize: 12,
+  },
+  infoIconBtn: {
+    ...S.ghost,
+    padding: "0 4px",
+    marginLeft: 8,
+    height: 20,
+  },
+  chaptersCard: {
+    ...S.input,
+    minHeight: 48,
+    fontSize: 12,
+    padding: "12px",
+    background: "transparent",
+    border: "1px solid var(--border)",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 4,
+  },
+  chaptersCardSubText: {
+    fontSize: 10,
+    color: "var(--text-muted)",
+    marginBottom: 8,
+    fontStyle: "italic",
+  },
+  chaptersList: {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    gap: 6,
+  },
+  chapterPill: {
+    ...S.pill,
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    padding: "4px 8px",
+    color: "var(--color-blue)",
+    borderColor: "var(--color-blue)",
+    background: "rgba(0, 153, 255, 0.05)",
+  },
+  chapterNumber: {
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  chapterTitle: {
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    maxWidth: 150,
+    fontSize: 11,
+  },
+  modalBody: {
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "var(--text-secondary)",
+  },
+  modalParagraph: {
+    marginBottom: 12,
+  },
+  modalTldr: {
+    ...S.pill,
+    background: "rgba(0, 153, 255, 0.05)",
+    borderColor: "var(--color-blue)",
+    color: "var(--text-primary)",
+    display: "inline-block",
+    marginTop: 8,
+  },
+  modalFooter: {
+    marginTop: 24,
+    textAlign: "right" as const,
+  },
+  noChaptersText: {
+    color: "var(--text-muted)",
+  },
+  modalGotItBtn: {
+    ...S.button,
+    padding: "6px 16px",
+  },
+} satisfies Record<string, React.CSSProperties>;

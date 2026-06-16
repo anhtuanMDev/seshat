@@ -15,42 +15,21 @@ export function PinnedContextStrip({
   onRemoveEvent,
 }: PinnedContextStripProps) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 6,
-        marginBottom: 20,
-        paddingBottom: 16,
-        paddingRight: 12,
-        borderBottom: "1px solid var(--border)",
-      }}
-    >
+    <div style={styles.container}>
       {pinnedCharObjs.map((c: Character) => (
         <button
           key={c.id}
           onClick={() => onRemoveChar(c.id)}
           style={{
-            fontSize: 11,
-            fontFamily: "inherit",
-            padding: "2px 6px 2px 8px",
+            ...styles.charBtn,
             border: `1px solid ${c.color}`,
             color: c.color,
-            background: "transparent",
-            cursor: "pointer",
-            borderRadius: 3,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
           }}
         >
           <span
             style={{
-              width: 5,
-              height: 5,
-              borderRadius: "50%",
+              ...styles.charDot,
               background: c.color,
-              display: "inline-block",
             }}
           />
           {c.name}
@@ -61,19 +40,7 @@ export function PinnedContextStrip({
         <button
           key={e.id}
           onClick={() => onRemoveEvent(e.id)}
-          style={{
-            fontSize: 11,
-            fontFamily: "inherit",
-            padding: "2px 6px 2px 8px",
-            border: "1px solid var(--border-field)",
-            color: "var(--text-secondary)",
-            background: "transparent",
-            cursor: "pointer",
-            borderRadius: 3,
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-          }}
+          style={styles.eventBtn}
         >
           T{e.time} · {e.title}
           <CloseIcon sx={{ fontSize: 12, opacity: 0.6 }} />
@@ -82,3 +49,45 @@ export function PinnedContextStrip({
     </div>
   );
 }
+
+const styles = {
+  container: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 20,
+    paddingBottom: 16,
+    paddingRight: 12,
+    borderBottom: "1px solid var(--border)",
+  },
+  charBtn: {
+    fontSize: 11,
+    fontFamily: "inherit",
+    padding: "2px 6px 2px 8px",
+    background: "transparent",
+    cursor: "pointer",
+    borderRadius: 3,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  charDot: {
+    width: 5,
+    height: 5,
+    borderRadius: "50%",
+    display: "inline-block",
+  },
+  eventBtn: {
+    fontSize: 11,
+    fontFamily: "inherit",
+    padding: "2px 6px 2px 8px",
+    border: "1px solid var(--border-field)",
+    color: "var(--text-secondary)",
+    background: "transparent",
+    cursor: "pointer",
+    borderRadius: 3,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+} satisfies Record<string, React.CSSProperties>;
