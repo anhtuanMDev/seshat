@@ -28,7 +28,7 @@ import {
   BugReportIcon,
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useTheme";
 import { syncToGitHub, loadBookFromGitHub } from "./lib/githubSync";
@@ -369,7 +369,26 @@ export default function App() {
 
   // If there's no bookId in the URL, we're likely on the root path (BookListPage)
   if (!bookId) {
-    return <Outlet />;
+    return (
+      <Suspense fallback={
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          width: "100vw",
+          background: "var(--bg-app)",
+          color: "var(--text-secondary)",
+          fontSize: 13,
+          letterSpacing: 2,
+          textTransform: "uppercase"
+        }}>
+          Loading list...
+        </div>
+      }>
+        <Outlet />
+      </Suspense>
+    );
   }
 
   // If we have a bookId but it's not fully loaded yet (or not even in memory), show loading
@@ -958,7 +977,22 @@ export default function App() {
 
         {/* ── Main content ── */}
         <div style={S.main} className="seshat-main" ref={mainRef}>
-          <Outlet />
+          <Suspense fallback={
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              width: "100%",
+              color: "var(--text-secondary)",
+              fontSize: 13,
+              letterSpacing: 1,
+            }}>
+              Loading page...
+            </div>
+          }>
+            <Outlet />
+          </Suspense>
         </div>
       </div>
 
