@@ -418,7 +418,7 @@ export default function BookListPage() {
 
 const styles = {
   container: {
-    minHeight: "100vh",
+    minHeight: "100dvh",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",

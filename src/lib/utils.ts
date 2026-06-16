@@ -267,7 +267,7 @@ const S = {
   app: {
     display: "flex",
     flexDirection: "column",
-    height: "100vh",
+    height: "100dvh",
     background: "var(--bg-app)",
     color: "var(--text-primary)",
     fontSize: 14,

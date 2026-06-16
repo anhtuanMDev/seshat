@@ -291,8 +291,8 @@ const styles = {
   container: {
     display: "flex",
     flexDirection: "column",
-    height: "100vh",
-    width: "100vw",
+    height: "100dvh",
+    width: "100dvw",
     overflow: "hidden",
     background: "var(--bg-app)",
     color: "var(--text-primary)",

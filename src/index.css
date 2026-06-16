@@ -684,7 +684,7 @@ svg circle {
     right: 0;
     bottom: 0;
     width: 280px;
-    max-height: 100vh;
+    max-height: 100dvh;
     background: var(--bg-side);
     z-index: 50;
     border-left: 1px solid var(--border);
@@ -712,7 +712,10 @@ svg circle {
 
   .seshat-chapter-toolbar.floating {
     top: auto;
-    bottom: 24px;
+    /* Keep the toolbar above the phone's gesture bar / browser navigation bar.
+       env(safe-area-inset-bottom) is 0 on devices without a notch/gesture bar,
+       so this is safe to apply universally. */
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
 
   .seshat-chapter-toolbar.floating.panel-open {
