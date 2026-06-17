@@ -65,10 +65,30 @@ import { ArrayItemCard } from "../components/character/ArrayItemCard";
 import { EquipmentBlock } from "../components/character/EquipmentBlock";
 
 const RARITY_COLORS = {
-  Common: { text: "Common", color: "#9ca3af", bg: "rgba(156, 163, 175, 0.05)", border: "rgba(156, 163, 175, 0.2)" },
-  Rare: { text: "Rare", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.08)", border: "rgba(59, 130, 246, 0.3)" },
-  Epic: { text: "Epic", color: "#a855f7", bg: "rgba(168, 85, 247, 0.08)", border: "rgba(168, 85, 247, 0.3)" },
-  Legendary: { text: "Legendary", color: "#eab308", bg: "rgba(234, 179, 8, 0.08)", border: "rgba(234, 179, 8, 0.3)" },
+  Common: {
+    text: "Common",
+    color: "#9ca3af",
+    bg: "rgba(156, 163, 175, 0.05)",
+    border: "rgba(156, 163, 175, 0.2)",
+  },
+  Rare: {
+    text: "Rare",
+    color: "#3b82f6",
+    bg: "rgba(59, 130, 246, 0.08)",
+    border: "rgba(59, 130, 246, 0.3)",
+  },
+  Epic: {
+    text: "Epic",
+    color: "#a855f7",
+    bg: "rgba(168, 85, 247, 0.08)",
+    border: "rgba(168, 85, 247, 0.3)",
+  },
+  Legendary: {
+    text: "Legendary",
+    color: "#eab308",
+    bg: "rgba(234, 179, 8, 0.08)",
+    border: "rgba(234, 179, 8, 0.3)",
+  },
 };
 
 const getSlotIcon = (slot: EquipSlot, color: string = "currentColor") => {
@@ -81,7 +101,7 @@ const getSlotIcon = (slot: EquipSlot, color: string = "currentColor") => {
     strokeWidth: 1.5,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
-    style: { opacity: 0.8 }
+    style: { opacity: 0.8 },
   };
 
   switch (slot) {
@@ -180,7 +200,8 @@ type ModalKind =
 export default function CharacterPage() {
   const { id } = useParams();
   const events = useEvents();
-  const chapters = useChapters() || [];
+  const rawChapters = useChapters();
+  const chapters = useMemo(() => rawChapters || [], [rawChapters]);
   const sortedChapters = useMemo(() => {
     return [...chapters].sort((a, b) => {
       if (a.order !== b.order) return a.order - b.order;
@@ -194,8 +215,10 @@ export default function CharacterPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedTimeContext, setSelectedTimeContext] = useState<string>("base");
-  const [selectedEquipContext, setSelectedEquipContext] = useState<string>("base");
+  const [selectedTimeContext, setSelectedTimeContext] =
+    useState<string>("base");
+  const [selectedEquipContext, setSelectedEquipContext] =
+    useState<string>("base");
 
   const char = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -286,20 +309,29 @@ export default function CharacterPage() {
   const ref = useAnimateIn();
 
   const statusTimelineRaw = useWatch({ control, name: "statusTimeline" });
-  const statusTimeline = useMemo(() => statusTimelineRaw || [], [statusTimelineRaw]);
-  const activeStatusIdx = statusTimeline.findIndex((s) => s.id === selectedTimeContext);
+  const statusTimeline = useMemo(
+    () => statusTimelineRaw || [],
+    [statusTimelineRaw],
+  );
+  const activeStatusIdx = statusTimeline.findIndex(
+    (s) => s.id === selectedTimeContext,
+  );
   const isBase = selectedTimeContext === "base" || activeStatusIdx === -1;
 
   const isEquipBase = selectedEquipContext === "base";
   const currentEquipEventId = useMemo(() => {
     if (isEquipBase) return undefined;
     // 1. Try to find the event associated with this chapter
-    const chapterEvents = (events || []).filter((e) => e.chapters?.includes(selectedEquipContext));
+    const chapterEvents = (events || []).filter((e) =>
+      e.chapters?.includes(selectedEquipContext),
+    );
     if (chapterEvents.length > 0) {
       return [...chapterEvents].sort((a, b) => a.time - b.time)[0].id;
     }
     // 2. Fallback to direct event context ID if it's already an event ID
-    const directEvent = (events || []).find((e) => e.id === selectedEquipContext);
+    const directEvent = (events || []).find(
+      (e) => e.id === selectedEquipContext,
+    );
     return directEvent?.id;
   }, [selectedEquipContext, events, isEquipBase]);
 
@@ -313,7 +345,7 @@ export default function CharacterPage() {
       equipment,
       events || [],
       statusTimeline,
-      selectedEquipContext
+      selectedEquipContext,
     );
   }, [equipment, events, statusTimeline, selectedEquipContext]);
   const achievements = useWatch({ control, name: "achievements" }) || [];
@@ -348,11 +380,7 @@ export default function CharacterPage() {
   }, [showExport, char, events, getValues]);
 
   if (!char) {
-    return (
-      <div style={styles.notFound}>
-        Character not found.
-      </div>
-    );
+    return <div style={styles.notFound}>Character not found.</div>;
   }
 
   const onSubmit = async () => {
@@ -440,11 +468,26 @@ export default function CharacterPage() {
   const autoEquip = () => {
     const current = [...(getValues("equipment") || [])];
     let changed = false;
-    const slots = ["Helmet", "Armor", "Boots", "Gloves", "Mount", "Weapon", "Offhand", "Accessory", "Relic", "Other"] as const;
+    const slots = [
+      "Helmet",
+      "Armor",
+      "Boots",
+      "Gloves",
+      "Mount",
+      "Weapon",
+      "Offhand",
+      "Accessory",
+      "Relic",
+      "Other",
+    ] as const;
     slots.forEach((slotName) => {
-      const isEquipped = current.some((eq) => eq.slot === slotName && eq.accessState === "Equipped");
+      const isEquipped = current.some(
+        (eq) => eq.slot === slotName && eq.accessState === "Equipped",
+      );
       if (!isEquipped) {
-        const stashItemIdx = current.findIndex((eq) => eq.slot === slotName && eq.accessState !== "Equipped");
+        const stashItemIdx = current.findIndex(
+          (eq) => eq.slot === slotName && eq.accessState !== "Equipped",
+        );
         if (stashItemIdx >= 0) {
           current[stashItemIdx] = {
             ...current[stashItemIdx],
@@ -470,7 +513,8 @@ export default function CharacterPage() {
   };
 
   const handleCopyEquipmentStateFrom = (sourceEventId: string) => {
-    const currentEventId = selectedEquipContext !== "base" ? selectedEquipContext : undefined;
+    const currentEventId =
+      selectedEquipContext !== "base" ? selectedEquipContext : undefined;
     if (!currentEventId) return;
 
     // Get the resolved equipment at the source context
@@ -478,7 +522,7 @@ export default function CharacterPage() {
       equipment,
       events || [],
       statusTimeline,
-      sourceStatusId,
+      sourceEventId,
     );
 
     // Update the equipment list
@@ -488,7 +532,9 @@ export default function CharacterPage() {
       if (!sourceItem) return item; // Item didn't exist or wasn't active
 
       // Add a history entry for the current event
-      const history = [...(item.history || [])].filter((h) => h.eventId !== currentEventId);
+      const history = [...(item.history || [])].filter(
+        (h) => h.eventId !== currentEventId,
+      );
       history.push({
         eventId: currentEventId,
         accessState: sourceItem.accessState,
@@ -518,7 +564,8 @@ export default function CharacterPage() {
         accessState: targetState,
       };
     } else {
-      const currentEventId = selectedEquipContext !== "base" ? selectedEquipContext : undefined;
+      const currentEventId =
+        selectedEquipContext !== "base" ? selectedEquipContext : undefined;
       if (!currentEventId) return;
 
       const activeEquip = resolveEquipmentAt(
@@ -532,7 +579,9 @@ export default function CharacterPage() {
 
       targetState = currentResolvedState === "Equipped" ? "Stored" : "Equipped";
 
-      const history = [...(item.history || [])].filter((h) => h.eventId !== currentEventId);
+      const history = [...(item.history || [])].filter(
+        (h) => h.eventId !== currentEventId,
+      );
       history.push({
         eventId: currentEventId,
         accessState: targetState,
@@ -547,18 +596,18 @@ export default function CharacterPage() {
     setValue("equipment", current, { shouldDirty: true });
     showToast(
       `Item moved to ${targetState === "Equipped" ? "Equipped Slots" : "Stash / Inventory"}!`,
-      "success"
+      "success",
     );
   };
 
   const viewStats = () => {
     if (!char) return;
     const res = scoreFighter(char, events);
-    
+
     let base = 0;
     let equipmentBonus = 0;
     let lossPenalty = 0;
-    
+
     res.notes.forEach((n) => {
       if (n.label.includes("Equipped items")) {
         equipmentBonus += n.pts;
@@ -571,10 +620,10 @@ export default function CharacterPage() {
 
     alert(
       `Combat Status Breakdown for ${char.name}:\n\n` +
-      `Combat Rating: ${res.score.toFixed(1)}\n` +
-      `• Base Potential: ${base.toFixed(1)}\n` +
-      `• Equipment Modifier: +${equipmentBonus.toFixed(1)}\n` +
-      `• Trauma / Defeat Penalty: -${lossPenalty.toFixed(1)}`
+        `Combat Rating: ${res.score.toFixed(1)}\n` +
+        `• Base Potential: ${base.toFixed(1)}\n` +
+        `• Equipment Modifier: +${equipmentBonus.toFixed(1)}\n` +
+        `• Trauma / Defeat Penalty: -${lossPenalty.toFixed(1)}`,
     );
   };
 
@@ -683,13 +732,25 @@ export default function CharacterPage() {
     opacity: isSaving ? 0.7 : 1,
   };
 
-  const genderName = (isBase ? "gender" : `statusTimeline.${activeStatusIdx}.gender`) as Path<CharacterForm>;
-  const dobName = (isBase ? "dob" : `statusTimeline.${activeStatusIdx}.dob`) as Path<CharacterForm>;
-  const appearanceName = (isBase ? "appearance" : `statusTimeline.${activeStatusIdx}.appearance`) as Path<CharacterForm>;
+  const genderName = (
+    isBase ? "gender" : `statusTimeline.${activeStatusIdx}.gender`
+  ) as Path<CharacterForm>;
+  const dobName = (
+    isBase ? "dob" : `statusTimeline.${activeStatusIdx}.dob`
+  ) as Path<CharacterForm>;
+  const appearanceName = (
+    isBase ? "appearance" : `statusTimeline.${activeStatusIdx}.appearance`
+  ) as Path<CharacterForm>;
 
-  const placeholderGender = isBase ? "Female, Non-binary, he/him…" : `Inherit: "${baseGender || 'none'}"`;
-  const placeholderDob = isBase ? "Born 201 ERA, age 24…" : `Inherit: "${baseDob || 'none'}"`;
-  const placeholderAppearance = isBase ? "Tall with scarred hands, wearing silver chainmail…" : `Inherit: "${baseAppearance || 'none'}"`;
+  const placeholderGender = isBase
+    ? "Female, Non-binary, he/him…"
+    : `Inherit: "${baseGender || "none"}"`;
+  const placeholderDob = isBase
+    ? "Born 201 ERA, age 24…"
+    : `Inherit: "${baseDob || "none"}"`;
+  const placeholderAppearance = isBase
+    ? "Tall with scarred hands, wearing silver chainmail…"
+    : `Inherit: "${baseAppearance || "none"}"`;
 
   return (
     <>
@@ -699,10 +760,7 @@ export default function CharacterPage() {
         data-testid="character-page-container"
       >
         {/* ── Header ── */}
-        <div
-          className="seshat-flex-between"
-          style={styles.header}
-        >
+        <div className="seshat-flex-between" style={styles.header}>
           <div style={styles.nameContainer}>
             <span style={colorDotStyle} />
             <input
@@ -711,10 +769,7 @@ export default function CharacterPage() {
               style={styles.nameInput}
             />
           </div>
-          <div
-            ref={dockedButtonsRef}
-            style={styles.buttonsContainer}
-          >
+          <div ref={dockedButtonsRef} style={styles.buttonsContainer}>
             <button
               onClick={() => setShowExport(true)}
               data-testid="character-export-btn"
@@ -739,7 +794,14 @@ export default function CharacterPage() {
         <div data-testid="biography-section">
           <Section
             title={
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "100%",
+                }}
+              >
                 <span style={{ display: "flex", alignItems: "center" }}>
                   <InfoIcon sx={{ fontSize: 12, marginRight: 4 }} />
                   Biography & Appearance
@@ -785,7 +847,11 @@ export default function CharacterPage() {
                     const s = statusTimeline[activeStatusIdx];
                     const ev = events.find((e) => e.id === s?.eventId);
                     return `Editing overrides for timeline entry: ${
-                      ev ? `T${ev.time} — ${ev.title}` : s?.startDate ? s.startDate.replace("T", " ") : `Entry (${s?.id.slice(0, 4)})`
+                      ev
+                        ? `T${ev.time} — ${ev.title}`
+                        : s?.startDate
+                          ? s.startDate.replace("T", " ")
+                          : `Entry (${s?.id.slice(0, 4)})`
                     }`;
                   })()}
             </p>
@@ -860,7 +926,8 @@ export default function CharacterPage() {
                   s.archetype && `Archetype: ${s.archetype}`,
                   s.gender && `Gender: ${s.gender}`,
                   s.dob && `DOB: ${s.dob}`,
-                  s.appearance && `Looks: ${s.appearance.length > 30 ? s.appearance.slice(0, 27) + "..." : s.appearance}`,
+                  s.appearance &&
+                    `Looks: ${s.appearance.length > 30 ? s.appearance.slice(0, 27) + "..." : s.appearance}`,
                   s.emotionalState && `Emotion: ${s.emotionalState}`,
                   s.physicalState && `Physical: ${s.physicalState}`,
                 ].filter(Boolean) as string[];
@@ -879,9 +946,7 @@ export default function CharacterPage() {
               })}
           </div>
           {!statusTimeline.length && (
-            <p style={styles.sectionSubItalic}>
-              No status entries recorded.
-            </p>
+            <p style={styles.sectionSubItalic}>No status entries recorded.</p>
           )}
         </Section>
 
@@ -915,8 +980,6 @@ export default function CharacterPage() {
             </div>
           </Section>
         </div>
-
-
 
         {/* ── Psychological core ── */}
         <div data-testid="psychological-core-section">
@@ -970,10 +1033,7 @@ export default function CharacterPage() {
             <hr style={S.rule} />
 
             {/* Traumas */}
-            <div
-              className="seshat-flex-between"
-              style={styles.sectionTitleRow}
-            >
+            <div className="seshat-flex-between" style={styles.sectionTitleRow}>
               <p style={styles.titleTextWithIcon}>
                 <CrisisAlertIcon sx={{ fontSize: 12 }} />
                 Traumas ({traumas.length})
@@ -1001,9 +1061,7 @@ export default function CharacterPage() {
               ))}
             </div>
             {!traumas.length && (
-              <p style={styles.sectionSubItalic}>
-                No traumas recorded.
-              </p>
+              <p style={styles.sectionSubItalic}>No traumas recorded.</p>
             )}
           </Section>
         </div>
@@ -1102,13 +1160,30 @@ export default function CharacterPage() {
         {/* ── Equipment ── */}
         <Section
           title={
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+              }}
+            >
               <span style={{ display: "flex", alignItems: "center" }}>
                 <ShieldIcon sx={{ fontSize: 12, marginRight: 4 }} />
                 Equipment ({activeEquipment.length})
               </span>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ fontSize: "11px", color: "var(--text-secondary)", fontWeight: 600 }}>TIMELINE VIEW:</span>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--text-secondary)",
+                    fontWeight: 600,
+                  }}
+                >
+                  TIMELINE VIEW:
+                </span>
                 <select
                   value={selectedEquipContext}
                   onChange={(e) => setSelectedEquipContext(e.target.value)}
@@ -1144,12 +1219,18 @@ export default function CharacterPage() {
               <div className="seshat-gear-sheet-layout">
                 {/* Left Column slots */}
                 <div style={styles.gearColumn}>
-                  {(["Helmet", "Armor", "Gloves", "Boots", "Mount"] as const).map((slotName) => {
+                  {(
+                    ["Helmet", "Armor", "Gloves", "Boots", "Mount"] as const
+                  ).map((slotName) => {
                     const eq = activeEquipment.find(
-                      (item) => item.slot === slotName && item.accessState === "Equipped"
+                      (item) =>
+                        item.slot === slotName &&
+                        item.accessState === "Equipped",
                     );
                     if (eq) {
-                      const itemIndex = equipment.findIndex((item) => item.id === eq.id);
+                      const itemIndex = equipment.findIndex(
+                        (item) => item.id === eq.id,
+                      );
                       const itemRarity = eq.rarity || "Common";
                       const rar = RARITY_COLORS[itemRarity];
                       return (
@@ -1171,8 +1252,20 @@ export default function CharacterPage() {
                             <div style={styles.slotLabel}>{slotName}</div>
                             <div style={styles.slotItemName}>{eq.name}</div>
                             <div style={styles.slotRarityRow}>
-                              <span style={{ ...styles.rarityDot, background: rar.color }} />
-                              <span style={{ ...styles.rarityText, color: rar.color }}>{rar.text}</span>
+                              <span
+                                style={{
+                                  ...styles.rarityDot,
+                                  background: rar.color,
+                                }}
+                              />
+                              <span
+                                style={{
+                                  ...styles.rarityText,
+                                  color: rar.color,
+                                }}
+                              >
+                                {rar.text}
+                              </span>
                             </div>
                           </div>
                           <button
@@ -1183,7 +1276,8 @@ export default function CharacterPage() {
                             style={styles.slotActionBtn}
                             title="Move to Stash"
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "var(--color-primary)";
+                              e.currentTarget.style.color =
+                                "var(--color-primary)";
                               e.currentTarget.style.opacity = "1";
                             }}
                             onMouseLeave={(e) => {
@@ -1226,7 +1320,10 @@ export default function CharacterPage() {
                 </div>
 
                 {/* Center Column: Character details and combat score */}
-                <div className="seshat-gear-center-column" style={styles.gearCenterColumn}>
+                <div
+                  className="seshat-gear-center-column"
+                  style={styles.gearCenterColumn}
+                >
                   <div
                     style={{
                       ...styles.gearAvatarCircle,
@@ -1240,24 +1337,41 @@ export default function CharacterPage() {
                   </div>
                   <div style={styles.gearCharName}>{char.name}</div>
                   <div style={styles.gearCharRole}>
-                    {char.role || "No Role"} {char.archetype && `· ${char.archetype}`}
+                    {char.role || "No Role"}{" "}
+                    {char.archetype && `· ${char.archetype}`}
                   </div>
                   <div style={styles.gearPowerBadge}>
                     <span style={styles.gearPowerLabel}>combat score</span>
                     <span style={styles.gearPowerValue}>
-                      {scoreFighter(char, events, currentEquipEventId).score.toFixed(1)}
+                      {scoreFighter(
+                        char,
+                        events,
+                        currentEquipEventId,
+                      ).score.toFixed(1)}
                     </span>
                   </div>
                 </div>
 
                 {/* Right Column slots */}
                 <div style={styles.gearColumn}>
-                  {(["Weapon", "Offhand", "Accessory", "Relic", "Other"] as const).map((slotName) => {
+                  {(
+                    [
+                      "Weapon",
+                      "Offhand",
+                      "Accessory",
+                      "Relic",
+                      "Other",
+                    ] as const
+                  ).map((slotName) => {
                     const eq = activeEquipment.find(
-                      (item) => item.slot === slotName && item.accessState === "Equipped"
+                      (item) =>
+                        item.slot === slotName &&
+                        item.accessState === "Equipped",
                     );
                     if (eq) {
-                      const itemIndex = equipment.findIndex((item) => item.id === eq.id);
+                      const itemIndex = equipment.findIndex(
+                        (item) => item.id === eq.id,
+                      );
                       const itemRarity = eq.rarity || "Common";
                       const rar = RARITY_COLORS[itemRarity];
                       return (
@@ -1279,8 +1393,20 @@ export default function CharacterPage() {
                             <div style={styles.slotLabel}>{slotName}</div>
                             <div style={styles.slotItemName}>{eq.name}</div>
                             <div style={styles.slotRarityRow}>
-                              <span style={{ ...styles.rarityDot, background: rar.color }} />
-                              <span style={{ ...styles.rarityText, color: rar.color }}>{rar.text}</span>
+                              <span
+                                style={{
+                                  ...styles.rarityDot,
+                                  background: rar.color,
+                                }}
+                              />
+                              <span
+                                style={{
+                                  ...styles.rarityText,
+                                  color: rar.color,
+                                }}
+                              >
+                                {rar.text}
+                              </span>
                             </div>
                           </div>
                           <button
@@ -1291,7 +1417,8 @@ export default function CharacterPage() {
                             style={styles.slotActionBtn}
                             title="Move to Stash"
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "var(--color-primary)";
+                              e.currentTarget.style.color =
+                                "var(--color-primary)";
                               e.currentTarget.style.opacity = "1";
                             }}
                             onMouseLeave={(e) => {
@@ -1367,7 +1494,9 @@ export default function CharacterPage() {
                       }}
                       defaultValue=""
                     >
-                      <option value="" disabled>📋 Clone Gear State...</option>
+                      <option value="" disabled>
+                        📋 Clone Gear State...
+                      </option>
                       <option value="base">Default / Base State</option>
                       {sortedChapters
                         .filter((ch) => ch.id !== selectedEquipContext)
@@ -1384,15 +1513,26 @@ export default function CharacterPage() {
               {/* Rarity Guide Legend */}
               <div style={styles.rarityGuideRow}>
                 <span style={styles.rarityGuideLabel}>RARITY GUIDE:</span>
-                {(["Common", "Rare", "Epic", "Legendary"] as const).map((rarKey) => {
-                  const rar = RARITY_COLORS[rarKey];
-                  return (
-                    <div key={rarKey} style={styles.rarityGuideItem}>
-                      <span style={{ ...styles.rarityDot, background: rar.color }} />
-                      <span style={{ color: "var(--text-secondary)", fontSize: 11 }}>{rar.text}</span>
-                    </div>
-                  );
-                })}
+                {(["Common", "Rare", "Epic", "Legendary"] as const).map(
+                  (rarKey) => {
+                    const rar = RARITY_COLORS[rarKey];
+                    return (
+                      <div key={rarKey} style={styles.rarityGuideItem}>
+                        <span
+                          style={{ ...styles.rarityDot, background: rar.color }}
+                        />
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontSize: 11,
+                          }}
+                        >
+                          {rar.text}
+                        </span>
+                      </div>
+                    );
+                  },
+                )}
               </div>
             </div>
           )}
@@ -1407,7 +1547,9 @@ export default function CharacterPage() {
               {activeEquipment
                 .filter((eq: Equipment) => eq.accessState !== "Equipped")
                 .map((eq: Equipment) => {
-                  const itemIndex = equipment.findIndex((item) => item.id === eq.id);
+                  const itemIndex = equipment.findIndex(
+                    (item) => item.id === eq.id,
+                  );
                   const isStored = eq.accessState === "Stored";
                   const itemRarity = eq.rarity || "Common";
                   const rar = RARITY_COLORS[itemRarity];
@@ -1430,8 +1572,15 @@ export default function CharacterPage() {
                         <div style={styles.slotLabel}>{eq.slot}</div>
                         <div style={styles.slotItemName}>{eq.name}</div>
                         <div style={styles.slotRarityRow}>
-                          <span style={{ ...styles.rarityDot, background: rar.color }} />
-                          <span style={{ color: "var(--text-muted)", fontSize: 10 }}>
+                          <span
+                            style={{
+                              ...styles.rarityDot,
+                              background: rar.color,
+                            }}
+                          />
+                          <span
+                            style={{ color: "var(--text-muted)", fontSize: 10 }}
+                          >
                             {isStored ? "Stored" : "No Access"}
                           </span>
                         </div>
@@ -1467,8 +1616,16 @@ export default function CharacterPage() {
                     </div>
                   );
                 })}
-              {!activeEquipment.filter((eq) => eq.accessState !== "Equipped").length && (
-                <p style={{ ...S.dim, gridColumn: "1 / -1", fontStyle: "italic", margin: 0 }}>
+              {!activeEquipment.filter((eq) => eq.accessState !== "Equipped")
+                .length && (
+                <p
+                  style={{
+                    ...S.dim,
+                    gridColumn: "1 / -1",
+                    fontStyle: "italic",
+                    margin: 0,
+                  }}
+                >
                   No items in stash.
                 </p>
               )}
@@ -1594,10 +1751,7 @@ export default function CharacterPage() {
             title="Trauma"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1617,10 +1771,7 @@ export default function CharacterPage() {
             title="Condition"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1641,10 +1792,7 @@ export default function CharacterPage() {
             title="Equipment"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1665,10 +1813,7 @@ export default function CharacterPage() {
             title="Achievement"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1688,10 +1833,7 @@ export default function CharacterPage() {
             title="Loss"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1711,10 +1853,7 @@ export default function CharacterPage() {
             title="Relationship"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1735,10 +1874,7 @@ export default function CharacterPage() {
             title="Status Entry"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -1759,10 +1895,7 @@ export default function CharacterPage() {
             title="Character Arc"
             onClose={handleCancelModal}
             footer={
-              <button
-                onClick={handleSaveModal}
-                style={styles.doneBtn}
-              >
+              <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
                 done
               </button>
@@ -2161,7 +2294,8 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     padding: "24px 16px",
-    background: "radial-gradient(circle, rgba(25,25,30,0.4) 0%, rgba(15,15,18,0.7) 100%)",
+    background:
+      "radial-gradient(circle, rgba(25,25,30,0.4) 0%, rgba(15,15,18,0.7) 100%)",
     borderRadius: "8px",
     border: "1px solid var(--border)",
     gap: "16px",

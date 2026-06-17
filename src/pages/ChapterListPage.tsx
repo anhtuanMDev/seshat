@@ -30,7 +30,7 @@ export default function ChapterListPage() {
     };
     appStore.books[bookIdx].chapters.push(ch);
     navigate(`/book/${bookId}/chapters/${ch.id}`);
-  }, [chapters?.length, bookIdx, bookId, navigate]);
+  }, [chapters, bookIdx, bookId, navigate]);
 
   const sortedChapters = [...(chapters || [])].sort(
     (a: Chapter, b: Chapter) => a.order - b.order,
