@@ -117,6 +117,17 @@ export default function App() {
   const characters = useCharacters();
   const chapters = useChapters();
 
+  // Clean up stale timeRef values pointing to deleted events
+  useEffect(() => {
+    if (bookIdx < 0 || !chapters || !events) return;
+    const eventIds = new Set((events || []).map((e: Event) => e.id));
+    chapters.forEach((ch, i) => {
+      if (ch.timeRef && !eventIds.has(ch.timeRef)) {
+        appStore.books[bookIdx].chapters[i].timeRef.set("");
+      }
+    });
+  }, [bookIdx, chapters, events]);
+
   const addChar = () => {
     if (bookIdx < 0) return;
     const c = mkChar(`Character ${characters.length + 1}`, "#c0392b");
@@ -152,7 +163,7 @@ export default function App() {
 
   const addChapter = () => {
     if (bookIdx < 0) return;
-    const order = (chapters?.length || 0) + 1;
+    const order = Math.max(0, ...(chapters || []).map((c) => c.order)) + 1;
     const ch: Chapter = {
       id: uid(),
       number: `Ch. ${order}`,

@@ -14,10 +14,13 @@ export {
   NATION_CONNECTION_TYPES,
 } from "./constants";
 
-export const uid = () => Math.random().toString(36).slice(2, 8);
+export const uid = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 export const mkChar = (n: string, color: string) => ({
-  id: Math.random().toString(36).slice(2, 8),
+  id: uid(),
   name: n,
   statusTimeline: [],
   color,

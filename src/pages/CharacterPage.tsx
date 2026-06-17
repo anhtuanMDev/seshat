@@ -1127,7 +1127,7 @@ export default function CharacterPage() {
                   <option value="base">Base (Default State)</option>
                   {sortedChapters.map((ch) => (
                     <option key={ch.id} value={ch.id}>
-                      {ch.number} — {ch.title}
+                      {ch.number} — {ch.title || "Untitled"}
                     </option>
                   ))}
                 </select>
@@ -1373,7 +1373,7 @@ export default function CharacterPage() {
                         .filter((ch) => ch.id !== selectedEquipContext)
                         .map((ch) => (
                           <option key={ch.id} value={ch.id}>
-                            {ch.number} - {ch.title}
+                            {ch.number} - {ch.title || "Untitled"}
                           </option>
                         ))}
                     </select>

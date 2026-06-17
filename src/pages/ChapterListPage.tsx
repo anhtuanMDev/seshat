@@ -17,7 +17,7 @@ export default function ChapterListPage() {
 
   const addChapter = useCallback(() => {
     if (bookIdx < 0) return;
-    const order = (chapters?.length || 0) + 1;
+    const order = Math.max(0, ...(chapters || []).map((c) => c.order)) + 1;
     const ch: Chapter = {
       id: uid(),
       number: `Ch. ${order}`,
