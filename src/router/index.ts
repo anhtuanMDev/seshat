@@ -17,6 +17,7 @@ const ChapterListPage = lazy(() => import("../pages/ChapterListPage"));
 const LoreWebPage = lazy(() => import("../pages/LoreWebPage"));
 const IssuesPage = lazy(() => import("../pages/IssuesPage"));
 const IssueDetailPage = lazy(() => import("../pages/IssueDetailPage"));
+const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 
 // Fallback spinner element (React Element constant)
 const PageLoading = createElement(
@@ -52,6 +53,7 @@ export const preloadPages = () => {
     () => import("../pages/FightPage"),
     () => import("../pages/IssuesPage"),
     () => import("../pages/IssueDetailPage"),
+    () => import("../pages/NotFoundPage"),
   ];
 
   const runPreloads = () => {
@@ -205,7 +207,23 @@ export const router = createBrowserRouter([
               createElement(LoreWebPage)
             ),
           },
+          {
+            path: "*",
+            element: createElement(
+              Suspense,
+              { fallback: PageLoading },
+              createElement(NotFoundPage)
+            ),
+          },
         ],
+      },
+      {
+        path: "*",
+        element: createElement(
+          Suspense,
+          { fallback: PageLoading },
+          createElement(NotFoundPage)
+        ),
       },
     ],
   },
