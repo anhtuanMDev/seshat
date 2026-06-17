@@ -1,9 +1,15 @@
 @import "./styles/theme.css";
 
 @keyframes seshat-shimmer {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 * {
@@ -552,7 +558,6 @@ svg circle {
   }
 }
 
-
 /* ── Chapter Page Layout ───────────────────────────────────────────────── */
 .seshat-chapter-layout {
   display: flex;
@@ -703,7 +708,6 @@ svg circle {
     background: var(--bg-side);
     z-index: 50;
     border-left: 1px solid var(--border);
-    padding: 24px 20px;
     margin: 0;
     overflow-y: auto;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
@@ -785,7 +789,9 @@ svg circle {
     -webkit-overflow-scrolling: touch;
     gap: 6px !important;
   }
-  .seshat-forum-filters::-webkit-scrollbar { display: none; }
+  .seshat-forum-filters::-webkit-scrollbar {
+    display: none;
+  }
 
   /* Cards */
   .seshat-forum-card {
@@ -832,13 +838,15 @@ svg circle {
     font-weight: 300;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
   }
   .seshat-forum-fab:active {
     transform: scale(0.93);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -941,22 +949,22 @@ svg circle {
   .seshat-event-card-container {
     gap: var(--space-3) !important; /* reduce gap to 12px */
   }
-  
+
   .seshat-event-card-inner {
     padding: 12px 14px !important; /* compact padding */
   }
-  
+
   .seshat-event-card-header {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 8px !important;
   }
-  
+
   .seshat-event-card-title-wrapper {
     width: 100% !important;
     gap: 6px !important;
   }
-  
+
   .seshat-event-card-date {
     width: 100% !important;
     text-align: left !important;
@@ -977,7 +985,12 @@ svg circle {
 
 .seshat-filled-slot,
 .seshat-empty-slot {
-  transition: transform 0.15s var(--ease-snappy), border-color 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), opacity 0.15s var(--ease-smooth);
+  transition:
+    transform 0.15s var(--ease-snappy),
+    border-color 0.15s var(--ease-smooth),
+    box-shadow 0.15s var(--ease-smooth),
+    background-color 0.15s var(--ease-smooth),
+    opacity 0.15s var(--ease-smooth);
 }
 
 .seshat-filled-slot:hover {
@@ -1000,6 +1013,3 @@ svg circle {
     order: -1; /* Place the avatar at the top on mobile */
   }
 }
-
-
-
