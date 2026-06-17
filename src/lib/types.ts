@@ -96,6 +96,9 @@ export interface StatusEntry {
   arcStage: string;
   role?: string;
   archetype?: string;
+  gender?: string;
+  dob?: string;
+  appearance?: string;
   emotionalState: string;
   physicalState: string;
   note: string;
@@ -121,6 +124,9 @@ export interface Character {
   color: string;
   role: string;
   archetype: string;
+  gender?: string;
+  dob?: string;
+  appearance?: string;
   coreWound: string;
   coreFear: string;
   coreDesire: string;
@@ -252,8 +258,11 @@ export interface Equipment {
   id: string;
   slot: EquipSlot;
   name: string;
+  rarity?: "Common" | "Rare" | "Epic" | "Legendary";
   atTime: string;
   atEventId: string;
+  lostTime?: string;
+  lostEventId?: string;
   stats: string;
   curses: string;
   unbindCondition: string;
@@ -264,6 +273,7 @@ export interface Equipment {
   lore: string;
   accessState: EquipAccess;
   accessNote: string;
+  history?: { eventId: string; accessState: EquipAccess }[];
 }
 
 export interface Achievement {

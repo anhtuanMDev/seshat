@@ -968,4 +968,38 @@ svg circle {
   }
 }
 
+/* ── Visual Equipment Grid ── */
+.seshat-gear-sheet-layout {
+  display: grid;
+  grid-template-columns: 1fr 200px 1fr;
+  gap: 20px;
+}
+
+.seshat-filled-slot,
+.seshat-empty-slot {
+  transition: transform 0.15s var(--ease-snappy), border-color 0.15s var(--ease-smooth), box-shadow 0.15s var(--ease-smooth), background-color 0.15s var(--ease-smooth), opacity 0.15s var(--ease-smooth);
+}
+
+.seshat-filled-slot:hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.seshat-empty-slot:hover {
+  opacity: 0.95 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-color: var(--color-primary) !important;
+}
+
+@media (max-width: 768px) {
+  .seshat-gear-sheet-layout {
+    grid-template-columns: 1fr;
+  }
+  .seshat-gear-center-column {
+    order: -1; /* Place the avatar at the top on mobile */
+  }
+}
+
+
 

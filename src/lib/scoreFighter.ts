@@ -1,4 +1,5 @@
 import type { Character, Event, Equipment, Condition, EventAttributes } from "./types";
+import { resolveEquipmentAt } from "./resolveEquipment";
 
 export interface Note {
   label: string;
@@ -53,13 +54,23 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
     notes.push({ label: "Skills", value: `${skills.length} known`, pts: Math.round(skillPts * 10) / 10, positive: true });
   }
 
-  const equippedItems = (char.equipment || []).filter(
+  const activeStatusEntry = resolveEvent
+    ? (char.statusTimeline || []).find((s) => s.eventId === resolveEvent.id)
+    : undefined;
+  const resolvedEquipment = resolveEquipmentAt(
+    char.equipment || [],
+    events,
+    char.statusTimeline || [],
+    activeStatusEntry?.id,
+  );
+
+  const equippedItems = resolvedEquipment.filter(
     (eq: Equipment) => (eq.accessState || "Equipped") === "Equipped",
   );
-  const storedItems = (char.equipment || []).filter(
+  const storedItems = resolvedEquipment.filter(
     (eq: Equipment) => (eq.accessState || "Equipped") === "Stored",
   );
-  const noAccessItems = (char.equipment || []).filter(
+  const noAccessItems = resolvedEquipment.filter(
     (eq: Equipment) => (eq.accessState || "Equipped") === "No Access",
   );
   const cursedEquipped = equippedItems.filter(

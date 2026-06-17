@@ -25,6 +25,11 @@ export default function CharMentionTooltip({
     contextWindowStart,
   );
 
+  const activeRole = (status && status.role) || char.role;
+  const activeGender = (status && status.gender) || char.gender;
+  const activeDob = (status && status.dob) || char.dob;
+  const activeAppearance = (status && status.appearance) || char.appearance;
+
   const charEvents = events
     .filter((e) => (e.characters || []).includes(char.id))
     .sort((a, b) => a.time - b.time);
@@ -41,7 +46,7 @@ export default function CharMentionTooltip({
         />
         <div>
           <div style={styles.nameText}>{char.name}</div>
-          {char.role && <div style={styles.roleText}>{char.role}</div>}
+          {activeRole && <div style={styles.roleText}>{activeRole}</div>}
         </div>
         <button onClick={onClose} style={styles.closeBtn}>
           ×
@@ -83,6 +88,26 @@ export default function CharMentionTooltip({
             <div style={styles.statusItem}>
               <span style={styles.textMuted}>physical: </span>
               {status.physicalState}
+            </div>
+          )}
+          {activeGender && (
+            <div style={styles.statusItem}>
+              <span style={styles.textMuted}>gender: </span>
+              {activeGender}
+            </div>
+          )}
+          {activeDob && (
+            <div style={styles.statusItem}>
+              <span style={styles.textMuted}>dob: </span>
+              {activeDob}
+            </div>
+          )}
+          {activeAppearance && (
+            <div style={styles.statusItem}>
+              <span style={styles.textMuted}>looks: </span>
+              {activeAppearance.length > 80
+                ? activeAppearance.slice(0, 77) + "…"
+                : activeAppearance}
             </div>
           )}
           {status.note && (

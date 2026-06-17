@@ -23,6 +23,9 @@ export const mkChar = (n: string, color: string) => ({
   color,
   role: "",
   archetype: "",
+  gender: "",
+  dob: "",
+  appearance: "",
   coreWound: "",
   coreFear: "",
   coreDesire: "",
@@ -54,7 +57,7 @@ export const mkArc = (): import("./types").CharacterArc => ({
   arcEnd: "",
 });
 
-import type { Event, EventType, StatusEntry, Condition } from "./types";
+import type { Event, EventType, StatusEntry, Condition, Equipment } from "./types";
 
 export const mkStatusEntry = (): StatusEntry => ({
   id: Math.random().toString(36).slice(2, 8),
@@ -65,6 +68,9 @@ export const mkStatusEntry = (): StatusEntry => ({
   arcStage: "",
   role: "",
   archetype: "",
+  gender: "",
+  dob: "",
+  appearance: "",
   emotionalState: "",
   physicalState: "",
   note: "",
@@ -167,12 +173,15 @@ export const mkSkill = () => ({
   requirement: "",
   notes: "",
 });
-export const mkEquip = () => ({
+export const mkEquip = (): Equipment => ({
   id: uid(),
   slot: "Weapon",
   name: "",
+  rarity: "Common",
   atTime: "",
   atEventId: "",
+  lostTime: "",
+  lostEventId: "",
   stats: "",
   curses: "",
   unbindCondition: "",
@@ -183,6 +192,7 @@ export const mkEquip = () => ({
   lore: "",
   accessState: "Equipped",
   accessNote: "",
+  history: [],
 });
 export const mkAchieve = () => ({
   id: uid(),

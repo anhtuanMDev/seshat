@@ -54,6 +54,14 @@ vi.mock("../../components/character/TraumaBlock", () => ({
   ),
 }));
 
+vi.mock("../../components/character/EquipmentBlock", () => ({
+  EquipmentBlock: () => (
+    <div data-testid="mock-equipment-block">
+      <input data-testid="mock-equipment-name" />
+    </div>
+  ),
+}));
+
 // Setup a baseline state
 function setupStoreWithCharacter() {
   const book = mkBook("Test Book");
@@ -202,5 +210,50 @@ describe("CharacterPage Edge-to-Edge", () => {
       expect(showToast).toHaveBeenCalledWith("Character synced to cloud", "success");
       expect(appStore.books[0].characters[0].name.get()).toBe("Villain");
     });
+  });
+
+  it("renders equipment section and allows adding/editing", async () => {
+    vi.mocked(routerDom.useParams).mockReturnValue({ id: "char-1" });
+    setupStoreWithCharacter();
+
+    // Add sample equipment to the initial setup to verify it renders
+    appStore.books[0].characters[0].equipment.set([
+      {
+        id: "equip-1",
+        name: "Holy Avenger",
+        slot: "Weapon",
+        accessState: "Equipped",
+        stats: "+10 attack",
+        curses: "",
+        unbindCondition: "",
+        uses: "∞",
+        creator: "",
+        createdWhy: "",
+        ingredients: "",
+        lore: "",
+        accessNote: "",
+        atTime: "T1",
+        atEventId: "",
+      }
+    ]);
+
+    render(<CharacterPage />);
+
+    // Verify initial equipment is displayed
+    expect(screen.getByText("Holy Avenger")).toBeInTheDocument();
+    expect(screen.getAllByText("Weapon")[0]).toBeInTheDocument();
+
+    // Click on the card itself to trigger edit
+    const itemCard = screen.getByText("Holy Avenger");
+    fireEvent.click(itemCard);
+
+    // Modal opens
+    await waitFor(() => {
+      expect(screen.getByTestId("mock-modal")).toBeInTheDocument();
+      expect(screen.getByText("Equipment")).toBeInTheDocument();
+    });
+
+    // Close the modal
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   });
 });
