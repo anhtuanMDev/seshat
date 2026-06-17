@@ -109,7 +109,8 @@ export function GlobalSearchModal({ open, onClose }: Props) {
     setIsReplacing(true);
     try {
       const bookData = appStore.books[bookIdx].get();
-      const regex = new RegExp(query, 'gi');
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escapedQuery, "gi");
 
       const deepReplace = (obj: unknown): unknown => {
         if (typeof obj === 'string') {

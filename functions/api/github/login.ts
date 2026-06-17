@@ -1,6 +1,6 @@
 import type { PagesFunction, Response as CloudflareResponse } from "@cloudflare/workers-types";
 import type { Env } from "./sync";
-import { signToken } from "./authUtils";
+import { signToken, hashAccessCode } from "./authUtils";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
@@ -39,9 +39,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const validUsers = JSON.parse(decodedContent);
 
     const userEntry = validUsers[cleanUsername];
-    const storedCode = typeof userEntry === "object" && userEntry !== null ? userEntry.accessCode : userEntry;
+    let isMatch = false;
 
-    if (storedCode !== accessCode) {
+    if (typeof userEntry === "string") {
+      isMatch = userEntry === accessCode;
+    } else if (typeof userEntry === "object" && userEntry !== null) {
+      if ("hash" in userEntry && "salt" in userEntry) {
+        const calculatedHash = await hashAccessCode(accessCode, userEntry.salt);
+        isMatch = calculatedHash === userEntry.hash;
+      } else if ("accessCode" in userEntry) {
+        isMatch = userEntry.accessCode === accessCode;
+      }
+    }
+
+    if (!isMatch) {
       return new Response(JSON.stringify({ error: "Unauthorized. Invalid Username or Access Code." }), { status: 401 }) as unknown as CloudflareResponse;
     }
 

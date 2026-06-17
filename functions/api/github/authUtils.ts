@@ -60,3 +60,18 @@ export async function verifyToken(token: string, secret: string): Promise<{ user
     return null;
   }
 }
+
+export async function hashAccessCode(accessCode: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(accessCode + salt);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function generateSalt(length: number = 16): string {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => chars[byte % chars.length]).join("");
+}

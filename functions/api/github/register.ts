@@ -2,6 +2,7 @@ import type {
   PagesFunction,
   Response as CloudflareResponse,
 } from "@cloudflare/workers-types";
+import { hashAccessCode, generateSalt } from "./authUtils";
 import type { Env } from "./sync";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -38,7 +39,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const usersUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/users.json`;
 
     // 1. Fetch current users.json from main branch
-    let usersData: Record<string, string | { accessCode: string; email: string }> = {};
+    let usersData: Record<
+      string,
+      | string
+      | { accessCode: string; email: string }
+      | { hash: string; salt: string; email: string }
+    > = {};
     let currentSha: string | undefined;
 
     const getRes = await fetch(usersUrl, { headers });
@@ -72,10 +78,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       ) as unknown as CloudflareResponse;
     }
 
-    // 3. Add new user
-    usersData[cleanUsername] = { accessCode, email: email || "" };
+    // 3. Add new user with salted hash
+    const salt = generateSalt();
+    const hash = await hashAccessCode(accessCode, salt);
+    usersData[cleanUsername] = { hash, salt, email: email || "" };
     const newContent = JSON.stringify(usersData, null, 2);
     const base64Content = btoa(unescape(encodeURIComponent(newContent)));
+
 
     // 4. Save updated users.json back to main branch
     const putBody: Record<string, string> = {
