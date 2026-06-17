@@ -139,21 +139,6 @@ export default function IssuesPage() {
     transition: "all 0.15s ease",
   });
 
-  const submitBtnStyle = (disabled: boolean) => ({
-    background: "var(--color-primary)",
-    color: "var(--bg-app)",
-    border: "none",
-    borderRadius: 4,
-    padding: "6px 20px",
-    fontWeight: 600,
-    fontSize: 13,
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    cursor: disabled ? "default" : ("pointer" as const),
-    opacity: disabled ? 0.6 : 1,
-  });
-
   return (
     <div style={styles.container}>
       {/* ── Global Header ── */}
@@ -392,81 +377,88 @@ export default function IssuesPage() {
         </div>
       </div>
 
-      {/* ── Create Issue Modal ── */}
       {showCreateModal && (
         <Modal
-          title="Create New Discussion Thread"
+          title="New Discussion"
           onClose={() => !isCreatingIssue && setShowCreateModal(false)}
         >
-          <div style={styles.modalBody}>
-            <div style={styles.fieldWrapper}>
-              <label style={S.label}>Title</label>
+          <div className="seshat-modal-body">
+            {/* Type selector — segmented toggle tabs */}
+            <div>
+              <p className="seshat-modal-section-title">WHAT IS THIS ABOUT?</p>
+              <div className="seshat-modal-type-selector">
+                {(
+                  [
+                    { value: "discussion", icon: "💬", label: "Discussion" },
+                    { value: "bug",        icon: "🐛", label: "Bug Report" },
+                    { value: "recommendation", icon: "💡", label: "Feature" },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    disabled={isCreatingIssue}
+                    onClick={() => setNewType(opt.value)}
+                    className={`seshat-modal-type-btn ${newType === opt.value ? "active" : ""}`}
+                  >
+                    <span>{opt.icon}</span>
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Title */}
+            <div className="seshat-modal-field-group">
+              <label className="seshat-modal-field-label">Title</label>
               <input
                 autoFocus
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="e.g. Chapter 4 layout jumps on refresh"
+                placeholder="Briefly describe your topic…"
                 disabled={isCreatingIssue}
-                style={styles.modalInput}
+                className="seshat-modal-input-field"
               />
             </div>
 
-            <div style={styles.fieldWrapper}>
-              <label style={S.label}>Type</label>
-              <select
-                value={newType}
-                onChange={(e) =>
-                  setNewType(
-                    e.target.value as "bug" | "recommendation" | "discussion",
-                  )
-                }
-                disabled={isCreatingIssue}
-                style={styles.modalSelect}
-              >
-                <option value="discussion">Discussion / Recommendation</option>
-                <option value="bug">Bug Report</option>
-                <option value="recommendation">Feature Recommendation</option>
-              </select>
-            </div>
-
-            <div style={styles.textareaWrapper}>
-              <label style={S.label}>Details / Description</label>
+            {/* Description */}
+            <div className="seshat-modal-field-group">
+              <div className="seshat-modal-label-row">
+                <label className="seshat-modal-field-label">Details</label>
+                <span className="seshat-modal-char-count">{newBody.length} chars</span>
+              </div>
               <textarea
                 value={newBody}
                 onChange={(e) => setNewBody(e.target.value)}
-                placeholder="Please describe the request or issue in detail..."
-                rows={6}
+                placeholder="Describe the issue or idea in as much detail as you can…"
                 disabled={isCreatingIssue}
-                style={{ ...S.textarea }}
+                className="seshat-modal-textarea-field"
               />
             </div>
 
-            <div style={styles.modalFooter}>
+            {/* Footer */}
+            <div className="seshat-modal-footer">
               <button
                 onClick={() => setShowCreateModal(false)}
                 disabled={isCreatingIssue}
-                style={styles.modalCancelBtn}
+                className="seshat-modal-btn-cancel"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitIssue}
-                disabled={
-                  !newTitle.trim() || !newBody.trim() || isCreatingIssue
-                }
-                style={submitBtnStyle(
-                  !newTitle.trim() || !newBody.trim() || isCreatingIssue,
-                )}
+                disabled={!newTitle.trim() || !newBody.trim() || isCreatingIssue}
+                className="seshat-modal-btn-submit"
               >
                 {isCreatingIssue && (
-                  <CircularProgress size={14} color="inherit" />
+                  <CircularProgress size={13} color="inherit" />
                 )}
-                {isCreatingIssue ? "Publishing..." : "Publish"}
+                {isCreatingIssue ? "Publishing…" : "Publish →"}
               </button>
             </div>
           </div>
         </Modal>
       )}
+
       {/* Mobile FAB — replaces the top "+ New" button on small screens */}
       <button
         className="seshat-forum-fab"
@@ -721,37 +713,109 @@ const styles = {
     gap: 4,
   },
   modalBody: {
-    padding: "0 24px 24px",
+    padding: "24px 28px 28px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
   },
-  fieldWrapper: {
-    marginBottom: 16,
+  typeSection: {
+    marginBottom: 4,
+  },
+  typeLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "1px",
+    color: "var(--text-muted)",
+    margin: "0 0 10px 0",
+  },
+  typePillRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 12,
+  },
+  typePill: {
+    padding: "16px 12px",
+    borderRadius: 12,
+    background: "var(--bg-main)",
+    border: "1px solid var(--border)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    transition: "all 0.15s ease",
+    textAlign: "center",
+    outline: "none",
+  },
+  typePillActive: {
+    background: "color-mix(in srgb, var(--color-primary) 8%, var(--bg-main))",
+    borderColor: "var(--color-primary)",
+    boxShadow: "0 0 0 1px var(--color-primary)",
+  },
+  typePillIcon: {
+    fontSize: 20,
+    marginBottom: 6,
+  },
+  typePillLabel: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-primary)",
+    marginBottom: 4,
+  },
+  typePillDesc: {
+    fontSize: 10,
+    color: "var(--text-muted)",
+    lineHeight: 1.3,
+  },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--text-secondary)",
   },
   modalInput: {
     ...S.input,
-    padding: "8px 12px",
+    padding: "10px 14px",
     border: "1px solid var(--border-field)",
-    borderRadius: 4,
-    fontSize: 14,
-  },
-  modalSelect: {
-    ...S.select,
-    padding: "8px 12px",
-    border: "1px solid var(--border-field)",
-    borderRadius: 4,
+    borderRadius: 8,
     fontSize: 14,
     background: "var(--bg-main)",
+    color: "var(--text-primary)",
   },
-  textareaWrapper: {
-    marginBottom: 24,
+  charCount: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  },
+  modalTextarea: {
+    ...S.textarea,
+    padding: "12px 14px",
+    border: "1px solid var(--border-field)",
+    borderRadius: 8,
+    fontSize: 14,
+    background: "var(--bg-main)",
+    color: "var(--text-primary)",
+    resize: "vertical",
+    minHeight: 120,
   },
   modalFooter: {
     display: "flex",
     justifyContent: "flex-end",
     gap: 12,
+    borderTop: "1px solid var(--border)",
+    paddingTop: 24,
+    marginTop: 8,
   },
   modalCancelBtn: {
     ...S.ghost,
-    padding: "6px 16px",
+    padding: "8px 20px",
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-secondary)",
   },
   badgeBase: {
     fontSize: 10,

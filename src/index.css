@@ -200,8 +200,9 @@ svg circle {
 .seshat-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -210,45 +211,251 @@ svg circle {
 }
 
 .seshat-modal {
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  width: min(640px, 100%);
-  max-height: 82vh;
+  background: var(--bg-card);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-radius: 16px;
+  width: min(560px, 100%);
+  max-height: 90vh;
   overflow-y: auto;
-  padding: 40px;
   position: relative;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
-  animation: modalEnter 0.2s ease-out;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  animation: modalEnter 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes modalEnter {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.93) translateY(12px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
 .seshat-modal-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 28px;
-  padding-bottom: 16px;
+  padding: 28px 28px 20px;
   border-bottom: 1px solid var(--border);
+  gap: 12px;
 }
 
 .seshat-modal-title {
-  font-size: 14px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  font-family: var(--font-serif);
 }
+
+
+/* ── Redesigned Modal Form Fields ───────────────────────────────────────── */
+.seshat-modal-body {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.seshat-modal-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.seshat-modal-type-selector {
+  display: flex;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+}
+
+.seshat-modal-type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s var(--ease-smooth);
+}
+
+.seshat-modal-type-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.seshat-modal-type-btn.active {
+  background: var(--color-primary);
+  color: var(--bg-app);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Adjust layout on mobile */
+@media (max-width: 500px) {
+  .seshat-modal-type-selector {
+    flex-direction: column;
+    padding: 6px;
+    gap: 6px;
+  }
+  .seshat-modal-type-btn {
+    width: 100%;
+    padding: 12px;
+  }
+}
+
+.seshat-modal-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seshat-modal-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seshat-modal-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+}
+
+.seshat-modal-char-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.seshat-modal-input-field {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.seshat-modal-input-field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.seshat-modal-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seshat-modal-textarea-field {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.5;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.seshat-modal-textarea-field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.seshat-modal-textarea-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seshat-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.seshat-modal-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.seshat-modal-btn-cancel:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--border) 30%, transparent);
+  color: var(--text-primary);
+}
+
+.seshat-modal-btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.seshat-modal-btn-submit {
+  background: var(--color-primary);
+  color: var(--bg-app);
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.seshat-modal-btn-submit:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.seshat-modal-btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.seshat-modal-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 
 /* ── Tiptap / ProseMirror ───────────────────────────────────────────────── */
 .ProseMirror {

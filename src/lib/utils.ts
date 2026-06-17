@@ -16,7 +16,7 @@ export {
 
 export const uid = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
+    ? crypto.randomUUID().replace(/-/g, "")
     : Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 export const mkChar = (n: string, color: string) => ({
