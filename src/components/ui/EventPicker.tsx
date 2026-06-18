@@ -98,9 +98,18 @@ function EventPickerInner({ label, placeholder, value, onChange, events, sx }: E
   );
 }
 
-function ControlledEventPicker<T extends FieldValues>({ control, name, ...rest }: EventPickerProps<T>) {
+function ControlledEventPicker<T extends FieldValues>({ control, name, onChange, ...rest }: EventPickerProps<T>) {
   const { field } = useController({ control: control!, name: name! });
-  return <EventPickerInner {...rest} value={field.value ?? ""} onChange={(v: string) => field.onChange(v)} />;
+  return (
+    <EventPickerInner
+      {...rest}
+      value={field.value ?? ""}
+      onChange={(v: string) => {
+        field.onChange(v);
+        onChange?.(v);
+      }}
+    />
+  );
 }
 
 export function EventPicker<T extends FieldValues = FieldValues>(props: EventPickerProps<T>) {

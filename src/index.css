@@ -1220,3 +1220,133 @@ svg circle {
     order: -1; /* Place the avatar at the top on mobile */
   }
 }
+
+/* ── Premium Redesigned Modal (Trauma Specific) ── */
+.seshat-modal-overlay {
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.8) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.seshat-modal {
+  background: color-mix(in srgb, var(--bg-card) 75%, transparent);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.seshat-modal-header {
+  align-items: center;
+  padding: 22px 28px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.seshat-modal-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 19px;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Trauma & Arc Form Redesign Custom Classes */
+.seshat-modal-form-redesign {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.seshat-form-section-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
+}
+
+.seshat-form-section-container:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.seshat-form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+/* Premium Transparent Input Styling */
+.seshat-modal-form-redesign .MuiFilledInput-root {
+  background: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  padding-top: 18px !important;
+  padding-bottom: 6px !important;
+}
+
+.seshat-modal-form-redesign .MuiFilledInput-root:hover:not(.Mui-disabled) {
+  border-color: color-mix(in srgb, var(--border) 80%, transparent) !important;
+}
+
+.seshat-modal-form-redesign .MuiFilledInput-root.Mui-focused {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
+}
+
+.seshat-modal-form-redesign .MuiFilledInput-root::before,
+.seshat-modal-form-redesign .MuiFilledInput-root::after {
+  display: none !important;
+}
+
+.seshat-modal-form-redesign .MuiInputLabel-root {
+  text-transform: none !important;
+  font-size: 13px !important;
+  letter-spacing: 0.1px !important;
+  color: var(--text-secondary) !important;
+}
+
+.seshat-modal-form-redesign .MuiFormHelperText-root {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.seshat-modal-btn-delete {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-red) 30%, transparent);
+  color: var(--color-red);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.seshat-modal-btn-delete:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-red) 8%, transparent);
+  border-color: var(--color-red);
+}
+
+.seshat-modal-btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

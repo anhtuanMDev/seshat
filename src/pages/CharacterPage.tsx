@@ -14,6 +14,7 @@ import { Modal } from "../components/ui/Modal";
 import {
   BadgeIcon,
   CrisisAlertIcon,
+  DeleteIcon,
   EmojiEventsIcon,
   HeartBrokenIcon,
   MedicalInformationIcon,
@@ -1748,13 +1749,38 @@ export default function CharacterPage() {
         {/* ── Modals ── */}
         {modal?.type === "trauma" && modal.idx !== null && (
           <Modal
-            title="Trauma"
+            title={modal.isNew ? "Add New Trauma" : "Edit Trauma Details"}
             onClose={handleCancelModal}
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => delItem("trauma", modal.idx!)}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this trauma entry"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <TraumaBlock
@@ -1762,6 +1788,8 @@ export default function CharacterPage() {
               index={modal.idx}
               color={char.color}
               onDelete={() => delItem("trauma", modal.idx!)}
+              chapters={sortedChapters}
+              events={events}
             />
           </Modal>
         )}
@@ -1892,17 +1920,43 @@ export default function CharacterPage() {
 
         {modal?.type === "arc" && modal.idx !== null && (
           <Modal
-            title="Character Arc"
+            title={modal.isNew ? "Add Character Arc" : "Edit Character Arc Details"}
             onClose={handleCancelModal}
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => delItem("arc", modal.idx!)}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this character arc"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <ArcBlock
               control={control}
+              setValue={setValue}
               index={modal.idx}
               color={char.color}
               onDelete={() => delItem("arc", modal.idx!)}
