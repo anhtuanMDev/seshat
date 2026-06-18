@@ -2,11 +2,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { appStore } from "../store/appStore";
 import { useChapters, useActiveBookIdx } from "../hooks/useWorldStore";
 import { S, uid } from "../lib/utils";
-import { AutoStoriesIcon, AddIcon } from "../components/ui/icons";
+import { AutoStoriesIcon, AddIcon, FileDownloadIcon } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import type { Chapter } from "../store/appStore";
 import { useCallback } from "react";
 import { ChapterCard } from "../components/chapter/ChapterCard";
+import { saveAs } from "file-saver";
 
 export default function ChapterListPage() {
   const { bookId } = useParams();
@@ -41,6 +42,29 @@ export default function ChapterListPage() {
     return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
   }, 0);
 
+  const exportChapters = useCallback(() => {
+    if (!sortedChapters.length) return;
+    const bookTitle = bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "Book";
+    
+    let content = `BOOK EXPORT: ${bookTitle}\n`;
+    content += `Total chapters: ${sortedChapters.length}\n`;
+    content += `Total words: ${totalWords}\n`;
+    content += `================================================================================\n\n`;
+
+    sortedChapters.forEach((ch) => {
+      content += `${ch.number}${ch.title ? ` - ${ch.title}` : ""}\n`;
+      if (ch.timeRef) content += `Time: ${ch.timeRef}\n`;
+      if (ch.synopsis) content += `Synopsis: ${ch.synopsis}\n`;
+      content += `--------------------------------------------------------------------------------\n`;
+      content += `${ch.body || ""}\n\n`;
+      content += `================================================================================\n\n`;
+    });
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const safeTitle = (bookTitle || "book").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    saveAs(blob, `${safeTitle}_chapters_export.txt`);
+  }, [sortedChapters, totalWords, bookIdx]);
+
   return (
     <div ref={ref} className="seshat-page-container">
       {/* Header */}
@@ -60,10 +84,16 @@ export default function ChapterListPage() {
             )}
           </span>
         </div>
-        <button onClick={addChapter} className="seshat-flex-align" style={styles.addBtn}>
-          <AddIcon sx={{ fontSize: 14 }} />
-          add chapter
-        </button>
+        <div className="seshat-flex-align" style={{ gap: 8 }}>
+          <button onClick={exportChapters} className="seshat-flex-align" style={styles.addBtn}>
+            <FileDownloadIcon sx={{ fontSize: 14 }} />
+            export
+          </button>
+          <button onClick={addChapter} className="seshat-flex-align" style={styles.addBtn}>
+            <AddIcon sx={{ fontSize: 14 }} />
+            add chapter
+          </button>
+        </div>
       </div>
 
       {/* Cards */}
