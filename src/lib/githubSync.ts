@@ -173,6 +173,26 @@ export const updateFilesOnGitHub = async (token: string, bookId: string, files: 
   }
 };
 
+export const loadChaptersForExport = async (
+  token: string, bookId: string, chapterIds: string[],
+): Promise<Record<string, unknown>[]> => {
+  try {
+    const response = await fetch(
+      `/api/github/exportChapters?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&chapterIds=${encodeURIComponent(chapterIds.join(","))}`,
+      { cache: "no-store" },
+    );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json() as { chapters: Record<string, unknown>[] };
+    return data.chapters || [];
+  } catch (error) {
+    console.error("Failed to load chapters for export:", error);
+    throw error;
+  }
+};
+
 export const loadFileFromGitHub = async (token: string, bookId: string, path: string): Promise<Record<string, unknown>> => {
   try {
     const response = await fetch(`/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(path)}`, { cache: "no-store" });

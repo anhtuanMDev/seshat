@@ -8,15 +8,18 @@ import type { Chapter } from "../store/appStore";
 import { useCallback, useState } from "react";
 import { ChapterCard } from "../components/chapter/ChapterCard";
 import { saveAs } from "file-saver";
+import { loadChaptersForExport } from "../lib/githubSync";
 
-const htmlToText = (html: string) => {
-  const el = document.createElement("div");
-  el.innerHTML = html;
-  return el.textContent || el.innerText || "";
-};
+const getToken = (): string | null =>
+  localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
 
-const buildExport = (chapters: Chapter[], bookTitle: string) => {
-  const totalWords = chapters.reduce((sum: number, ch: Chapter) => {
+const htmlToText = (html: string) => html.replace(/<[^>]*>/g, "").trim();
+
+const buildExport = (
+  chapters: { number: string; title: string; timeRef: string; synopsis: string; body: string }[],
+  bookTitle: string,
+) => {
+  const totalWords = chapters.reduce((sum, ch) => {
     const body = htmlToText(ch.body || "");
     return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
   }, 0);
@@ -38,7 +41,7 @@ const buildExport = (chapters: Chapter[], bookTitle: string) => {
   return content;
 };
 
-const buildSingleChapterExport = (ch: Chapter) => {
+const buildSingleChapterExport = (ch: { number: string; title: string; timeRef: string; synopsis: string; body: string }) => {
   let content = `${ch.number}${ch.title ? ` - ${ch.title}` : ""}\n`;
   if (ch.timeRef) content += `Time: ${ch.timeRef}\n`;
   if (ch.synopsis) content += `Synopsis: ${ch.synopsis}\n`;
@@ -102,27 +105,46 @@ export default function ChapterListPage() {
     setSelectedIds([]);
   }, []);
 
+  const doExport = useCallback(async (
+    chapters: Chapter[],
+    mode: "all" | "single",
+    bookTitle: string,
+  ) => {
+    const token = getToken();
+    if (!token) return;
+
+    const ids = chapters.map((c) => c.id);
+    const fetched = await loadChaptersForExport(token, bookId!, ids);
+
+    if (mode === "all") {
+      const content = buildExport(fetched as any, bookTitle);
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const safeTitle = (bookTitle || "book").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      saveAs(blob, `${safeTitle}_chapters_export.txt`);
+    } else {
+      fetched.forEach((ch: any, i: number) => {
+        setTimeout(() => {
+          const content = buildSingleChapterExport(ch);
+          const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+          const fileName = (ch.number as string)
+            .replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          saveAs(blob, `${fileName}.txt`);
+        }, i * 200);
+      });
+    }
+  }, [bookId]);
+
   const exportAll = useCallback(() => {
     if (!sortedChapters.length) return;
     const bookTitle = bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "Book";
-    const content = buildExport(sortedChapters, bookTitle);
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const safeTitle = (bookTitle || "book").replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    saveAs(blob, `${safeTitle}_chapters_export.txt`);
-  }, [sortedChapters, bookIdx]);
+    doExport(sortedChapters, "all", bookTitle);
+  }, [sortedChapters, bookIdx, doExport]);
 
   const exportSelected = useCallback(() => {
     if (!selectedChapters.length) return;
-    selectedChapters.forEach((ch, i) => {
-      setTimeout(() => {
-        const content = buildSingleChapterExport(ch);
-        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-        const fileName = ch.number
-          .replace(/[^a-z0-9]/gi, '_').toLowerCase();
-        saveAs(blob, `${fileName}.txt`);
-      }, i * 200);
-    });
-  }, [selectedChapters]);
+    const bookTitle = bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "Book";
+    doExport(selectedChapters, "single", bookTitle);
+  }, [selectedChapters, bookIdx, doExport]);
 
   return (
     <div ref={ref} className="seshat-page-container">
