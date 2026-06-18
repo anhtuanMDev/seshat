@@ -4,9 +4,11 @@ import type { Chapter } from "../../store/appStore";
 interface ChapterCardProps {
   chapter: Chapter;
   onClick: () => void;
+  selected?: boolean;
+  onToggle?: () => void;
 }
 
-export function ChapterCard({ chapter: c, onClick }: ChapterCardProps) {
+export function ChapterCard({ chapter: c, onClick, selected, onToggle }: ChapterCardProps) {
   const [hover, setHover] = useState(false);
   const wordCount = c.body?.trim() ? c.body.trim().split(/\s+/).length : 0;
 
@@ -15,7 +17,7 @@ export function ChapterCard({ chapter: c, onClick }: ChapterCardProps) {
     borderLeftColor: hover
       ? "var(--color-purple)"
       : "color-mix(in srgb, var(--color-purple) 40%, transparent)",
-    background: hover ? "var(--bg-hover)" : "transparent",
+    background: selected ? "var(--bg-active)" : hover ? "var(--bg-hover)" : "transparent",
   };
 
   const infoTitleStyle = {
@@ -44,13 +46,18 @@ export function ChapterCard({ chapter: c, onClick }: ChapterCardProps) {
 
   return (
     <div
-      onClick={onClick}
       style={cardStyle}
+      onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
       {/* Chapter Number Column */}
       <div style={styles.numberCol}>
+        {onToggle && (
+          <span style={styles.checkbox}>
+            {selected ? "☑" : "☐"}
+          </span>
+        )}
         {c.number ? (
           <span style={styles.numberSpan}>{c.number}</span>
         ) : (
@@ -110,6 +117,16 @@ const styles = {
     flexShrink: 0,
     alignSelf: "flex-start",
     paddingTop: 2,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  checkbox: {
+    fontSize: 16,
+    color: "var(--color-purple)",
+    lineHeight: 1,
+    userSelect: "none",
+    pointerEvents: "none",
   },
   numberSpan: {
     fontSize: 11,
