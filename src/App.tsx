@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
-import { appStore } from "./store/appStore";
+import { appStore, clearAppStore } from "./store/appStore";
 import { showToast } from "./store/toastStore";
 import {
   useEvents,
@@ -27,6 +27,7 @@ import {
   MenuIcon,
   SearchIcon,
   BugReportIcon,
+  LogoutIcon,
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState, useMemo, Suspense } from "react";
@@ -34,7 +35,7 @@ import { animate } from "animejs";
 import { useTheme } from "./hooks/useTheme";
 import { syncToGitHub, loadBookFromGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
-import type { Chapter } from "./store/appStore";
+import type { Chapter, BookData } from "./store/appStore";
 
 const EMPTY_ARR: never[] = [];
 
@@ -45,7 +46,7 @@ export default function App() {
   const { theme, toggle } = useTheme();
 
   const [showSearch, setShowSearch] = useState(false);
-  const [conflictData, setConflictData] = useState<{ serverBook: any, serverSha: string } | null>(null);
+  const [conflictData, setConflictData] = useState<{ serverBook: BookData, serverSha: string } | null>(null);
 
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
@@ -249,6 +250,13 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("seshat-auth-token");
+    sessionStorage.removeItem("seshat-auth-token");
+    clearAppStore();
+    navigate("/auth");
+  };
+
   const handlePull = async () => {
     const savedToken =
       localStorage.getItem("seshat-auth-token") ||
@@ -264,7 +272,7 @@ export default function App() {
       // loadBookFromGitHub returns { book, branchSha } or just the book?
       // Wait, let's just await it and see what it returns. If it returns the book directly,
       // it might have branchSha attached. Let's cast it or pass it.
-      const response = await loadBookFromGitHub(savedToken, bookId) as any;
+      const response = await loadBookFromGitHub(savedToken, bookId) as BookData;
       if (response && response.id) {
          // This means it returned the book object directly (wait, does it?)
          // loadBookFromGitHub sets lastSyncSha internally! 
@@ -281,7 +289,7 @@ export default function App() {
     }
   };
 
-  const handleResolveConflicts = async (mergedBook: any) => {
+  const handleResolveConflicts = async (mergedBook: BookData) => {
     setConflictData(null);
     if (bookIdx >= 0) {
       appStore.books[bookIdx].set(mergedBook);
@@ -293,9 +301,10 @@ export default function App() {
         try {
           setIsSyncing(true);
           showToast("Pushing resolved state to cloud...", "info");
-          await syncToGitHub(token, bookId!);
+          await syncToGitHub(token);
           showToast("Successfully pushed resolved state!", "success");
-        } catch (e) {
+        } catch (error) {
+          console.error(error);
           showToast("Failed to push resolved state", "error");
         } finally {
           setIsSyncing(false);
@@ -503,6 +512,14 @@ export default function App() {
                 <LightModeIcon sx={{ fontSize: 16 }} />
               )}
             </button>
+            <button
+              onClick={handleLogout}
+              style={{ ...styles.themeBtn, color: "#ef4444" }}
+              title="Secure Logout"
+            >
+              <LogoutIcon sx={{ fontSize: 16 }} />
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>Logout</span>
+            </button>
           </div>
 
           {/* More Menu Toggle (Mobile/Tablet) */}
@@ -516,84 +533,93 @@ export default function App() {
             >
               More ▾
             </button>
-            {showMoreMenu && (
-              <>
-                <div
-                  style={styles.moreMenuOverlay}
-                  onClick={() => setShowMoreMenu(false)}
-                />
-                <div
-                  className="seshat-more-dropdown"
-                  style={styles.moreMenuDropdown}
-                >
-                  <button
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      navigate(`/book/${bookId}/fight`);
-                    }}
-                    style={styles.moreMenuBtn(
-                      location.pathname === `/book/${bookId}/fight`,
-                    )}
-                  >
-                    <SportsKabaddiIcon sx={{ fontSize: 14 }} />
-                    Fight Mode
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      setShowExport(true);
-                    }}
-                    style={styles.moreMenuBtn(false)}
-                  >
-                    <FileDownloadIcon sx={{ fontSize: 14 }} />
-                    Export for AI
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      handlePull();
-                    }}
-                    disabled={isSyncing}
-                    style={styles.moreMenuBtn(false)}
-                  >
-                    <CloudSyncIcon
-                      sx={{ fontSize: 14, transform: "rotate(180deg)" }}
-                    />
-                    Pull
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      handleSync();
-                    }}
-                    disabled={isSyncing}
-                    style={styles.moreMenuBtn(false)}
-                  >
-                    <CloudSyncIcon sx={{ fontSize: 14 }} />
-                    {isSyncing ? "Syncing..." : "Sync"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      toggle();
-                    }}
-                    style={styles.moreMenuBtn(false)}
-                  >
-                    {theme === "light" ? (
-                      <LightModeIcon sx={{ fontSize: 16 }} />
-                    ) : (
-                      <DarkModeIcon sx={{ fontSize: 16 }} />
-                    )}
-                    {theme === "light" ? "Dark Mode" : "Light Mode"}
-                  </button>
-                </div>
-              </>
-            )}
+
           </div>
         </div>
       </div>
 
       <div style={S.row} className="seshat-row">
+        {/* ── Bottom Sheet (Mobile) ── */}
+        {showMoreMenu && (
+          <>
+            <div
+              style={styles.moreMenuOverlay}
+              onClick={() => setShowMoreMenu(false)}
+            />
+            <div style={styles.moreMenuDropdown}>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  navigate(`/book/${bookId}/fight`);
+                }}
+                style={styles.moreMenuBtn(
+                  location.pathname === `/book/${bookId}/fight`,
+                )}
+              >
+                <SportsKabaddiIcon sx={{ fontSize: 20 }} />
+                Fight Mode
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  setShowExport(true);
+                }}
+                style={styles.moreMenuBtn(false)}
+              >
+                <FileDownloadIcon sx={{ fontSize: 20 }} />
+                Export for AI
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  handlePull();
+                }}
+                disabled={isSyncing}
+                style={styles.moreMenuBtn(false)}
+              >
+                <CloudSyncIcon
+                  sx={{ fontSize: 20, transform: "rotate(180deg)" }}
+                />
+                Pull
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  handleSync();
+                }}
+                disabled={isSyncing}
+                style={styles.moreMenuBtn(false)}
+              >
+                <CloudSyncIcon sx={{ fontSize: 20 }} />
+                {isSyncing ? "Syncing..." : "Sync"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  toggle();
+                }}
+                style={styles.moreMenuBtn(false)}
+              >
+                {theme === "light" ? (
+                  <LightModeIcon sx={{ fontSize: 20 }} />
+                ) : (
+                  <DarkModeIcon sx={{ fontSize: 20 }} />
+                )}
+                {theme === "light" ? "Dark Mode" : "Light Mode"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  handleLogout();
+                }}
+                style={{ ...styles.moreMenuBtn(false), color: "#ef4444" }}
+              >
+                <LogoutIcon sx={{ fontSize: 20 }} />
+                Logout
+              </button>
+            </div>
+          </>
+        )}
         {/* ── Sidebar Overlay (Mobile) ── */}
         <div
           className={`seshat-sidebar-overlay ${showSidebar ? "open" : ""}`}
@@ -1043,19 +1069,24 @@ const styles = {
     right: 0,
     bottom: 0,
     zIndex: 90,
+    backdropFilter: "blur(2px)",
+    background: "rgba(0,0,0,0.2)",
   } as React.CSSProperties,
   moreMenuDropdown: {
-    position: "absolute",
-    top: "100%",
+    position: "fixed",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: "auto",
     background: "var(--bg-card)",
-    border: "1px solid var(--border)",
-    borderRadius: 4,
-    padding: "8px 0",
+    borderTop: "1px solid var(--border)",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: "32px 16px 48px",
     display: "flex",
     flexDirection: "column",
-    gap: 4,
-    minWidth: 140,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    gap: 8,
+    boxShadow: "0 -8px 48px rgba(0,0,0,0.5)",
     zIndex: 100,
   } as React.CSSProperties,
   moreMenuBtn: (isActive: boolean) =>
@@ -1063,11 +1094,15 @@ const styles = {
       ...S.ghost,
       width: "100%",
       justifyContent: "flex-start",
-      padding: "8px 16px",
+      padding: "16px 20px",
+      borderRadius: 12,
       display: "flex",
       alignItems: "center",
-      gap: 8,
-      color: isActive ? "var(--color-red)" : "inherit",
+      gap: 16,
+      fontSize: 16,
+      fontWeight: isActive ? 600 : 500,
+      color: isActive ? "var(--color-primary)" : "var(--text-primary)",
+      background: isActive ? "rgba(255,255,255,0.05)" : "transparent",
     }) as React.CSSProperties,
   mobileBackToBooksContainer: {
     padding: "20px 24px 16px",

@@ -607,12 +607,7 @@ svg circle {
   }
 }
 
-/* Sidebar Drawer overlay */
-.seshat-more-dropdown {
-  right: 0;
-  border-radius: 4px;
-  margin-top: 8px;
-}
+
 
 .seshat-sidebar-overlay {
   display: none;
@@ -636,13 +631,7 @@ svg circle {
   .seshat-page-container {
     padding: 24px 28px !important;
   }
-  .seshat-more-dropdown {
-    right: -28px;
-    border-radius: 0 0 0 4px !important;
-    border-right: none !important;
-    border-top: none !important;
-    margin-top: 0 !important;
-  }
+
   .seshat-mobile-only {
     display: flex !important;
   }
@@ -684,13 +673,7 @@ svg circle {
     font-size: 14px !important;
   }
 
-  .seshat-more-dropdown {
-    right: -16px;
-    border-radius: 0 0 0 4px !important;
-    border-right: none !important;
-    border-top: none !important;
-    margin-top: 0 !important;
-  }
+
 
   .seshat-top-actions {
     gap: 16px !important;
@@ -731,10 +714,7 @@ svg circle {
   .seshat-top-actions button {
     padding: 0 2px !important;
   }
-  .seshat-more-dropdown {
-    right: -8px;
-    margin-top: 0 !important;
-  }
+
 }
 
 .seshat-event-meta-grid {

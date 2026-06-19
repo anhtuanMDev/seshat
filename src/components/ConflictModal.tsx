@@ -60,7 +60,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
     diffEntities("ingredient", localBook.ingredients, serverBook.ingredients, (i) => i.name || "Unnamed Ingredient");
     diffEntities("monster", localBook.monsters, serverBook.monsters, (m) => m.name || "Unnamed Monster");
     diffEntities("treasure", localBook.treasures, serverBook.treasures, (t) => t.name || "Unnamed Treasure");
-    diffEntities("foreshadow", localBook.foreshadows, serverBook.foreshadows, (f) => f.hint || "Foreshadow Hint");
+    diffEntities("foreshadow", localBook.foreshadows, serverBook.foreshadows, (f) => f.description || "Foreshadow Entry");
 
     return list;
   }, [localBook, serverBook]);
