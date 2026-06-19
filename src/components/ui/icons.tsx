@@ -44,3 +44,4 @@ export { default as ShieldIcon } from "@mui/icons-material/Shield";
 export { default as WarningIcon } from "@mui/icons-material/Warning";
 export { default as CheckCircleIcon } from "@mui/icons-material/CheckCircle";
 export { default as InfoIcon } from "@mui/icons-material/Info";
+export { default as LogoutIcon } from "@mui/icons-material/Logout";

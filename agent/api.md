@@ -201,6 +201,42 @@ All endpoints are relative to the application origin. The base path is `/api/git
 
 ---
 
+## Local-First Architecture & Conflict Resolution
+
+Seshat employs a true "Local-First" architecture using `@legendapp/state` and `react-hook-form` connected to Cloudflare Workers. To ensure absolute data safety and offline resilience, the application guarantees the following synchronization flows:
+
+### 1. Optimistic UI Updates (The "Anti-Doom" Patch)
+All core editors (`ChapterPage.tsx`, `CharacterPage.tsx`, `EventPage.tsx`, `WorldPage.tsx`) execute **Optimistic UI Updates**. When a user hits "Save", their changes are *immediately* written to the local `appStore` (and by extension `localStorage`) **before** the GitHub API network request is dispatched. 
+- If the component unmounts mid-save (user navigates away), the data is safely persisted.
+- If the network request fails (e.g., a `409 Conflict`), the local changes remain active and safe on the device until they can be successfully merged or pushed.
+
+### 2. Form State Sync (`isDirty` Protection)
+To prevent background syncs from destroying active user typing sessions, all editor components subscribe to the `appStore` safely:
+- If a background `Pull` overwrites the global `appStore` with new cloud data, editors will evaluate `!isDirty && !isSaving`.
+- **If actively typing (Dirty)**: The editor ignores the background cloud update, preserving the user's unsaved keystrokes.
+- **If reading (Clean)**: The editor automatically resets and visually updates to reflect the new cloud data.
+
+### 3. Git-Style Conflict Resolution (Smart Merge UI)
+When the user executes a `Pull` operation, Seshat no longer blindly overwrites local state. Instead:
+1. `App.tsx` fetches the complete `serverBookData`.
+2. The `ConflictModal` is invoked to perform a deep, granular JSON diff between the `localBook` and the `serverBookData`.
+3. The Modal automatically ignores intentional omissions (like lazy-loaded `chapter.body` text) to prevent false-positive conflicts.
+4. The user is presented with a mobile-responsive interface to select `[Keep Local]` or `[Keep Cloud]` on a per-entity basis (e.g., choosing Local for Character A, but Cloud for Event B).
+5. Upon confirmation, the resolved state is seamlessly merged into the `appStore` and a background `Push` is automatically triggered to sync the final truth to the cloud.
+
+### 4. Unlimited Offline Persistence (IndexedDB)
+Because massive JSON books with dozens of chapters can quickly exceed the standard 5MB `localStorage` limit (causing catastrophic `QuotaExceededError` crashes), `appStore` persistence is bound entirely to **IndexedDB**. 
+- IndexedDB allows for gigabytes of offline storage, enabling the user to cache million-word novels locally without performance degradation.
+- A built-in zero-downtime migration script in `appStore.ts` detects and seamlessly migrates legacy 5MB `localStorage` data into IndexedDB on startup.
+
+### 5. Secure Data Wipe (Logout Protocol)
+Because offline-first applications natively cache sensitive intellectual property into the browser's database, Seshat enforces a "Secure Logout" protocol.
+- Clicking "Logout" in the UI explicitly invokes `clearAppStore()`.
+- This instantly purges all in-memory React state, which structurally overwrites the persistent `IndexedDB` with a completely blank slate.
+- All JWT auth tokens are simultaneously destroyed from `localStorage`/`sessionStorage`, ensuring zero trace of user data remains on shared computers.
+
+---
+
 ## Page & Feature API Context
 
 This section maps the Seshat application's pages and features to the APIs they consume, explaining **how** and **why** they are called in each specific context.
@@ -440,21 +476,3 @@ All wrappers re-throw errors so callers can show `showToast("...", "error")` and
 
 ---
 
-## Legacy REST Endpoints (Unused / Stubs)
-
-`src/api/endpoints/world.ts` + `src/api/axios.ts` — these use an axios instance with base URL `/api` and Bearer token from `localStorage["token"]`. They have **no backend implementation** in `functions/` and are **not called anywhere** in the main app. They are dead stubs from an earlier design phase.
-
-```ts
-getWorlds()                               // GET /api/worlds
-getWorld(id)                              // GET /api/worlds/:id
-createWorld(data)                         // POST /api/worlds
-updateWorld(id, data)                     // PUT /api/worlds/:id
-deleteWorld(id)                           // DELETE /api/worlds/:id
-getCharacters(worldId)                    // GET /api/worlds/:worldId/characters
-getCharacter(worldId, id)                 // GET /api/worlds/:worldId/characters/:id
-createCharacter(worldId, data)            // POST /api/worlds/:worldId/characters
-updateCharacter(worldId, id, data)        // PUT /api/worlds/:worldId/characters/:id
-deleteCharacter(worldId, id)              // DELETE /api/worlds/:worldId/characters/:id
-```
-
-> ⚠️ Do not build on top of these. Use the GitHub-backed functions under `/api/github/` instead.

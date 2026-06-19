@@ -8,47 +8,16 @@ import type { Chapter } from "../store/appStore";
 import { useCallback, useState } from "react";
 import { ChapterCard } from "../components/chapter/ChapterCard";
 import { saveAs } from "file-saver";
+import JSZip from "jszip";
 import { loadChaptersForExport } from "../lib/githubSync";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 
 const getToken = (): string | null =>
   localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
 
 const htmlToText = (html: string) => html.replace(/<[^>]*>/g, "").trim();
 
-const buildExport = (
-  chapters: { number: string; title: string; timeRef: string; synopsis: string; body: string }[],
-  bookTitle: string,
-) => {
-  const totalWords = chapters.reduce((sum, ch) => {
-    const body = htmlToText(ch.body || "");
-    return sum + (body.trim() === "" ? 0 : body.trim().split(/\s+/).length);
-  }, 0);
 
-  let content = `BOOK EXPORT: ${bookTitle}\n`;
-  content += `Total chapters: ${chapters.length}\n`;
-  content += `Total words: ${totalWords}\n`;
-  content += `================================================================================\n\n`;
-
-  chapters.forEach((ch) => {
-    content += `${ch.number}${ch.title ? ` - ${ch.title}` : ""}\n`;
-    if (ch.timeRef) content += `Time: ${ch.timeRef}\n`;
-    if (ch.synopsis) content += `Synopsis: ${ch.synopsis}\n`;
-    content += `--------------------------------------------------------------------------------\n`;
-    content += `${htmlToText(ch.body || "")}\n\n`;
-    content += `================================================================================\n\n`;
-  });
-
-  return content;
-};
-
-const buildSingleChapterExport = (ch: { number: string; title: string; timeRef: string; synopsis: string; body: string }) => {
-  let content = `${ch.number}${ch.title ? ` - ${ch.title}` : ""}\n`;
-  if (ch.timeRef) content += `Time: ${ch.timeRef}\n`;
-  if (ch.synopsis) content += `Synopsis: ${ch.synopsis}\n`;
-  content += `--------------------------------------------------------------------------------\n`;
-  content += `${htmlToText(ch.body || "")}\n\n`;
-  return content;
-};
 
 export default function ChapterListPage() {
   const { bookId } = useParams();
@@ -115,22 +84,94 @@ export default function ChapterListPage() {
 
     const ids = chapters.map((c) => c.id);
     const fetched = await loadChaptersForExport(token, bookId!, ids);
+    const safeTitle = (bookTitle || "book").replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
     if (mode === "all") {
-      const content = buildExport(fetched as any, bookTitle);
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-      const safeTitle = (bookTitle || "book").replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      saveAs(blob, `${safeTitle}_chapters_export.txt`);
-    } else {
-      fetched.forEach((ch: any, i: number) => {
-        setTimeout(() => {
-          const content = buildSingleChapterExport(ch);
-          const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-          const fileName = (ch.number as string)
-            .replace(/[^a-z0-9]/gi, '_').toLowerCase();
-          saveAs(blob, `${fileName}.txt`);
-        }, i * 200);
+      const docChildren: Paragraph[] = [];
+
+      docChildren.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: bookTitle || "Book Export", bold: true, size: 48 }),
+          ],
+          spacing: { after: 400 },
+        })
+      );
+
+      (fetched as unknown as Chapter[]).forEach((ch) => {
+        docChildren.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `${ch.number}${ch.title ? ` - ${ch.title}` : ""}`, bold: true, size: 36 }),
+            ],
+            spacing: { before: 400, after: 200 },
+          })
+        );
+        
+        const temp = document.createElement("div");
+        temp.innerHTML = ch.body || "";
+        const paragraphs = Array.from(temp.querySelectorAll("p")).map(
+          (p) => p.textContent || "",
+        );
+        const lines = paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
+        
+        lines.filter((line) => line.trim().length > 0).forEach((line) => {
+          docChildren.push(
+            new Paragraph({
+              text: line,
+              spacing: { after: 200 },
+            })
+          );
+        });
       });
+
+      const doc = new Document({
+        sections: [{ properties: {}, children: docChildren }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${safeTitle}_chapters_export.docx`);
+    } else {
+      const zip = new JSZip();
+
+      for (const ch of fetched as unknown as Chapter[]) {
+        const docChildren: Paragraph[] = [];
+        docChildren.push(
+          new Paragraph({
+            children: [
+              new TextRun({ text: `${ch.number}${ch.title ? ` - ${ch.title}` : ""}`, bold: true, size: 36 }),
+            ],
+            spacing: { before: 400, after: 200 },
+          })
+        );
+        
+        const temp = document.createElement("div");
+        temp.innerHTML = ch.body || "";
+        const paragraphs = Array.from(temp.querySelectorAll("p")).map(
+          (p) => p.textContent || "",
+        );
+        const lines = paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
+        
+        lines.filter((line) => line.trim().length > 0).forEach((line) => {
+          docChildren.push(
+            new Paragraph({
+              text: line,
+              spacing: { after: 200 },
+            })
+          );
+        });
+
+        const doc = new Document({
+          sections: [{ properties: {}, children: docChildren }],
+        });
+
+        const blob = await Packer.toBlob(doc);
+        const safeChapterTitle = `${ch.number}${ch.title ? `_${ch.title}` : ""}`.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        zip.file(`${safeChapterTitle}.docx`, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      saveAs(zipBlob, `${safeTitle}_selected_chapters.zip`);
     }
   }, [bookId]);
 

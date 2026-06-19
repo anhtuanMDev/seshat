@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { appStore, mkBook } from "../store/appStore";
+import { appStore, mkBook, clearAppStore } from "../store/appStore";
 import { S } from "../lib/utils";
 import {
   AutoStoriesIcon,
@@ -9,6 +9,7 @@ import {
   DarkModeIcon,
   CloseIcon,
   BugReportIcon,
+  LogoutIcon,
 } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { useTheme } from "../hooks/useTheme";
@@ -211,6 +212,13 @@ export default function BookListPage() {
     cursor: disabled ? "default" : "pointer" as const,
   });
 
+  const handleLogout = () => {
+    localStorage.removeItem("seshat-auth-token");
+    sessionStorage.removeItem("seshat-auth-token");
+    clearAppStore();
+    navigate("/auth");
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.topBar}>
@@ -228,6 +236,10 @@ export default function BookListPage() {
           ) : (
             <DarkModeIcon sx={styles.toggleIcon} />
           )}
+        </button>
+        <button onClick={handleLogout} title="Secure Logout" style={styles.logoutBtn}>
+          <LogoutIcon sx={styles.logoutIcon} />
+          Logout
         </button>
       </div>
 
@@ -455,6 +467,19 @@ const styles = {
     cursor: "pointer",
   },
   toggleIcon: {
+    fontSize: 16,
+  },
+  logoutBtn: {
+    ...S.ghost,
+    fontSize: 13,
+    opacity: 0.8,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    color: "#ef4444",
+    cursor: "pointer",
+  },
+  logoutIcon: {
     fontSize: 16,
   },
   logoIcon: {

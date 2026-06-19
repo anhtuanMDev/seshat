@@ -21,8 +21,9 @@ import {
   SaveIcon,
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import { useSelector } from "@legendapp/state/react";
 import { NationBlock } from "../components/world/NationBlock";
 import { TechniqueBlock } from "../components/world/TechniqueBlock";
 import { IngredientBlock } from "../components/world/IngredientBlock";
@@ -64,22 +65,34 @@ export default function WorldPage() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const lastBookIdxRef = useRef<number>(-1);
+
+  const bookData = useSelector(() => {
+    if (bookIdx < 0) return null;
+    return appStore.books[bookIdx].get();
+  });
 
   useEffect(() => {
-    if (bookIdx < 0) return;
-    reset({
-      title: appStore.books[bookIdx].title.get() || "",
-      synopsis: appStore.books[bookIdx].synopsis.get() || "",
-      setting: appStore.books[bookIdx].setting.get() || "",
-      themes: appStore.books[bookIdx].themes.get() || "",
-      rules: appStore.books[bookIdx].rules.get() || "",
-      nations: appStore.books[bookIdx].nations.get() || [],
-      techniques: appStore.books[bookIdx].techniques.get() || [],
-      ingredients: appStore.books[bookIdx].ingredients.get() || [],
-      monsters: appStore.books[bookIdx].monsters.get() || [],
-      treasures: appStore.books[bookIdx].treasures.get() || [],
-    });
-  }, [bookIdx, reset]);
+    if (!bookData) return;
+    
+    const isDifferentBook = lastBookIdxRef.current !== bookIdx;
+    lastBookIdxRef.current = bookIdx;
+
+    if (isDifferentBook || (!isDirty && !isSaving)) {
+      reset({
+        title: bookData.title || "",
+        synopsis: bookData.synopsis || "",
+        setting: bookData.setting || "",
+        themes: bookData.themes || "",
+        rules: bookData.rules || "",
+        nations: bookData.nations || [],
+        techniques: bookData.techniques || [],
+        ingredients: bookData.ingredients || [],
+        monsters: bookData.monsters || [],
+        treasures: bookData.treasures || [],
+      });
+    }
+  }, [bookIdx, bookData, reset, isDirty, isSaving]);
 
   const ref = useAnimateIn();
   const [isFloating, setIsFloating] = useState(false);

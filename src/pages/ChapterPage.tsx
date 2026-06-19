@@ -493,9 +493,7 @@ export default function ChapterPage() {
             });
           }
 
-          await updateFilesOnGitHub(token, bookId, filesToSync);
-
-          // ── Store writes happen AFTER the API succeeds ──────────────────────
+          // ── Store writes happen BEFORE the API to prevent data loss on unmount ──────────
           ch.number.set(data.number);
           ch.title.set(data.title);
           ch.synopsis.set(data.synopsis);
@@ -506,6 +504,8 @@ export default function ChapterPage() {
           ch.scenes.set(data.scenes);
           ch.timeRef.set(data.timeRef);
           ch.drafts.set(currentDrafts);
+
+          await updateFilesOnGitHub(token, bookId, filesToSync);
 
           showToast("Chapter synced to cloud", "success");
           // Only reset the form if the user is still viewing the chapter we just saved.

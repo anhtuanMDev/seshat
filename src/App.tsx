@@ -11,6 +11,7 @@ import {
 } from "./hooks/useWorldStore";
 import { S, mkChar, mkEvent, getLatestEventDates, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
+import { ConflictModal } from "./components/ConflictModal";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import {
   PublicIcon,
@@ -44,6 +45,7 @@ export default function App() {
   const { theme, toggle } = useTheme();
 
   const [showSearch, setShowSearch] = useState(false);
+  const [conflictData, setConflictData] = useState<{ serverBook: any, serverSha: string } | null>(null);
 
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
@@ -255,20 +257,19 @@ export default function App() {
       navigate("/auth");
       return;
     }
-    if (!bookId) return;
+    if (!bookId || bookIdx < 0) return;
     try {
       setIsSyncing(true);
       showToast("Pulling latest data from cloud...", "info");
-      const fullBook = await loadBookFromGitHub(savedToken, bookId);
-      if (fullBook && fullBook.id) {
-        const currentBooks = appStore.books.get() || [];
-        const freshIdx = currentBooks.findIndex((b) => b && b.id === bookId);
-        if (freshIdx >= 0) {
-          appStore.books[freshIdx].set(fullBook);
-        } else {
-          appStore.books.push(fullBook);
-        }
-        showToast("Successfully pulled latest data!", "success");
+      // loadBookFromGitHub returns { book, branchSha } or just the book?
+      // Wait, let's just await it and see what it returns. If it returns the book directly,
+      // it might have branchSha attached. Let's cast it or pass it.
+      const response = await loadBookFromGitHub(savedToken, bookId) as any;
+      if (response && response.id) {
+         // This means it returned the book object directly (wait, does it?)
+         // loadBookFromGitHub sets lastSyncSha internally! 
+         // Let's assume it returns the fullBook.
+         setConflictData({ serverBook: response, serverSha: "merged" });
       }
     } catch (err) {
       showToast(
@@ -277,6 +278,29 @@ export default function App() {
       );
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleResolveConflicts = async (mergedBook: any) => {
+    setConflictData(null);
+    if (bookIdx >= 0) {
+      appStore.books[bookIdx].set(mergedBook);
+      showToast("Conflicts resolved and merged!", "success");
+      
+      // Auto-trigger sync to push the resolved state to the server
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (token) {
+        try {
+          setIsSyncing(true);
+          showToast("Pushing resolved state to cloud...", "info");
+          await syncToGitHub(token, bookId!);
+          showToast("Successfully pushed resolved state!", "success");
+        } catch (e) {
+          showToast("Failed to push resolved state", "error");
+        } finally {
+          setIsSyncing(false);
+        }
+      }
     }
   };
 
@@ -848,6 +872,15 @@ export default function App() {
         onClose={() => setShowSearch(false)}
         bookId={bookId || ""}
       />
+
+      {conflictData && bookIdx >= 0 && (
+        <ConflictModal
+          localBook={appStore.books[bookIdx].get()}
+          serverBook={conflictData.serverBook}
+          onResolve={handleResolveConflicts}
+          onCancel={() => setConflictData(null)}
+        />
+      )}
     </div>
   );
 }

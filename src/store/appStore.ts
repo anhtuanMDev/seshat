@@ -1,12 +1,13 @@
 import { observable } from "@legendapp/state";
 import { configureObservablePersistence, persistObservable } from "@legendapp/state/persist";
-import { ObservablePersistLocalStorage } from "@legendapp/state/persist-plugins/local-storage";
+import { ObservablePersistIndexedDB } from "@legendapp/state/persist-plugins/indexeddb";
 import type { Character, Event, Chapter } from "../lib/types";
 
 export type { Character, Event, Chapter } from "../lib/types";
 
+// Switch to IndexedDB to completely bypass the 5MB/10MB localStorage quota
 configureObservablePersistence({
-  pluginLocal: ObservablePersistLocalStorage
+  pluginLocal: ObservablePersistIndexedDB
 });
 
 export interface Nation {
@@ -143,5 +144,28 @@ export const appStore = observable({
   lastSyncSha: null as string | null,
   books: [] as BookData[],
 });
+
+export const clearAppStore = () => {
+  appStore.set({
+    activeBookId: null,
+    lastSyncSha: null,
+    books: [],
+  });
+};
+
+// Auto-migrate old localStorage data into IndexedDB
+try {
+  const oldLocalData = localStorage.getItem("seshat-app");
+  if (oldLocalData) {
+    const parsed = JSON.parse(oldLocalData);
+    if (parsed) {
+      appStore.set(parsed);
+      localStorage.removeItem("seshat-app");
+      console.log("Successfully migrated appStore from LocalStorage to IndexedDB.");
+    }
+  }
+} catch (e) {
+  console.error("Migration from LocalStorage failed:", e);
+}
 
 persistObservable(appStore, { local: "seshat-app" });

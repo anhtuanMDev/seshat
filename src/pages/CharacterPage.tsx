@@ -280,32 +280,38 @@ export default function CharacterPage() {
     return () => observer.disconnect();
   }, []);
 
+  const lastCharIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (char) {
-      reset({
-        name: char.name || "",
-        role: char.role || "",
-        archetype: char.archetype || "",
-        gender: char.gender || "",
-        dob: char.dob || "",
-        appearance: char.appearance || "",
-        coreWound: char.coreWound || "",
-        coreFear: char.coreFear || "",
-        coreDesire: char.coreDesire || "",
-        philosophy: char.philosophy || "",
-        secrets: char.secrets || "",
-        arcs: char.arcs || [],
-        statusTimeline: char.statusTimeline || [],
-        traumas: char.traumas || [],
-        conditions: char.conditions || [],
-        equipment: char.equipment || [],
-        achievements: char.achievements || [],
-        losses: char.losses || [],
-        relationships: char.relationships || [],
-      });
+      const isDifferentChar = lastCharIdRef.current !== char.id;
+      lastCharIdRef.current = char.id;
+
+      if (isDifferentChar || (!isDirty && !isSaving)) {
+        reset({
+          name: char.name || "",
+          role: char.role || "",
+          archetype: char.archetype || "",
+          gender: char.gender || "",
+          dob: char.dob || "",
+          appearance: char.appearance || "",
+          coreWound: char.coreWound || "",
+          coreFear: char.coreFear || "",
+          coreDesire: char.coreDesire || "",
+          philosophy: char.philosophy || "",
+          secrets: char.secrets || "",
+          arcs: char.arcs || [],
+          statusTimeline: char.statusTimeline || [],
+          traumas: char.traumas || [],
+          conditions: char.conditions || [],
+          equipment: char.equipment || [],
+          achievements: char.achievements || [],
+          losses: char.losses || [],
+          relationships: char.relationships || [],
+        });
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [char?.id, reset]);
+  }, [char, reset, isDirty, isSaving]);
 
   const ref = useAnimateIn();
 
