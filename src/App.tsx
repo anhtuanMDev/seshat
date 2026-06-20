@@ -12,7 +12,7 @@ import {
 import { S, mkChar, mkEvent, getLatestEventDates, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
 import { ConflictModal } from "./components/ConflictModal";
-import { getConflicts } from "./lib/conflictUtils";
+import { getConflicts, autoMergeOtherChapters } from "./lib/conflictUtils";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import {
   PublicIcon,
@@ -274,8 +274,19 @@ export default function App() {
       if (response && response.id) {
          const localBook = appStore.books[bookIdx].get();
          const conflictsList = getConflicts(localBook, response);
-         if (conflictsList.length === 0) {
-           appStore.books[bookIdx].set(response);
+         const visibleConflicts = conflictsList.filter(c => {
+           if (c.type === "chapter") {
+             const originalId = c.id.replace("chapter_", "");
+             if (selChapter && originalId !== selChapter) {
+               return false;
+             }
+           }
+           return true;
+         });
+
+         if (visibleConflicts.length === 0) {
+           const mergedBook = autoMergeOtherChapters(localBook, conflictsList, selChapter);
+           appStore.books[bookIdx].set(mergedBook);
            showToast("Local data is already up to date. No conflicts found!", "success");
          } else {
            setConflictData({ serverBook: response, serverSha: "merged" });
@@ -901,10 +912,11 @@ export default function App() {
         bookId={bookId || ""}
       />
 
-      {conflictData && bookIdx >= 0 && (
+       {conflictData && bookIdx >= 0 && (
         <ConflictModal
           localBook={appStore.books[bookIdx].get()}
           serverBook={conflictData.serverBook}
+          activeChapterId={selChapter}
           onResolve={handleResolveConflicts}
           onCancel={() => setConflictData(null)}
         />

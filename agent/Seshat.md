@@ -922,6 +922,14 @@ Seshat uses a completely serverless authentication and cloud synchronization mod
 - Uses `src/lib/githubSync.ts` to trigger REST API requests to the Cloudflare Worker.
 - Converts the entire `appStore.get()` (all books, characters, chapters, events) into a flattened filesystem tree (JSON blobs) and directly hits the **GitHub Git Database API** (Trees, Commits, Refs) to safely persist the user's data to a unique branch per user (`user-username`).
 
+### Git-Style Conflict Resolution (Smart Merge UI)
+
+When the user executes a `Pull` operation, Seshat compares the local state with the server state using a deep, granular JSON diff via `getConflicts` (ignoring lazy-loaded body/draft properties).
+1. **Active Page Filtering**: The conflict list is filtered by the active context (e.g. the currently active chapter, metadata, characters, events). Non-active chapter conflicts are automatically designated to auto-resolve to the server version (preserving their local bodies and drafts).
+2. **Silent Auto-Merge**: If there are no conflicts on the active page (visible conflicts length is 0), the other chapters are auto-merged silently in the background using `autoMergeOtherChapters`. The local store and `lastSyncSha` are updated, and a success toast is shown without interrupting the user.
+3. **Interactive Conflict Resolution**: If there are active page conflicts, the `ConflictModal` is displayed. The user resolves active conflicts using the interface (`[Keep Local]` or `[Keep Cloud]`).
+4. Upon confirming the merge, the final resolved state (combining interactive resolutions and non-active chapter auto-resolutions) is saved to the store and pushed back to the cloud.
+
 > [!CAUTION]
 > **CRITICAL: GitHub Tree Syncing & Memory Constraints**
 > 

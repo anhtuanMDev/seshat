@@ -6,29 +6,49 @@ import { getConflicts } from "../lib/conflictUtils";
 interface ConflictModalProps {
   localBook: BookData;
   serverBook: BookData;
+  activeChapterId?: string | null;
   onResolve: (mergedBook: BookData) => void;
   onCancel: () => void;
 }
 
-export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: ConflictModalProps) {
+export function ConflictModal({ localBook, serverBook, activeChapterId, onResolve, onCancel }: ConflictModalProps) {
   const [resolutions, setResolutions] = useState<Record<string, "local" | "server">>({});
 
   const conflicts = useMemo(() => getConflicts(localBook, serverBook), [localBook, serverBook]);
 
+  const { visibleConflicts, autoResolutions } = useMemo(() => {
+    const visible: typeof conflicts = [];
+    const auto: Record<string, "local" | "server"> = {};
+
+    conflicts.forEach(c => {
+      if (c.type === "chapter") {
+        const originalId = c.id.replace("chapter_", "");
+        if (activeChapterId && originalId !== activeChapterId) {
+          auto[c.id] = "server";
+          return;
+        }
+      }
+      visible.push(c);
+    });
+
+    return { visibleConflicts: visible, autoResolutions: auto };
+  }, [conflicts, activeChapterId]);
+
   const handleResolveAll = (strategy: "local" | "server") => {
     const newRes = { ...resolutions };
-    conflicts.forEach(c => newRes[c.id] = strategy);
+    visibleConflicts.forEach(c => newRes[c.id] = strategy);
     setResolutions(newRes);
   };
 
   const handleConfirm = () => {
     // Ensure all resolved
-    if (conflicts.some(c => !resolutions[c.id])) {
+    if (visibleConflicts.some(c => !resolutions[c.id])) {
       alert("Please resolve all conflicts before continuing.");
       return;
     }
 
     // Build the merged book based on resolutions
+    const finalResolutions = { ...autoResolutions, ...resolutions };
     const mergedBook: BookData = { ...localBook };
 
     const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
@@ -38,7 +58,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
       const mergedMap = new Map<string, any>(sourceArr.map(i => [i.id, i]));
       
       conflicts.filter(c => c.type === type).forEach(c => {
-        const res = resolutions[c.id];
+        const res = finalResolutions[c.id];
         const originalId = c.id.replace(`${type}_`, "");
         
         if (res === "server") {
@@ -71,7 +91,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
       (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
     };
 
-    if (resolutions["meta_book"] === "server") {
+    if (finalResolutions["meta_book"] === "server") {
       mergedBook.title = serverBook.title;
       mergedBook.synopsis = serverBook.synopsis;
       mergedBook.setting = serverBook.setting;
@@ -81,7 +101,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
 
     mergeArray("character", "characters");
     mergeArray("event", "events");
-    mergeArray("chapter", "chapters", ["body", "drafts"]);
+    mergeArray("chapter", "chapters", ["body", "drafts", "activeDraftId"]);
     mergeArray("nation", "nations");
     mergeArray("technique", "techniques");
     mergeArray("ingredient", "ingredients");
@@ -92,12 +112,55 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
     onResolve(mergedBook);
   };
 
-  if (conflicts.length === 0) {
+  if (visibleConflicts.length === 0) {
     return (
       <Modal title="Sync Complete" onClose={onCancel}>
         <div style={{ padding: "32px 24px", textAlign: "center" }}>
           <p style={{ color: "var(--text-secondary)", marginBottom: 24, fontSize: 16 }}>Your local data safely matches the cloud. No conflicts found.</p>
-          <button onClick={() => onResolve(localBook)} style={btnStyle}>Continue</button>
+          <button onClick={() => {
+            // Build the fully merged book using autoResolutions since no visible conflicts exist
+            const mergedBook: BookData = { ...localBook };
+            const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const mergedMap = new Map<string, any>(sourceArr.map(i => [i.id, i]));
+              
+              conflicts.filter(c => c.type === type).forEach(c => {
+                const res = autoResolutions[c.id];
+                const originalId = c.id.replace(`${type}_`, "");
+                if (res === "server") {
+                  if (c.serverValue === null) {
+                    mergedMap.delete(originalId);
+                  } else {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const serverVal: any = { ...(c.serverValue as any) };
+                    if (preserveKeys.length > 0) {
+                      const localVal = mergedMap.get(originalId);
+                      if (localVal) {
+                        preserveKeys.forEach(k => {
+                          if (localVal[k] !== undefined) serverVal[k] = localVal[k];
+                        });
+                      }
+                    }
+                    mergedMap.set(originalId, serverVal);
+                  }
+                }
+              });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
+            };
+            mergeArray("character", "characters");
+            mergeArray("event", "events");
+            mergeArray("chapter", "chapters", ["body", "drafts", "activeDraftId"]);
+            mergeArray("nation", "nations");
+            mergeArray("technique", "techniques");
+            mergeArray("ingredient", "ingredients");
+            mergeArray("monster", "monsters");
+            mergeArray("treasure", "treasures");
+            mergeArray("foreshadow", "foreshadows");
+            onResolve(mergedBook);
+          }} style={btnStyle}>Continue</button>
         </div>
       </Modal>
     );
@@ -108,8 +171,8 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
       <button onClick={onCancel} style={cancelBtnStyle}>Cancel</button>
       <button 
         onClick={handleConfirm} 
-        disabled={conflicts.some(c => !resolutions[c.id])} 
-        style={conflicts.some(c => !resolutions[c.id]) ? disabledBtnStyle : btnStyle}
+        disabled={visibleConflicts.some(c => !resolutions[c.id])} 
+        style={visibleConflicts.some(c => !resolutions[c.id]) ? disabledBtnStyle : btnStyle}
       >
         Confirm Merge
       </button>
@@ -129,7 +192,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
         </div>
 
         <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 16, background: "var(--bg-app)" }}>
-          {conflicts.map((c, index) => (
+          {visibleConflicts.map((c, index) => (
             <div key={c.id} style={{ 
               display: "flex", 
               flexWrap: "wrap", 
@@ -137,7 +200,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
               justifyContent: "space-between", 
               alignItems: "center", 
               padding: "16px 0", 
-              borderBottom: index === conflicts.length - 1 ? "none" : "1px solid var(--border)" 
+              borderBottom: index === visibleConflicts.length - 1 ? "none" : "1px solid var(--border)" 
             }}>
               <div style={{ flex: "1 1 200px" }}>
                 <div style={{ fontSize: 11, color: "var(--color-blue)", textTransform: "uppercase", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>{c.type}</div>

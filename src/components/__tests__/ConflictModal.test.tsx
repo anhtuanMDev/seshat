@@ -143,4 +143,58 @@ describe("ConflictModal Component", () => {
       })],
     }));
   });
+
+  it("filters out and auto-resolves other chapters' conflicts to server", () => {
+    const local = {
+      ...createBaseBook("Local Title"),
+      chapters: [
+        { id: "ch-1", number: "1", title: "Local Chapter 1", order: 1 },
+        { id: "ch-2", number: "2", title: "Local Chapter 2", order: 2 },
+      ],
+    } as unknown as BookData;
+
+    const server = {
+      ...createBaseBook("Server Title"),
+      chapters: [
+        { id: "ch-1", number: "1", title: "Server Chapter 1", order: 1 },
+        { id: "ch-2", number: "2", title: "Server Chapter 2", order: 2 },
+      ],
+    } as unknown as BookData;
+
+    const onResolve = vi.fn();
+    const onCancel = vi.fn();
+
+    render(
+      <ConflictModal
+        localBook={local}
+        serverBook={server}
+        activeChapterId="ch-1"
+        onResolve={onResolve}
+        onCancel={onCancel}
+        />
+    );
+
+    // Book metadata and Chapter 1 conflicts should be visible. Chapter 2 conflict should be hidden.
+    expect(screen.getByText("Book Metadata & World Rules")).toBeInTheDocument();
+    expect(screen.getByText("Chapter 1: Local Chapter 1")).toBeInTheDocument();
+    expect(screen.queryByText("Chapter 2: Local Chapter 2")).toBeNull();
+
+    // Resolve visible conflicts
+    fireEvent.click(screen.getByRole("button", { name: "Keep All Local" }));
+
+    const confirmBtn = screen.getByRole("button", { name: "Confirm Merge" });
+    fireEvent.click(confirmBtn);
+
+    // Assert resolved merged book:
+    // Metadata -> Local Title
+    // Chapter 1 -> Local Chapter 1
+    // Chapter 2 -> Server Chapter 2 (auto-resolved to server)
+    expect(onResolve).toHaveBeenCalledWith(expect.objectContaining({
+      title: "Local Title",
+      chapters: [
+        expect.objectContaining({ id: "ch-1", title: "Local Chapter 1" }),
+        expect.objectContaining({ id: "ch-2", title: "Server Chapter 2" }),
+      ],
+    }));
+  });
 });

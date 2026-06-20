@@ -219,10 +219,11 @@ To prevent background syncs from destroying active user typing sessions, all edi
 ### 3. Git-Style Conflict Resolution (Smart Merge UI)
 When the user executes a `Pull` operation, Seshat no longer blindly overwrites local state. Instead:
 1. `App.tsx` fetches the complete `serverBookData`.
-2. The `ConflictModal` is invoked to perform a deep, granular JSON diff between the `localBook` and the `serverBookData`.
-3. The Modal automatically ignores intentional omissions (like lazy-loaded `chapter.body` text) to prevent false-positive conflicts.
-4. The user is presented with a mobile-responsive interface to select `[Keep Local]` or `[Keep Cloud]` on a per-entity basis (e.g., choosing Local for Character A, but Cloud for Event B).
-5. Upon confirmation, the resolved state is seamlessly merged into the `appStore` and a background `Push` is automatically triggered to sync the final truth to the cloud.
+2. The comparison engine performs a deep, granular JSON diff between `localBook` and `serverBookData` via `getConflicts`, ignoring lazy-loaded body/draft fields.
+3. The conflict list is filtered to only include items relevant to the active page (active chapter, metadata, characters, events). Non-active chapter conflicts are automatically designated to auto-resolve to the server version (preserving their local bodies and drafts).
+4. **Silent Auto-Merge**: If no conflicts remain for the active page (visible conflicts length is 0), the other chapters are auto-merged silently in the background using `autoMergeOtherChapters`. The local store and `lastSyncSha` are updated, and a success toast is shown without interrupting the user with a modal.
+5. **Interactive Conflict Resolution**: If there are active page conflicts, the `ConflictModal` is displayed. The user resolves active conflicts using the interface (`[Keep Local]` or `[Keep Cloud]`).
+6. Upon confirming the merge, the final resolved state (combining interactive resolutions and non-active chapter auto-resolutions) is saved to the store and pushed back to the cloud.
 
 ### 4. Unlimited Offline Persistence (IndexedDB)
 Because massive JSON books with dozens of chapters can quickly exceed the standard 5MB `localStorage` limit (causing catastrophic `QuotaExceededError` crashes), `appStore` persistence is bound entirely to **IndexedDB**. 

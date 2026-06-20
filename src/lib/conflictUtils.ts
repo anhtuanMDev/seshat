@@ -62,6 +62,12 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
           delete s[k];
         });
         if (canonicalStringify(l) !== canonicalStringify(s)) {
+          console.log(`[Conflict Debug] Conflict detected for ${type}/${localItem.id}:`, {
+            localStringified: canonicalStringify(l),
+            serverStringified: canonicalStringify(s),
+            localObj: l,
+            serverObj: s
+          });
           list.push({
             id: `${type}_${localItem.id}`,
             type,
@@ -114,6 +120,7 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
   diffEntities("chapter", localBook.chapters, serverBook.chapters, c => `Chapter ${c.number}: ${c.title || ""}`, [
     "body",
     "drafts",
+    "activeDraftId",
   ]);
   diffEntities("nation", localBook.nations, serverBook.nations, n => n.name || "Unnamed Nation");
   diffEntities("technique", localBook.techniques, serverBook.techniques, t => t.name || "Unnamed Technique");
@@ -123,4 +130,47 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
   diffEntities("foreshadow", localBook.foreshadows, serverBook.foreshadows, f => f.description || "Foreshadow Entry");
 
   return list;
+}
+
+export function autoMergeOtherChapters(
+  localBook: BookData,
+  conflicts: ConflictItem[],
+  activeChapterId: string | null
+): BookData {
+  const mergedBook: BookData = { ...localBook };
+
+  const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mergedMap = new Map<string, any>(sourceArr.map(i => [i.id, i]));
+    
+    conflicts.filter(c => c.type === type).forEach(c => {
+      const originalId = c.id.replace(`${type}_`, "");
+      
+      // Auto-resolve non-active chapter conflicts to server
+      if (type === "chapter" && activeChapterId && originalId !== activeChapterId) {
+        if (c.serverValue === null) {
+          mergedMap.delete(originalId);
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const serverVal: any = { ...(c.serverValue as any) };
+          if (preserveKeys.length > 0) {
+            const localVal = mergedMap.get(originalId);
+            if (localVal) {
+              preserveKeys.forEach(k => {
+                if (localVal[k] !== undefined) serverVal[k] = localVal[k];
+              });
+            }
+          }
+          mergedMap.set(originalId, serverVal);
+        }
+      }
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
+  };
+
+  mergeArray("chapter", "chapters", ["body", "drafts", "activeDraftId"]);
+  return mergedBook;
 }
