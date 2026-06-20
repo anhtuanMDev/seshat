@@ -31,7 +31,7 @@ export function ArcBlock({ control, index, color, onDelete, events, setValue }: 
   };
 
   return (
-    <div className="seshat-modal-form-redesign">
+    <div className="seshat-modal-form-redesign" style={{ padding: "24px 28px" }}>
       {/* Section 1: Timeline Alignment */}
       <div className="seshat-form-section-container">
         <div className="seshat-form-section-header">

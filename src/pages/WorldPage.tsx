@@ -29,6 +29,13 @@ import { TechniqueBlock } from "../components/world/TechniqueBlock";
 import { IngredientBlock } from "../components/world/IngredientBlock";
 import { MonsterBlock } from "../components/world/MonsterBlock";
 import { TreasureBlock } from "../components/world/TreasureBlock";
+import { Modal } from "../components/ui/Modal";
+import { DeleteIcon } from "../components/ui/icons";
+import { NationCard } from "../components/world/NationCard";
+import { TechniqueCard } from "../components/world/TechniqueCard";
+import { IngredientCard } from "../components/world/IngredientCard";
+import { MonsterCard } from "../components/world/MonsterCard";
+import { TreasureCard } from "../components/world/TreasureCard";
 import type { WorldForm } from "../components/world/types";
 import type {
   Nation,
@@ -66,6 +73,58 @@ export default function WorldPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const lastBookIdxRef = useRef<number>(-1);
+
+  const [modal, setModal] = useState<{
+    type: "nation" | "technique" | "ingredient" | "monster" | "treasure";
+    idx: number | null;
+    isNew?: boolean;
+  } | null>(null);
+
+  const addWorldItem = (
+    type: "nation" | "technique" | "ingredient" | "monster" | "treasure",
+    mk: () => any
+  ) => {
+    const field =
+      type === "nation"
+        ? "nations"
+        : type === "technique"
+        ? "techniques"
+        : type === "ingredient"
+        ? "ingredients"
+        : type === "monster"
+        ? "monsters"
+        : "treasures";
+    const current = getValues(field) || [];
+    const newItem = mk();
+    setValue(field, [...current, newItem] as any, { shouldDirty: true });
+    setModal({ type, idx: current.length, isNew: true });
+  };
+
+  const handleCancelModal = () => {
+    if (!modal) return;
+    if (modal.isNew) {
+      const field =
+        modal.type === "nation"
+          ? "nations"
+          : modal.type === "technique"
+          ? "techniques"
+          : modal.type === "ingredient"
+          ? "ingredients"
+          : modal.type === "monster"
+          ? "monsters"
+          : "treasures";
+      const current = getValues(field) || [];
+      setValue(
+        field,
+        current.filter((_, idx) => idx !== modal.idx) as any
+      );
+    }
+    setModal(null);
+  };
+
+  const handleSaveModal = () => {
+    setModal(null);
+  };
 
   const bookData = useSelector(() => {
     if (bookIdx < 0) return null;
@@ -196,14 +255,6 @@ export default function WorldPage() {
     }
   };
 
-  const addItem = (
-    field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures",
-    mk: () => Nation | Technique | Ingredient | Monster | Treasure,
-  ) => {
-    const items = getValues(field);
-    setValue(field, [...items, mk()] as typeof items);
-  };
-
   const delItem = (
     field: "nations" | "techniques" | "ingredients" | "monsters" | "treasures",
     delId: string,
@@ -309,7 +360,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addItem("nations", mkNation)}>
+          <GhostButton onClick={() => addWorldItem("nation", mkNation)}>
             + add
           </GhostButton>
         }
@@ -319,17 +370,15 @@ export default function WorldPage() {
           Kingdoms, empires, tribes, hidden societies. The political landscape
           your characters live inside.
         </p>
-        {nations.map((n: Nation, i: number) => (
-          <NationBlock
-            key={n.id}
-            control={control}
-            index={i}
-            onDelete={() => delItem("nations", n.id)}
-            connections={n.connections || []}
-            onAddConnection={() => addConnection(i)}
-            onDelConnection={(connId) => delConnection(i, connId)}
-          />
-        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+          {nations.map((n: Nation, i: number) => (
+            <NationCard
+              key={n.id}
+              nation={n}
+              onEdit={() => setModal({ type: "nation", idx: i })}
+            />
+          ))}
+        </div>
         {!nations.length && <p style={S.dim}>No nations yet.</p>}
       </Section>
 
@@ -341,7 +390,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addItem("techniques", mkTechnique)}>
+          <GhostButton onClick={() => addWorldItem("technique", mkTechnique)}>
             + add
           </GhostButton>
         }
@@ -351,14 +400,15 @@ export default function WorldPage() {
           Martial arts, blacksmithing schools, biological arts, forbidden
           knowledge. How things are made and mastered in this world.
         </p>
-        {techniques.map((t: Technique, i: number) => (
-          <TechniqueBlock
-            key={t.id}
-            control={control}
-            index={i}
-            onDelete={() => delItem("techniques", t.id)}
-          />
-        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+          {techniques.map((t: Technique, i: number) => (
+            <TechniqueCard
+              key={t.id}
+              technique={t}
+              onEdit={() => setModal({ type: "technique", idx: i })}
+            />
+          ))}
+        </div>
         {!techniques.length && <p style={S.dim}>No techniques yet.</p>}
       </Section>
 
@@ -370,7 +420,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addItem("ingredients", mkIngredient)}>
+          <GhostButton onClick={() => addWorldItem("ingredient", mkIngredient)}>
             + add
           </GhostButton>
         }
@@ -380,14 +430,15 @@ export default function WorldPage() {
           Materials, herbs, minerals, essences. The raw stuff of your world —
           what things are made from.
         </p>
-        {ingredients.map((item: Ingredient, i: number) => (
-          <IngredientBlock
-            key={item.id}
-            control={control}
-            index={i}
-            onDelete={() => delItem("ingredients", item.id)}
-          />
-        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+          {ingredients.map((item: Ingredient, i: number) => (
+            <IngredientCard
+              key={item.id}
+              ingredient={item}
+              onEdit={() => setModal({ type: "ingredient", idx: i })}
+            />
+          ))}
+        </div>
         {!ingredients.length && <p style={S.dim}>No ingredients yet.</p>}
       </Section>
 
@@ -399,7 +450,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addItem("monsters", mkMonster)}>
+          <GhostButton onClick={() => addWorldItem("monster", mkMonster)}>
             + add
           </GhostButton>
         }
@@ -409,14 +460,15 @@ export default function WorldPage() {
           Creatures, beasts, horrors. What hunts your characters — and what
           drops when they die.
         </p>
-        {monsters.map((m: Monster, i: number) => (
-          <MonsterBlock
-            key={m.id}
-            control={control}
-            index={i}
-            onDelete={() => delItem("monsters", m.id)}
-          />
-        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+          {monsters.map((m: Monster, i: number) => (
+            <MonsterCard
+              key={m.id}
+              monster={m}
+              onEdit={() => setModal({ type: "monster", idx: i })}
+            />
+          ))}
+        </div>
         {!monsters.length && <p style={S.dim}>No monsters yet.</p>}
       </Section>
 
@@ -428,7 +480,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addItem("treasures", mkTreasure)}>
+          <GhostButton onClick={() => addWorldItem("treasure", mkTreasure)}>
             + add
           </GhostButton>
         }
@@ -438,14 +490,15 @@ export default function WorldPage() {
           World-level relics, legendary items not yet held by anyone. When a
           character claims one, add it to their equipment too.
         </p>
-        {treasures.map((tr: Treasure, i: number) => (
-          <TreasureBlock
-            key={tr.id}
-            control={control}
-            index={i}
-            onDelete={() => delItem("treasures", tr.id)}
-          />
-        ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+          {treasures.map((tr: Treasure, i: number) => (
+            <TreasureCard
+              key={tr.id}
+              treasure={tr}
+              onEdit={() => setModal({ type: "treasure", idx: i })}
+            />
+          ))}
+        </div>
         {!treasures.length && <p style={S.dim}>No treasures yet.</p>}
       </Section>
       </div>
@@ -470,6 +523,248 @@ export default function WorldPage() {
             {isSaving ? "saving..." : "save"}
           </button>
         </div>
+      )}
+
+      {modal?.type === "nation" && modal.idx !== null && (
+        <Modal
+          title={modal.isNew ? "Add Nation / Faction" : "Edit Nation / Faction Details"}
+          onClose={handleCancelModal}
+          variant="wide"
+          footer={
+            <div className="seshat-flex-between" style={{ width: "100%" }}>
+              <div>
+                {!modal.isNew && (
+                  <button
+                    onClick={() => {
+                      delItem("nations", nations[modal.idx!].id);
+                      setModal(null);
+                    }}
+                    className="seshat-modal-btn-delete"
+                    title="Delete this nation/faction"
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div className="seshat-flex-align" style={{ gap: 12 }}>
+                <button
+                  onClick={handleCancelModal}
+                  className="seshat-modal-btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveModal}
+                  className="seshat-modal-btn-submit"
+                >
+                  <SaveIcon sx={{ fontSize: 16 }} />
+                  Save
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <NationBlock
+            control={control}
+            index={modal.idx}
+            onDelete={() => {}}
+            connections={nations[modal.idx!].connections || []}
+            onAddConnection={() => addConnection(modal.idx!)}
+            onDelConnection={(connId) => delConnection(modal.idx!, connId)}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "technique" && modal.idx !== null && (
+        <Modal
+          title={modal.isNew ? "Add Technique" : "Edit Technique Details"}
+          onClose={handleCancelModal}
+          variant="wide"
+          footer={
+            <div className="seshat-flex-between" style={{ width: "100%" }}>
+              <div>
+                {!modal.isNew && (
+                  <button
+                    onClick={() => {
+                      delItem("techniques", techniques[modal.idx!].id);
+                      setModal(null);
+                    }}
+                    className="seshat-modal-btn-delete"
+                    title="Delete this technique"
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div className="seshat-flex-align" style={{ gap: 12 }}>
+                <button
+                  onClick={handleCancelModal}
+                  className="seshat-modal-btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveModal}
+                  className="seshat-modal-btn-submit"
+                >
+                  <SaveIcon sx={{ fontSize: 16 }} />
+                  Save
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <TechniqueBlock
+            control={control}
+            index={modal.idx}
+            onDelete={() => {}}
+          />
+        </Modal>
+      )}
+      {modal?.type === "ingredient" && modal.idx !== null && (
+        <Modal
+          title={modal.isNew ? "Add Ingredient / Resource" : "Edit Ingredient / Resource Details"}
+          onClose={handleCancelModal}
+          variant="wide"
+          footer={
+            <div className="seshat-flex-between" style={{ width: "100%" }}>
+              <div>
+                {!modal.isNew && (
+                  <button
+                    onClick={() => {
+                      delItem("ingredients", ingredients[modal.idx!].id);
+                      setModal(null);
+                    }}
+                    className="seshat-modal-btn-delete"
+                    title="Delete this ingredient"
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div className="seshat-flex-align" style={{ gap: 12 }}>
+                <button
+                  onClick={handleCancelModal}
+                  className="seshat-modal-btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveModal}
+                  className="seshat-modal-btn-submit"
+                >
+                  <SaveIcon sx={{ fontSize: 16 }} />
+                  Save
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <IngredientBlock
+            control={control}
+            index={modal.idx}
+            onDelete={() => {}}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "monster" && modal.idx !== null && (
+        <Modal
+          title={modal.isNew ? "Add Monster / Hazard" : "Edit Monster / Hazard Details"}
+          onClose={handleCancelModal}
+          variant="wide"
+          footer={
+            <div className="seshat-flex-between" style={{ width: "100%" }}>
+              <div>
+                {!modal.isNew && (
+                  <button
+                    onClick={() => {
+                      delItem("monsters", monsters[modal.idx!].id);
+                      setModal(null);
+                    }}
+                    className="seshat-modal-btn-delete"
+                    title="Delete this monster"
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div className="seshat-flex-align" style={{ gap: 12 }}>
+                <button
+                  onClick={handleCancelModal}
+                  className="seshat-modal-btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveModal}
+                  className="seshat-modal-btn-submit"
+                >
+                  <SaveIcon sx={{ fontSize: 16 }} />
+                  Save
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <MonsterBlock
+            control={control}
+            index={modal.idx}
+            onDelete={() => {}}
+          />
+        </Modal>
+      )}
+
+      {modal?.type === "treasure" && modal.idx !== null && (
+        <Modal
+          title={modal.isNew ? "Add Treasure / Artifact" : "Edit Treasure / Artifact Details"}
+          onClose={handleCancelModal}
+          variant="wide"
+          footer={
+            <div className="seshat-flex-between" style={{ width: "100%" }}>
+              <div>
+                {!modal.isNew && (
+                  <button
+                    onClick={() => {
+                      delItem("treasures", treasures[modal.idx!].id);
+                      setModal(null);
+                    }}
+                    className="seshat-modal-btn-delete"
+                    title="Delete this treasure"
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                    Delete
+                  </button>
+                )}
+              </div>
+              <div className="seshat-flex-align" style={{ gap: 12 }}>
+                <button
+                  onClick={handleCancelModal}
+                  className="seshat-modal-btn-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveModal}
+                  className="seshat-modal-btn-submit"
+                >
+                  <SaveIcon sx={{ fontSize: 16 }} />
+                  Save
+                </button>
+              </div>
+            </div>
+          }
+        >
+          <TreasureBlock
+            control={control}
+            index={modal.idx}
+            onDelete={() => {}}
+          />
+        </Modal>
       )}
     </>
   );

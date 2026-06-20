@@ -12,6 +12,7 @@ import {
 import { S, mkChar, mkEvent, getLatestEventDates, uid } from "./lib/utils";
 import { SideItem } from "./components/ui";
 import { ConflictModal } from "./components/ConflictModal";
+import { getConflicts } from "./lib/conflictUtils";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
 import {
   PublicIcon,
@@ -269,15 +270,16 @@ export default function App() {
     try {
       setIsSyncing(true);
       showToast("Pulling latest data from cloud...", "info");
-      // loadBookFromGitHub returns { book, branchSha } or just the book?
-      // Wait, let's just await it and see what it returns. If it returns the book directly,
-      // it might have branchSha attached. Let's cast it or pass it.
       const response = await loadBookFromGitHub(savedToken, bookId) as BookData;
       if (response && response.id) {
-         // This means it returned the book object directly (wait, does it?)
-         // loadBookFromGitHub sets lastSyncSha internally! 
-         // Let's assume it returns the fullBook.
-         setConflictData({ serverBook: response, serverSha: "merged" });
+         const localBook = appStore.books[bookIdx].get();
+         const conflictsList = getConflicts(localBook, response);
+         if (conflictsList.length === 0) {
+           appStore.books[bookIdx].set(response);
+           showToast("Local data is already up to date. No conflicts found!", "success");
+         } else {
+           setConflictData({ serverBook: response, serverSha: "merged" });
+         }
       }
     } catch (err) {
       showToast(

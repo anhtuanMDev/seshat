@@ -1802,20 +1802,49 @@ export default function CharacterPage() {
 
         {modal?.type === "condition" && modal.idx !== null && (
           <Modal
-            title="Condition"
+            title={modal.isNew ? "Add Condition" : "Edit Condition Details"}
             onClose={handleCancelModal}
+            variant="wide"
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => {
+                        delItem("condition", modal.idx!);
+                        setModal(null);
+                      }}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this condition"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <ConditionBlock
               control={control}
               index={modal.idx}
               color="var(--color-orange)"
-              onDelete={() => delItem("condition", modal.idx!)}
+              onDelete={() => {}}
               events={events}
             />
           </Modal>
@@ -1907,6 +1936,7 @@ export default function CharacterPage() {
           <Modal
             title="Status Entry"
             onClose={handleCancelModal}
+            variant="wide"
             footer={
               <button onClick={handleSaveModal} style={styles.doneBtn}>
                 <SaveIcon sx={{ fontSize: 12 }} />
@@ -1928,6 +1958,7 @@ export default function CharacterPage() {
           <Modal
             title={modal.isNew ? "Add Character Arc" : "Edit Character Arc Details"}
             onClose={handleCancelModal}
+            variant="wide"
             footer={
               <div className="seshat-flex-between" style={{ width: "100%" }}>
                 <div>

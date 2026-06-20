@@ -245,22 +245,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       book.chapters?.forEach((c) => {
         indexChapters.push({ id: c.id, title: c.title });
         
-        if (c.body === undefined) {
-          let foundFiles = false;
-          for (const [p, sha] of existingFiles.entries()) {
-            if (p.startsWith(`${bDir}/chapters/chapter_${c.id}/`) || p === `${bDir}/chapters/chapter_${c.id}.json`) {
-              treeFiles.push({
-                path: p,
-                mode: "100644",
-                type: "blob",
-                sha,
-              });
-              foundFiles = true;
-            }
-          }
-          if (foundFiles) return;
-        }
-
         const drafts = (c.drafts as Record<string, unknown>[]) || [];
         treeFiles.push({
           path: `${bDir}/chapters/chapter_${c.id}/metadata.json`,
@@ -277,17 +261,35 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             pinnedChars: c.pinnedChars,
             pinnedEventIds: c.pinnedEventIds,
             scenes: c.scenes,
-            drafts: drafts.map((d: Record<string, unknown>) => ({ id: d.id, name: d.name, createdAt: d.createdAt }))
+            drafts: drafts.map((d: Record<string, unknown>) => ({
+              id: d.id,
+              name: d.name,
+              createdAt: d.createdAt,
+              isDeleted: d.isDeleted
+            }))
           }, null, 2),
         });
 
         drafts.forEach((d: Record<string, unknown>) => {
-          treeFiles.push({
-            path: `${bDir}/chapters/chapter_${c.id}/${d.id}.json`,
-            mode: "100644",
-            type: "blob",
-            content: JSON.stringify(d, null, 2),
-          });
+          const draftPath = `${bDir}/chapters/chapter_${c.id}/${d.id}.json`;
+          if (c.body === undefined) {
+            const existingSha = existingFiles.get(draftPath);
+            if (existingSha) {
+              treeFiles.push({
+                path: draftPath,
+                mode: "100644",
+                type: "blob",
+                sha: existingSha,
+              });
+            }
+          } else {
+            treeFiles.push({
+              path: draftPath,
+              mode: "100644",
+              type: "blob",
+              content: JSON.stringify(d, null, 2),
+            });
+          }
         });
       });
 

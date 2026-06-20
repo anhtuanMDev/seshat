@@ -7,9 +7,10 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  variant?: "standard" | "wide";
 }
 
-export function Modal({ title, onClose, children, footer }: ModalProps) {
+export function Modal({ title, onClose, children, footer, variant = "standard" }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +87,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
       onClick={handleOverlayClick}
     >
       <div
-        className="seshat-modal"
+        className={`seshat-modal ${variant === "wide" ? "wide" : ""}`}
         ref={modalRef}
         role="dialog"
         aria-modal="true"
@@ -110,7 +111,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
             <CloseIcon sx={{ fontSize: 16 }} />
           </button>
         </div>
-        <div>{children}</div>
+        <div className="seshat-modal-body-container">{children}</div>
         {footer && (
           <div className="seshat-flex-end" style={styles.footer}>
             {footer}
@@ -132,8 +133,7 @@ const styles = {
     lineHeight: 1,
   },
   footer: {
-    marginTop: "var(--space-8)",
-    paddingTop: "var(--space-4)",
+    padding: "16px 28px 24px",
     borderTop: "1px solid var(--border)",
     gap: "var(--space-3)",
   },

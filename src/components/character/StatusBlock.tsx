@@ -1,4 +1,3 @@
-import { S } from "../../lib/utils";
 import { Field } from "../ui";
 import { EventPicker } from "../ui/EventPicker";
 import { Sel } from "../ui/Sel";
@@ -23,7 +22,7 @@ export function StatusBlock({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+    <div className="seshat-modal-form-redesign" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* 2-Column Responsive Layout */}
       <div 
         style={{
@@ -45,22 +44,18 @@ export function StatusBlock({
                 events={events}
               />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                <div>
-                  <label style={S.label}>From date</label>
-                  <Field
-                    name={`statusTimeline.${index}.startDate` as const}
-                    control={control}
-                    type="datetime-local"
-                  />
-                </div>
-                <div>
-                  <label style={S.label}>To date</label>
-                  <Field
-                    name={`statusTimeline.${index}.endDate` as const}
-                    control={control}
-                    type="datetime-local"
-                  />
-                </div>
+                <Field
+                  label="From date"
+                  name={`statusTimeline.${index}.startDate` as const}
+                  control={control}
+                  type="datetime-local"
+                />
+                <Field
+                  label="To date"
+                  name={`statusTimeline.${index}.endDate` as const}
+                  control={control}
+                  type="datetime-local"
+                />
               </div>
             </div>
           </div>
