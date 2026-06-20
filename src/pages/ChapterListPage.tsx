@@ -74,6 +74,7 @@ export default function ChapterListPage() {
 
   const draggedIdxRef = useRef<number | null>(null);
   const touchStartYRef = useRef<number | null>(null);
+  const containerRectRef = useRef<DOMRect | null>(null);
 
   const moveChapterToPosition = useCallback((fromIdx: number, toIdx: number) => {
     if (bookIdx < 0 || fromIdx === toIdx) return;
@@ -94,6 +95,7 @@ export default function ChapterListPage() {
     setDraggedIdx(idx);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", idx.toString());
+    containerRectRef.current = containerRef.current?.getBoundingClientRect() || null;
   };
 
   const handleDragOver = (e: React.DragEvent, idx: number) => {
@@ -102,18 +104,17 @@ export default function ChapterListPage() {
       setDragOverIdx(idx);
     }
 
-    const container = containerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
+    const rect = containerRectRef.current || containerRef.current?.getBoundingClientRect();
+    if (rect && containerRef.current) {
       const relativeY = e.clientY - rect.top;
 
       // Auto-scroll when dragging near top (within 80px)
       if (relativeY < 80) {
-        container.scrollTop -= 15;
+        containerRef.current.scrollTop -= 15;
       }
       // Auto-scroll when dragging near bottom (within 80px of visible area)
       else if (relativeY > rect.height - 80) {
-        container.scrollTop += 15;
+        containerRef.current.scrollTop += 15;
       }
     }
   };
@@ -133,6 +134,7 @@ export default function ChapterListPage() {
     setDraggedIdx(idx);
     draggedIdxRef.current = idx;
     touchStartYRef.current = e.touches[0].clientY;
+    containerRectRef.current = containerRef.current?.getBoundingClientRect() || null;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -154,14 +156,13 @@ export default function ChapterListPage() {
     }
 
     // Auto-scroll on mobile boundary touch dragging
-    const container = containerRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
+    const rect = containerRectRef.current || containerRef.current?.getBoundingClientRect();
+    if (rect && containerRef.current) {
       const relativeY = touch.clientY - rect.top;
       if (relativeY < 80) {
-        container.scrollTop -= 12;
+        containerRef.current.scrollTop -= 12;
       } else if (relativeY > rect.height - 80) {
-        container.scrollTop += 12;
+        containerRef.current.scrollTop += 12;
       }
     }
   };
@@ -174,11 +175,13 @@ export default function ChapterListPage() {
     setDragOverIdx(null);
     draggedIdxRef.current = null;
     touchStartYRef.current = null;
+    containerRectRef.current = null;
   };
 
   const handleDragEnd = () => {
     setDraggedIdx(null);
     setDragOverIdx(null);
+    containerRectRef.current = null;
   };
 
   const addChapter = useCallback(() => {
@@ -446,6 +449,7 @@ export default function ChapterListPage() {
               onTouchStart={(e) => handleTouchStart(e, idx)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
               style={{
                 display: "flex",
                 alignItems: "center",

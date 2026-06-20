@@ -13,6 +13,7 @@ export interface Env {
 interface BookPayload {
   id: string;
   title: string;
+  isFullyLoaded?: boolean;
   synopsis?: string;
   setting?: string;
   themes?: string;
@@ -154,6 +155,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }[] = [];
 
     for (const book of data.books) {
+      if (book.isFullyLoaded === false) {
+        // This book was not fully loaded on the client, meaning the client has no edits.
+        // We must preserve all existing files of this book on GitHub!
+        const bookPrefix = `books/book_${book.id}/`;
+        for (const [filePath, sha] of existingFiles.entries()) {
+          if (filePath.startsWith(bookPrefix)) {
+            treeFiles.push({
+              path: filePath,
+              mode: "100644",
+              type: "blob",
+              sha: sha
+            });
+          }
+        }
+        continue;
+      }
+
       const bDir = `books/book_${book.id}`;
 
       // 1. book.json
@@ -246,6 +264,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         indexChapters.push({ id: c.id, title: c.title });
         
         const drafts = (c.drafts as Record<string, unknown>[]) || [];
+        
+        // If it's a metadata-only sync and drafts list is empty/undefined,
+        // recover drafts list from existing files in the repo to prevent accidental deletion!
+        if (c.body === undefined && drafts.length === 0) {
+          const draftPrefix = `${bDir}/chapters/chapter_${c.id}/`;
+          for (const filePath of existingFiles.keys()) {
+            if (filePath.startsWith(draftPrefix) && filePath.endsWith(".json") && !filePath.endsWith("metadata.json")) {
+              const draftId = filePath.substring(draftPrefix.length, filePath.length - 5);
+              drafts.push({
+                id: draftId,
+                name: "Draft",
+                createdAt: Date.now(),
+                isDeleted: false
+              });
+            }
+          }
+        }
+
         treeFiles.push({
           path: `${bDir}/chapters/chapter_${c.id}/metadata.json`,
           mode: "100644",

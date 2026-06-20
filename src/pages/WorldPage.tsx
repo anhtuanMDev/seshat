@@ -82,42 +82,47 @@ export default function WorldPage() {
 
   const addWorldItem = (
     type: "nation" | "technique" | "ingredient" | "monster" | "treasure",
-    mk: () => any
+    mk: () => Nation | Technique | Ingredient | Monster | Treasure
   ) => {
-    const field =
-      type === "nation"
-        ? "nations"
-        : type === "technique"
-        ? "techniques"
-        : type === "ingredient"
-        ? "ingredients"
-        : type === "monster"
-        ? "monsters"
-        : "treasures";
-    const current = getValues(field) || [];
-    const newItem = mk();
-    setValue(field, [...current, newItem] as any, { shouldDirty: true });
-    setModal({ type, idx: current.length, isNew: true });
+    let currentLength = 0;
+    if (type === "nation") {
+      const current = getValues("nations") || [];
+      setValue("nations", [...current, mk() as Nation], { shouldDirty: true });
+      currentLength = current.length;
+    } else if (type === "technique") {
+      const current = getValues("techniques") || [];
+      setValue("techniques", [...current, mk() as Technique], { shouldDirty: true });
+      currentLength = current.length;
+    } else if (type === "ingredient") {
+      const current = getValues("ingredients") || [];
+      setValue("ingredients", [...current, mk() as Ingredient], { shouldDirty: true });
+      currentLength = current.length;
+    } else if (type === "monster") {
+      const current = getValues("monsters") || [];
+      setValue("monsters", [...current, mk() as Monster], { shouldDirty: true });
+      currentLength = current.length;
+    } else if (type === "treasure") {
+      const current = getValues("treasures") || [];
+      setValue("treasures", [...current, mk() as Treasure], { shouldDirty: true });
+      currentLength = current.length;
+    }
+    setModal({ type, idx: currentLength, isNew: true });
   };
 
   const handleCancelModal = () => {
     if (!modal) return;
     if (modal.isNew) {
-      const field =
-        modal.type === "nation"
-          ? "nations"
-          : modal.type === "technique"
-          ? "techniques"
-          : modal.type === "ingredient"
-          ? "ingredients"
-          : modal.type === "monster"
-          ? "monsters"
-          : "treasures";
-      const current = getValues(field) || [];
-      setValue(
-        field,
-        current.filter((_, idx) => idx !== modal.idx) as any
-      );
+      if (modal.type === "nation") {
+        setValue("nations", (getValues("nations") || []).filter((_, idx) => idx !== modal.idx));
+      } else if (modal.type === "technique") {
+        setValue("techniques", (getValues("techniques") || []).filter((_, idx) => idx !== modal.idx));
+      } else if (modal.type === "ingredient") {
+        setValue("ingredients", (getValues("ingredients") || []).filter((_, idx) => idx !== modal.idx));
+      } else if (modal.type === "monster") {
+        setValue("monsters", (getValues("monsters") || []).filter((_, idx) => idx !== modal.idx));
+      } else if (modal.type === "treasure") {
+        setValue("treasures", (getValues("treasures") || []).filter((_, idx) => idx !== modal.idx));
+      }
     }
     setModal(null);
   };

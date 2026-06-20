@@ -118,7 +118,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
 
   return (
     <Modal title="Sync Conflicts Detected" onClose={onCancel} footer={footer}>
-      <div style={{ padding: "0 24px 24px", display: "flex", flexDirection: "column", maxHeight: "65vh" }}>
+      <div style={{ padding: "0 24px 24px" }}>
         <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 20, lineHeight: 1.5 }}>
           The cloud has changes that conflict with your local data. Please select which version to keep for each item.
         </p>
@@ -128,7 +128,7 @@ export function ConflictModal({ localBook, serverBook, onResolve, onCancel }: Co
           <button onClick={() => handleResolveAll("server")} style={outlineBtnStyle}>Keep All Cloud</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", border: "1px solid var(--border)", borderRadius: 8, padding: 16, background: "var(--bg-app)" }}>
+        <div style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 16, background: "var(--bg-app)" }}>
           {conflicts.map((c, index) => (
             <div key={c.id} style={{ 
               display: "flex", 
@@ -172,7 +172,7 @@ const choiceStyle = {
   background: "var(--bg-app)", border: "1px solid var(--border)", color: "var(--text-secondary)", padding: "6px 16px", borderRadius: 4, cursor: "pointer", fontSize: 14, fontWeight: 500, flex: 1, textAlign: "center" as const
 };
 const activeChoiceStyle = {
-  background: "var(--color-blue)", border: "1px solid var(--color-blue)", color: "#ffffff", padding: "6px 16px", borderRadius: 4, cursor: "pointer", fontSize: 14, fontWeight: 500, flex: 1, textAlign: "center" as const, boxShadow: "0 2px 8px rgba(0, 153, 255, 0.3)"
+  background: "var(--color-blue)", border: "1px solid var(--color-blue)", color: "var(--bg-app)", padding: "6px 16px", borderRadius: 4, cursor: "pointer", fontSize: 14, fontWeight: 500, flex: 1, textAlign: "center" as const, boxShadow: "0 2px 8px rgba(0, 153, 255, 0.3)"
 };
 const btnStyle = {
   background: "var(--color-green)", border: "none", color: "var(--bg-app)", padding: "8px 24px", borderRadius: 6, cursor: "pointer", fontSize: 15, fontWeight: 600, boxShadow: "0 2px 8px rgba(0,0,0,0.1)"

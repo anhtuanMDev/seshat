@@ -115,7 +115,6 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
         if (path.endsWith("metadata.json") || path.match(/chapter_[^/]+\.json$/)) {
           const chapterData = { ...data };
           delete chapterData.body;
-          delete chapterData.drafts;
           (book.chapters as Record<string, unknown>[]).push(chapterData);
         }
       } else if (path.includes("/events/")) {

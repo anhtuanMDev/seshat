@@ -9,6 +9,30 @@ export interface ConflictItem {
   resolution?: "local" | "server";
 }
 
+function canonicalStringify(val: unknown): string {
+  if (val === null || val === undefined) {
+    return "";
+  }
+  if (Array.isArray(val)) {
+    if (val.length === 0) return "";
+    return "[" + val.map(canonicalStringify).filter(Boolean).join(",") + "]";
+  }
+  if (typeof val === "object") {
+    const keys = Object.keys(val).sort();
+    const parts = keys.map(k => {
+      const v = (val as Record<string, unknown>)[k];
+      if (v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0)) {
+        return "";
+      }
+      return `${JSON.stringify(k)}:${canonicalStringify(v)}`;
+    }).filter(Boolean);
+    if (parts.length === 0) return "";
+    return "{" + parts.join(",") + "}";
+  }
+  if (val === "") return "";
+  return JSON.stringify(val);
+}
+
 export function getConflicts(localBook: BookData, serverBook: BookData): ConflictItem[] {
   const list: ConflictItem[] = [];
 
@@ -37,7 +61,7 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
           delete l[k];
           delete s[k];
         });
-        if (JSON.stringify(l) !== JSON.stringify(s)) {
+        if (canonicalStringify(l) !== canonicalStringify(s)) {
           list.push({
             id: `${type}_${localItem.id}`,
             type,
@@ -75,7 +99,7 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
     themes: serverBook.themes,
     rules: serverBook.rules,
   };
-  if (JSON.stringify(localMeta) !== JSON.stringify(serverMeta)) {
+  if (canonicalStringify(localMeta) !== canonicalStringify(serverMeta)) {
     list.push({
       id: "meta_book",
       type: "metadata",
