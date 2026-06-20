@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "@legendapp/state/react";
 import { appStore, mkBook, clearAppStore } from "../store/appStore";
 import { S } from "../lib/utils";
 import {
@@ -29,37 +30,32 @@ export default function BookListPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newBookTitle, setNewBookTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
-  const [isLoadingBooks, setIsLoadingBooks] = useState(false);
+  const isLoadingBooks = useSelector(() => appStore.isLoadingBooks.get());
   const [isSyncing, setIsSyncing] = useState(false);
-
-  const token =
-    localStorage.getItem("seshat-auth-token") ||
-    sessionStorage.getItem("seshat-auth-token");
 
   useEffect(() => {
     let cancelled = false;
+    const token =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
+
     const loadBooks = async () => {
-      if (token) {
-        const currentBooks = appStore.books.get();
-        const isFirstLoad = !currentBooks || currentBooks.length === 0;
-        if (isFirstLoad) {
-          setIsLoadingBooks(true);
-        }
+      if (token && !appStore.isLoadingBooks.get() && appStore.books.get().length === 0) {
+        appStore.isLoadingBooks.set(true);
         try {
           const cloudBooks = await loadFromGitHub(token);
+          if (cancelled) return;
           if (cloudBooks && cloudBooks.length > 0) {
             appStore.books.set((prevBooks) => {
-              const newBooks = [...(prevBooks || [])].filter(Boolean); // Filter out any corrupt undefined/null items
+              const newBooks = [...(prevBooks || [])].filter(Boolean);
               for (const cb of cloudBooks) {
                 const existingIdx = newBooks.findIndex((b) => b && b.id === cb.id);
                 if (existingIdx >= 0) {
-                  // Merge basic metadata, keep local characters/events/etc
                   newBooks[existingIdx] = {
                     ...newBooks[existingIdx],
                     title: cb.title,
                   };
                 } else {
-                  // Initialize a complete BookData structure, but mark it as NOT fully loaded
                   newBooks.push({
                     ...mkBook(cb.title),
                     id: cb.id,
@@ -69,15 +65,18 @@ export default function BookListPage() {
               }
               return newBooks;
             });
-            if (isFirstLoad && !cancelled)
+            if (!cancelled) {
               showToast("Books loaded from cloud.", "success");
+            }
           }
         } catch (error) {
           if (cancelled) return;
           console.error("Failed to sync books from cloud:", error);
-          if (isFirstLoad) showToast("Failed to load books from cloud.", "error");
+          showToast("Failed to load books from cloud.", "error");
         } finally {
-          if (isFirstLoad && !cancelled) setIsLoadingBooks(false);
+          if (!cancelled) {
+            appStore.isLoadingBooks.set(false);
+          }
         }
       }
     };
@@ -85,7 +84,7 @@ export default function BookListPage() {
     return () => {
       cancelled = true;
     };
-  }, [token]); // Re-run if token changes
+  }, []);
 
   const confirmCreateBook = async () => {
     const title = newBookTitle.trim();

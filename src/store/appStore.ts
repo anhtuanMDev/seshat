@@ -143,6 +143,7 @@ export const appStore = observable({
   activeBookId: null as string | null,
   lastSyncSha: null as string | null,
   books: [] as BookData[],
+  isLoadingBooks: false,
 });
 
 export const clearAppStore = () => {
@@ -150,6 +151,7 @@ export const clearAppStore = () => {
     activeBookId: null,
     lastSyncSha: null,
     books: [],
+    isLoadingBooks: false,
   });
 };
 

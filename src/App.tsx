@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
-import { appStore, clearAppStore } from "./store/appStore";
+import { appStore, clearAppStore, mkBook } from "./store/appStore";
 import { showToast } from "./store/toastStore";
 import {
   useEvents,
@@ -34,7 +34,7 @@ import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { animate } from "animejs";
 import { useTheme } from "./hooks/useTheme";
-import { syncToGitHub, loadBookFromGitHub } from "./lib/githubSync";
+import { syncToGitHub, loadBookFromGitHub, loadFromGitHub } from "./lib/githubSync";
 import type { Character, Event } from "./lib/types";
 import type { Chapter, BookData } from "./store/appStore";
 
@@ -52,6 +52,61 @@ export default function App() {
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
   }, [bookId]);
+
+  // Load the complete list of books on startup.
+  // This prevents losing/wiping out other books in the remote repository during a sync
+  // if the user navigates directly to a book-specific route first.
+  useEffect(() => {
+    let cancelled = false;
+    const token =
+      localStorage.getItem("seshat-auth-token") ||
+      sessionStorage.getItem("seshat-auth-token");
+
+    if (!token) return;
+
+    const loadGlobalBooksList = async () => {
+      appStore.isLoadingBooks.set(true);
+      try {
+        const cloudBooks = await loadFromGitHub(token);
+        if (cancelled) return;
+        if (cloudBooks && cloudBooks.length > 0) {
+          appStore.books.set((prevBooks) => {
+            const newBooks = [...(prevBooks || [])].filter(Boolean);
+            for (const cb of cloudBooks) {
+              const existingIdx = newBooks.findIndex((b) => b && b.id === cb.id);
+              if (existingIdx >= 0) {
+                // Update basic metadata, preserving deep entities if already loaded/modified locally
+                newBooks[existingIdx] = {
+                  ...newBooks[existingIdx],
+                  title: cb.title,
+                };
+              } else {
+                // Initialize as placeholder book metadata, to be lazy-loaded if opened
+                newBooks.push({
+                  ...mkBook(cb.title),
+                  id: cb.id,
+                  isFullyLoaded: false,
+                });
+              }
+            }
+            return newBooks;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load global books list:", err);
+      } finally {
+        if (!cancelled) {
+          appStore.isLoadingBooks.set(false);
+        }
+      }
+    };
+
+    loadGlobalBooksList();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const bookIdx = useActiveBookIdx();
   const isInsideBook = bookIdx >= 0;
