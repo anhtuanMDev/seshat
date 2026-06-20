@@ -16,6 +16,7 @@ import { appStore } from "../../store/appStore";
 import { useActiveBookIdx } from "../../hooks/useWorldStore";
 import type { Character, Event } from "../../lib/types";
 import type { Editor } from "@tiptap/core";
+import { DOMParser } from "@tiptap/pm/model";
 import { buildMentionExtension, type MentionItem } from "./MentionExtension";
 import { EntityMention } from "./EntityMentionNode";
 import { PinPointExtension } from "./PinPointExtension";
@@ -207,6 +208,27 @@ function RichEditorCore({
       PinPointExtension,
     ],
     content,
+    editorProps: {
+      handlePaste(view, event) {
+        const text = event.clipboardData?.getData("text/plain");
+        if (text) {
+          const isHtml = /<\/?[a-z]+[^>]*>/i.test(text) && (
+            /<\/[a-z]+>/i.test(text) ||
+            /<br\s*\/?>/i.test(text) ||
+            /<img\s[^>]*\/?>/i.test(text)
+          );
+          if (isHtml) {
+            const parser = DOMParser.fromSchema(view.state.schema);
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = text;
+            const slice = parser.parseSlice(tempDiv);
+            view.dispatch(view.state.tr.replaceSelection(slice));
+            return true;
+          }
+        }
+        return false;
+      },
+    },
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
       updatePinpoints(editor);
