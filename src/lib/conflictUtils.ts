@@ -43,8 +43,27 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
     getName: (item: T) => string,
     excludeKeys: string[] = []
   ) => {
-    const serverMap = new Map((serverArr || []).map(i => [i.id, i]));
-    (localArr || []).forEach(localItem => {
+    // De-duplicate arrays by ID keeping the first occurrence to prevent duplicate false conflicts
+    const uniqueLocal: T[] = [];
+    const localSeen = new Set<string>();
+    (localArr || []).forEach(item => {
+      if (item && !localSeen.has(item.id)) {
+        localSeen.add(item.id);
+        uniqueLocal.push(item);
+      }
+    });
+
+    const uniqueServer: T[] = [];
+    const serverSeen = new Set<string>();
+    (serverArr || []).forEach(item => {
+      if (item && !serverSeen.has(item.id)) {
+        serverSeen.add(item.id);
+        uniqueServer.push(item);
+      }
+    });
+
+    const serverMap = new Map(uniqueServer.map(i => [i.id, i]));
+    uniqueLocal.forEach(localItem => {
       const serverItem = serverMap.get(localItem.id);
       if (!serverItem) {
         list.push({
@@ -142,8 +161,18 @@ export function autoMergeOtherChapters(
   const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+    // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mergedMap = new Map<string, any>(sourceArr.map(i => [i.id, i]));
+    const uniqueSource: any[] = [];
+    const seen = new Set<string>();
+    sourceArr.forEach(item => {
+      if (item && !seen.has(item.id)) {
+        seen.add(item.id);
+        uniqueSource.push(item);
+      }
+    });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
     
     conflicts.filter(c => c.type === type).forEach(c => {
       const originalId = c.id.replace(`${type}_`, "");

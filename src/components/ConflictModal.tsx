@@ -54,8 +54,18 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
     const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+      // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mergedMap = new Map<string, any>(sourceArr.map(i => [i.id, i]));
+      const uniqueSource: any[] = [];
+      const seen = new Set<string>();
+      sourceArr.forEach(item => {
+        if (item && !seen.has(item.id)) {
+          seen.add(item.id);
+          uniqueSource.push(item);
+        }
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
       
       conflicts.filter(c => c.type === type).forEach(c => {
         const res = finalResolutions[c.id];
@@ -123,8 +133,18 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
             const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+              // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const mergedMap = new Map<string, any>(sourceArr.map(i => [i.id, i]));
+              const uniqueSource: any[] = [];
+              const seen = new Set<string>();
+              sourceArr.forEach(item => {
+                if (item && !seen.has(item.id)) {
+                  seen.add(item.id);
+                  uniqueSource.push(item);
+                }
+              });
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
               
               conflicts.filter(c => c.type === type).forEach(c => {
                 const res = autoResolutions[c.id];

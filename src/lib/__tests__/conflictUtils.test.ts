@@ -231,4 +231,35 @@ describe("autoMergeOtherChapters", () => {
     expect(ch1?.title).toBe("Server Chapter 1");
     expect(ch1?.activeDraftId).toBe("local-draft-id");
   });
+
+  it("de-duplicates local chapters, preserving the first occurrence (active edits)", () => {
+    const local = {
+      ...createBaseBook(),
+      chapters: [
+        { id: "ch-1", number: "1", title: "Chapter 1", order: 1, body: "Correct Body", activeDraftId: "d-1" },
+        { id: "ch-1", number: "1", title: "Chapter 1", order: 1, body: undefined, activeDraftId: undefined },
+      ],
+    } as unknown as BookData;
+
+    const server = {
+      ...createBaseBook(),
+      chapters: [
+        { id: "ch-1", number: "1", title: "Chapter 1 - Server Title", order: 1 },
+      ],
+    } as unknown as BookData;
+
+    const conflicts = getConflicts(local, server);
+    // Should have exactly 1 conflict (for ch-1 due to title difference), not a second duplicate/Local Only conflict
+    expect(conflicts.length).toBe(1);
+    expect(conflicts[0].id).toBe("chapter_ch-1");
+
+    const merged = autoMergeOtherChapters(local, conflicts, "ch-2"); // ch-1 auto-merges to server
+    const chs = merged.chapters.filter(c => c.id === "ch-1");
+    // Should be de-duplicated to exactly one element
+    expect(chs.length).toBe(1);
+    expect(chs[0].title).toBe("Chapter 1 - Server Title");
+    // Body and activeDraftId should be preserved from the FIRST local occurrence (the one with edits)
+    expect(chs[0].body).toBe("Correct Body");
+    expect(chs[0].activeDraftId).toBe("d-1");
+  });
 });

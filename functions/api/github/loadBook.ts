@@ -89,6 +89,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
       characters: [], chapters: [], events: [], foreshadows: [], isFullyLoaded: true
     };
     
+    const chaptersMap = new Map<string, { data: Record<string, unknown>; isMetadata: boolean }>();
+    
     for (const [path, content] of Object.entries(fileContents)) {
       let data: Record<string, unknown>;
       try {
@@ -115,7 +117,12 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
         if (path.endsWith("metadata.json") || path.match(/chapter_[^/]+\.json$/)) {
           const chapterData = { ...data };
           delete chapterData.body;
-          (book.chapters as Record<string, unknown>[]).push(chapterData);
+          const isMetadata = path.endsWith("metadata.json");
+          const chapterId = chapterData.id as string;
+          const existing = chaptersMap.get(chapterId);
+          if (!existing || isMetadata) {
+            chaptersMap.set(chapterId, { data: chapterData, isMetadata });
+          }
         }
       } else if (path.includes("/events/")) {
         (book.events as Record<string, unknown>[]).push(data);
@@ -123,6 +130,8 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
         book.foreshadows = Array.isArray(data) ? data : data.foreshadows || [];
       }
     }
+
+    book.chapters = Array.from(chaptersMap.values()).map(x => x.data);
 
     return new Response(JSON.stringify({ book, branchSha: branchData.object.sha }), {
       status: 200,
