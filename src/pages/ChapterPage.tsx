@@ -3,7 +3,7 @@ import { Skeleton } from "@mui/material";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { updateFileOnGitHub, updateFilesOnGitHub } from "../lib/githubSync";
+import { updateFileOnGitHub, updateFilesOnGitHub, loadFileFromGitHub } from "../lib/githubSync";
 import { computeEventSync } from "../lib/eventSync";
 import {
   useEvents,
@@ -177,7 +177,6 @@ export default function ChapterPage() {
             sessionStorage.getItem("seshat-auth-token");
           if (token && bookId) {
             try {
-              const { loadFileFromGitHub } = await import("../lib/githubSync");
               let parsed: Record<string, unknown>;
               try {
                 parsed = await loadFileFromGitHub(

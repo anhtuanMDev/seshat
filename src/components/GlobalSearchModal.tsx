@@ -10,6 +10,7 @@ import {
 import { appStore } from "../store/appStore";
 import type { BookData, Character, Event, Chapter } from "../store/appStore";
 import { showToast } from "../store/toastStore";
+import { syncToGitHub } from "../lib/githubSync";
 
 interface Props {
   open: boolean;
@@ -137,13 +138,11 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       
       const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
       if (token) {
-        import("../lib/githubSync").then(({ syncToGitHub }) => {
-          syncToGitHub(token).then(() => {
-            showToast("Replaced and synced to cloud successfully!", "success");
-          }).catch((err) => {
-            console.error(err);
-            showToast("Replaced locally, but failed to sync to cloud.", "error");
-          });
+        syncToGitHub(token).then(() => {
+          showToast("Replaced and synced to cloud successfully!", "success");
+        }).catch((err) => {
+          console.error(err);
+          showToast("Replaced locally, but failed to sync to cloud.", "error");
         });
       } else {
         showToast("Replaced all occurrences in loaded data! (Not synced to cloud)", "success");
