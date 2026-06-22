@@ -45,6 +45,7 @@ export default function BookListPage() {
         try {
           const cloudBooks = await loadFromGitHub(token);
           if (cancelled) return;
+          appStore.isBookListLoaded.set(true);
           if (cloudBooks && cloudBooks.length > 0) {
             appStore.books.set((prevBooks) => {
               const newBooks = [...(prevBooks || [])].filter(Boolean);

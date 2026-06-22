@@ -33,6 +33,7 @@ interface RequestPayload {
   lastKnownSha?: string;
   data?: {
     books?: BookPayload[];
+    isBookListLoaded?: boolean;
   };
 }
 
@@ -153,6 +154,38 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       content?: string;
       sha?: string;
     }[] = [];
+
+    // Collect all book IDs that currently exist in the GitHub repository
+    const existingBookIds = new Set<string>();
+    for (const filePath of existingFiles.keys()) {
+      const match = filePath.match(/^books\/book_([^/]+)\//);
+      if (match) {
+        existingBookIds.add(match[1]);
+      }
+    }
+
+    const clientBookIds = new Set(data.books.map(b => b.id));
+
+    // Guard: If the client has not loaded the complete book list,
+    // we must preserve all books that exist in the repository but are missing from the client payload.
+    const isBookListLoaded = !!data.isBookListLoaded;
+    if (!isBookListLoaded) {
+      for (const existingId of existingBookIds) {
+        if (!clientBookIds.has(existingId)) {
+          const bookPrefix = `books/book_${existingId}/`;
+          for (const [filePath, sha] of existingFiles.entries()) {
+            if (filePath.startsWith(bookPrefix)) {
+              treeFiles.push({
+                path: filePath,
+                mode: "100644",
+                type: "blob",
+                sha: sha
+              });
+            }
+          }
+        }
+      }
+    }
 
     for (const book of data.books) {
       if (book.isFullyLoaded === false) {

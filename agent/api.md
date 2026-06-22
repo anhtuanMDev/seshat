@@ -69,7 +69,10 @@ All endpoints are relative to the application origin. The base path is `/api/git
 {
   "token": "string",  // User's auth token
   "lastKnownSha": "string", // Optimistic Concurrency Control: The last seen commit SHA. Rejects if branch has advanced.
-  "data": "object"    // The full serializable state of the appStore
+  "data": {
+    "books": BookPayload[],
+    "isBookListLoaded": boolean // Guard flag: if false/undefined, backend preserves other books on GitHub instead of deleting them.
+  }
 }
 ```
 
@@ -89,6 +92,7 @@ All endpoints are relative to the application origin. The base path is `/api/git
 **Query Parameters:**
 
 - `token`: `string` (URL Encoded) - User's auth token
+- `t`: `number` - (Cache Buster) Unix timestamp (e.g., `Date.now()`) to prevent aggressive mobile caching.
 
 **Response:**
 
@@ -112,6 +116,7 @@ All endpoints are relative to the application origin. The base path is `/api/git
 
 - `token`: `string` (URL Encoded)
 - `bookId`: `string` (URL Encoded)
+- `t`: `number` - (Cache Buster) Unix timestamp to bypass mobile caching layers.
 
 **Response:**
 
@@ -194,6 +199,7 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `token`: `string` (URL Encoded)
 - `bookId`: `string` (URL Encoded)
 - `path`: `string` (URL Encoded)
+- `t`: `number` - (Cache Buster) Unix timestamp to ensure a fresh file fetch.
 
 **Response:**
 
@@ -379,13 +385,14 @@ Supports both legacy format `{ username: "code" }` and new format `{ username: {
 4. Conflict-check `lastKnownSha` vs `branchSha` → 409 if mismatch
 5. GET commit at `branchSha` to get `baseTreeSha`
 6. GET tree at `baseTreeSha?recursive=1` → build `existingFiles` map (path → blob sha)
-7. Build `treeFiles[]` for all entities under `books/book_<id>/...`
+7. If `data.isBookListLoaded` is false/undefined: Identify all book IDs that exist in the repository's `existingFiles` but are not in the client payload `data.books`. For all files belonging to these missing books, copy their paths and existing SHAs directly into `treeFiles` to prevent their deletion.
+8. Build `treeFiles[]` for all books in the client payload:
    - Chapters with `body === undefined` (stubs): copy existing blob SHA from `existingFiles` — do NOT write content, otherwise the chapter body is wiped from GitHub
    - Chapters with content: write `metadata.json` + one `<draftId>.json` per draft
-8. POST new tree with **no `base_tree`** (full tree replacement — ensures deleted books are actually removed)
-9. POST new commit with `parents: [branchSha]`
-10. PATCH branch ref to new commit SHA
-11. Return `{ success: true, branch: branchName, sha: newCommitSha }`
+9. POST new tree with **no `base_tree`** (full tree replacement — ensures deleted books are actually removed only when `isBookListLoaded` is true)
+10. POST new commit with `parents: [branchSha]`
+11. PATCH branch ref to new commit SHA
+12. Return `{ success: true, branch: branchName, sha: newCommitSha }`
 
 ---
 
