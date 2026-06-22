@@ -32,3 +32,4 @@ dist-ssr
 # Cloudflare Wrangler temp files
 .wrangler
 wrangler.toml
+stats.html

@@ -1,7 +1,5 @@
 import { useParams } from "react-router-dom";
 import { Skeleton } from "@mui/material";
-import { Document, Packer, Paragraph, TextRun } from "docx";
-import { saveAs } from "file-saver";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
@@ -609,88 +607,103 @@ export default function ChapterPage() {
 
   const isLoading = chapter.body === undefined;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!chapter) return;
 
-    // Convert HTML to plain text paragraphs
-    const temp = document.createElement("div");
-    temp.innerHTML = body || "";
+    showToast("Generating document...", "info");
 
-    // Refresh mention names before export
-    const mentionSpans = temp.querySelectorAll("span[data-mention-id]");
-    if (mentionSpans.length > 0 && bookIdx >= 0) {
-      const book = appStore.books[bookIdx].get();
-      mentionSpans.forEach((span) => {
-        const id = span.getAttribute("data-mention-id");
-        const trigger = span.getAttribute("data-trigger");
-        let entity = null;
-        switch (trigger) {
-          case "@":
-            entity = book.characters?.find((c) => c.id === id);
-            break;
-          case "#":
-            entity = book.nations?.find((c) => c.id === id);
-            break;
-          case "%":
-            entity = book.monsters?.find((c) => c.id === id);
-            break;
-          case "~":
-            entity = book.ingredients?.find((c) => c.id === id);
-            break;
-          case "^":
-            entity = book.techniques?.find((c) => c.id === id);
-            break;
-          case "$":
-            entity = book.treasures?.find((c) => c.id === id);
-            break;
-        }
-        if (entity) {
-          span.textContent = `${trigger}${entity.name}`;
-        }
-      });
-    }
+    try {
+      const [docxModule, fileSaverModule] = await Promise.all([
+        import("docx"),
+        import("file-saver"),
+      ]);
 
-    // Get text and split by newlines (block elements like <p> will have newlines if we use innerText, or we can just split by \n)
-    // Actually, Tiptap uses <p> tags. We can select all paragraphs.
-    const paragraphs = Array.from(temp.querySelectorAll("p")).map(
-      (p) => p.textContent || "",
-    );
-    // If no <p> tags were found, fallback to innerText split
-    const lines =
-      paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
+      const { Document, Packer, Paragraph, TextRun } = docxModule;
+      const { saveAs } = fileSaverModule;
 
-    const doc = new Document({
-      sections: [
-        {
-          properties: {},
-          children: [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: chapter.title || "Untitled Chapter",
-                  bold: true,
-                  size: 32, // 16pt
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            ...lines
-              .filter((line) => line.trim().length > 0)
-              .map(
-                (line) =>
-                  new Paragraph({
-                    text: line,
-                    spacing: { after: 200 },
+      // Convert HTML to plain text paragraphs
+      const temp = document.createElement("div");
+      temp.innerHTML = body || "";
+
+      // Refresh mention names before export
+      const mentionSpans = temp.querySelectorAll("span[data-mention-id]");
+      if (mentionSpans.length > 0 && bookIdx >= 0) {
+        const book = appStore.books[bookIdx].get();
+        mentionSpans.forEach((span) => {
+          const id = span.getAttribute("data-mention-id");
+          const trigger = span.getAttribute("data-trigger");
+          let entity = null;
+          switch (trigger) {
+            case "@":
+              entity = book.characters?.find((c) => c.id === id);
+              break;
+            case "#":
+              entity = book.nations?.find((c) => c.id === id);
+              break;
+            case "%":
+              entity = book.monsters?.find((c) => c.id === id);
+              break;
+            case "~":
+              entity = book.ingredients?.find((c) => c.id === id);
+              break;
+            case "^":
+              entity = book.techniques?.find((c) => c.id === id);
+              break;
+            case "$":
+              entity = book.treasures?.find((c) => c.id === id);
+              break;
+          }
+          if (entity) {
+            span.textContent = `${trigger}${entity.name}`;
+          }
+        });
+      }
+
+      // Get text and split by newlines (block elements like <p> will have newlines if we use innerText, or we can just split by \n)
+      // Actually, Tiptap uses <p> tags. We can select all paragraphs.
+      const paragraphs = Array.from(temp.querySelectorAll("p")).map(
+        (p) => p.textContent || "",
+      );
+      // If no <p> tags were found, fallback to innerText split
+      const lines =
+        paragraphs.length > 0 ? paragraphs : temp.innerText.split("\n");
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: chapter.title || "Untitled Chapter",
+                    bold: true,
+                    size: 32, // 16pt
                   }),
-              ),
-          ],
-        },
-      ],
-    });
+                ],
+                spacing: { after: 400 },
+              }),
+              ...lines
+                .filter((line) => line.trim().length > 0)
+                .map(
+                  (line) =>
+                    new Paragraph({
+                      text: line,
+                      spacing: { after: 200 },
+                    }),
+                ),
+            ],
+          },
+        ],
+      });
 
-    Packer.toBlob(doc).then((blob) => {
+      const blob = await Packer.toBlob(doc);
       saveAs(blob, `${chapter.title || "chapter"}.docx`);
-    });
+      showToast("Chapter exported successfully", "success");
+    } catch (err) {
+      console.error("[ChapterPage] Export failed:", err);
+      showToast("Failed to export chapter", "error");
+    }
   };
 
   const pinnedCharObjs = characters.filter((c: Character) =>
