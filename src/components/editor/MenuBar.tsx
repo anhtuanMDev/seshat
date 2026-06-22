@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/core";
 import MentionHelpButton from "./MentionHelpButton";
 import { WordCountDisplay } from "./WordCountDisplay";
+import { uid } from "../../lib/utils";
 
 interface MenuBarProps {
   editor: Editor;
@@ -144,7 +145,7 @@ export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
                         .chain()
                         .focus()
                         .setPinPoint({
-                          id: crypto.randomUUID(),
+                          id: uid(),
                           comment: pinpointComment.trim(),
                         })
                         .run();
@@ -167,7 +168,7 @@ export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
                         .chain()
                         .focus()
                         .setPinPoint({
-                          id: crypto.randomUUID(),
+                          id: uid(),
                           comment: pinpointComment.trim(),
                         })
                         .run();

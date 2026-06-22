@@ -12,7 +12,7 @@ import {
   useCharacters,
   useActiveBookIdx,
 } from "../hooks/useWorldStore";
-import { S } from "../lib/utils";
+import { S, uid } from "../lib/utils";
 
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import {
@@ -197,7 +197,7 @@ export default function ChapterPage() {
               let loadedDrafts =
                 (parsed.drafts as import("../lib/types").Draft[]) || [];
               if (loadedDrafts.length === 0) {
-                const newId = crypto.randomUUID();
+                const newId = uid();
                 loadedDrafts = [
                   {
                     id: newId,
@@ -425,7 +425,7 @@ export default function ChapterPage() {
           let curActiveDraftId = activeDraftId;
 
           if (currentDrafts.length === 0) {
-            const newId = crypto.randomUUID();
+            const newId = uid();
             currentDrafts = [
               {
                 id: newId,
@@ -568,7 +568,7 @@ export default function ChapterPage() {
       const ch = appStore.books[bookIdx].chapters[chapterIdx];
       const currentDrafts = ch.drafts.get() || [];
       const newDraft: Draft = {
-        id: crypto.randomUUID(),
+        id: uid(),
         name,
         body: getValues("body"),
         createdAt: Date.now(),
