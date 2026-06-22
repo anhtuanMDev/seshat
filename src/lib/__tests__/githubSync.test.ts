@@ -86,7 +86,10 @@ describe("githubSync APIs", () => {
     
     const books = await loadFromGitHub("token123");
     expect(books).toEqual(mockBooks);
-    expect(global.fetch).toHaveBeenCalledWith("/api/github/load?token=token123", { cache: "no-store" });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/github\/load\?token=token123&t=\d+/),
+      { cache: "no-store" }
+    );
   });
 
   it("loadBookFromGitHub returns book and sets isFullyLoaded", async () => {

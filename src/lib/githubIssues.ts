@@ -54,7 +54,7 @@ interface GithubCommentPayload {
 }
 
 export const fetchIssues = async (token: string): Promise<SeshatIssue[]> => {
-  const response = await fetch(`/api/github/issues?token=${encodeURIComponent(token)}`, { cache: "no-store" });
+  const response = await fetch(`/api/github/issues?token=${encodeURIComponent(token)}&t=${Date.now()}`, { cache: "no-store" });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -86,7 +86,7 @@ export const fetchIssueDetail = async (
   token: string,
   issueNumber: number,
 ): Promise<{ issue: SeshatIssue; comments: SeshatComment[] }> => {
-  const response = await fetch(`/api/github/issues?token=${encodeURIComponent(token)}&number=${issueNumber}`, {
+  const response = await fetch(`/api/github/issues?token=${encodeURIComponent(token)}&number=${issueNumber}&t=${Date.now()}`, {
     cache: "no-store",
   });
   if (!response.ok) {

@@ -80,7 +80,7 @@ export const loginToGitHub = async (username: string, accessCode: string): Promi
 
 export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
   try {
-    const response = await fetch(`/api/github/load?token=${encodeURIComponent(token)}`, { cache: "no-store" });
+    const response = await fetch(`/api/github/load?token=${encodeURIComponent(token)}&t=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -98,7 +98,7 @@ export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
 
 export const loadBookFromGitHub = async (token: string, bookId: string): Promise<BookData> => {
   try {
-    const response = await fetch(`/api/github/loadBook?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}`, { cache: "no-store" });
+    const response = await fetch(`/api/github/loadBook?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&t=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -178,7 +178,7 @@ export const loadChaptersForExport = async (
 ): Promise<Record<string, unknown>[]> => {
   try {
     const response = await fetch(
-      `/api/github/exportChapters?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&chapterIds=${encodeURIComponent(chapterIds.join(","))}`,
+      `/api/github/exportChapters?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&chapterIds=${encodeURIComponent(chapterIds.join(","))}&t=${Date.now()}`,
       { cache: "no-store" },
     );
     if (!response.ok) {
@@ -195,7 +195,7 @@ export const loadChaptersForExport = async (
 
 export const loadFileFromGitHub = async (token: string, bookId: string, path: string): Promise<Record<string, unknown>> => {
   try {
-    const response = await fetch(`/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(path)}`, { cache: "no-store" });
+    const response = await fetch(`/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(path)}&t=${Date.now()}`, { cache: "no-store" });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: response.statusText }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
