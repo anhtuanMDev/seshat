@@ -214,6 +214,41 @@ describe("ChapterPage Edge-to-Edge", () => {
     });
   });
 
+  it("saves changes to the first/fallback draft when activeDraftId is missing or null", async () => {
+    vi.mocked(routerDom.useParams).mockReturnValue({ id: "chap-456", bookId: "book-123" });
+    localStorage.setItem("seshat-auth-token", "valid-token");
+    setupStoreWithChapter(true);
+    
+    // Set up existing drafts but keep activeDraftId null
+    appStore.books[0].chapters[0].drafts.set([
+      { id: "draft-xyz", name: "Existing Draft", body: "<p>Original body</p>", createdAt: Date.now() }
+    ]);
+    appStore.books[0].chapters[0].activeDraftId?.set(undefined);
+
+    const { updateFilesOnGitHub } = await import("../../lib/githubSync");
+    vi.mocked(updateFilesOnGitHub).mockResolvedValue();
+
+    render(<ChapterPage />);
+
+    // Trigger save
+    fireEvent.click(screen.getByTestId("mock-editor-save"));
+
+    await waitFor(() => {
+      // It should fallback to draft-xyz and update its body in filesToSync
+      expect(updateFilesOnGitHub).toHaveBeenCalledWith(
+        "valid-token",
+        "book-123",
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: "chapters/chapter_chap-456/draft-xyz.json",
+            content: expect.stringContaining("It was a dark and stormy night.")
+          })
+        ])
+      );
+      expect(showToast).toHaveBeenCalledWith("Chapter synced to cloud", "success");
+    });
+  });
+
   it("exports chapter to DOCX", async () => {
     vi.mocked(routerDom.useParams).mockReturnValue({ id: "chap-456", bookId: "book-123" });
     setupStoreWithChapter(true);

@@ -142,6 +142,16 @@ export default function ChapterPage() {
           }
 
           if (actId) {
+            const exists = chapter.drafts?.some((d) => d.id === actId);
+            if (!exists && chapter.drafts && chapter.drafts.length > 0) {
+              const sorted = [...chapter.drafts].sort(
+                (a, b) => a.createdAt - b.createdAt,
+              );
+              actId = sorted[0].id;
+            }
+          }
+
+          if (actId) {
             appStore.books[bookIdx].chapters[chapterIdx].activeDraftId?.set(
               actId,
             );
@@ -221,6 +231,16 @@ export default function ChapterPage() {
                 actId = sorted[0].id;
               }
 
+              if (actId) {
+                const exists = loadedDrafts.some((d) => d.id === actId);
+                if (!exists && loadedDrafts.length > 0) {
+                  const sorted = [...loadedDrafts].sort(
+                    (a, b) => a.createdAt - b.createdAt,
+                  );
+                  actId = sorted[0].id;
+                }
+              }
+
               const fullDrafts = await Promise.all(
                 loadedDrafts.map(async (d) => {
                   try {
@@ -241,29 +261,32 @@ export default function ChapterPage() {
               const fetchedBody = activeDraft.body || "";
               const fetchedNotes = (parsed.notes as string) || "";
 
-              // Update appStore with the missing massive text fields
-              appStore.books[bookIdx].chapters[chapterIdx].body.set(
-                fetchedBody,
-              );
-              // Also sync notes if they were somehow stripped
-              if (parsed.notes)
-                appStore.books[bookIdx].chapters[chapterIdx].notes.set(
-                  fetchedNotes,
-                );
-
+              // Update appStore drafts and notes first
               appStore.books[bookIdx].chapters[chapterIdx].drafts.set(
                 fullDrafts,
               );
+              if (parsed.notes) {
+                appStore.books[bookIdx].chapters[chapterIdx].notes.set(
+                  fetchedNotes,
+                );
+              }
               if (actId) {
                 appStore.books[bookIdx].chapters[chapterIdx].activeDraftId?.set(
                   actId,
                 );
-                setActiveDraftId(actId);
                 localDrafts[chapter.id] = actId;
                 localStorage.setItem(
                   "seshat-active-drafts",
                   JSON.stringify(localDrafts),
                 );
+              }
+
+              // Update body last to ensure drafts and activeDraftId are fully sync'd in the store before triggering re-render
+              appStore.books[bookIdx].chapters[chapterIdx].body.set(
+                fetchedBody,
+              );
+              if (actId) {
+                setActiveDraftId(actId);
               }
 
               // Immediately inject into the form so the Rich Editor picks it up without waiting for a re-render cycle
@@ -434,15 +457,19 @@ export default function ChapterPage() {
             curActiveDraftId = newId;
             setActiveDraftId(newId);
           } else {
-            const activeIdx = currentDrafts.findIndex(
+            let activeIdx = currentDrafts.findIndex(
               (d) => d.id === curActiveDraftId,
             );
-            if (activeIdx !== -1) {
-              currentDrafts[activeIdx] = {
-                ...currentDrafts[activeIdx],
-                body: data.body,
-              };
+            if (activeIdx === -1) {
+              // Fallback to the first draft if activeDraftId is invalid/null
+              curActiveDraftId = currentDrafts[0].id;
+              setActiveDraftId(curActiveDraftId);
+              activeIdx = 0;
             }
+            currentDrafts[activeIdx] = {
+              ...currentDrafts[activeIdx],
+              body: data.body,
+            };
           }
 
           const metadataPayload = {
