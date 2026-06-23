@@ -33,12 +33,14 @@ export function Section({
       <hr style={styles.hr} />
       <div
         className="seshat-flex-between"
+        onClick={() => setOpen((o) => !o)}
         style={{
           ...styles.header,
           marginBottom: open ? "var(--space-4)" : 0,
+          cursor: "pointer",
         }}
       >
-        <GhostButton onClick={() => setOpen((o) => !o)}>
+        <GhostButton sx={{ pointerEvents: "none" }}>
           {open ? (
             <ExpandMoreIcon sx={styles.expandIcon} />
           ) : (
@@ -46,7 +48,14 @@ export function Section({
           )}
           {title}
         </GhostButton>
-        {open && action}
+        {open && action && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            {action}
+          </div>
+        )}
       </div>
       <div
         style={{
@@ -56,9 +65,7 @@ export function Section({
           transform: open ? "translateY(0)" : "translateY(-4px)",
         }}
       >
-        <div style={styles.childrenWrapper}>
-          {children}
-        </div>
+        <div style={styles.childrenWrapper}>{children}</div>
       </div>
     </div>
   );
@@ -67,6 +74,7 @@ export function Section({
 const styles = {
   container: {
     marginBottom: "var(--space-2)",
+    cursor: "pointer",
   },
   hr: {
     border: "none",
@@ -83,7 +91,8 @@ const styles = {
   },
   transitionWrapper: {
     display: "grid",
-    transition: "grid-template-rows 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
+    transition:
+      "grid-template-rows 0.3s ease, opacity 0.3s ease, transform 0.3s ease",
   },
   childrenWrapper: {
     overflow: "hidden",

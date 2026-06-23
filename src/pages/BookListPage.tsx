@@ -458,6 +458,7 @@ const styles = {
     right: 24,
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 16,
   },
   forumBtn: {
