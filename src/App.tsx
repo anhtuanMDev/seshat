@@ -283,6 +283,18 @@ export default function App() {
     characters: true,
   });
 
+  // Auto-close mobile menus when window is resized to desktop width
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setShowMoreMenu(false);
+        setShowSidebar(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Auto-close sidebar on navigation (React recommended pattern)
   if (location.pathname !== prevPath) {
     setPrevPath(location.pathname);
@@ -616,6 +628,16 @@ export default function App() {
               onClick={() => setShowMoreMenu(false)}
             />
             <div style={styles.moreMenuDropdown}>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  setShowAIChat(true);
+                }}
+                style={styles.moreMenuBtn(false)}
+              >
+                <SmartToyIcon sx={{ fontSize: 20 }} />
+                Ask AI
+              </button>
               <button
                 onClick={() => {
                   setShowMoreMenu(false);
