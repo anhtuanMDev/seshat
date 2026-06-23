@@ -30,6 +30,18 @@ const AI_PROVIDERS = [
     models: ["deepseek-chat", "deepseek-coder"],
   },
   {
+    id: "grok",
+    name: "xAI Grok",
+    url: "https://api.x.ai/v1",
+    models: ["grok-beta", "grok-vision-beta"],
+  },
+  {
+    id: "gemini",
+    name: "Google Gemini",
+    url: "https://generativelanguage.googleapis.com/v1beta/openai",
+    models: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-exp"],
+  },
+  {
     id: "local",
     name: "Local (LMStudio/Ollama)",
     url: "http://localhost:1234/v1",
@@ -169,10 +181,10 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
       console.error(err);
       const msg = err instanceof Error ? err.message : String(err);
       showToast(`AI Error: ${msg}`, "error");
-      setMessages([
-        ...newMsgs,
-        { role: "assistant", content: `**Error:** ${msg}` },
-      ]);
+      
+      // Revert the UI state so the user doesn't lose their typed prompt
+      setMessages(messages);
+      setInput(input.trim());
     } finally {
       setIsTyping(false);
     }
@@ -429,6 +441,11 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
           transition: border-color 0.2s;
           width: 100%;
           box-sizing: border-box;
+        }
+
+        .ai-config-input option {
+          background: var(--bg-main);
+          color: var(--text-primary);
         }
 
         .ai-model-pill {
