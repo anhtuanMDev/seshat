@@ -48,8 +48,20 @@ export function getDeepDiff(local: unknown, server: unknown, path: string = ""):
   if (Array.isArray(local) && Array.isArray(server)) {
     if (local.length !== server.length) {
       diffs.push(`${path}: Array length changed (${local.length} -> ${server.length})`);
-    } else {
-      diffs.push(`${path}: Array contents modified`);
+    }
+    const len = Math.max(local.length, server.length);
+    let diffCount = 0;
+    for (let i = 0; i < len; i++) {
+      const currentPath = path ? `${path}[${i}]` : `[${i}]`;
+      const itemDiffs = getDeepDiff(local[i], server[i], currentPath);
+      if (itemDiffs.length > 0) {
+        diffs.push(...itemDiffs);
+        diffCount++;
+      }
+      if (diffCount > 5) {
+         diffs.push(`${path}: ...and more items modified`);
+         break;
+      }
     }
     return diffs;
   }
@@ -221,15 +233,7 @@ export function autoMergeOtherChapters(
     type Entity = Record<string, unknown> & { id: string };
     const sourceArr = (mergedBook[arrayKey] as unknown as Entity[]) || [];
     // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
-    const uniqueSource: Entity[] = [];
-    const seen = new Set<string>();
-    sourceArr.forEach(item => {
-      if (item && !seen.has(item.id)) {
-        seen.add(item.id);
-        uniqueSource.push(item);
-      }
-    });
-    const mergedMap = new Map<string, Entity>(uniqueSource.map(i => [i.id, i]));
+    const mergedMap = new Map<string, Entity>(sourceArr.filter(i => i).map(i => [i.id, i]));
     
     conflicts.filter(c => c.type === type).forEach(c => {
       const originalId = c.id.replace(`${type}_`, "");
@@ -252,7 +256,12 @@ export function autoMergeOtherChapters(
         }
       }
     });
-    (mergedBook[arrayKey] as unknown) = Array.from(mergedMap.values());
+    
+    // Map over original sourceArr to preserve duplicates, but fetch updated values
+    (mergedBook[arrayKey] as unknown) = sourceArr
+      .filter(i => i)
+      .map(item => mergedMap.get(item.id))
+      .filter(Boolean);
   };
 
   mergeArray("chapter", "chapters", ["body", "drafts", "activeDraftId"]);

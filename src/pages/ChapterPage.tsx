@@ -114,12 +114,8 @@ export default function ChapterPage() {
     const loadChapterData = async () => {
       if (chapter && chapterIdx >= 0) {
         const isNewChapter = formChapterIdRef.current !== chapter.id;
-        // If the user is on a new chapter but a save is still in-flight,
-        // bail now — saveDoneAt will re-trigger this effect once it's safe.
-        if (isNewChapter && isSavingRef.current) return;
         // shouldReset: always true for a new chapter; otherwise only when not dirty
-        const shouldReset =
-          isNewChapter || (!isDirtyRef.current && !isSavingRef.current);
+        const shouldReset = isNewChapter || (!isDirtyRef.current && !isSavingRef.current);
         if (chapter.body !== undefined) {
           if (shouldReset) {
             formChapterIdRef.current = chapter.id;

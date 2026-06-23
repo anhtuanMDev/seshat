@@ -123,19 +123,22 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escapedQuery, "gi");
 
-      const deepReplace = (obj: unknown): unknown => {
+      const deepReplace = (obj: unknown, parentKey?: string): unknown => {
         if (typeof obj === 'string') {
+          if (parentKey === 'pinnedChars' || parentKey === 'characters' || parentKey === 'chapters' || parentKey === 'pinnedEventIds') {
+            return obj;
+          }
           return obj.replace(regex, replaceStr);
         } else if (Array.isArray(obj)) {
-          return obj.map(item => deepReplace(item));
+          return obj.map(item => deepReplace(item, parentKey));
         } else if (obj !== null && typeof obj === 'object') {
           const newObj: Record<string, unknown> = {};
           const objRecord = obj as Record<string, unknown>;
           for (const key in objRecord) {
-            if (key === 'id' || key.endsWith('Id') || key === 'time' || key.includes('Date') || key === 'body' || key === 'drafts') {
+            if (key === 'id' || key.endsWith('Id') || key === 'timeRef' || key === 'time' || key.includes('Date') || key === 'body' || key === 'drafts') {
               newObj[key] = objRecord[key];
             } else {
-              newObj[key] = deepReplace(objRecord[key]);
+              newObj[key] = deepReplace(objRecord[key], key);
             }
           }
           return newObj;

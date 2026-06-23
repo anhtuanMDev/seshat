@@ -436,7 +436,7 @@ Supports both legacy format `{ username: "code" }` and new format `{ username: {
 8. Build `treeFiles[]` for all books in the client payload:
    - Chapters with `body === undefined` (stubs): copy existing blob SHA from `existingFiles` — do NOT write content, otherwise the chapter body is wiped from GitHub
    - Chapters with content: write `metadata.json` + one `<draftId>.json` per draft
-9. POST new tree with **no `base_tree`** (full tree replacement — ensures deleted books are actually removed only when `isBookListLoaded` is true)
+9. POST new tree with `base_tree` set to `baseTreeSha` (safely preserves unchanged data, including lazily loaded chapter bodies)
 10. POST new commit with `parents: [branchSha]`
 11. PATCH branch ref to new commit SHA (Does NOT use `force: true`. Relies on atomic fast-forward checks. If GitHub returns `422`, it catches race conditions and returns `409 Conflict`)
 12. Return `{ success: true, branch: branchName, sha: newCommitSha }`

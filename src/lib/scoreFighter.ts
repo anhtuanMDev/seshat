@@ -50,7 +50,7 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   const resolveEvent = atEventId
     ? events.find((e) => e.id === atEventId)
     : [...events]
-        .sort((a, b) => b.time - a.time)
+        .sort((a, b) => b.time !== a.time ? b.time - a.time : a.id.localeCompare(b.id))
         .find((e) => (e.characters || []).includes(char.id));
   const attr = resolveEvent ? char.attributes?.[resolveEvent.id] || {} : {};
 
