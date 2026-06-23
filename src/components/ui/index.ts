@@ -7,4 +7,5 @@ export { SideItem } from './SideItem';
 export { EventPicker } from './EventPicker';
 export { CharStatusPanel } from './CharStatusPanel';
 export { GhostButton } from './GhostButton';
+export { Modal } from './Modal';
 export * from './icons';

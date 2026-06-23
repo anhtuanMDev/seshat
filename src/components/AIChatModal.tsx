@@ -1,9 +1,47 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Modal } from "./ui";
-import { S } from "../lib/utils";
-import { SmartToyIcon, SendIcon, SettingsIcon } from "./ui/icons";
+import { SmartToyIcon, SendIcon, DeleteIcon } from "./ui/icons";
 import ReactMarkdown from "react-markdown";
 import { showToast } from "../store/toastStore";
+
+const AI_PROVIDERS = [
+  {
+    id: "openai",
+    name: "OpenAI",
+    url: "https://api.openai.com/v1",
+    models: ["gpt-4o-mini", "gpt-4o", "o1-mini"],
+  },
+  {
+    id: "openrouter",
+    name: "OpenRouter",
+    url: "https://openrouter.ai/api/v1",
+    models: ["anthropic/claude-3.5-sonnet", "google/gemini-1.5-pro", "meta-llama/llama-3.1-70b-instruct"],
+  },
+  {
+    id: "groq",
+    name: "Groq",
+    url: "https://api.groq.com/openai/v1",
+    models: ["llama3-8b-8192", "llama3-70b-8192", "mixtral-8x7b-32768"],
+  },
+  {
+    id: "deepseek",
+    name: "DeepSeek",
+    url: "https://api.deepseek.com/v1",
+    models: ["deepseek-chat", "deepseek-coder"],
+  },
+  {
+    id: "local",
+    name: "Local (LMStudio/Ollama)",
+    url: "http://localhost:1234/v1",
+    models: ["local-model"],
+  },
+  {
+    id: "custom",
+    name: "Custom...",
+    url: "",
+    models: [],
+  }
+];
 
 interface Message {
   role: "user" | "assistant";
@@ -16,26 +54,44 @@ interface AIChatModalProps {
 }
 
 export function AIChatModal({ onClose, contextText }: AIChatModalProps) {
-  const [tab, setTab] = useState<"chat" | "config">(() => {
-    return localStorage.getItem("seshat-ai-key") ? "chat" : "config";
-  });
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
   // Config State
-  const [baseUrl, setBaseUrl] = useState(() => localStorage.getItem("seshat-ai-url") || "https://api.openai.com/v1");
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("seshat-ai-key") || "");
-  const [model, setModel] = useState(() => localStorage.getItem("seshat-ai-model") || "gpt-4o-mini");
+  const [providerId, setProviderId] = useState(
+    () => localStorage.getItem("seshat-ai-provider") || "openai",
+  );
+  const [baseUrl, setBaseUrl] = useState(
+    () => localStorage.getItem("seshat-ai-url") || "https://api.openai.com/v1",
+  );
+  const [apiKey, setApiKey] = useState(
+    () => localStorage.getItem("seshat-ai-key") || "",
+  );
+  const [model, setModel] = useState(
+    () => localStorage.getItem("seshat-ai-model") || "gpt-4o-mini",
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const saveConfig = () => {
+  // Auto-save config when it changes
+  useEffect(() => {
+    localStorage.setItem("seshat-ai-provider", providerId);
     localStorage.setItem("seshat-ai-url", baseUrl);
     localStorage.setItem("seshat-ai-key", apiKey);
     localStorage.setItem("seshat-ai-model", model);
-    showToast("AI Configuration saved", "success");
-    setTab("chat");
+  }, [providerId, baseUrl, apiKey, model]);
+
+  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const pid = e.target.value;
+    setProviderId(pid);
+    const prov = AI_PROVIDERS.find(p => p.id === pid);
+    if (prov && pid !== "custom") {
+      setBaseUrl(prov.url);
+      if (prov.models.length > 0) {
+        setModel(prov.models[0]);
+      }
+    }
   };
 
   const scrollToBottom = () => {
@@ -52,11 +108,13 @@ export function AIChatModal({ onClose, contextText }: AIChatModalProps) {
     if (!input.trim()) return;
     if (!apiKey.trim() && !baseUrl.includes("localhost")) {
       showToast("Please enter an API Key in settings first", "error");
-      setTab("config");
       return;
     }
 
-    const newMsgs = [...messages, { role: "user" as const, content: input.trim() }];
+    const newMsgs = [
+      ...messages,
+      { role: "user" as const, content: input.trim() },
+    ];
     setMessages(newMsgs);
     setInput("");
     setIsTyping(true);
@@ -67,7 +125,7 @@ export function AIChatModal({ onClose, contextText }: AIChatModalProps) {
         content: `You are an expert lorekeeper, editor, and creative assistant for a novelist. 
 You are given the full canonical context of the world, characters, rules, and timeline below. 
 Never contradict this context. Use it to answer questions, brainstorm, or write prose. 
-Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
+Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
       };
 
       const payload = {
@@ -76,17 +134,30 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
         temperature: 0.7,
       };
 
-      const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
+      const res = await fetch(
+        `${baseUrl.replace(/\/$/, "")}/chat/completions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!res.ok) {
-        const errText = await res.text();
+        let errText = await res.text();
+        try {
+          const parsed = JSON.parse(errText);
+          if (parsed.error?.message) {
+            errText = parsed.error.message;
+          } else if (parsed.message) {
+            errText = parsed.message;
+          }
+        } catch {
+          // If it's not JSON, we just use the raw errText
+        }
         throw new Error(errText || res.statusText);
       }
 
@@ -98,7 +169,10 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
       console.error(err);
       const msg = err instanceof Error ? err.message : String(err);
       showToast(`AI Error: ${msg}`, "error");
-      setMessages([...newMsgs, { role: "assistant", content: `**Error:** ${msg}` }]);
+      setMessages([
+        ...newMsgs,
+        { role: "assistant", content: `**Error:** ${msg}` },
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -111,160 +185,161 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
   };
 
   return (
-    <Modal title="Ask AI" onClose={onClose} width="800px">
-      <div style={{ display: "flex", flexDirection: "column", height: "70vh", maxHeight: "800px" }}>
-        {/* Tabs */}
-        <div style={{ display: "flex", gap: 16, borderBottom: "1px solid var(--border)", paddingBottom: 12, marginBottom: 16 }}>
-          <button
-            onClick={() => setTab("chat")}
-            style={{
-              ...S.ghost,
-              color: tab === "chat" ? "var(--color-purple)" : "var(--text-secondary)",
-              fontWeight: tab === "chat" ? 600 : 400,
-              display: "flex", alignItems: "center", gap: 6
-            }}
-          >
-            <SmartToyIcon sx={{ fontSize: 16 }} />
-            Chat
-          </button>
-          <button
-            onClick={() => setTab("config")}
-            style={{
-              ...S.ghost,
-              color: tab === "config" ? "var(--color-purple)" : "var(--text-secondary)",
-              fontWeight: tab === "config" ? 600 : 400,
-              display: "flex", alignItems: "center", gap: 6
-            }}
-          >
-            <SettingsIcon sx={{ fontSize: 16 }} />
-            Configuration
-          </button>
-          {tab === "chat" && messages.length > 0 && (
-            <button
-              onClick={clearChat}
-              style={{ ...S.ghost, marginLeft: "auto", color: "var(--text-muted)", fontSize: 12 }}
+    <Modal title="AI Co-Pilot" onClose={onClose} variant="wide">
+      <div className="ai-modal-layout">
+        {/* LEFT SIDEBAR: Config & Controls */}
+        <div className="ai-modal-sidebar">
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div className="ai-brand-icon">
+                <SmartToyIcon sx={{ fontSize: 20 }} />
+              </div>
+              <h3 style={{ fontSize: 16, margin: 0 }}>Oracle Settings</h3>
+            </div>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4, margin: "0 0 24px 0" }}>
+              Configure your BYOK AI provider. Model settings auto-save securely to your browser.
+            </p>
+          </div>
+
+          <div className="ai-config-group">
+            <label className="ai-config-label">Provider</label>
+            <select
+              className="ai-config-input"
+              value={providerId}
+              onChange={handleProviderChange}
             >
-              Clear Chat
-            </button>
+              {AI_PROVIDERS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {providerId === "custom" && (
+            <div className="ai-config-group">
+              <label className="ai-config-label">API Base URL</label>
+              <input
+                type="text"
+                className="ai-config-input"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="https://api.openai.com/v1"
+              />
+            </div>
           )}
+
+          <div className="ai-config-group">
+            <label className="ai-config-label">Model ID</label>
+            <input
+              type="text"
+              className="ai-config-input"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="gpt-4o"
+            />
+            {AI_PROVIDERS.find((p) => p.id === providerId)?.models.length ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                {AI_PROVIDERS.find((p) => p.id === providerId)?.models.map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setModel(m)}
+                    className="ai-model-pill"
+                    style={{
+                      background: model === m ? "var(--bg-active)" : "var(--bg-panel)",
+                      borderColor: model === m ? "var(--color-purple)" : "var(--border-field)",
+                      color: model === m ? "var(--color-purple)" : "var(--text-secondary)",
+                    }}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="ai-config-hint">Type the model ID manually.</span>
+            )}
+          </div>
+
+          <div className="ai-config-group">
+            <label className="ai-config-label">API Key</label>
+            <input
+              type="password"
+              className="ai-config-input"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-..."
+            />
+            <span className="ai-config-hint">Requires sufficient credits.</span>
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          <button
+            onClick={clearChat}
+            className="ai-clear-btn"
+            disabled={messages.length === 0}
+          >
+            <DeleteIcon sx={{ fontSize: 16 }} />
+            Clear Context History
+          </button>
         </div>
 
-        {tab === "config" && (
-          <div style={{ flex: 1, overflowY: "auto", paddingRight: 8 }}>
-            <h3 style={{ fontSize: 16, marginBottom: 16 }}>Unified AI Interface (BYOK)</h3>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24, lineHeight: 1.5 }}>
-              Seshat passes your entire world state directly to the AI model of your choice using an OpenAI-compatible interface. 
-              Your API key is stored <b>only in your local browser</b> and is never synced to the server.
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>API Base URL</label>
-                <input
-                  type="text"
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  style={S.input}
-                  placeholder="https://api.openai.com/v1"
-                />
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-                  Examples: <code>https://api.openai.com/v1</code>, <code>https://openrouter.ai/api/v1</code>, <code>http://localhost:1234/v1</code> (LMStudio)
-                </div>
+        {/* RIGHT AREA: Chat Interface */}
+        <div className="ai-modal-main">
+          <div className="ai-chat-feed">
+            {messages.length === 0 ? (
+              <div className="ai-empty-state">
+                <SmartToyIcon sx={{ fontSize: 48, opacity: 0.1, marginBottom: 16 }} />
+                <p>The Oracle is ready.</p>
+                <span style={{ fontSize: 13, opacity: 0.6, marginTop: 8 }}>
+                  Ask about your world, characters, or request a prose scene.
+                </span>
               </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>API Key</label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  style={S.input}
-                  placeholder="sk-..."
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Model ID</label>
-                <input
-                  type="text"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  style={S.input}
-                  placeholder="gpt-4o"
-                />
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
-                  Examples: <code>gpt-4o</code>, <code>anthropic/claude-3.5-sonnet</code> (OpenRouter), <code>google/gemini-1.5-pro</code>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 16 }}>
-                <button onClick={saveConfig} style={S.primaryBtn}>
-                  Save Configuration
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "chat" && (
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-            <div style={{ flex: 1, overflowY: "auto", paddingRight: 8, display: "flex", flexDirection: "column", gap: 16 }}>
-              {messages.length === 0 ? (
-                <div style={{ margin: "auto", textAlign: "center", color: "var(--text-muted)" }}>
-                  <SmartToyIcon sx={{ fontSize: 48, opacity: 0.2, marginBottom: 16 }} />
-                  <p>Send a message to start brainstorming with your world lore.</p>
-                </div>
-              ) : (
-                messages.map((m, i) => (
-                  <div key={i} style={{ 
-                    alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                    maxWidth: "85%",
-                    background: m.role === "user" ? "var(--bg-active)" : "var(--bg-card)",
-                    border: "1px solid var(--border)",
-                    padding: "12px 16px",
-                    borderRadius: m.role === "user" ? "12px 12px 0 12px" : "12px 12px 12px 0",
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    color: "var(--text)",
-                    wordBreak: "break-word"
-                  }}>
+            ) : (
+              messages.map((m, i) => (
+                <div key={i} className={`ai-message-block ${m.role === "user" ? "ai-user-bg" : "ai-assistant-bg"}`}>
+                  <div className="ai-avatar">
+                    {m.role === "user" ? "U" : <SmartToyIcon sx={{ fontSize: 18 }} />}
+                  </div>
+                  <div className={`ai-message-content ${m.role === "user" ? "ai-user-text" : ""}`}>
                     {m.role === "assistant" ? (
                       <ReactMarkdown
                         components={{
-                          p: ({ ...props }) => <p style={{ margin: "0 0 8px 0" }} {...props} />,
-                          ul: ({ ...props }) => <ul style={{ margin: "0 0 8px 0", paddingLeft: 20 }} {...props} />,
-                          li: ({ ...props }) => <li style={{ marginBottom: 4 }} {...props} />,
-                          strong: ({ ...props }) => <strong style={{ color: "var(--text-secondary)" }} {...props} />,
+                          p: ({ ...props }) => <p style={{ margin: "0 0 12px 0" }} {...props} />,
+                          ul: ({ ...props }) => <ul style={{ margin: "0 0 12px 0", paddingLeft: 24 }} {...props} />,
+                          ol: ({ ...props }) => <ol style={{ margin: "0 0 12px 0", paddingLeft: 24 }} {...props} />,
+                          li: ({ ...props }) => <li style={{ marginBottom: 6 }} {...props} />,
+                          strong: ({ ...props }) => <strong style={{ color: "var(--text-primary)", fontWeight: 600 }} {...props} />,
+                          h3: ({ ...props }) => <h3 style={{ margin: "16px 0 8px 0", fontSize: 16, color: "var(--text-primary)" }} {...props} />,
                         }}
                       >
                         {m.content}
                       </ReactMarkdown>
                     ) : (
-                      <div style={{ whiteSpace: "pre-wrap" }}>{m.content}</div>
+                      <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{m.content}</div>
                     )}
                   </div>
-                ))
-              )}
-              {isTyping && (
-                <div style={{ 
-                  alignSelf: "flex-start",
-                  background: "transparent",
-                  color: "var(--text-muted)",
-                  padding: "8px 16px",
-                  fontSize: 13,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8
-                }}>
-                  <span className="seshat-typing-dot">●</span>
-                  <span className="seshat-typing-dot" style={{ animationDelay: "0.2s" }}>●</span>
-                  <span className="seshat-typing-dot" style={{ animationDelay: "0.4s" }}>●</span>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+              ))
+            )}
+            
+            {isTyping && (
+              <div className="ai-message-block ai-assistant-bg">
+                 <div className="ai-avatar">
+                  <SmartToyIcon sx={{ fontSize: 18 }} />
+                </div>
+                <div className="ai-typing-indicator">
+                  <span className="ai-dot"></span>
+                  <span className="ai-dot" style={{ animationDelay: "0.2s" }}></span>
+                  <span className="ai-dot" style={{ animationDelay: "0.4s" }}></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} style={{ height: 1 }} />
+          </div>
 
-            <div style={{ marginTop: 16, display: "flex", gap: 8, alignItems: "flex-end" }}>
+          <div className="ai-input-container">
+            <div className="ai-input-wrapper">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -274,42 +349,295 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
                     handleSend();
                   }
                 }}
-                placeholder="Ask about your world, characters, or ask it to write a scene..."
-                style={{
-                  ...S.input,
-                  flex: 1,
-                  resize: "none",
-                  minHeight: "44px",
-                  maxHeight: "150px",
-                  paddingTop: 12,
-                  paddingBottom: 12,
-                }}
-                rows={Math.min(5, input.split("\n").length)}
+                placeholder="Ask the Oracle..."
+                className="ai-textarea"
+                rows={1}
+                style={{ height: Math.min(200, Math.max(44, input.split("\n").length * 20 + 24)) }}
               />
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isTyping}
-                style={{
-                  ...S.primaryBtn,
-                  height: "44px",
-                  padding: "0 16px",
-                  opacity: (!input.trim() || isTyping) ? 0.5 : 1
-                }}
+                className="ai-send-btn"
               >
                 <SendIcon sx={{ fontSize: 18 }} />
               </button>
             </div>
+            <div style={{ fontSize: 11, textAlign: "center", marginTop: 8, color: "var(--text-muted)" }}>
+              The entire world context is automatically included in every prompt.
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       <style>{`
-        .seshat-typing-dot {
-          animation: typingPulse 1.4s infinite ease-in-out both;
+        .ai-modal-layout {
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          height: 70vh;
+          min-height: 500px;
+          max-height: 800px;
+          background: var(--bg-main);
+          border-radius: 8px;
+          border: 1px solid var(--border);
+          overflow: hidden;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
-        @keyframes typingPulse {
-          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-          40% { opacity: 1; transform: scale(1.2); }
+
+        .ai-modal-sidebar {
+          background: var(--bg-side);
+          border-right: 1px solid var(--border);
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          overflow-y: auto;
+        }
+
+        .ai-brand-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          background: var(--color-purple);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ai-config-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .ai-config-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+
+        .ai-config-input {
+          background: var(--bg-panel);
+          border: 1px solid var(--border-field);
+          color: var(--text-primary);
+          border-radius: 6px;
+          padding: 8px 12px;
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.2s;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .ai-model-pill {
+          font-size: 11px;
+          padding: 4px 8px;
+          border-radius: 4px;
+          border: 1px solid var(--border-field);
+          background: var(--bg-panel);
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .ai-model-pill:hover {
+          border-color: var(--text-muted);
+        }
+
+        .ai-config-input:focus {
+          border-color: var(--color-purple);
+        }
+
+        .ai-config-hint {
+          font-size: 11px;
+          color: var(--text-muted);
+        }
+
+        .ai-clear-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px;
+          background: transparent;
+          border: 1px solid var(--border-field);
+          color: var(--text-secondary);
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 13px;
+        }
+
+        .ai-clear-btn:not(:disabled):hover {
+          background: rgba(255, 0, 0, 0.1);
+          color: var(--color-red);
+          border-color: var(--color-red);
+        }
+
+        .ai-clear-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .ai-modal-main {
+          display: flex;
+          flex-direction: column;
+          background: var(--bg-main);
+          position: relative;
+          min-width: 0; /* Prevent flex items from blowing out grid cells */
+        }
+
+        .ai-chat-feed {
+          flex: 1;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .ai-empty-state {
+          margin: auto;
+          text-align: center;
+          color: var(--text-muted);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 40px;
+        }
+
+        .ai-message-block {
+          padding: 32px 40px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          gap: 20px;
+        }
+
+        .ai-user-bg {
+          background: var(--bg-active);
+        }
+
+        .ai-assistant-bg {
+          background: var(--bg-main);
+        }
+
+        .ai-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          background: var(--bg-panel);
+          color: var(--text-secondary);
+          font-weight: 600;
+          font-size: 14px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .ai-message-content {
+          flex: 1;
+          min-width: 0;
+          color: var(--text-primary);
+          font-size: 15px;
+          line-height: 1.7;
+        }
+
+        .ai-message-content p:last-child {
+          margin-bottom: 0 !important;
+        }
+
+        .ai-user-text {
+          color: var(--text-secondary);
+          font-size: 15px;
+        }
+
+        .ai-input-container {
+          padding: 24px 40px;
+          background: var(--bg-main);
+          border-top: 1px solid var(--border);
+        }
+
+        .ai-input-wrapper {
+          position: relative;
+          background: var(--bg-panel);
+          border: 1px solid var(--border-field);
+          border-radius: 12px;
+          display: flex;
+          align-items: flex-end;
+          padding: 8px 8px 8px 16px;
+          transition: all 0.2s;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .ai-input-wrapper:focus-within {
+          border-color: var(--color-purple);
+          box-shadow: 0 4px 16px rgba(var(--color-purple-rgb), 0.1);
+        }
+
+        .ai-textarea {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: var(--text-primary);
+          resize: none;
+          font-family: inherit;
+          font-size: 15px;
+          line-height: 1.5;
+          padding: 10px 0;
+        }
+
+        .ai-textarea::placeholder {
+          color: var(--text-dim);
+        }
+
+        .ai-send-btn {
+          background: var(--color-purple);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          margin-left: 12px;
+          margin-bottom: 2px;
+          transition: all 0.2s;
+        }
+
+        .ai-send-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .ai-send-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .ai-typing-indicator {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          height: 24px;
+        }
+
+        .ai-dot {
+          width: 6px;
+          height: 6px;
+          background: var(--text-muted);
+          border-radius: 50%;
+          animation: typing 1.4s infinite ease-in-out both;
+        }
+
+        @keyframes typing {
+          0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+          40% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </Modal>

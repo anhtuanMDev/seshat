@@ -565,6 +565,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Global Glossary  | `App.tsx`       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures |
 | Issue Tracker    | `IssuesPage`    | Direct integration with GitHub Issues API to submit bugs and feedback (`lib/githubIssues`) |
 | Equipment Config | `CharacterPage` | `EquipmentBlock` managing loadouts, dynamically resolved via `resolveEquipment.ts` |
+| AI Chat Interface| `AIChatModal`   | Unified BYOK OpenAI-compatible chat interface natively parsing the world context `buildExport()` |
 | Batch Export     | `lib/export`    | `/api/github/exportChapters` GraphQL endpoint fetches bulk chapter bodies for DOCX generation |
 ---
 

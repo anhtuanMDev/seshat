@@ -377,6 +377,16 @@ const S = {
     background: "var(--bg-panel)",
     color: "var(--text-primary)",
   },
+  primaryBtn: {
+    padding: "8px 16px",
+    borderRadius: 6,
+    border: "none",
+    cursor: "pointer",
+    background: "var(--color-purple)",
+    color: "#fff",
+    fontWeight: 600,
+    fontSize: 14,
+  },
   addBtn: {
     display: "flex",
     alignItems: "center",
