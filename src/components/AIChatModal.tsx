@@ -39,7 +39,7 @@ const AI_PROVIDERS = [
     id: "gemini",
     name: "Google Gemini",
     url: "https://generativelanguage.googleapis.com/v1beta/openai",
-    models: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-2.0-flash-exp"],
+    models: ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"],
   },
   {
     id: "local",
@@ -162,10 +162,12 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
         let errText = await res.text();
         try {
           const parsed = JSON.parse(errText);
-          if (parsed.error?.message) {
-            errText = parsed.error.message;
-          } else if (parsed.message) {
-            errText = parsed.message;
+          const errObj = Array.isArray(parsed) ? parsed[0] : parsed;
+          
+          if (errObj?.error?.message) {
+            errText = errObj.error.message;
+          } else if (errObj?.message) {
+            errText = errObj.message;
           }
         } catch {
           // If it's not JSON, we just use the raw errText
