@@ -574,7 +574,7 @@ export default function WorldPage() {
             control={control}
             index={modal.idx}
             onDelete={() => {}}
-            connections={nations[modal.idx!].connections || []}
+            connections={nations[modal.idx!]?.connections || []}
             onAddConnection={() => addConnection(modal.idx!)}
             onDelConnection={(connId) => delConnection(modal.idx!, connId)}
           />

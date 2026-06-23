@@ -166,17 +166,27 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
             <div key={c.id} style={{ 
               display: "flex", 
               flexWrap: "wrap", 
-              gap: 12, 
+              gap: 16, 
               justifyContent: "space-between", 
-              alignItems: "center", 
+              alignItems: "flex-start", 
               padding: "16px 0", 
               borderBottom: index === visibleConflicts.length - 1 ? "none" : "1px solid var(--border)" 
             }}>
-              <div style={{ flex: "1 1 200px" }}>
+              <div style={{ flex: "1 1 250px", minWidth: 0 }}>
                 <div style={{ fontSize: 11, color: "var(--color-blue)", textTransform: "uppercase", fontWeight: 700, letterSpacing: 1, marginBottom: 4 }}>{c.type}</div>
-                <div style={{ color: "var(--text-primary)", fontSize: 16, fontWeight: 600, lineHeight: 1.3 }}>{c.name}</div>
+                <div style={{ color: "var(--text-primary)", fontSize: 16, fontWeight: 600, lineHeight: 1.3, marginBottom: 8, wordBreak: "break-word" }}>{c.name}</div>
+                {c.diffs && c.diffs.length > 0 && (
+                  <div style={{ background: "var(--bg-panel)", padding: "10px 12px", borderRadius: 6, fontSize: 12, fontFamily: "monospace", color: "var(--text-secondary)", maxHeight: 180, overflowY: "auto", overflowX: "hidden" }}>
+                    {c.diffs.slice(0, 10).map((diff, i) => (
+                      <div key={i} style={{ marginBottom: 6, overflowWrap: "anywhere", lineHeight: 1.4, paddingLeft: 12, textIndent: -12 }}>
+                        <span style={{ color: "var(--text-muted)", marginRight: 4 }}>•</span>{diff}
+                      </div>
+                    ))}
+                    {c.diffs.length > 10 && <div style={{ fontStyle: "italic", marginTop: 6, color: "var(--text-muted)" }}>...and {c.diffs.length - 10} more changes</div>}
+                  </div>
+                )}
               </div>
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: 8, flex: "1 1 180px", minWidth: "180px" }}>
                 <button 
                   onClick={() => setResolutions(prev => ({ ...prev, [c.id]: "local" }))}
                   style={resolutions[c.id] === "local" ? activeChoiceStyle : choiceStyle}

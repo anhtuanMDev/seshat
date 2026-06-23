@@ -153,63 +153,41 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       mode: "100644";
       type: "blob";
       content?: string;
-      sha?: string;
+      sha?: string | null;
     }[] = [];
 
-    // Collect all book IDs that currently exist in the GitHub repository
-    const existingBookIds = new Set<string>();
-    for (const filePath of existingFiles.keys()) {
-      const match = filePath.match(/^books\/book_([^/]+)\//);
-      if (match) {
-        existingBookIds.add(match[1]);
-      }
-    }
-
+    const unseenFiles = new Set(existingFiles.keys());
     const clientBookIds = new Set(data.books.map(b => b.id));
-
-    // Guard: If the client has not loaded the complete book list,
-    // we must preserve all books that exist in the repository but are missing from the client payload.
     const isBookListLoaded = !!data.isBookListLoaded;
+
     if (!isBookListLoaded) {
-      for (const existingId of existingBookIds) {
-        if (!clientBookIds.has(existingId)) {
-          const bookPrefix = `books/book_${existingId}/`;
-          for (const [filePath, sha] of existingFiles.entries()) {
-            if (filePath.startsWith(bookPrefix)) {
-              treeFiles.push({
-                path: filePath,
-                mode: "100644",
-                type: "blob",
-                sha: sha
-              });
-            }
-          }
+      for (const filePath of unseenFiles) {
+        const match = filePath.match(/^books\/book_([^/]+)\//);
+        if (match && !clientBookIds.has(match[1])) {
+          unseenFiles.delete(filePath);
         }
       }
     }
 
     for (const book of data.books) {
+      const bDir = `books/book_${book.id}`;
+      
       if (book.isFullyLoaded === false) {
-        // This book was not fully loaded on the client, meaning the client has no edits.
-        // We must preserve all existing files of this book on GitHub!
-        const bookPrefix = `books/book_${book.id}/`;
-        for (const [filePath, sha] of existingFiles.entries()) {
-          if (filePath.startsWith(bookPrefix)) {
-            treeFiles.push({
-              path: filePath,
-              mode: "100644",
-              type: "blob",
-              sha: sha
-            });
+        for (const filePath of unseenFiles) {
+          if (filePath.startsWith(`${bDir}/`)) {
+            unseenFiles.delete(filePath);
           }
         }
         continue;
       }
 
-      const bDir = `books/book_${book.id}`;
+      const addFile = (fileDef: { path: string; mode: "100644"; type: "blob"; content?: string; sha?: string }) => {
+        treeFiles.push(fileDef);
+        unseenFiles.delete(fileDef.path);
+      };
 
       // 1. book.json
-      treeFiles.push({
+      addFile({
         path: `${bDir}/book.json`,
         mode: "100644",
         type: "blob",
@@ -227,8 +205,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         ),
       });
 
-      // 2. world/world.json (just the basics)
-      treeFiles.push({
+      // 2. world/world.json
+      addFile({
         path: `${bDir}/world/world.json`,
         mode: "100644",
         type: "blob",
@@ -239,7 +217,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       type WorldItem = { id: string; [key: string]: unknown };
 
       book.nations?.forEach((n: WorldItem) => {
-        treeFiles.push({
+        addFile({
           path: `${bDir}/world/nations/nation_${n.id}.json`,
           mode: "100644",
           type: "blob",
@@ -247,7 +225,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         });
       });
       book.monsters?.forEach((m: WorldItem) => {
-        treeFiles.push({
+        addFile({
           path: `${bDir}/world/monsters/monster_${m.id}.json`,
           mode: "100644",
           type: "blob",
@@ -255,7 +233,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         });
       });
       book.treasures?.forEach((t: WorldItem) => {
-        treeFiles.push({
+        addFile({
           path: `${bDir}/world/treasures/treasure_${t.id}.json`,
           mode: "100644",
           type: "blob",
@@ -263,7 +241,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         });
       });
       book.techniques?.forEach((t: WorldItem) => {
-        treeFiles.push({
+        addFile({
           path: `${bDir}/world/techniques/technique_${t.id}.json`,
           mode: "100644",
           type: "blob",
@@ -271,7 +249,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         });
       });
       book.ingredients?.forEach((i: WorldItem) => {
-        treeFiles.push({
+        addFile({
           path: `${bDir}/world/ingredients/ingredient_${i.id}.json`,
           mode: "100644",
           type: "blob",
@@ -286,7 +264,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
       book.characters?.forEach((c) => {
         indexCharacters.push({ id: c.id, name: c.name });
-        treeFiles.push({
+        addFile({
           path: `${bDir}/characters/char_${c.id}.json`,
           mode: "100644",
           type: "blob",
@@ -298,8 +276,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         indexChapters.push({ id: c.id, title: c.title });
         
         const drafts = Array.isArray(c.drafts) ? (c.drafts as Record<string, unknown>[]) : [];
+        
+        if (c.body === undefined && drafts.length === 0) {
+          // Attempt to recover drafts from existing files so we don't nuke them from metadata.json
+          for (const filePath of existingFiles.keys()) {
+            if (filePath.startsWith(`${bDir}/chapters/chapter_${c.id}/`) && filePath.endsWith(".json") && !filePath.endsWith("metadata.json")) {
+               const id = filePath.split("/").pop()?.replace(".json", "");
+               if (id) {
+                 drafts.push({ id, name: "Recovered Draft", createdAt: Date.now(), isDeleted: false });
+               }
+            }
+          }
+        }
 
-        treeFiles.push({
+        addFile({
           path: `${bDir}/chapters/chapter_${c.id}/metadata.json`,
           mode: "100644",
           type: "blob",
@@ -328,15 +318,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           if (c.body === undefined) {
             const existingSha = existingFiles.get(draftPath);
             if (existingSha) {
-              treeFiles.push({
+              addFile({
                 path: draftPath,
                 mode: "100644",
                 type: "blob",
                 sha: existingSha,
               });
+            } else {
+              unseenFiles.delete(draftPath);
             }
           } else {
-            treeFiles.push({
+            addFile({
               path: draftPath,
               mode: "100644",
               type: "blob",
@@ -348,7 +340,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
       book.events?.forEach((e) => {
         indexEvents.push({ id: e.id, title: e.title });
-        treeFiles.push({
+        addFile({
           path: `${bDir}/events/event_${e.id}.json`,
           mode: "100644",
           type: "blob",
@@ -357,7 +349,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
 
       if (book.foreshadows) {
-        treeFiles.push({
+        addFile({
           path: `${bDir}/foreshadows.json`,
           mode: "100644",
           type: "blob",
@@ -366,7 +358,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       } else {
         const fsSha = existingFiles.get(`${bDir}/foreshadows.json`);
         if (fsSha) {
-          treeFiles.push({
+          addFile({
             path: `${bDir}/foreshadows.json`,
             mode: "100644",
             type: "blob",
@@ -376,7 +368,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       }
 
       // 5. index.json for fast loading
-      treeFiles.push({
+      addFile({
         path: `${bDir}/index.json`,
         mode: "100644",
         type: "blob",
@@ -392,11 +384,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    // 5. Create the Tree (Omit base_tree to ensure deleted books are removed!)
+    // Explicitly delete files that are no longer in the payload
+    for (const filePath of unseenFiles) {
+      if (filePath.startsWith("books/")) {
+        treeFiles.push({
+          path: filePath,
+          mode: "100644",
+          type: "blob",
+          sha: null,
+        });
+      }
+    }
+
+    // 5. Create the Tree (using base_tree to safely preserve unchanged data)
     const createTreeRes = await fetch(`${baseUrl}/git/trees`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ tree: treeFiles }),
+      body: JSON.stringify({ base_tree: baseTreeSha, tree: treeFiles }),
     });
     if (!createTreeRes.ok)
       throw new Error(

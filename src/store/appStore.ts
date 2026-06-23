@@ -7,7 +7,14 @@ export type { Character, Event, Chapter } from "../lib/types";
 
 // Switch to IndexedDB to completely bypass the 5MB/10MB localStorage quota
 configureObservablePersistence({
-  pluginLocal: ObservablePersistIndexedDB
+  pluginLocal: ObservablePersistIndexedDB,
+  localOptions: {
+    indexedDB: {
+      databaseName: "seshat-db",
+      version: 1,
+      tableNames: ["seshat-app"],
+    },
+  },
 });
 
 export interface Nation {
@@ -170,6 +177,12 @@ try {
   }
 } catch (e) {
   console.error("Migration from LocalStorage failed:", e);
+  const oldLocalData = localStorage.getItem("seshat-app");
+  if (oldLocalData) {
+    localStorage.setItem("seshat-app-corrupted-backup", oldLocalData);
+    localStorage.removeItem("seshat-app");
+    alert("Warning: Failed to migrate old local data. A backup was saved in localStorage as 'seshat-app-corrupted-backup'.");
+  }
 }
 
 persistObservable(appStore, { local: "seshat-app" });

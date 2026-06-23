@@ -6,6 +6,7 @@ export interface ConflictItem {
   name: string;
   localValue: unknown;
   serverValue: unknown;
+  diffs: string[];
   resolution?: "local" | "server";
 }
 
@@ -31,6 +32,62 @@ function canonicalStringify(val: unknown): string {
   }
   if (val === "") return "";
   return JSON.stringify(val);
+}
+
+export function getDeepDiff(local: unknown, server: unknown, path: string = ""): string[] {
+  const diffs: string[] = [];
+  if (local === server) return diffs;
+
+  const lStr = canonicalStringify(local);
+  const sStr = canonicalStringify(server);
+  if (lStr === sStr) return diffs;
+
+  if (local === undefined && server !== undefined) return [`${path}: Added from cloud`];
+  if (local !== undefined && server === undefined) return [`${path}: Deleted in cloud`];
+
+  if (Array.isArray(local) && Array.isArray(server)) {
+    if (local.length !== server.length) {
+      diffs.push(`${path}: Array length changed (${local.length} -> ${server.length})`);
+    } else {
+      diffs.push(`${path}: Array contents modified`);
+    }
+    return diffs;
+  }
+
+  if (local !== null && server !== null && typeof local === "object" && typeof server === "object") {
+    const lObj = local as Record<string, unknown>;
+    const sObj = server as Record<string, unknown>;
+    const allKeys = new Set([...Object.keys(lObj), ...Object.keys(sObj)]);
+    
+    for (const key of allKeys) {
+      const lVal = lObj[key];
+      const sVal = sObj[key];
+      const currentPath = path ? `${path}.${key}` : key;
+      
+      const subDiffs = getDeepDiff(lVal, sVal, currentPath);
+      if (subDiffs.length > 0) {
+        if (typeof lVal !== "object" && typeof sVal !== "object" && !Array.isArray(lVal) && !Array.isArray(sVal)) {
+          let lShort = String(lVal);
+          let sShort = String(sVal);
+          if (lShort.length > 30) lShort = lShort.substring(0, 30) + "...";
+          if (sShort.length > 30) sShort = sShort.substring(0, 30) + "...";
+          diffs.push(`${currentPath}: "${lShort}" -> "${sShort}"`);
+        } else if (Array.isArray(lVal) || Array.isArray(sVal)) {
+           diffs.push(`${currentPath}: Array contents modified`);
+        } else {
+           diffs.push(...subDiffs);
+        }
+      }
+    }
+    return diffs;
+  }
+
+  let lShort = String(local);
+  let sShort = String(server);
+  if (lShort.length > 30) lShort = lShort.substring(0, 30) + "...";
+  if (sShort.length > 30) sShort = sShort.substring(0, 30) + "...";
+  diffs.push(`${path}: "${lShort}" -> "${sShort}"`);
+  return diffs;
 }
 
 export function getConflicts(localBook: BookData, serverBook: BookData): ConflictItem[] {
@@ -72,6 +129,7 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
           name: `${getName(localItem)} (Local Only)`,
           localValue: localItem,
           serverValue: null,
+          diffs: ["Added locally (Not in cloud)"]
         });
       } else {
         const l: Record<string, unknown> = { ...localItem } as unknown as Record<string, unknown>;
@@ -80,19 +138,16 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
           delete l[k];
           delete s[k];
         });
-        if (canonicalStringify(l) !== canonicalStringify(s)) {
-          console.log(`[Conflict Debug] Conflict detected for ${type}/${localItem.id}:`, {
-            localStringified: canonicalStringify(l),
-            serverStringified: canonicalStringify(s),
-            localObj: l,
-            serverObj: s
-          });
+        
+        const diffs = getDeepDiff(l, s);
+        if (diffs.length > 0) {
           list.push({
             id: `${type}_${localItem.id}`,
             type,
             name: getName(localItem),
             localValue: localItem,
             serverValue: serverItem,
+            diffs: Array.from(new Set(diffs)), // deduplicate
           });
         }
         serverMap.delete(localItem.id);
@@ -105,6 +160,7 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
         name: `${getName(serverItem)} (Cloud Only)`,
         localValue: null,
         serverValue: serverItem,
+        diffs: ["Added in cloud (Not local)"]
       });
     });
   };
@@ -124,13 +180,16 @@ export function getConflicts(localBook: BookData, serverBook: BookData): Conflic
     themes: serverBook.themes,
     rules: serverBook.rules,
   };
-  if (canonicalStringify(localMeta) !== canonicalStringify(serverMeta)) {
+  
+  const metaDiffs = getDeepDiff(localMeta, serverMeta);
+  if (metaDiffs.length > 0) {
     list.push({
       id: "meta_book",
       type: "metadata",
       name: "Book Metadata & World Rules",
       localValue: localMeta,
       serverValue: serverMeta,
+      diffs: Array.from(new Set(metaDiffs)),
     });
   }
 

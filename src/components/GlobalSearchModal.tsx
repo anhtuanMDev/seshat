@@ -50,51 +50,61 @@ export function GlobalSearchModal({ open, onClose }: Props) {
     const monsters = bookIdx >= 0 ? appStore.books[bookIdx].monsters.get() || [] : [];
     const treasures = bookIdx >= 0 ? appStore.books[bookIdx].treasures.get() || [] : [];
 
+    const deepStringMatch = (obj: unknown): boolean => {
+      if (typeof obj === 'string') return obj.toLowerCase().includes(term);
+      if (Array.isArray(obj)) return obj.some(deepStringMatch);
+      if (obj && typeof obj === 'object') return Object.values(obj).some(deepStringMatch);
+      return false;
+    };
+
     // Search Characters
     characters.forEach(c => {
       if (c.name.toLowerCase().includes(term)) hits.push({ type: "Character", name: c.name, snippet: c.name });
-      if (c.role?.toLowerCase().includes(term)) hits.push({ type: "Character", name: c.name, snippet: c.role });
-      if (c.coreWound?.toLowerCase().includes(term)) hits.push({ type: "Character", name: c.name, snippet: c.coreWound });
-      c.traumas?.forEach(t => {
-        if (t.description?.toLowerCase().includes(term)) hits.push({ type: "Character Trauma", name: c.name, snippet: t.description });
-      });
-      const dump = JSON.stringify(c).toLowerCase();
-      if (dump.includes(term) && !hits.find(h => h.name === c.name)) {
-        hits.push({ type: "Character", name: c.name, snippet: "(Matched in notes/lore)" });
+      else if (c.role?.toLowerCase().includes(term)) hits.push({ type: "Character", name: c.name, snippet: c.role });
+      else if (c.coreWound?.toLowerCase().includes(term)) hits.push({ type: "Character", name: c.name, snippet: c.coreWound });
+      else {
+        let foundTrauma = false;
+        c.traumas?.forEach(t => {
+          if (!foundTrauma && t.description?.toLowerCase().includes(term)) {
+            hits.push({ type: "Character Trauma", name: c.name, snippet: t.description });
+            foundTrauma = true;
+          }
+        });
+        if (!foundTrauma && deepStringMatch(c) && !hits.find(h => h.name === c.name)) {
+          hits.push({ type: "Character", name: c.name, snippet: "(Matched in notes/lore)" });
+        }
       }
     });
 
     // Search Events
     events.forEach(e => {
-      const dump = JSON.stringify(e).toLowerCase();
-      if (dump.includes(term)) {
+      if (deepStringMatch(e)) {
         hits.push({ type: "Event", name: e.title, snippet: e.description || "(Matched in notes)" });
       }
     });
 
     // Search Chapters
     chapters.forEach(ch => {
-      const dump = JSON.stringify(ch).toLowerCase();
-      if (dump.includes(term)) {
+      if (deepStringMatch(ch)) {
         hits.push({ type: "Chapter", name: ch.title || "Untitled", snippet: ch.synopsis || "(Matched in text)" });
       }
     });
 
     // Search Glossary (World)
     nations.forEach(n => {
-      if (JSON.stringify(n).toLowerCase().includes(term)) hits.push({ type: "Nation", name: n.name, snippet: n.culture || n.geography || "(Matched in lore)" });
+      if (deepStringMatch(n)) hits.push({ type: "Nation", name: n.name, snippet: n.culture || n.geography || "(Matched in lore)" });
     });
     techniques.forEach(t => {
-      if (JSON.stringify(t).toLowerCase().includes(term)) hits.push({ type: "Technique", name: t.name, snippet: t.effect || t.description || "(Matched in lore)" });
+      if (deepStringMatch(t)) hits.push({ type: "Technique", name: t.name, snippet: t.effect || t.description || "(Matched in lore)" });
     });
     ingredients.forEach(i => {
-      if (JSON.stringify(i).toLowerCase().includes(term)) hits.push({ type: "Ingredient", name: i.name, snippet: i.properties || i.uses || "(Matched in lore)" });
+      if (deepStringMatch(i)) hits.push({ type: "Ingredient", name: i.name, snippet: i.properties || i.uses || "(Matched in lore)" });
     });
     monsters.forEach(m => {
-      if (JSON.stringify(m).toLowerCase().includes(term)) hits.push({ type: "Monster", name: m.name, snippet: m.abilities || m.behavior || "(Matched in lore)" });
+      if (deepStringMatch(m)) hits.push({ type: "Monster", name: m.name, snippet: m.abilities || m.behavior || "(Matched in lore)" });
     });
     treasures.forEach(tr => {
-      if (JSON.stringify(tr).toLowerCase().includes(term)) hits.push({ type: "Treasure", name: tr.name, snippet: tr.description || tr.stats || "(Matched in lore)" });
+      if (deepStringMatch(tr)) hits.push({ type: "Treasure", name: tr.name, snippet: tr.description || tr.stats || "(Matched in lore)" });
     });
 
     return hits;

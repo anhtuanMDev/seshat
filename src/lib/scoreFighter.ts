@@ -9,15 +9,29 @@ export interface Note {
   neutral?: boolean;
 }
 
-const POWER_SCORE: Record<string, number> = {
+export const SCORING_WEIGHTS = {
+  POWER_MULTIPLIER: 3.0,
+  SKILL_VALUE: 1.2,
+  EQUIPMENT_VALUE: 1.0,
+  CURSE_PENALTY: 0.6,
+  ACHIEVEMENT_VALUE: 0.3,
+  LOSS_PENALTY: 0.15,
+  EMOTION: {
+    NEGATIVE_SEVERE: -1.0,
+    POSITIVE_CALM: 0.5,
+    POSITIVE_AGGRESSIVE: 0.3,
+  },
+};
+
+export const POWER_SCORE: Record<string, number> = {
   Latent: 1, Awakening: 2, Capable: 3, Skilled: 4,
   Elite: 5, Peak: 6, Transcendent: 7,
 };
-const COND_PENALTY: Record<string, number> = {
+export const COND_PENALTY: Record<string, number> = {
   Physical: -1, Wounded: -1.5, Mental: -0.5, Cursed: -0.5,
   Spiritual: 0, Social: 0, Blessed: 1, Enhanced: 1,
 };
-const ARC_MOD: Record<string, number> = {
+export const ARC_MOD: Record<string, number> = {
   Unaware: 0, Questioning: 0.2, Resisting: 0.5,
   Breaking: 1, Transforming: 1.5, Integrated: 2,
 };
@@ -41,14 +55,15 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   const attr = resolveEvent ? char.attributes?.[resolveEvent.id] || {} : {};
 
   const powerTier = attr.power || "";
-  const powerPts = POWER_SCORE[powerTier] || 0;
+  const powerBase = POWER_SCORE[powerTier] || 0;
+  const powerPts = powerBase * SCORING_WEIGHTS.POWER_MULTIPLIER;
   if (powerPts) {
-    score += powerPts * 3;
-    notes.push({ label: "Power tier", value: powerTier, pts: powerPts * 3, positive: true });
+    score += powerPts;
+    notes.push({ label: "Power tier", value: powerTier, pts: powerPts, positive: true });
   }
 
   const skills = char.skills || [];
-  const skillPts = skills.length * 1.2;
+  const skillPts = skills.length * SCORING_WEIGHTS.SKILL_VALUE;
   if (skillPts) {
     score += skillPts;
     notes.push({ label: "Skills", value: `${skills.length} known`, pts: Math.round(skillPts * 10) / 10, positive: true });
@@ -76,7 +91,7 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   const cursedEquipped = equippedItems.filter(
     (eq: Equipment) => eq.curses && eq.curses.trim(),
   );
-  const equipPts = equippedItems.length * 1.0 - cursedEquipped.length * 0.6;
+  const equipPts = equippedItems.length * SCORING_WEIGHTS.EQUIPMENT_VALUE - cursedEquipped.length * SCORING_WEIGHTS.CURSE_PENALTY;
   if (equippedItems.length) {
     score += equipPts;
     notes.push({
@@ -102,8 +117,8 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
     }
   }
 
-  const achievePts = (char.achievements || []).length * 0.3;
-  const lossPts = (char.losses || []).length * -0.15;
+  const achievePts = (char.achievements || []).length * SCORING_WEIGHTS.ACHIEVEMENT_VALUE;
+  const lossPts = (char.losses || []).length * -SCORING_WEIGHTS.LOSS_PENALTY;
   if (achievePts) {
     score += achievePts;
     notes.push({ label: "Achievements", value: `${char.achievements!.length}`, pts: Math.round(achievePts * 10) / 10, positive: true });
@@ -122,11 +137,11 @@ export function scoreFighter(char: Character, events: Event[], atEventId?: strin
   let emoScore = 0;
   const emo = (attr.emotionalState || "").toLowerCase();
   if (emo.includes("grief") || emo.includes("broken") || emo.includes("despair")) {
-    emoScore -= 1;
+    emoScore += SCORING_WEIGHTS.EMOTION.NEGATIVE_SEVERE;
   } else if (emo.includes("resolute") || emo.includes("focused") || emo.includes("calm")) {
-    emoScore += 0.5;
+    emoScore += SCORING_WEIGHTS.EMOTION.POSITIVE_CALM;
   } else if (emo.includes("rage") || emo.includes("fury")) {
-    emoScore += 0.3;
+    emoScore += SCORING_WEIGHTS.EMOTION.POSITIVE_AGGRESSIVE;
   }
 
   if (emoScore !== 0) {
