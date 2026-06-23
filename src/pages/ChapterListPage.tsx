@@ -251,7 +251,7 @@ export default function ChapterListPage() {
 
       const ids = chapters.map((c) => c.id);
       const fetched = await loadChaptersForExport(token, bookId!, ids);
-      const safeTitle = (bookTitle || "book").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const safeTitle = (bookTitle || "book");
 
       if (mode === "all") {
         const docChildren: Paragraph[] = [];
@@ -297,7 +297,7 @@ export default function ChapterListPage() {
         });
 
         const blob = await Packer.toBlob(doc);
-        saveAs(blob, `${safeTitle}_chapters_export.docx`);
+        saveAs(blob, `${safeTitle} - Chapters Export.docx`);
         showToast("Export completed successfully", "success");
       } else {
         const zip = new JSZip();
@@ -334,12 +334,12 @@ export default function ChapterListPage() {
           });
 
           const blob = await Packer.toBlob(doc);
-          const safeChapterTitle = `${ch.number}${ch.title ? `_${ch.title}` : ""}`.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          const safeChapterTitle = `${ch.number}${ch.title ? ` - ${ch.title}` : ""}`;
           zip.file(`${safeChapterTitle}.docx`, blob);
         }
 
         const zipBlob = await zip.generateAsync({ type: "blob" });
-        saveAs(zipBlob, `${safeTitle}_selected_chapters.zip`);
+        saveAs(zipBlob, `${safeTitle} - Selected Chapters.zip`);
         showToast("Export completed successfully", "success");
       }
     } catch (err) {
