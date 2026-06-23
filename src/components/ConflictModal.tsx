@@ -40,15 +40,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
     setResolutions(newRes);
   };
 
-  const handleConfirm = () => {
-    // Ensure all resolved
-    if (visibleConflicts.some(c => !resolutions[c.id])) {
-      alert("Please resolve all conflicts before continuing.");
-      return;
-    }
-
-    // Build the merged book based on resolutions
-    const finalResolutions = { ...autoResolutions, ...resolutions };
+  const buildMergedBook = (resolutionsMap: Record<string, "local" | "server">): BookData => {
     const mergedBook: BookData = { ...localBook };
 
     const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
@@ -68,7 +60,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
       const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
       
       conflicts.filter(c => c.type === type).forEach(c => {
-        const res = finalResolutions[c.id];
+        const res = resolutionsMap[c.id];
         const originalId = c.id.replace(`${type}_`, "");
         
         if (res === "server") {
@@ -88,7 +80,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
             }
             mergedMap.set(originalId, serverVal);
           }
-        } else {
+        } else if (res === "local") {
           // Keep local: do nothing if it exists locally, or add if it was local only
           if (c.localValue) {
             mergedMap.set(originalId, c.localValue);
@@ -101,7 +93,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
       (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
     };
 
-    if (finalResolutions["meta_book"] === "server") {
+    if (resolutionsMap["meta_book"] === "server") {
       mergedBook.title = serverBook.title;
       mergedBook.synopsis = serverBook.synopsis;
       mergedBook.setting = serverBook.setting;
@@ -119,7 +111,19 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
     mergeArray("treasure", "treasures");
     mergeArray("foreshadow", "foreshadows");
 
-    onResolve(mergedBook);
+    return mergedBook;
+  };
+
+  const handleConfirm = () => {
+    // Ensure all resolved
+    if (visibleConflicts.some(c => !resolutions[c.id])) {
+      alert("Please resolve all conflicts before continuing.");
+      return;
+    }
+
+    // Build the merged book based on resolutions
+    const finalResolutions = { ...autoResolutions, ...resolutions };
+    onResolve(buildMergedBook(finalResolutions));
   };
 
   if (visibleConflicts.length === 0) {
@@ -129,57 +133,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
           <p style={{ color: "var(--text-secondary)", marginBottom: 24, fontSize: 16 }}>Your local data safely matches the cloud. No conflicts found.</p>
           <button onClick={() => {
             // Build the fully merged book using autoResolutions since no visible conflicts exist
-            const mergedBook: BookData = { ...localBook };
-            const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const sourceArr = (mergedBook[arrayKey] as any[]) || [];
-              // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const uniqueSource: any[] = [];
-              const seen = new Set<string>();
-              sourceArr.forEach(item => {
-                if (item && !seen.has(item.id)) {
-                  seen.add(item.id);
-                  uniqueSource.push(item);
-                }
-              });
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
-              
-              conflicts.filter(c => c.type === type).forEach(c => {
-                const res = autoResolutions[c.id];
-                const originalId = c.id.replace(`${type}_`, "");
-                if (res === "server") {
-                  if (c.serverValue === null) {
-                    mergedMap.delete(originalId);
-                  } else {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const serverVal: any = { ...(c.serverValue as any) };
-                    if (preserveKeys.length > 0) {
-                      const localVal = mergedMap.get(originalId);
-                      if (localVal) {
-                        preserveKeys.forEach(k => {
-                          if (localVal[k] !== undefined) serverVal[k] = localVal[k];
-                        });
-                      }
-                    }
-                    mergedMap.set(originalId, serverVal);
-                  }
-                }
-              });
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
-            };
-            mergeArray("character", "characters");
-            mergeArray("event", "events");
-            mergeArray("chapter", "chapters", ["body", "drafts", "activeDraftId"]);
-            mergeArray("nation", "nations");
-            mergeArray("technique", "techniques");
-            mergeArray("ingredient", "ingredients");
-            mergeArray("monster", "monsters");
-            mergeArray("treasure", "treasures");
-            mergeArray("foreshadow", "foreshadows");
-            onResolve(mergedBook);
+            onResolve(buildMergedBook(autoResolutions));
           }} style={btnStyle}>Continue</button>
         </div>
       </Modal>

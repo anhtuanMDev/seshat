@@ -2,6 +2,7 @@ import { lazy, createElement, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import App from "../App";
 import AuthGuard from "../components/AuthGuard";
+import ErrorPage from "../pages/ErrorPage";
 
 // Dynamic page imports
 const AuthPage = lazy(() => import("../pages/AuthPage"));
@@ -36,7 +37,7 @@ const PageLoading = createElement(
       textTransform: "uppercase",
     },
   },
-  "Loading page..."
+  "Loading page...",
 );
 
 // Prefetch all dynamic modules when the browser is idle to ensure instant navigation
@@ -89,23 +90,21 @@ export const router = createBrowserRouter([
     element: createElement(
       Suspense,
       { fallback: PageLoading },
-      createElement(AuthPage)
+      createElement(AuthPage),
     ),
+    errorElement: createElement(ErrorPage),
   },
   {
     path: "/",
-    element: createElement(
-      AuthGuard,
-      null,
-      createElement(App)
-    ),
+    element: createElement(AuthGuard, null, createElement(App)),
+    errorElement: createElement(ErrorPage),
     children: [
       {
         index: true,
         element: createElement(
           Suspense,
           { fallback: PageLoading },
-          createElement(BookListPage)
+          createElement(BookListPage),
         ),
       },
       {
@@ -113,7 +112,7 @@ export const router = createBrowserRouter([
         element: createElement(
           Suspense,
           { fallback: PageLoading },
-          createElement(IssuesPage)
+          createElement(IssuesPage),
         ),
       },
       {
@@ -121,7 +120,7 @@ export const router = createBrowserRouter([
         element: createElement(
           Suspense,
           { fallback: PageLoading },
-          createElement(IssueDetailPage)
+          createElement(IssueDetailPage),
         ),
       },
       {
@@ -132,7 +131,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(WorldPage)
+              createElement(WorldPage),
             ),
           },
           {
@@ -140,7 +139,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(WorldPage)
+              createElement(WorldPage),
             ),
           },
           {
@@ -148,7 +147,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(CharacterListPage)
+              createElement(CharacterListPage),
             ),
           },
           {
@@ -156,7 +155,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(CharacterPage)
+              createElement(CharacterPage),
             ),
           },
           {
@@ -164,7 +163,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(TimelinePage)
+              createElement(TimelinePage),
             ),
           },
           {
@@ -172,7 +171,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(EventPage)
+              createElement(EventPage),
             ),
           },
           {
@@ -180,7 +179,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(FightPage)
+              createElement(FightPage),
             ),
           },
           {
@@ -188,7 +187,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(ChapterListPage)
+              createElement(ChapterListPage),
             ),
           },
           {
@@ -196,7 +195,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(ChapterPage)
+              createElement(ChapterPage),
             ),
           },
           {
@@ -204,7 +203,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(LoreWebPage)
+              createElement(LoreWebPage),
             ),
           },
           {
@@ -212,7 +211,7 @@ export const router = createBrowserRouter([
             element: createElement(
               Suspense,
               { fallback: PageLoading },
-              createElement(NotFoundPage)
+              createElement(NotFoundPage),
             ),
           },
         ],
@@ -222,7 +221,7 @@ export const router = createBrowserRouter([
         element: createElement(
           Suspense,
           { fallback: PageLoading },
-          createElement(NotFoundPage)
+          createElement(NotFoundPage),
         ),
       },
     ],

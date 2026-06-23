@@ -122,7 +122,7 @@ export function GlobalSearchModal({ open, onClose }: Props) {
           const newObj: Record<string, unknown> = {};
           const objRecord = obj as Record<string, unknown>;
           for (const key in objRecord) {
-            if (key === 'id' || key.endsWith('Id') || key === 'time' || key.includes('Date') || key === 'body') {
+            if (key === 'id' || key.endsWith('Id') || key === 'time' || key.includes('Date') || key === 'body' || key === 'drafts') {
               newObj[key] = objRecord[key];
             } else {
               newObj[key] = deepReplace(objRecord[key]);

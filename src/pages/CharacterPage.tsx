@@ -1228,102 +1228,18 @@ export default function CharacterPage() {
                 <div style={styles.gearColumn}>
                   {(
                     ["Helmet", "Armor", "Gloves", "Boots", "Mount"] as const
-                  ).map((slotName) => {
-                    const eq = activeEquipment.find(
-                      (item) =>
-                        item.slot === slotName &&
-                        item.accessState === "Equipped",
-                    );
-                    if (eq) {
-                      const itemIndex = equipment.findIndex(
-                        (item) => item.id === eq.id,
-                      );
-                      const itemRarity = eq.rarity || "Common";
-                      const rar = RARITY_COLORS[itemRarity];
-                      return (
-                        <div
-                          key={slotName}
-                          onClick={() => openEdit("equipment", itemIndex)}
-                          className="seshat-filled-slot"
-                          style={{
-                            ...styles.filledSlotCard,
-                            borderColor: rar.border,
-                            background: rar.bg,
-                            borderLeft: `3px solid ${rar.color}`,
-                          }}
-                        >
-                          <div style={styles.slotIconBox}>
-                            {getSlotIcon(slotName, rar.color)}
-                          </div>
-                          <div style={styles.slotDetails}>
-                            <div style={styles.slotLabel}>{slotName}</div>
-                            <div style={styles.slotItemName}>{eq.name}</div>
-                            <div style={styles.slotRarityRow}>
-                              <span
-                                style={{
-                                  ...styles.rarityDot,
-                                  background: rar.color,
-                                }}
-                              />
-                              <span
-                                style={{
-                                  ...styles.rarityText,
-                                  color: rar.color,
-                                }}
-                              >
-                                {rar.text}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleItemAccessState(itemIndex);
-                            }}
-                            style={styles.slotActionBtn}
-                            title="Move to Stash"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color =
-                                "var(--color-primary)";
-                              e.currentTarget.style.opacity = "1";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = "var(--text-muted)";
-                              e.currentTarget.style.opacity = "0.7";
-                            }}
-                          >
-                            📥
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              delItem("equipment", itemIndex);
-                            }}
-                            style={styles.slotDeleteBtn}
-                            title="Delete item completely"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div
-                        key={slotName}
-                        onClick={() => openAddEquipmentForSlot(slotName)}
-                        className="seshat-empty-slot"
-                        style={styles.emptySlotCard}
-                      >
-                        <div style={styles.emptySlotIconBox}>
-                          {getSlotIcon(slotName, "var(--text-muted)")}
-                        </div>
-                        <div style={styles.emptySlotDetails}>
-                          <div style={styles.emptySlotLabel}>{slotName}</div>
-                          <div style={styles.emptySlotAction}>+ equip</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  ).map((slotName) => (
+                    <EquipmentSlotView
+                      key={slotName}
+                      slotName={slotName}
+                      activeEquipment={activeEquipment}
+                      equipment={equipment}
+                      openEdit={openEdit}
+                      toggleItemAccessState={toggleItemAccessState}
+                      delItem={delItem}
+                      openAddEquipmentForSlot={openAddEquipmentForSlot}
+                    />
+                  ))}
                 </div>
 
                 {/* Center Column: Character details and combat score */}
@@ -1369,102 +1285,18 @@ export default function CharacterPage() {
                       "Relic",
                       "Other",
                     ] as const
-                  ).map((slotName) => {
-                    const eq = activeEquipment.find(
-                      (item) =>
-                        item.slot === slotName &&
-                        item.accessState === "Equipped",
-                    );
-                    if (eq) {
-                      const itemIndex = equipment.findIndex(
-                        (item) => item.id === eq.id,
-                      );
-                      const itemRarity = eq.rarity || "Common";
-                      const rar = RARITY_COLORS[itemRarity];
-                      return (
-                        <div
-                          key={slotName}
-                          onClick={() => openEdit("equipment", itemIndex)}
-                          className="seshat-filled-slot"
-                          style={{
-                            ...styles.filledSlotCard,
-                            borderColor: rar.border,
-                            background: rar.bg,
-                            borderLeft: `3px solid ${rar.color}`,
-                          }}
-                        >
-                          <div style={styles.slotIconBox}>
-                            {getSlotIcon(slotName, rar.color)}
-                          </div>
-                          <div style={styles.slotDetails}>
-                            <div style={styles.slotLabel}>{slotName}</div>
-                            <div style={styles.slotItemName}>{eq.name}</div>
-                            <div style={styles.slotRarityRow}>
-                              <span
-                                style={{
-                                  ...styles.rarityDot,
-                                  background: rar.color,
-                                }}
-                              />
-                              <span
-                                style={{
-                                  ...styles.rarityText,
-                                  color: rar.color,
-                                }}
-                              >
-                                {rar.text}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleItemAccessState(itemIndex);
-                            }}
-                            style={styles.slotActionBtn}
-                            title="Move to Stash"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color =
-                                "var(--color-primary)";
-                              e.currentTarget.style.opacity = "1";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color = "var(--text-muted)";
-                              e.currentTarget.style.opacity = "0.7";
-                            }}
-                          >
-                            📥
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              delItem("equipment", itemIndex);
-                            }}
-                            style={styles.slotDeleteBtn}
-                            title="Delete item completely"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div
-                        key={slotName}
-                        onClick={() => openAddEquipmentForSlot(slotName)}
-                        className="seshat-empty-slot"
-                        style={styles.emptySlotCard}
-                      >
-                        <div style={styles.emptySlotIconBox}>
-                          {getSlotIcon(slotName, "var(--text-muted)")}
-                        </div>
-                        <div style={styles.emptySlotDetails}>
-                          <div style={styles.emptySlotLabel}>{slotName}</div>
-                          <div style={styles.emptySlotAction}>+ equip</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  ).map((slotName) => (
+                    <EquipmentSlotView
+                      key={slotName}
+                      slotName={slotName}
+                      activeEquipment={activeEquipment}
+                      equipment={equipment}
+                      openEdit={openEdit}
+                      toggleItemAccessState={toggleItemAccessState}
+                      delItem={delItem}
+                      openAddEquipmentForSlot={openAddEquipmentForSlot}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -2523,3 +2355,99 @@ const styles = {
     textOverflow: "ellipsis",
   },
 } satisfies Record<string, React.CSSProperties>;
+
+function EquipmentSlotView({
+  slotName,
+  activeEquipment,
+  equipment,
+  openEdit,
+  toggleItemAccessState,
+  delItem,
+  openAddEquipmentForSlot,
+}: {
+  slotName: EquipSlot;
+  activeEquipment: Equipment[];
+  equipment: Equipment[];
+  openEdit: (type: "equipment", idx: number) => void;
+  toggleItemAccessState: (idx: number) => void;
+  delItem: (type: "equipment", idx: number) => void;
+  openAddEquipmentForSlot: (slot: EquipSlot) => void;
+}) {
+  const eq = activeEquipment.find(
+    (item) => item.slot === slotName && item.accessState === "Equipped",
+  );
+  if (eq) {
+    const itemIndex = equipment.findIndex((item) => item.id === eq.id);
+    const itemRarity = eq.rarity || "Common";
+    const rar = RARITY_COLORS[itemRarity as keyof typeof RARITY_COLORS];
+    return (
+      <div
+        key={slotName}
+        onClick={() => openEdit("equipment", itemIndex)}
+        className="seshat-filled-slot"
+        style={{
+          ...styles.filledSlotCard,
+          borderColor: rar.border,
+          background: rar.bg,
+          borderLeft: `3px solid ${rar.color}`,
+        }}
+      >
+        <div style={styles.slotIconBox}>{getSlotIcon(slotName, rar.color)}</div>
+        <div style={styles.slotDetails}>
+          <div style={styles.slotLabel}>{slotName}</div>
+          <div style={styles.slotItemName}>{eq.name}</div>
+          <div style={styles.slotRarityRow}>
+            <span style={{ ...styles.rarityDot, background: rar.color }} />
+            <span style={{ ...styles.rarityText, color: rar.color }}>
+              {rar.text}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleItemAccessState(itemIndex);
+          }}
+          style={styles.slotActionBtn}
+          title="Move to Stash"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--color-primary)";
+            e.currentTarget.style.opacity = "1";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.opacity = "0.7";
+          }}
+        >
+          📥
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            delItem("equipment", itemIndex);
+          }}
+          style={styles.slotDeleteBtn}
+          title="Delete item completely"
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div
+      key={slotName}
+      onClick={() => openAddEquipmentForSlot(slotName)}
+      className="seshat-empty-slot"
+      style={styles.emptySlotCard}
+    >
+      <div style={styles.emptySlotIconBox}>
+        {getSlotIcon(slotName, "var(--text-muted)")}
+      </div>
+      <div style={styles.emptySlotDetails}>
+        <div style={styles.emptySlotLabel}>{slotName}</div>
+        <div style={styles.emptySlotAction}>+ equip</div>
+      </div>
+    </div>
+  );
+}

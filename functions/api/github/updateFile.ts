@@ -120,6 +120,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body: JSON.stringify({ sha: commitData.sha }),
     });
     if (!refRes.ok) {
+      if (refRes.status === 422) {
+        return new Response(
+          JSON.stringify({
+            error: "Conflict: Concurrent modification detected. Please Pull the latest changes.",
+            conflict: true,
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ) as unknown as CloudflareResponse;
+      }
       const errTxt = await refRes.text();
       throw new Error(`Failed to update branch reference: ${refRes.status} ${errTxt}`);
     }

@@ -414,16 +414,29 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (!createCommitRes.ok) throw new Error("Failed to create Commit");
     const newCommitData = (await createCommitRes.json()) as { sha: string };
 
-    // 7. Update the Branch Reference
+    // 7. Update the Branch Reference (Atomic check: do NOT use force: true)
+    // If another request updated the branch in the meantime, this will be rejected
+    // by GitHub as a non-fast-forward update, preventing race conditions.
     const updateRefRes = await fetch(
       `${baseUrl}/git/refs/heads/${branchName}`,
       {
         method: "PATCH",
         headers,
-        body: JSON.stringify({ sha: newCommitData.sha, force: true }),
+        body: JSON.stringify({ sha: newCommitData.sha }),
       },
     );
-    if (!updateRefRes.ok) throw new Error("Failed to update branch reference");
+    if (!updateRefRes.ok) {
+      if (updateRefRes.status === 422) {
+        return new Response(
+          JSON.stringify({
+            error: "Conflict: Concurrent modification detected. Please Pull the latest changes.",
+            conflict: true,
+          }),
+          { status: 409, headers: { "Content-Type": "application/json" } },
+        ) as unknown as CloudflareResponse;
+      }
+      throw new Error(`Failed to update branch reference: ${await updateRefRes.text()}`);
+    }
 
     return new Response(JSON.stringify({ success: true, branch: branchName, sha: newCommitData.sha }), {
       status: 200,

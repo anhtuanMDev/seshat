@@ -6,6 +6,7 @@ import { VisibilityIcon, VisibilityOffIcon } from "../components/ui/icons";
 import { InputAdornment, IconButton } from "@mui/material";
 import { registerToGitHub, loginToGitHub } from "../lib/githubSync";
 import { showToast } from "../store/toastStore";
+import { checkTokenValidity } from "../lib/auth";
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -18,22 +19,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
-    
-    if (savedToken) {
-      try {
-        const parts = savedToken.split(".");
-        if (parts.length >= 3 && parts[1]) {
-          const payloadStr = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
-          const payload = JSON.parse(decodeURIComponent(payloadStr.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
-          if (Date.now() < payload.exp) {
-            navigate("/");
-            return;
-          }
-        }
-      } catch {
-        // Invalid token
-      }
+    if (checkTokenValidity()) {
+      navigate("/");
     }
   }, [navigate]);
 
