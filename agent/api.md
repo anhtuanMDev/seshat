@@ -192,7 +192,7 @@ All endpoints are relative to the application origin. The base path is `/api/git
 
 **Endpoint:** `/api/github/loadFile`
 **Method:** `GET`
-**Purpose:** Lazily loads the raw contents of a specific file inside a book directory without fetching the entire book payload.
+**Purpose:** Lazily loads the raw contents of a specific file inside a book directory without fetching the entire book payload. Uses a GraphQL Blob query to directly fetch the plain text, bypassing the REST Contents API's 1MB file size limit and eliminating the need for base64 decoding.
 
 **Query Parameters:**
 

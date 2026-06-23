@@ -44,11 +44,10 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
     const mergedBook: BookData = { ...localBook };
 
     const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+      type Entity = Record<string, unknown> & { id: string };
+      const sourceArr = (mergedBook[arrayKey] as unknown as Entity[]) || [];
       // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const uniqueSource: any[] = [];
+      const uniqueSource: Entity[] = [];
       const seen = new Set<string>();
       sourceArr.forEach(item => {
         if (item && !seen.has(item.id)) {
@@ -56,8 +55,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
           uniqueSource.push(item);
         }
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
+      const mergedMap = new Map<string, Entity>(uniqueSource.map(i => [i.id, i]));
       
       conflicts.filter(c => c.type === type).forEach(c => {
         const res = resolutionsMap[c.id];
@@ -67,8 +65,7 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
           if (c.serverValue === null) {
             mergedMap.delete(originalId);
           } else {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const serverVal: any = { ...(c.serverValue as any) };
+            const serverVal = { ...(c.serverValue as Entity) };
             // Preserve keys from local (like chapter body)
             if (preserveKeys.length > 0) {
               const localVal = mergedMap.get(originalId);
@@ -83,14 +80,13 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
         } else if (res === "local") {
           // Keep local: do nothing if it exists locally, or add if it was local only
           if (c.localValue) {
-            mergedMap.set(originalId, c.localValue);
+            mergedMap.set(originalId, c.localValue as Entity);
           } else {
             mergedMap.delete(originalId); // It was cloud only, and user said "Keep Local" (which means ignore cloud)
           }
         }
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
+      (mergedBook[arrayKey] as unknown) = Array.from(mergedMap.values());
     };
 
     if (resolutionsMap["meta_book"] === "server") {

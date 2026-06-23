@@ -104,6 +104,12 @@ export default function ChapterPage() {
       },
     });
 
+  const isDirtyRef = useRef(formState.isDirty);
+
+  useLayoutEffect(() => {
+    isDirtyRef.current = formState.isDirty;
+  });
+
   useEffect(() => {
     const loadChapterData = async () => {
       if (chapter && chapterIdx >= 0) {
@@ -113,7 +119,7 @@ export default function ChapterPage() {
         if (isNewChapter && isSavingRef.current) return;
         // shouldReset: always true for a new chapter; otherwise only when not dirty
         const shouldReset =
-          isNewChapter || (!formState.isDirty && !isSavingRef.current);
+          isNewChapter || (!isDirtyRef.current && !isSavingRef.current);
         if (chapter.body !== undefined) {
           if (shouldReset) {
             formChapterIdRef.current = chapter.id;
@@ -314,11 +320,8 @@ export default function ChapterPage() {
       }
     };
     loadChapterData();
-    // We intentionally don't include formState.isDirty
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    chapter?.id,
-    chapter?.body,
+    chapter,
     chapterIdx,
     bookId,
     bookIdx,

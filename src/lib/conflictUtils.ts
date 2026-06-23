@@ -159,11 +159,10 @@ export function autoMergeOtherChapters(
   const mergedBook: BookData = { ...localBook };
 
   const mergeArray = (type: string, arrayKey: keyof BookData, preserveKeys: string[] = []) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sourceArr = (mergedBook[arrayKey] as any[]) || [];
+    type Entity = Record<string, unknown> & { id: string };
+    const sourceArr = (mergedBook[arrayKey] as unknown as Entity[]) || [];
     // De-duplicate sourceArr keeping the first occurrence to preserve valid local edits
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const uniqueSource: any[] = [];
+    const uniqueSource: Entity[] = [];
     const seen = new Set<string>();
     sourceArr.forEach(item => {
       if (item && !seen.has(item.id)) {
@@ -171,8 +170,7 @@ export function autoMergeOtherChapters(
         uniqueSource.push(item);
       }
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mergedMap = new Map<string, any>(uniqueSource.map(i => [i.id, i]));
+    const mergedMap = new Map<string, Entity>(uniqueSource.map(i => [i.id, i]));
     
     conflicts.filter(c => c.type === type).forEach(c => {
       const originalId = c.id.replace(`${type}_`, "");
@@ -182,8 +180,7 @@ export function autoMergeOtherChapters(
         if (c.serverValue === null) {
           mergedMap.delete(originalId);
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const serverVal: any = { ...(c.serverValue as any) };
+          const serverVal = { ...(c.serverValue as Entity) };
           if (preserveKeys.length > 0) {
             const localVal = mergedMap.get(originalId);
             if (localVal) {
@@ -196,8 +193,7 @@ export function autoMergeOtherChapters(
         }
       }
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (mergedBook[arrayKey] as any) = Array.from(mergedMap.values());
+    (mergedBook[arrayKey] as unknown) = Array.from(mergedMap.values());
   };
 
   mergeArray("chapter", "chapters", ["body", "drafts", "activeDraftId"]);
