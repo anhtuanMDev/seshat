@@ -4,6 +4,7 @@ import type { Editor } from "@tiptap/core";
 import MentionHelpButton from "./MentionHelpButton";
 import { WordCountDisplay } from "./WordCountDisplay";
 import { uid } from "../../lib/utils";
+import { Modal } from "../ui/Modal";
 
 interface MenuBarProps {
   editor: Editor;
@@ -13,6 +14,8 @@ interface MenuBarProps {
 export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
   const [showPinpointModal, setShowPinpointModal] = useState(false);
   const [pinpointComment, setPinpointComment] = useState("");
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   const handleAddPinpoint = useCallback(() => {
     setShowPinpointModal(true);
@@ -102,8 +105,8 @@ export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
       {btn(
         "🔗",
         () => {
-          const url = prompt("Link URL:");
-          if (url) editor.chain().focus().setLink({ href: url }).run();
+          setShowLinkModal(true);
+          setLinkUrl("");
         },
         editor.isActive("link"),
       )}
@@ -184,6 +187,40 @@ export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
           </div>,
           document.body,
         )}
+
+      {showLinkModal && (
+        <Modal title="Add Link" onClose={() => setShowLinkModal(false)}>
+          <div style={{ padding: "0 var(--space-5) var(--space-5)" }}>
+            <input
+              autoFocus
+              style={styles.textarea}
+              placeholder="https://..."
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (linkUrl) editor.chain().focus().setLink({ href: linkUrl }).run();
+                  setShowLinkModal(false);
+                }
+              }}
+            />
+            <div className="seshat-flex-end" style={styles.modalFooter}>
+              <button onClick={() => setShowLinkModal(false)} style={styles.cancelBtn}>
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (linkUrl) editor.chain().focus().setLink({ href: linkUrl }).run();
+                  setShowLinkModal(false);
+                }}
+                style={styles.addBtn}
+              >
+                Add Link
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

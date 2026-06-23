@@ -1,7 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useController } from "react-hook-form";
-import type { Control, FieldValues, Path } from "react-hook-form";
+
+import { withRHFControl } from "./withRHFControl";
 
 const StyledButton = styled(Button)(() => ({
   fontSize: 12,
@@ -13,15 +14,11 @@ const StyledButton = styled(Button)(() => ({
   "&:hover": { background: "none" },
 }));
 
-interface ToggleProps<T extends FieldValues = FieldValues> {
+export interface ToggleInnerProps {
   label?: string;
   value?: boolean;
   onChange?: (v: boolean) => void;
-  control?: Control<T>;
-  name?: Path<T>;
 }
-
-type ToggleInnerProps = Omit<ToggleProps<FieldValues>, "control" | "name">;
 
 function ToggleInner({ label, value, onChange }: ToggleInnerProps) {
   return (
@@ -49,21 +46,7 @@ function ToggleInner({ label, value, onChange }: ToggleInnerProps) {
   );
 }
 
-function ControlledToggle<T extends FieldValues>({ control, name, ...rest }: ToggleProps<T>) {
-  const { field } = useController({ control: control!, name: name! });
-  return <ToggleInner {...rest} value={field.value ?? false} onChange={(v: boolean) => field.onChange(v)} />;
-}
-
-export function Toggle<T extends FieldValues = FieldValues>(props: ToggleProps<T>) {
-  if (props.control && props.name) {
-    return <ControlledToggle<T> {...props} />;
-  }
-  const { control, name, ...rest } = props;
-  void control;
-  void name;
-  return <ToggleInner {...rest} />;
-}
-
+export const Toggle = withRHFControl<boolean, ToggleInnerProps>(ToggleInner);
 const styles = {
   container: {
     marginBottom: 16,

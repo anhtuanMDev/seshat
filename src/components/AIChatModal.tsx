@@ -69,6 +69,7 @@ export function AIChatModal({ onClose, contextText }: AIChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Config State
   const [providerId, setProviderId] = useState(
@@ -193,9 +194,7 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
   };
 
   const clearChat = () => {
-    if (confirm("Are you sure you want to clear the chat history?")) {
-      setMessages([]);
-    }
+    setShowClearConfirm(true);
   };
 
   return (
@@ -382,6 +381,48 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
           </div>
         </div>
       </div>
+
+      {showClearConfirm && (
+        <Modal title="Clear Chat History" onClose={() => setShowClearConfirm(false)}>
+          <div style={{ padding: "0 var(--space-5) var(--space-5)" }}>
+            <p style={{ color: "var(--text-primary)", marginBottom: 24 }}>
+              Are you sure you want to clear the chat history?
+            </p>
+            <div className="seshat-flex-end" style={{ gap: 12 }}>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                style={{
+                  padding: "6px 12px",
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setMessages([]);
+                  setShowClearConfirm(false);
+                }}
+                style={{
+                  padding: "6px 12px",
+                  background: "var(--color-red)",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              >
+                Yes, clear it
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       <style>{`
         .ai-modal-layout {

@@ -1,7 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useController } from "react-hook-form";
-import type { Control, FieldValues, Path } from "react-hook-form";
+
+import { withRHFControl } from "./withRHFControl";
 
 const StyledFormControl = styled(FormControl)(() => ({
   width: "100%",
@@ -30,18 +31,14 @@ const StyledFormControl = styled(FormControl)(() => ({
   },
 }));
 
-interface EventPickerProps<T extends FieldValues = FieldValues> {
+export interface EventPickerInnerProps {
   label?: string;
   placeholder?: string;
   value?: string;
   onChange?: (v: string) => void;
   events: Array<{ id: string; time: number; title: string }>;
-  control?: Control<T>;
-  name?: Path<T>;
   sx?: import("@mui/material").SxProps<import("@mui/material").Theme>;
 }
-
-type EventPickerInnerProps = Omit<EventPickerProps<FieldValues>, "control" | "name">;
 
 function EventPickerInner({ label, placeholder, value, onChange, events, sx }: EventPickerInnerProps) {
   return (
@@ -98,30 +95,7 @@ function EventPickerInner({ label, placeholder, value, onChange, events, sx }: E
   );
 }
 
-function ControlledEventPicker<T extends FieldValues>({ control, name, onChange, ...rest }: EventPickerProps<T>) {
-  const { field } = useController({ control: control!, name: name! });
-  return (
-    <EventPickerInner
-      {...rest}
-      value={field.value ?? ""}
-      onChange={(v: string) => {
-        field.onChange(v);
-        onChange?.(v);
-      }}
-    />
-  );
-}
-
-export function EventPicker<T extends FieldValues = FieldValues>(props: EventPickerProps<T>) {
-  if (props.control && props.name) {
-    return <ControlledEventPicker<T> {...props} />;
-  }
-  const { control, name, ...rest } = props;
-  void control;
-  void name;
-  return <EventPickerInner {...rest} />;
-}
-
+export const EventPicker = withRHFControl<string, EventPickerInnerProps>(EventPickerInner);
 const styles = {
   placeholderText: {
     color: "var(--text-muted)",

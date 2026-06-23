@@ -1,8 +1,9 @@
+/* eslint-disable react-refresh/only-export-components */
 import { TextField } from "@mui/material";
 import type { TextFieldProps, InputLabelProps } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useController } from "react-hook-form";
-import type { Control, FieldValues, Path } from "react-hook-form";
+import type { FieldValues, Control, Path } from "react-hook-form";
+import { withRHFControl } from "./withRHFControl";
 
 const StyledTextField = styled(TextField)(() => ({
   width: "100%",
@@ -99,29 +100,4 @@ function FieldInner({
   );
 }
 
-function ControlledField<T extends FieldValues>({
-  control,
-  name,
-  ...rest
-}: FieldProps<T>) {
-  const { field } = useController({ control: control!, name: name! });
-  return (
-    <FieldInner
-      {...rest}
-      value={field.value ?? ""}
-      onChange={(v: string) => field.onChange(v)}
-    />
-  );
-}
-
-export function Field<T extends FieldValues = FieldValues>(
-  props: FieldProps<T>,
-) {
-  if (props.control && props.name) {
-    return <ControlledField<T> {...props} />;
-  }
-  const { control, name, ...rest } = props;
-  void control;
-  void name;
-  return <FieldInner {...rest} />;
-}
+export const Field = withRHFControl<string, FieldInnerProps & { type?: string }>(FieldInner);

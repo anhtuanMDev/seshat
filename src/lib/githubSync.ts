@@ -18,32 +18,29 @@ async function fetchApi(url: string, options?: RequestInit) {
 }
 
 export const syncToGitHub = async (token: string): Promise<void> => {
-  try {
-    const data = appStore.get();
-    
-    // WARNING (Code Reviewer): Race Condition Risk
-    // This sync endpoint POSTs a tree with no base_tree at all (a full replacement).
-    // If two tabs sync concurrently, the `lastKnownSha` check only catches the second 
-    // writer after it has read its own (stale) tree. There is a window between GET tree 
-    // and POST tree where a slower request could clobber a faster one's freshly-pushed changes.
-    const response = await fetchApi("/api/github/sync", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token, data, lastKnownSha: appStore.lastSyncSha.get() }),
-    });
+  return navigator.locks.request("seshat-sync", async () => {
+    try {
+      const data = appStore.get();
+      
+      const response = await fetchApi("/api/github/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, data, lastKnownSha: appStore.lastSyncSha.get() }),
+      });
 
-    const resData = await response.json().catch(() => ({})) as { sha?: string };
-    if (resData.sha) {
-      appStore.lastSyncSha.set(resData.sha);
+      const resData = await response.json().catch(() => ({})) as { sha?: string };
+      if (resData.sha) {
+        appStore.lastSyncSha.set(resData.sha);
+      }
+
+      console.log("Successfully synced to GitHub via token!");
+    } catch (error) {
+      console.error("Failed to sync to GitHub:", error);
+      throw error;
     }
-
-    console.log("Successfully synced to GitHub via token!");
-  } catch (error) {
-    console.error("Failed to sync to GitHub:", error);
-    throw error;
-  }
+  });
 };
 
 export const registerToGitHub = async (username: string, email: string, accessCode: string): Promise<void> => {
@@ -114,43 +111,47 @@ export const loadBookFromGitHub = async (token: string, bookId: string): Promise
 };
 
 export const updateFileOnGitHub = async (token: string, bookId: string, path: string, content: string): Promise<void> => {
-  try {
-    const response = await fetchApi("/api/github/updateFile", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token, bookId, path, content, lastKnownSha: appStore.lastSyncSha.get() }),
-    });
+  return navigator.locks.request("seshat-sync", async () => {
+    try {
+      const response = await fetchApi("/api/github/updateFile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, bookId, path, content, lastKnownSha: appStore.lastSyncSha.get() }),
+      });
 
-    const resData = await response.json().catch(() => ({})) as { sha?: string };
-    if (resData.sha) {
-      appStore.lastSyncSha.set(resData.sha);
+      const resData = await response.json().catch(() => ({})) as { sha?: string };
+      if (resData.sha) {
+        appStore.lastSyncSha.set(resData.sha);
+      }
+    } catch (error) {
+      console.error(`Failed to update ${path} on GitHub:`, error);
+      throw error;
     }
-  } catch (error) {
-    console.error(`Failed to update ${path} on GitHub:`, error);
-    throw error;
-  }
+  });
 };
 
 export const updateFilesOnGitHub = async (token: string, bookId: string, files: { path: string; content: string }[]): Promise<void> => {
-  try {
-    const response = await fetchApi("/api/github/updateFiles", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token, bookId, files, lastKnownSha: appStore.lastSyncSha.get() }),
-    });
+  return navigator.locks.request("seshat-sync", async () => {
+    try {
+      const response = await fetchApi("/api/github/updateFiles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, bookId, files, lastKnownSha: appStore.lastSyncSha.get() }),
+      });
 
-    const resData = await response.json().catch(() => ({})) as { sha?: string };
-    if (resData.sha) {
-      appStore.lastSyncSha.set(resData.sha);
+      const resData = await response.json().catch(() => ({})) as { sha?: string };
+      if (resData.sha) {
+        appStore.lastSyncSha.set(resData.sha);
+      }
+    } catch (error) {
+      console.error(`Failed to update files on GitHub:`, error);
+      throw error;
     }
-  } catch (error) {
-    console.error(`Failed to update files on GitHub:`, error);
-    throw error;
-  }
+  });
 };
 
 export const loadChaptersForExport = async (
