@@ -559,7 +559,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Mobile Overlay   | `ChapterPage`   | Drawer-style overlay backdrop for ReferencePanel on small screens |
 | Dynamic Mentions | `MentionExtension`| Tiptap custom nodes dynamically resolve entity names from store state during render/export |
 | Bi-Di Linking    | `EventPage`     | Inverse timeline querying mapping pinned events back to Chapters |
-| Draft Versioning | `ChapterPage`   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts |
+| Draft Versioning | `ChapterPage`   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts. The `sync.ts` pipeline includes draft recovery logic to prevent orphaned historical drafts from being deleted if a sync arrives without body context. |
 | Foreshadow Tracker| `ChapterPage`  | `ForeshadowPanel` tracking planted ideas to payoff chapters (`appStore.books[i].foreshadows[]`) |
 | Subplot Tracking | `TimelinePage`  | `Event` filtering and tagging by `subplot` property |
 | Global Glossary  | `App.tsx`       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures |
@@ -611,8 +611,8 @@ Seshat uses a **Local-First** architecture. The browser's `localStorage` (via Le
 - **Pull:** Forces a fetch from GitHub, aggressively overwriting local memory with the cloud state. This is required when switching devices or environments (e.g., from `localhost` to `production`) because `localStorage` is domain-isolated, meaning the production site won't know about changes made on localhost unless explicitly told to Pull.
 
 ### Fight Simulation (`scoreFighter.ts`)
-A deterministic comparison engine for power scaling.
-**Rules:** It takes two Character objects and compares their attributes: Skills, Equipment, and Conditions. 
+
+`scoreFighter` compares two characters' power levels, skills, and equipment against modifiers (curses, statuses, event arcs) to generate a numeric value representing their theoretical combat effectiveness at a specific point in time. All balancing coefficients (e.g., equipment multipliers, status penalties) are abstracted into an external `SCORING_WEIGHTS` constant to simplify game-balance tuning without altering core algorithms.
 - It assigns arbitrary mathematical weights to `tier`, `rarity`, and `stats` text.
 - It is purely read-only; it does not mutate character state. It is used in `FightPage` as a sandbox for authors to check if a planned encounter makes logical sense based on the established world rules.
 
@@ -857,9 +857,12 @@ src/components/__tests__/    # Cross-component render-performance tests
 | ------------------------------------- | ----- | ---------------------------------- |
 | `src/lib/__tests__/utils.test.ts`     | 10    | uid(), mk helpers, style object S  |
 | `src/lib/__tests__/export.test.ts`    | 12    | buildExport() plaintext generation |
-| `src/pages/__tests__/FightPage.test.ts` | 22  | scoreFighter scoring logic         |
+| `src/pages/__tests__/FightPage.test.ts` | 29  | scoreFighter scoring logic         |
+| `src/pages/__tests__/*Page.test.tsx`  | ~30   | Edge-to-edge component tests for Chapter, Character, World, BookList, Auth, NotFound |
+| `src/lib/__tests__/conflictUtils.test.ts` | 8   | Deep diffing and conflict resolution validation |
+| `functions/api/github/__tests__/sync.test.ts` | 1 | Draft recovery and sync integrity tests |
 | `src/components/ui/__tests__/*`       | 11    | Field, Sel, Toggle, EventPicker    |
-| `src/components/__tests__/renderPerformance.test.tsx` | 18 | Memoized component DOM stability   |
+| `src/components/__tests__/*`          | 23    | ConflictModal, renderPerformance tests |
 
 ### Benchmarks
 
