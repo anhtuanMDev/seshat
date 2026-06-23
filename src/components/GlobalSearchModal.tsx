@@ -118,54 +118,57 @@ export function GlobalSearchModal({ open, onClose }: Props) {
   const executeReplaceAll = () => {
     setShowConfirm(false);
     setIsReplacing(true);
-    try {
-      const bookData = appStore.books[bookIdx].get();
-      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(escapedQuery, "gi");
+    
+    setTimeout(() => {
+      try {
+        const bookData = appStore.books[bookIdx].get();
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(escapedQuery, "gi");
 
-      const deepReplace = (obj: unknown, parentKey?: string): unknown => {
-        if (typeof obj === 'string') {
-          if (parentKey === 'pinnedChars' || parentKey === 'characters' || parentKey === 'chapters' || parentKey === 'pinnedEventIds') {
-            return obj;
-          }
-          return obj.replace(regex, replaceStr);
-        } else if (Array.isArray(obj)) {
-          return obj.map(item => deepReplace(item, parentKey));
-        } else if (obj !== null && typeof obj === 'object') {
-          const newObj: Record<string, unknown> = {};
-          const objRecord = obj as Record<string, unknown>;
-          for (const key in objRecord) {
-            if (key === 'id' || key.endsWith('Id') || key === 'timeRef' || key === 'time' || key.includes('Date') || key === 'body' || key === 'drafts') {
-              newObj[key] = objRecord[key];
-            } else {
-              newObj[key] = deepReplace(objRecord[key], key);
+        const deepReplace = (obj: unknown, parentKey?: string): unknown => {
+          if (typeof obj === 'string') {
+            if (parentKey === 'pinnedChars' || parentKey === 'characters' || parentKey === 'chapters' || parentKey === 'pinnedEventIds') {
+              return obj;
             }
+            return obj.replace(regex, replaceStr);
+          } else if (Array.isArray(obj)) {
+            return obj.map(item => deepReplace(item, parentKey));
+          } else if (obj !== null && typeof obj === 'object') {
+            const newObj: Record<string, unknown> = {};
+            const objRecord = obj as Record<string, unknown>;
+            for (const key in objRecord) {
+              if (key === 'id' || key.endsWith('Id') || key === 'timeRef' || key === 'time' || key.includes('Date') || key === 'body' || key === 'drafts') {
+                newObj[key] = objRecord[key];
+              } else {
+                newObj[key] = deepReplace(objRecord[key], key);
+              }
+            }
+            return newObj;
           }
-          return newObj;
-        }
-        return obj;
-      };
+          return obj;
+        };
 
-      const newBookData = deepReplace(bookData) as BookData;
-      appStore.books[bookIdx].set(newBookData);
-      
-      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
-      if (token) {
-        syncToGitHub(token).then(() => {
-          showToast("Replaced and synced to cloud successfully!", "success");
-        }).catch((err) => {
-          console.error(err);
-          showToast("Replaced locally, but failed to sync to cloud.", "error");
-        });
-      } else {
-        showToast("Replaced all occurrences in loaded data! (Not synced to cloud)", "success");
+        const newBookData = deepReplace(bookData) as BookData;
+        appStore.books[bookIdx].set(newBookData);
+        
+        const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+        if (token) {
+          syncToGitHub(token).then(() => {
+            showToast("Replaced and synced to cloud successfully!", "success");
+          }).catch((err) => {
+            console.error(err);
+            showToast("Replaced locally, but failed to sync to cloud.", "error");
+          });
+        } else {
+          showToast("Replaced all occurrences in loaded data! (Not synced to cloud)", "success");
+        }
+        onClose();
+      } catch {
+        showToast("Error replacing text. See console.", "error");
+      } finally {
+        setIsReplacing(false);
       }
-      onClose();
-    } catch {
-      showToast("Error replacing text. See console.", "error");
-    } finally {
-      setIsReplacing(false);
-    }
+    }, 50);
   };
 
   if (!open) return null;

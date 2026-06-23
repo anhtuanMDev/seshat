@@ -33,9 +33,8 @@ export function withRHFControl<
     if (props.control && props.name) {
       return <ControlledWrapper<T> {...props} />;
     }
-    const rest = { ...props };
-    delete rest.control;
-    delete rest.name;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { control, name, ...rest } = props;
     return <InnerComponent {...(rest as unknown as P)} />;
   };
 }

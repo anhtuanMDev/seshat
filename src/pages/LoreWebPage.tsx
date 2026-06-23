@@ -74,16 +74,71 @@ export default function LoreWebPage() {
   const deferredTime = useDeferredValue(currentTime);
   const setCurrentTime = setCurrentTimeRaw;
 
+  const baseLayoutPositions = useMemo(() => {
+    const rawNodes: Node[] = [];
+    const rawEdges: Edge[] = [];
+
+    nations.forEach((n) => {
+      rawNodes.push({ id: `nation_${n.id}`, position: { x: 0, y: 0 }, data: { label: "" } });
+      n.connections?.forEach((conn) => {
+        const targetNation = nations.find((x) => x.name.toLowerCase() === conn.withNation.toLowerCase());
+        if (targetNation) {
+          rawEdges.push({ id: `e_nat_${n.id}_${targetNation.id}`, source: `nation_${n.id}`, target: `nation_${targetNation.id}` });
+        }
+      });
+    });
+
+    characters.forEach((c) => {
+      rawNodes.push({ id: `char_${c.id}`, position: { x: 0, y: 0 }, data: { label: "" } });
+      c.relationships?.forEach((r) => {
+        rawEdges.push({ id: `e_char_${c.id}_${r.withId}`, source: `char_${c.id}`, target: `char_${r.withId}` });
+      });
+      Object.keys(c.attributes || {}).forEach((eventId) => {
+        rawEdges.push({ id: `e_ev_${c.id}_${eventId}`, source: `char_${c.id}`, target: `event_${eventId}` });
+      });
+    });
+
+    events.forEach((e) => {
+      rawNodes.push({ id: `event_${e.id}`, position: { x: 0, y: 0 }, data: { label: "" } });
+    });
+
+    treasures.forEach((t) => {
+      rawNodes.push({ id: `tr_${t.id}`, position: { x: 0, y: 0 }, data: { label: "" } });
+      if (t.creator) {
+        const creatorChar = characters.find((c) => c.name.toLowerCase() === t.creator.toLowerCase());
+        if (creatorChar) {
+          rawEdges.push({ id: `e_tr_${t.id}_${creatorChar.id}`, source: `char_${creatorChar.id}`, target: `tr_${t.id}` });
+        }
+      }
+    });
+
+    const layouted = getLayoutedElements(rawNodes, rawEdges);
+    const posMap = new Map<string, { x: number; y: number; sourcePosition?: Position; targetPosition?: Position }>();
+    layouted.nodes.forEach((n) => {
+      posMap.set(n.id, { x: n.position.x, y: n.position.y, sourcePosition: n.sourcePosition, targetPosition: n.targetPosition });
+    });
+    return posMap;
+  }, [characters, events, nations, treasures]);
+
   const initialElements = useMemo(() => {
     const rawNodes: Node[] = [];
     const rawEdges: Edge[] = [];
+
+    const applyPos = (id: string) => {
+      const pos = baseLayoutPositions.get(id);
+      return {
+        position: pos ? { x: pos.x, y: pos.y } : { x: 0, y: 0 },
+        sourcePosition: pos?.sourcePosition || Position.Right,
+        targetPosition: pos?.targetPosition || Position.Left,
+      };
+    };
 
     // NATIONS
     nations.forEach((n) => {
       rawNodes.push({
         id: `nation_${n.id}`,
         data: { label: n.name },
-        position: { x: 0, y: 0 },
+        ...applyPos(`nation_${n.id}`),
         style: {
           background: "var(--bg-main)",
           color: "var(--color-green)",
@@ -120,7 +175,7 @@ export default function LoreWebPage() {
       rawNodes.push({
         id: `char_${c.id}`,
         data: { label: c.name },
-        position: { x: 0, y: 0 },
+        ...applyPos(`char_${c.id}`),
         style: {
           background: "var(--bg-main)",
           color: c.color || "var(--color-primary)",
@@ -182,7 +237,7 @@ export default function LoreWebPage() {
         rawNodes.push({
           id: `event_${e.id}`,
           data: { label: `T${e.time}: ${e.title}` },
-          position: { x: 0, y: 0 },
+          ...applyPos(`event_${e.id}`),
           style: {
             background: "var(--bg-main)",
             color: "var(--color-blue)",
@@ -198,7 +253,7 @@ export default function LoreWebPage() {
       rawNodes.push({
         id: `tr_${t.id}`,
         data: { label: t.name },
-        position: { x: 0, y: 0 },
+        ...applyPos(`tr_${t.id}`),
         style: {
           background: "var(--bg-main)",
           color: "var(--color-orange)",
@@ -232,8 +287,8 @@ export default function LoreWebPage() {
       }
     });
 
-    return getLayoutedElements(rawNodes, rawEdges);
-  }, [characters, events, nations, treasures, deferredTime]);
+    return { nodes: rawNodes, edges: rawEdges };
+  }, [characters, events, nations, treasures, deferredTime, baseLayoutPositions]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialElements.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialElements.edges);

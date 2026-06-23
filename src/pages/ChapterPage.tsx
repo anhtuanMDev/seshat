@@ -12,6 +12,7 @@ import {
 } from "../hooks/useWorldStore";
 import { S, uid } from "../lib/utils";
 import { exportChapterToWord } from "../lib/exportUtils";
+import { getUpdatedDrafts } from "../lib/draftUtils";
 
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import {
@@ -441,36 +442,14 @@ export default function ChapterPage() {
         try {
           isSavingRef.current = true;
           setIsSaving(true);
-          let currentDrafts = overrideDrafts || ch.drafts.get() || [];
-          let curActiveDraftId = activeDraftId;
-
-          if (currentDrafts.length === 0) {
-            const newId = uid();
-            currentDrafts = [
-              {
-                id: newId,
-                name: "Draft 1",
-                body: data.body,
-                createdAt: Date.now(),
-              },
-            ];
-            curActiveDraftId = newId;
-            setActiveDraftId(newId);
-          } else {
-            let activeIdx = currentDrafts.findIndex(
-              (d) => d.id === curActiveDraftId,
-            );
-            if (activeIdx === -1) {
-              // Fallback to the first draft if activeDraftId is invalid/null
-              curActiveDraftId = currentDrafts[0].id;
-              setActiveDraftId(curActiveDraftId);
-              activeIdx = 0;
-            }
-            currentDrafts[activeIdx] = {
-              ...currentDrafts[activeIdx],
-              body: data.body,
-            };
+          const draftUpdate = getUpdatedDrafts(overrideDrafts || ch.drafts.get(), activeDraftId, data.body);
+          
+          if (activeDraftId !== draftUpdate.newActiveDraftId) {
+            setActiveDraftId(draftUpdate.newActiveDraftId);
           }
+          
+          const currentDrafts = draftUpdate.updatedDrafts;
+          const activeDraftObj = draftUpdate.activeDraft;
 
           const metadataPayload = {
             id,
@@ -491,9 +470,7 @@ export default function ChapterPage() {
             })), // Without body
           };
 
-          const activeDraftObj = currentDrafts.find(
-            (d) => d.id === curActiveDraftId,
-          );
+
 
           const filesToSync = [
             {
