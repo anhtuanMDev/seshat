@@ -40,7 +40,11 @@ export default function BookListPage() {
       sessionStorage.getItem("seshat-auth-token");
 
     const loadBooks = async () => {
-      if (token && !appStore.isLoadingBooks.get() && appStore.books.get().length === 0) {
+      if (
+        token &&
+        !appStore.isLoadingBooks.get() &&
+        appStore.books.get().length === 0
+      ) {
         appStore.isLoadingBooks.set(true);
         try {
           const cloudBooks = await loadFromGitHub(token);
@@ -50,7 +54,9 @@ export default function BookListPage() {
             appStore.books.set((prevBooks) => {
               const newBooks = [...(prevBooks || [])].filter(Boolean);
               for (const cb of cloudBooks) {
-                const existingIdx = newBooks.findIndex((b) => b && b.id === cb.id);
+                const existingIdx = newBooks.findIndex(
+                  (b) => b && b.id === cb.id,
+                );
                 if (existingIdx >= 0) {
                   newBooks[existingIdx] = {
                     ...newBooks[existingIdx],
@@ -197,7 +203,10 @@ export default function BookListPage() {
           showToast("Book renamed in cloud.", "success");
         } catch (error) {
           console.error("Failed to sync rename:", error);
-          showToast("Failed to sync rename: " + (error as Error).message, "error");
+          showToast(
+            "Failed to sync rename: " + (error as Error).message,
+            "error",
+          );
         } finally {
           setIsSyncing(false);
         }
@@ -209,7 +218,7 @@ export default function BookListPage() {
     ...S.pill,
     ...styles.deleteConfirmBtn,
     opacity: disabled ? 0.5 : 1,
-    cursor: disabled ? "default" : "pointer" as const,
+    cursor: disabled ? "default" : ("pointer" as const),
   });
 
   const handleLogout = () => {
@@ -224,7 +233,6 @@ export default function BookListPage() {
       <div style={styles.topBar}>
         <button onClick={() => navigate("/issues")} style={styles.forumBtn}>
           <BugReportIcon sx={styles.bugIcon} />
-          Forum
         </button>
         <button
           onClick={toggle}
@@ -237,7 +245,11 @@ export default function BookListPage() {
             <DarkModeIcon sx={styles.toggleIcon} />
           )}
         </button>
-        <button onClick={handleLogout} title="Secure Logout" style={styles.logoutBtn}>
+        <button
+          onClick={handleLogout}
+          title="Secure Logout"
+          style={styles.logoutBtn}
+        >
           <LogoutIcon sx={styles.logoutIcon} />
           Logout
         </button>
@@ -304,7 +316,8 @@ export default function BookListPage() {
                     }}
                     style={styles.bookCard}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "var(--text-secondary)";
+                      e.currentTarget.style.borderColor =
+                        "var(--text-secondary)";
                       e.currentTarget.style.boxShadow =
                         "0 4px 16px rgba(0,0,0,0.1)";
                     }}
