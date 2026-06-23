@@ -174,7 +174,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 73 tests across 8 test files. 11 pages totaling ~2555 lines (incl. icons). Note: Testing coverage is currently limited mostly to util logic and specific UI components. Core pages, API sync logic, and complex state management lack edge-to-edge testing.**
+**Total: 74 tests across 9 test files. 11 pages totaling ~2300 lines (incl. icons). Note: API sync logic (including race condition and data-loss edge cases) is explicitly tested. Complex state management and core pages lack edge-to-edge testing.**
 
 ---
 

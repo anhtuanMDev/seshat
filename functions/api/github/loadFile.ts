@@ -1,6 +1,12 @@
 import { verifyToken } from "./authUtils";
 
-export async function onRequestGet({ request, env }: { request: Request; env: Record<string, string> }) {
+export async function onRequestGet({
+  request,
+  env,
+}: {
+  request: Request;
+  env: Record<string, string>;
+}) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
   const bookId = url.searchParams.get("bookId");
@@ -13,7 +19,6 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
   const githubToken = env.GITHUB_TOKEN;
   const owner = env.GITHUB_OWNER;
   const repo = env.GITHUB_REPO;
-  const baseUrl = `https://api.github.com/repos/${owner}/${repo}`;
   const headers = {
     Authorization: `Bearer ${githubToken}`,
     "User-Agent": "Seshat-App",
@@ -22,29 +27,57 @@ export async function onRequestGet({ request, env }: { request: Request; env: Re
 
   try {
     const payload = await verifyToken(token, env.AUTH_SECRET);
-    if (!payload || !payload.username) return new Response("Invalid token", { status: 401 });
+    if (!payload || !payload.username)
+      return new Response("Invalid token", { status: 401 });
     const username = payload.username as string;
     const branchName = `user-${username}`;
 
-    const fileRes = await fetch(`${baseUrl}/contents/books/book_${bookId}/${path}?ref=${branchName}`, { headers });
-    if (!fileRes.ok) {
-      return new Response(JSON.stringify({ error: "File not found" }), { status: 404 });
-    }
-    const fileData = await fileRes.json() as { content: string; encoding: string };
-    
-    if (fileData.encoding === "base64") {
-      const content = decodeURIComponent(escape(atob(fileData.content.replace(/\n/g, ""))));
-      return new Response(content, {
-        status: 200,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" },
+    const query = `query {
+      repository(owner: "${owner}", name: "${repo}") {
+        object(expression: "${branchName}:books/book_${bookId}/${path}") {
+          ... on Blob {
+            text
+          }
+        }
+      }
+    }`;
+
+    const graphqlRes = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query }),
+    });
+
+    if (!graphqlRes.ok) {
+      return new Response(JSON.stringify({ error: "GraphQL request failed" }), {
+        status: 500,
       });
-    } else {
-      return new Response(fileData.content, {
-        status: 200,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-cache, no-store, must-revalidate" },
-      });
     }
+
+    const graphqlData = (await graphqlRes.json()) as {
+      data?: { repository: { object?: { text?: string | null } } };
+      errors?: unknown;
+    };
+
+    if (graphqlData.errors || !graphqlData.data?.repository?.object) {
+      return new Response(
+        JSON.stringify({ error: "File not found or GraphQL error" }),
+        { status: 404 },
+      );
+    }
+
+    const content = graphqlData.data.repository.object.text;
+
+    return new Response(content || "{}", {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), { status: 500 });
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
+      status: 500,
+    });
   }
 }

@@ -26,6 +26,7 @@ interface BookPayload {
   characters?: Array<{ id: string; name: string; [key: string]: unknown }>;
   chapters?: Array<{ id: string; title: string; [key: string]: unknown }>;
   events?: Array<{ id: string; title: string; [key: string]: unknown }>;
+  foreshadows?: Array<{ id: string; [key: string]: unknown }>;
 }
 
 interface RequestPayload {
@@ -296,24 +297,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       book.chapters?.forEach((c) => {
         indexChapters.push({ id: c.id, title: c.title });
         
-        const drafts = (c.drafts as Record<string, unknown>[]) || [];
-        
-        // If it's a metadata-only sync and drafts list is empty/undefined,
-        // recover drafts list from existing files in the repo to prevent accidental deletion!
-        if (c.body === undefined && drafts.length === 0) {
-          const draftPrefix = `${bDir}/chapters/chapter_${c.id}/`;
-          for (const filePath of existingFiles.keys()) {
-            if (filePath.startsWith(draftPrefix) && filePath.endsWith(".json") && !filePath.endsWith("metadata.json")) {
-              const draftId = filePath.substring(draftPrefix.length, filePath.length - 5);
-              drafts.push({
-                id: draftId,
-                name: "Draft",
-                createdAt: Date.now(),
-                isDeleted: false
-              });
-            }
-          }
-        }
+        const drafts = Array.isArray(c.drafts) ? (c.drafts as Record<string, unknown>[]) : [];
 
         treeFiles.push({
           path: `${bDir}/chapters/chapter_${c.id}/metadata.json`,
@@ -371,6 +355,25 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           content: JSON.stringify(e, null, 2),
         });
       });
+
+      if (book.foreshadows) {
+        treeFiles.push({
+          path: `${bDir}/foreshadows.json`,
+          mode: "100644",
+          type: "blob",
+          content: JSON.stringify(book.foreshadows, null, 2),
+        });
+      } else {
+        const fsSha = existingFiles.get(`${bDir}/foreshadows.json`);
+        if (fsSha) {
+          treeFiles.push({
+            path: `${bDir}/foreshadows.json`,
+            mode: "100644",
+            type: "blob",
+            sha: fsSha,
+          });
+        }
+      }
 
       // 5. index.json for fast loading
       treeFiles.push({

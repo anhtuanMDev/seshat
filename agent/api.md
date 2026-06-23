@@ -346,7 +346,7 @@ Conflict (409) additionally includes `"conflict": true`.
 | 400 | Missing required parameter(s) |
 | 401 | Missing token / invalid JWT / expired JWT |
 | 404 | Resource not found (branch, book, or file) |
-| 409 | Sync conflict — `lastKnownSha` doesn't match branch HEAD; client must Pull first |
+| 409 | Sync conflict — `lastKnownSha` mismatch OR concurrent race condition caught by GitHub's atomic fast-forward check (422) |
 | 500 | Server error (missing env vars, GitHub API failure, JSON parse error) |
 
 ---
@@ -391,7 +391,7 @@ Supports both legacy format `{ username: "code" }` and new format `{ username: {
    - Chapters with content: write `metadata.json` + one `<draftId>.json` per draft
 9. POST new tree with **no `base_tree`** (full tree replacement — ensures deleted books are actually removed only when `isBookListLoaded` is true)
 10. POST new commit with `parents: [branchSha]`
-11. PATCH branch ref to new commit SHA
+11. PATCH branch ref to new commit SHA (Does NOT use `force: true`. Relies on atomic fast-forward checks. If GitHub returns `422`, it catches race conditions and returns `409 Conflict`)
 12. Return `{ success: true, branch: branchName, sha: newCommitSha }`
 
 ---
@@ -406,7 +406,7 @@ Both follow identical steps, differing only in how many files go into the tree:
 4. GET commit at `branchSha` → extract `treeSha` from `commit.tree.sha` (**tree SHA, not commit SHA**)
 5. POST new tree with `base_tree: treeSha` + the changed file(s) at `books/book_<bookId>/<path>`
 6. POST commit with `parents: [branchSha]`
-7. PATCH branch ref to new commit SHA
+7. PATCH branch ref to new commit SHA (Relies on atomic fast-forward checks. If GitHub returns `422`, it converts to `409 Conflict` to catch concurrent races)
 8. Return `{ success: true, sha: newCommitSha }`
 
 > [!CAUTION]
