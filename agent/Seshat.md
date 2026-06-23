@@ -174,7 +174,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 74 tests across 9 test files. 11 pages totaling ~2300 lines (incl. icons). Note: API sync logic (including race condition and data-loss edge cases) is explicitly tested. Complex state management and core pages lack edge-to-edge testing.**
+**Total: 182 tests across 27 test files. 11 pages totaling ~2300 lines (incl. icons). Note: API sync logic (including race condition and data-loss edge cases) is explicitly tested. Core pages like ChapterPage, CharacterPage, and WorldPage now have comprehensive edge-to-edge testing.**
 
 ---
 
@@ -398,7 +398,7 @@ Nation blocks include `periodActive` (time range the nation existed), structured
 
 ### CharacterPage (`/book/:bookId/characters/:id`)
 
-Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (arcs, status, traumas, conditions, achievements, losses) has its own sub-component in `src/components/character/` (e.g. `ArcBlock`, `StatusBlock`). The Status Timeline and Arcs sections both use modal-based array editing. `onSubmit` uses explicit per-field `.set()` calls.
+Full character sheet with Identity, Psychology, Status Timeline, Character arc, Conditions, Equipment, Achievements & Losses sections. Uses react-hook-form with **`useWatch`** instead of `watch()` (required for React Compiler compatibility). Each array type (arcs, status, traumas, conditions, equipment, achievements, losses) has its own sub-component in `src/components/character/` (e.g. `ArcBlock`, `StatusBlock`, `EquipmentBlock`). The Status Timeline and Arcs sections both use modal-based array editing. `onSubmit` uses explicit per-field `.set()` calls.
 
 ### EventPage (`/book/:bookId/events/:id`)
 
@@ -563,6 +563,9 @@ Each domain directory mirrors a page and contains components that are only used 
 | Foreshadow Tracker| `ChapterPage`  | `ForeshadowPanel` tracking planted ideas to payoff chapters (`appStore.books[i].foreshadows[]`) |
 | Subplot Tracking | `TimelinePage`  | `Event` filtering and tagging by `subplot` property |
 | Global Glossary  | `App.tsx`       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures |
+| Issue Tracker    | `IssuesPage`    | Direct integration with GitHub Issues API to submit bugs and feedback (`lib/githubIssues`) |
+| Equipment Config | `CharacterPage` | `EquipmentBlock` managing loadouts, dynamically resolved via `resolveEquipment.ts` |
+| Batch Export     | `lib/export`    | `/api/github/exportChapters` GraphQL endpoint fetches bulk chapter bodies for DOCX generation |
 ---
 
 ### Continuity Tracker Rules

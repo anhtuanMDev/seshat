@@ -207,6 +207,53 @@ All endpoints are relative to the application origin. The base path is `/api/git
 
 ---
 
+### 9. Export Chapters (Bulk Fetch)
+
+**Endpoint:** `/api/github/exportChapters`
+**Method:** `GET`
+**Purpose:** Fetches the full contents (including `body` prose) for multiple specific chapters at once using a batch GraphQL Blob query. This is used exclusively for generating Word Document exports without forcing the user to load every chapter into memory first.
+
+**Query Parameters:**
+
+- `token`: `string` (URL Encoded)
+- `bookId`: `string` (URL Encoded)
+- `chapterIds`: `string` (Comma-separated list of chapter IDs)
+
+**Response:**
+
+- `200 OK` with JSON:
+  ```typescript
+  {
+    "chapters": Array<{ id: string, title: string, body: string, drafts: any[] }>
+  }
+  ```
+
+---
+
+### 10. Issue Tracker
+
+**Endpoint:** `/api/github/issues`
+**Method:** `GET` / `POST`
+**Purpose:** Integrates directly with the GitHub repository's issue tracker. Allows users to submit bugs, feature requests, or discuss features directly from the app. Filters issues by the "seshat" label.
+
+**GET Parameters:**
+- `token`: `string`
+- `number`: `string` (Optional, fetches a specific issue + its comments if provided. Otherwise, fetches all "seshat" issues).
+
+**POST Request Body (JSON):**
+```typescript
+{
+  "token": "string",
+  "issueNumber"?: number, // If provided, posts a comment to the issue
+  "title"?: "string",     // For new issues
+  "body": "string",       // The issue/comment markdown body
+  "type"?: "string"       // "bug", "recommendation", "discussion"
+}
+```
+
+**Response:**
+- `200 OK` (GET) or `201 Created` (POST) with issue/comment JSON payload from GitHub.
+
 ## Local-First Architecture & Conflict Resolution
 
 Seshat employs a true "Local-First" architecture using `@legendapp/state` and `react-hook-form` connected to Cloudflare Workers. To ensure absolute data safety and offline resilience, the application guarantees the following synchronization flows:
