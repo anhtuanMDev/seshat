@@ -45,3 +45,6 @@ export { default as WarningIcon } from "@mui/icons-material/Warning";
 export { default as CheckCircleIcon } from "@mui/icons-material/CheckCircle";
 export { default as InfoIcon } from "@mui/icons-material/Info";
 export { default as LogoutIcon } from "@mui/icons-material/Logout";
+export { default as SmartToyIcon } from "@mui/icons-material/SmartToy";
+export { default as SendIcon } from "@mui/icons-material/Send";
+export { default as SettingsIcon } from "@mui/icons-material/Settings";

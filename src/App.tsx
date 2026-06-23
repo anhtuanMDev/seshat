@@ -14,6 +14,7 @@ import { SideItem } from "./components/ui";
 import { ConflictModal } from "./components/ConflictModal";
 import { getConflicts, autoMergeOtherChapters } from "./lib/conflictUtils";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
+import { AIChatModal } from "./components/AIChatModal";
 import {
   PublicIcon,
   AutoStoriesIcon,
@@ -29,6 +30,7 @@ import {
   SearchIcon,
   BugReportIcon,
   LogoutIcon,
+  SmartToyIcon,
 } from "./components/ui/icons";
 import { buildExport } from "./lib/export";
 import { useEffect, useRef, useState, useMemo, Suspense } from "react";
@@ -47,6 +49,7 @@ export default function App() {
   const { theme, toggle } = useTheme();
 
   const [showSearch, setShowSearch] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
   const [conflictData, setConflictData] = useState<{ serverBook: BookData, serverSha: string } | null>(null);
 
   useEffect(() => {
@@ -552,13 +555,11 @@ export default function App() {
               </span>
             </button>
             <button
-              onClick={() => setShowExport(true)}
+              onClick={() => setShowAIChat(true)}
               style={styles.exportBtn}
             >
-              <FileDownloadIcon sx={{ fontSize: 16 }} />
-              <span style={{ fontSize: 13, letterSpacing: 1 }}>
-                Export for AI
-              </span>
+              <SmartToyIcon sx={{ fontSize: 16 }} />
+              <span style={{ fontSize: 13, letterSpacing: 1 }}>Ask AI</span>
             </button>
             <button
               onClick={() => navigate(`/book/${bookId}/fight`)}
@@ -929,7 +930,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Export modal ── */}
       {showExport && (
         <div style={styles.exportOverlay}>
           <div style={styles.exportContent}>
@@ -959,6 +959,13 @@ export default function App() {
             <textarea readOnly value={text} style={styles.exportTextarea} />
           </div>
         </div>
+      )}
+
+      {showAIChat && (
+        <AIChatModal
+          contextText={text}
+          onClose={() => setShowAIChat(false)}
+        />
       )}
 
       <GlobalSearchModal
