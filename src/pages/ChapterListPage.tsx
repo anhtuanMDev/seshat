@@ -458,11 +458,6 @@ export default function ChapterListPage() {
               onDragOver={(e) => handleDragOver(e, idx)}
               onDrop={(e) => handleDrop(e, idx)}
               onDragEnd={handleDragEnd}
-              onDragLeave={() => {
-                if (dragOverIdx === idx) {
-                  setDragOverIdx(null);
-                }
-              }}
               onTouchStart={(e) => handleTouchStart(e, idx)}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -472,9 +467,9 @@ export default function ChapterListPage() {
                 alignItems: "center",
                 gap: 12,
                 opacity: 1,
-                transform: isDragOver ? "translateY(4px)" : "none",
-                transition: "all 0.15s ease",
-                borderTop: isDragOver ? "2px solid var(--color-purple)" : "none",
+                paddingTop: isDragOver ? 8 : 0,
+                boxShadow: isDragOver ? "inset 0 2px 0 var(--color-purple)" : "none",
+                transition: "padding-top 0.15s ease, box-shadow 0.15s ease",
                 cursor: reorderMode ? "grab" : "default",
               }}
             >
