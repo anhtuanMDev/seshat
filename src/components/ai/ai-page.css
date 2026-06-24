@@ -331,14 +331,17 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   MOBILE TOP BAR EXTRAS (context + settings toggle badges)
+   RESPONSIVE TOP BAR EXTRAS (context + settings toggle badges)
    ───────────────────────────────────────────────────────────────────────────── */
 
-.ai-mobile-topbar-extras {
+.ai-responsive-topbar-extras {
   display: none;
 }
 
-/* tablet drawer toggle — handled at bottom of file with !important */
+/* tablet drawer toggle — hidden on desktop and mobile */
+.ai-tablet-sidebar-btn {
+  display: none !important;
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MOBILE BOTTOM SHEET OVERLAY
@@ -438,6 +441,16 @@
     display: flex !important;
   }
 
+  /* show context badge on tablet, but not mobile settings button */
+  .ai-responsive-topbar-extras {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-mobile-settings-btn {
+    display: none !important;
+  }
+
   /* chat takes full width on tablet */
   .ai-page-main {
     width: 100%;
@@ -464,8 +477,8 @@
     display: none;
   }
 
-  /* show mobile topbar extras (book badge + settings button) */
-  .ai-mobile-topbar-extras {
+  /* show responsive topbar extras (book badge + settings button) */
+  .ai-responsive-topbar-extras {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -561,7 +574,4 @@
   background: rgba(139, 92, 246, 0.08);
 }
 
-/* tablet toggle — hidden on desktop and mobile */
-.ai-tablet-sidebar-btn {
-  display: none !important;
-}
+

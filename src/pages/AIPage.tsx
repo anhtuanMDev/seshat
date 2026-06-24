@@ -180,19 +180,25 @@ export default function AIPage() {
 
         <div style={{ flex: 1 }} />
 
-        {/* ── Mobile-only: context badge + settings button ───────────────── */}
-        <div className="ai-mobile-topbar-extras">
+        {/* ── Responsive: context badge + mobile settings ───────────────── */}
+        <div className="ai-responsive-topbar-extras">
           {activeBookName && (
             <button
               className="ai-context-badge"
-              onClick={() => setSheetOpen(true)}
+              onClick={() => {
+                if (window.innerWidth <= 768) {
+                  setSheetOpen(true);
+                } else {
+                  setTabletDrawerOpen(true);
+                }
+              }}
               title="Change context"
             >
               📚 {activeBookName}
             </button>
           )}
           <button
-            className={`ai-settings-btn${sheetOpen ? " active" : ""}`}
+            className={`ai-settings-btn ai-mobile-settings-btn${sheetOpen ? " active" : ""}`}
             onClick={() => setSheetOpen((v) => !v)}
             title="Oracle settings"
             aria-label="Open Oracle settings"
@@ -275,7 +281,13 @@ export default function AIPage() {
             expertMode={expertMode}
             aiMode={aiMode}
             isTyping={isTyping}
-            onOpenSheet={() => setSheetOpen(true)}
+            onOpenSheet={() => {
+              if (window.innerWidth <= 768) {
+                setSheetOpen(true);
+              } else {
+                setTabletDrawerOpen(true);
+              }
+            }}
           />
 
           <AIChatFeed

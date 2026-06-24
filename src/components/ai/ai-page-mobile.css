@@ -14,8 +14,8 @@
   }
 }
 
-/* Show the mobile context strip below the top bar */
-@media (max-width: 768px) {
+/* Show the mobile context strip below the top bar on both mobile and tablet */
+@media (max-width: 1024px) {
   .ai-mobile-context-strip {
     display: flex !important;
   }
