@@ -43,7 +43,7 @@ const AI_PROVIDERS = [
     id: "gemini",
     name: "Google Gemini",
     url: "https://generativelanguage.googleapis.com/v1beta/openai",
-    models: ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"],
+    models: ["gemini-3.5-flash", "gemini-2.5-pro", "gemini-flash-latest"],
   },
   {
     id: "local",
@@ -158,7 +158,7 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${apiKey.trim()}`,
           },
           body: JSON.stringify(payload),
         },
