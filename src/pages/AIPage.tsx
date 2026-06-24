@@ -23,9 +23,24 @@ import { MobileContextStrip } from "../components/ai/MobileContextStrip";
 
 export default function AIPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const focusType = searchParams.get("focusType");
   const focusId = searchParams.get("focusId");
+
+  const setFocusId = useCallback(
+    (newId: string | null) => {
+      const newParams = new URLSearchParams(searchParams);
+      if (!newId) {
+        newParams.delete("focusId");
+        newParams.delete("focusType");
+      } else {
+        newParams.set("focusId", newId);
+        newParams.set("focusType", "character");
+      }
+      setSearchParams(newParams);
+    },
+    [searchParams, setSearchParams],
+  );
 
   // ── Local UI state ──────────────────────────────────────────────────────────
   const [input, setInput] = useState("");
@@ -268,6 +283,7 @@ export default function AIPage() {
           isLoadingContext={isLoadingContext}
           focusType={focusType}
           focusId={focusId}
+          setFocusId={setFocusId}
           aiMode={aiMode}
           setAiMode={setAiMode}
           expertMode={expertMode}
@@ -383,6 +399,7 @@ export default function AIPage() {
           isLoadingContext={isLoadingContext}
           focusType={focusType}
           focusId={focusId}
+          setFocusId={setFocusId}
           aiMode={aiMode}
           setAiMode={(m) => {
             setAiMode(m);

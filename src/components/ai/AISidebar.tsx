@@ -18,6 +18,7 @@ interface Props {
   isLoadingContext: boolean;
   focusType: string | null;
   focusId: string | null;
+  setFocusId?: (id: string | null) => void;
   // Mode
   aiMode: AiMode;
   setAiMode: (m: AiMode) => void;
@@ -49,6 +50,7 @@ export default function AISidebar({
   isLoadingContext,
   focusType,
   focusId,
+  setFocusId,
   aiMode,
   setAiMode,
   expertMode,
@@ -200,42 +202,72 @@ export default function AISidebar({
                 const mode = AI_MODES[key];
                 const isSelected = expertMode === key;
                 return (
-                  <button
-                    key={key}
-                    onClick={() => setExpertMode(key)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "8px 12px",
-                      borderRadius: 6,
-                      border: "1px solid",
-                      borderColor: isSelected ? "var(--text-primary)" : "var(--border-field)",
-                      background: isSelected
-                        ? "rgba(139, 92, 246, 0.1)"
-                        : "var(--bg-panel)",
-                      color: isSelected ? "var(--text-primary)" : "var(--text-secondary)",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                  >
-                    <span style={{ fontSize: 16 }}>{mode.icon}</span>
-                    <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 400 }}>
-                      {mode.label}
-                    </span>
-                    {key === "CHARACTER_ROLEPLAY" && !focusId && (
-                      <span
+                  <div key={key} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <button
+                      onClick={() => setExpertMode(key)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "8px 12px",
+                        borderRadius: 6,
+                        border: "1px solid",
+                        borderColor: isSelected ? "var(--text-primary)" : "var(--border-field)",
+                        background: isSelected
+                          ? "color-mix(in srgb, var(--text-primary) 10%, transparent)"
+                          : "var(--bg-panel)",
+                        color: isSelected ? "var(--text-primary)" : "var(--text-secondary)",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <span style={{ fontSize: 16 }}>{mode.icon}</span>
+                      <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 400 }}>
+                        {mode.label}
+                      </span>
+                      {key === "CHARACTER_ROLEPLAY" && !focusId && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: "var(--color-orange)",
+                            marginLeft: "auto",
+                          }}
+                        >
+                          needs focus
+                        </span>
+                      )}
+                    </button>
+                    
+                    {/* Roleplay Character Selection Dropdown */}
+                    {isSelected && key === "CHARACTER_ROLEPLAY" && (
+                      <div
                         style={{
-                          fontSize: 10,
-                          color: "var(--color-orange)",
-                          marginLeft: "auto",
+                          padding: "6px 12px",
+                          background: "var(--bg-panel)",
+                          borderRadius: 6,
+                          border: "1px solid var(--border-field)",
+                          marginTop: 2,
+                          animation: "ai-fade-in 0.2s ease",
                         }}
                       >
-                        needs focus
-                      </span>
+                        <select
+                          className="ai-config-input"
+                          style={{ padding: "6px 10px", fontSize: 12, marginTop: 4, marginBottom: 4 }}
+                          value={focusId || ""}
+                          onChange={(e) => setFocusId?.(e.target.value || null)}
+                        >
+                          <option value="" disabled>Select a Character...</option>
+                          {books.find(b => b.id === selectedBookId)?.characters?.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                          {(!books.find(b => b.id === selectedBookId)?.characters?.length) && (
+                            <option value="" disabled>No characters in this book</option>
+                          )}
+                        </select>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
