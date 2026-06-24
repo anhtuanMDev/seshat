@@ -27,20 +27,20 @@
 
 ## 1. Stack Overview
 
-| Concern     | Library                      | Why                                                           |
-| ----------- | ---------------------------- | ------------------------------------------------------------- |
-| Framework   | React 19 + Vite 8            | Fast HMR, modern JSX transform, ES2023 target                 |
-| Routing     | React Router v7              | Nested routes with layout persistence                         |
-| State       | Legend State                 | Fine-grained reactivity, built-in persistence, no boilerplate |
-| Data Fetch  | React Query + Axios          | Async state, caching (configured via queryClient.ts)          |
-| Validation  | Zod                          | Runtime schema validation                                     |
-| Forms       | react-hook-form              | Performant local form state, minimal re-renders               |
-| UI/Icons    | MUI (Material UI) v9 + @mui/icons-material | Consistent, accessible components; centralized icon exports via `src/components/ui/icons.tsx` |
-| Animation   | Anime.js v4                  | Timeline-based, works on DOM refs                             |
-| Rich text   | Tiptap v3 (StarterKit + Underline, Link, Highlight, TextAlign, Typography, Placeholder) | ProseMirror-based editor with formatting toolbar |
-| Node Graph  | @xyflow/react + dagre        | Interactive visual relationship graphs with auto-layout       |
-| Exporting   | docx + file-saver            | Generating chapter files as `.docx` directly in the browser   |
-| Testing     | Vitest + testing-library     | Unit/integration tests with jsdom environment                 |
+| Concern    | Library                                                                                 | Why                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Framework  | React 19 + Vite 8                                                                       | Fast HMR, modern JSX transform, ES2023 target                                                 |
+| Routing    | React Router v7                                                                         | Nested routes with layout persistence                                                         |
+| State      | Legend State                                                                            | Fine-grained reactivity, built-in persistence, no boilerplate                                 |
+| Data Fetch | React Query + Axios                                                                     | Async state, caching (configured via queryClient.ts)                                          |
+| Validation | Zod                                                                                     | Runtime schema validation                                                                     |
+| Forms      | react-hook-form                                                                         | Performant local form state, minimal re-renders                                               |
+| UI/Icons   | MUI (Material UI) v9 + @mui/icons-material                                              | Consistent, accessible components; centralized icon exports via `src/components/ui/icons.tsx` |
+| Animation  | Anime.js v4                                                                             | Timeline-based, works on DOM refs                                                             |
+| Rich text  | Tiptap v3 (StarterKit + Underline, Link, Highlight, TextAlign, Typography, Placeholder) | ProseMirror-based editor with formatting toolbar                                              |
+| Node Graph | @xyflow/react + dagre                                                                   | Interactive visual relationship graphs with auto-layout                                       |
+| Exporting  | docx + file-saver                                                                       | Generating chapter files as `.docx` directly in the browser                                   |
+| Testing    | Vitest + testing-library                                                                | Unit/integration tests with jsdom environment                                                 |
 
 ---
 
@@ -220,7 +220,6 @@ export const router = createBrowserRouter([
 // `/auth` handles login and registration.
 // Root `/` shows BookListPage (multi-book manager), protected by AuthGuard.
 // All world/character/event/chapter/fight/lore-web routes are nested under `/book/:bookId`.
-
 ```
 
 ---
@@ -259,14 +258,15 @@ Hooks are scoped to the active book (identified by `appStore.activeBookId`):
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
 
-export const useActiveBookIdx = () => useSelector(() => {
-  const activeId = appStore.activeBookId.get();
-  return appStore.books.get().findIndex(b => b.id === activeId);
-});
+export const useActiveBookIdx = () =>
+  useSelector(() => {
+    const activeId = appStore.activeBookId.get();
+    return appStore.books.get().findIndex((b) => b.id === activeId);
+  });
 
 export const useWorldTitle = () => {
   const idx = useActiveBookIdx();
-  return useSelector(() => idx >= 0 ? appStore.books[idx].title.get() : "");
+  return useSelector(() => (idx >= 0 ? appStore.books[idx].title.get() : ""));
 };
 // ... same pattern for synopsis, setting, themes, rules,
 //     events, characters, nations, techniques, ingredients,
@@ -317,13 +317,19 @@ import { useSelector } from "@legendapp/state/react";
 
 // Inside component:
 const bookIdx = useActiveBookIdx();
-const entity = useSelector(() => bookIdx >= 0
-  ? appStore.books[bookIdx].collection.get().find((x: { id: string }) => x.id === entityId)
-  : undefined
+const entity = useSelector(() =>
+  bookIdx >= 0
+    ? appStore.books[bookIdx].collection
+        .get()
+        .find((x: { id: string }) => x.id === entityId)
+    : undefined,
 );
-const entityIdx = useSelector(() => bookIdx >= 0
-  ? appStore.books[bookIdx].collection.get().findIndex((x: { id: string }) => x.id === entityId)
-  : -1
+const entityIdx = useSelector(() =>
+  bookIdx >= 0
+    ? appStore.books[bookIdx].collection
+        .get()
+        .findIndex((x: { id: string }) => x.id === entityId)
+    : -1,
 );
 
 interface MyForm {
@@ -361,7 +367,12 @@ interface ItemBlockProps {
 
 function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
   const value = useWatch({ control, name: `items.${index}.field` as const });
-  return <Field value={value} onChange={(v) => setValue(`items.${index}.field`, v)} />;
+  return (
+    <Field
+      value={value}
+      onChange={(v) => setValue(`items.${index}.field`, v)}
+    />
+  );
 }
 
 // In JSX:
@@ -373,18 +384,18 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 
 ### Page Size Summary
 
-| Page                | Lines | Extracted sub-components                        | Icons added |
-| ------------------- | ----- | ----------------------------------------------- | ----------- |
-| WorldPage           | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure) | Section icons: Flag, Build, Science, BugReport, Diamond; SaveIcon |
-| CharacterPage       | 220   | 6 character blocks (Arc, Status, Trauma, Condition, Achievement, Loss) + CharStatusPanel + ArrayItemCard + Modal | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
-| CharacterListPage   | 288   | CharacterCard, StatPill (Features multi-select export mode)      | PeopleIcon, AddIcon, ArticleIcon |
-| EventPage           | 252   | CharacterAttrsBlock                             | SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon; PeopleAltIcon in block |
-| TimelinePage        | 326   | EventCard                                       | TimelineIcon, AddIcon |
-| ChapterPage         | ~300  | ReferencePanel, PinnedContextStrip, ChapterToolbar (floating on scroll, always-on RichEditor), ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon |
-| ChapterListPage     | 237   | ChapterCard                                     | AutoStoriesIcon, AddIcon |
-| FightPage           | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow | SportsKabaddiIcon (title), CameraAltIcon (Snapshot) |
-| AuthPage            | 179   | None                                            | VisibilityIcon, VisibilityOffIcon |
-| LoreWebPage         | 326   | None                                            | None |
+| Page              | Lines | Extracted sub-components                                                                                                                       | Icons added                                                                           |
+| ----------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| WorldPage         | 112   | 5 world blocks (Nation, Technique, Ingredient, Monster, Treasure)                                                                              | Section icons: Flag, Build, Science, BugReport, Diamond; SaveIcon                     |
+| CharacterPage     | 220   | 6 character blocks (Arc, Status, Trauma, Condition, Achievement, Loss) + CharStatusPanel + ArrayItemCard + Modal                               | Section icons: Timeline, Badge, Psychology, Route, MedicalInfo, EmojiEvents; SaveIcon |
+| CharacterListPage | 288   | CharacterCard, StatPill (Features multi-select export mode)                                                                                    | PeopleIcon, AddIcon, ArticleIcon                                                      |
+| EventPage         | 252   | CharacterAttrsBlock                                                                                                                            | SaveIcon, ScheduleIcon, CalendarTodayIcon, LocationOnIcon; PeopleAltIcon in block     |
+| TimelinePage      | 326   | EventCard                                                                                                                                      | TimelineIcon, AddIcon                                                                 |
+| ChapterPage       | ~300  | ReferencePanel, PinnedContextStrip, ChapterToolbar (floating on scroll, always-on RichEditor), ContextTag, CharCard, EventRef, WorldTabContent | SaveIcon, ArticleIcon in toolbar; People/EventNote/Public on tabs; NotesIcon          |
+| ChapterListPage   | 237   | ChapterCard                                                                                                                                    | AutoStoriesIcon, AddIcon                                                              |
+| FightPage         | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow                                                                                   | SportsKabaddiIcon (title), CameraAltIcon (Snapshot)                                   |
+| AuthPage          | 179   | None                                                                                                                                           | VisibilityIcon, VisibilityOffIcon                                                     |
+| LoreWebPage       | 326   | None                                                                                                                                           | None                                                                                  |
 
 ### BookListPage (`/`)
 
@@ -432,32 +443,32 @@ CRUD-style list pages using `EntryBlock` + `Section` with inline Field/Sel compo
 
 All accept `value` + `onChange` (uncontrolled) or `control` + `name` (controlled via react-hook-form):
 
-| Component         | Props                                                          |
-| ----------------- | -------------------------------------------------------------- |
-| `Field`           | `{ label: ReactNode, value?, onChange?, control?, name?, multi?, rows? }` |
-| `Sel`             | `{ label, value?, onChange?, control?, name?, opts }`          |
-| `Toggle`          | `{ label, value, onChange }`                                   |
-| `Section`         | `{ title: ReactNode, children, action?, defaultOpen? }`        |
-| `EntryBlock`      | `{ color, onDelete, children }` (CloseIcon delete button)      |
-| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }` (CloseIcon delete) |
-| `GhostButton`     | MUI `styled(Button)` — shared ghost button across pages        |
-| `EventPicker`     | `{ label, value, onChange, events[] }`                         |
+| Component         | Props                                                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `Field`           | `{ label: ReactNode, value?, onChange?, control?, name?, multi?, rows? }`                                               |
+| `Sel`             | `{ label, value?, onChange?, control?, name?, opts }`                                                                   |
+| `Toggle`          | `{ label, value, onChange }`                                                                                            |
+| `Section`         | `{ title: ReactNode, children, action?, defaultOpen? }`                                                                 |
+| `EntryBlock`      | `{ color, onDelete, children }` (CloseIcon delete button)                                                               |
+| `SideItem`        | `{ label, sub?, active, color?, onClick, onDelete? }` (CloseIcon delete)                                                |
+| `GhostButton`     | MUI `styled(Button)` — shared ghost button across pages                                                                 |
+| `EventPicker`     | `{ label, value, onChange, events[] }`                                                                                  |
 | `Modal`           | `{ title, onClose, children, footer? }` — portal-based modal, Escape to close, overlay click to close, body scroll lock |
-| `CharStatusPanel` | `{ statusTimeline, color, events, onChange }`                  |
-| `icons.tsx`       | 37 named re-exports from `@mui/icons-material`; import via `../ui/icons` or barrel |
+| `CharStatusPanel` | `{ statusTimeline, color, events, onChange }`                                                                           |
+| `icons.tsx`       | 37 named re-exports from `@mui/icons-material`; import via `../ui/icons` or barrel                                      |
 
 ### React.memo usage
 
 Leaf display components wrapped in `React.memo` to prevent unnecessary re-renders when parent state changes but props are stable:
 
-| Component            | File                          | Props type                |
-| -------------------- | ----------------------------- | ------------------------- |
-| `WinBar`             | `src/components/fight/`       | All primitives            |
-| `NoteRow`            | `src/components/fight/`       | `Note` object             |
-| `SnapshotCard`       | `src/components/fight/`       | Primitives + optional Event |
-| `ContextTag`         | `src/components/chapter/`     | Primitives + callback     |
-| `WorldField`         | `src/components/chapter/`     | Primitives                |
-| `WorldTabContent`    | `src/components/chapter/`     | All strings               |
+| Component         | File                      | Props type                  |
+| ----------------- | ------------------------- | --------------------------- |
+| `WinBar`          | `src/components/fight/`   | All primitives              |
+| `NoteRow`         | `src/components/fight/`   | `Note` object               |
+| `SnapshotCard`    | `src/components/fight/`   | Primitives + optional Event |
+| `ContextTag`      | `src/components/chapter/` | Primitives + callback       |
+| `WorldField`      | `src/components/chapter/` | Primitives                  |
+| `WorldTabContent` | `src/components/chapter/` | All strings                 |
 
 Components receiving object/array props (e.g. `PinnedContextStrip`, `ScoreBreakdown`) are not memoized — they would need a custom comparator.
 
@@ -471,39 +482,39 @@ Icons are imported from `@mui/icons-material` via `src/components/ui/icons.tsx` 
 - `transition: none` is set on SVG paths in `index.css` (line 154-157) to prevent flicker on theme toggle
 - Icons are grouped with their label text (never standalone without a textual label)
 
-| Icon                     | Context                                    |
-| ------------------------ | ------------------------------------------ |
-| `PublicIcon`             | World nav, World tab in reference panel    |
-| `AutoStoriesIcon`        | Chapters nav, Chapters list page           |
-| `TimelineIcon`           | Timeline nav, Status Timeline section      |
-| `PeopleIcon`/`PeopleAltIcon` | Characters nav, Characters present     |
-| `SportsKabaddiIcon`      | Fight nav, Fight page title                |
-| `FileDownloadIcon`       | Export button                              |
-| `LightModeIcon`/`DarkModeIcon` | Theme toggle                         |
-| `AddIcon`                | Add button (sidebar headers, list pages)   |
-| `CloseIcon`/`DeleteIcon` | Remove/delete buttons (EntryBlock, SideItem, CharStatusPanel) |
-| `SaveIcon`               | Save button (all pages)                    |
-| `ExpandMoreIcon`/`ChevronRightIcon` | Section collapse/expand        |
-| `FlagIcon`               | Nations section                            |
-| `BuildIcon`              | Techniques section                         |
-| `ScienceIcon`            | Ingredients section                        |
-| `BugReportIcon`          | Monsters section                           |
-| `DiamondIcon`            | Treasures section                          |
-| `BadgeIcon`              | Identity section (Character page)          |
-| `PsychologyIcon`         | Psychological core, Scene motive           |
-| `RouteIcon`              | Character arc section                      |
-| `CrisisAlertIcon`        | Traumas sub-header                         |
-| `MedicalInformationIcon` | Conditions section                         |
-| `EmojiEventsIcon`        | Achievements sub-header                    |
-| `HeartBrokenIcon`        | Losses sub-header                          |
-| `ScheduleIcon`           | Time field (Event page)                    |
-| `CalendarTodayIcon`      | Start/End date fields, Status From/To      |
-| `LocationOnIcon`         | Setting/location field                     |
-| `CameraAltIcon`          | Snapshot card (Fight page)                 |
-| `CenterFocusStrongIcon`  | Focus mode button (Chapter toolbar)        |
-| `ArticleIcon`            | Refs panel button (Chapter toolbar)        |
-| `EventNoteIcon`          | Events tab (reference panel)               |
-| `NotesIcon`              | Chapter notes, AI narrator note            |
+| Icon                                | Context                                                       |
+| ----------------------------------- | ------------------------------------------------------------- |
+| `PublicIcon`                        | World nav, World tab in reference panel                       |
+| `AutoStoriesIcon`                   | Chapters nav, Chapters list page                              |
+| `TimelineIcon`                      | Timeline nav, Status Timeline section                         |
+| `PeopleIcon`/`PeopleAltIcon`        | Characters nav, Characters present                            |
+| `SportsKabaddiIcon`                 | Fight nav, Fight page title                                   |
+| `FileDownloadIcon`                  | Export button                                                 |
+| `LightModeIcon`/`DarkModeIcon`      | Theme toggle                                                  |
+| `AddIcon`                           | Add button (sidebar headers, list pages)                      |
+| `CloseIcon`/`DeleteIcon`            | Remove/delete buttons (EntryBlock, SideItem, CharStatusPanel) |
+| `SaveIcon`                          | Save button (all pages)                                       |
+| `ExpandMoreIcon`/`ChevronRightIcon` | Section collapse/expand                                       |
+| `FlagIcon`                          | Nations section                                               |
+| `BuildIcon`                         | Techniques section                                            |
+| `ScienceIcon`                       | Ingredients section                                           |
+| `BugReportIcon`                     | Monsters section                                              |
+| `DiamondIcon`                       | Treasures section                                             |
+| `BadgeIcon`                         | Identity section (Character page)                             |
+| `PsychologyIcon`                    | Psychological core, Scene motive                              |
+| `RouteIcon`                         | Character arc section                                         |
+| `CrisisAlertIcon`                   | Traumas sub-header                                            |
+| `MedicalInformationIcon`            | Conditions section                                            |
+| `EmojiEventsIcon`                   | Achievements sub-header                                       |
+| `HeartBrokenIcon`                   | Losses sub-header                                             |
+| `ScheduleIcon`                      | Time field (Event page)                                       |
+| `CalendarTodayIcon`                 | Start/End date fields, Status From/To                         |
+| `LocationOnIcon`                    | Setting/location field                                        |
+| `CameraAltIcon`                     | Snapshot card (Fight page)                                    |
+| `CenterFocusStrongIcon`             | Focus mode button (Chapter toolbar)                           |
+| `ArticleIcon`                       | Refs panel button (Chapter toolbar)                           |
+| `EventNoteIcon`                     | Events tab (reference panel)                                  |
+| `NotesIcon`                         | Chapter notes, AI narrator note                               |
 
 ### RichEditor (`src/components/editor/RichEditor.tsx`)
 
@@ -523,106 +534,122 @@ Each domain directory mirrors a page and contains components that are only used 
 
 ## 8. Features Map
 
-| Feature          | Location        | Store path                                                       |
-| ---------------- | --------------- | ---------------------------------------------------------------- |
-| Books            | `BookListPage`  | `appStore.books[]`, `.activeBookId`                              |
-| World meta       | `WorldPage`     | `appStore.books[i].title`, `.synopsis`, `.setting`, `.themes`, `.rules` |
-| Nations          | `WorldPage`     | `appStore.books[i].nations[]` (periodActive, connections[], allianceLogic) |
-| Techniques       | `WorldPage`     | `appStore.books[i].techniques[]`                                 |
-| Ingredients      | `WorldPage`     | `appStore.books[i].ingredients[]`                                |
-| Monsters         | `WorldPage`     | `appStore.books[i].monsters[]`                                   |
-| Treasures        | `WorldPage`     | `appStore.books[i].treasures[]`                                  |
-| Characters       | `CharacterPage` | `appStore.books[i].characters[]`                                 |
-| Arcs             | `CharacterPage` | `.arcs[]`                                                        |
-| Status Timeline  | `CharacterPage` | `.statusTimeline[]` (includes role, archetype, power, states)    |
-| Traumas          | `CharacterPage` | `.traumas[]`                                                     |
-| Conditions       | `CharacterPage` | `.conditions[]`                                                  |
-| Achievements     | `CharacterPage` | `.achievements[]`                                                |
-| Losses           | `CharacterPage` | `.losses[]`                                                      |
-| Events           | `EventPage`     | `appStore.books[i].events[]` (chapters[], startDate, endDate)    |
-| Event attributes | `EventPage`     | `appStore.books[i].characters[j].attributes[eventId]`            |
-| Chapters         | `ChapterPage`   | `appStore.books[i].chapters[]`                                   |
-| Fight sim        | `FightPage`     | Read-only computed via `src/lib/scoreFighter.ts`                 |
-| Export           | `App.tsx` / `CharacterListPage` | `buildExport()` modal in App.tsx, batch export in list page  |
-| Theme toggle     | `App.tsx`       | `localStorage('seshat-theme')`                                   |
-| @mentions        | `RichEditor`    | Multi-trigger Tiptap Mention extension (@, #, %, ~, ^, $)        |
-| Unsaved Guard    | `RichEditor`    | Warns users before navigating away with unsaved changes          |
-| Global Search    | `App.tsx` topbar| `GlobalSearchModal` component with safe recursive deep regex replacement |
-| Lore Web         | `LoreWebPage`   | Interactive directed node graph with Temporal Timeline slider mapping connections |
-| Status Resolution| `resolveStatus` | Computes active character status entry based on chapter timeline context |
-| Toast System     | `toastStore.ts` | Global temporary notifications system for user actions |
-| Continuity Tracker | `ChapterPage`   | Offline, mention-based dynamic checklist extracting Traumas and Core Wounds from pinned characters |
-| Temporal Rels    | `CharacterPage` | `RelationshipBlock` mapping relationship evolution timelines |
-| Scene Outlining  | `ChapterPage`   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome) |
-| Cloud Sync       | `lib/githubSync`| Push (Sync) & Pull mechanisms syncing `appStore` to GitHub branch |
-| Lazy Loading     | `lib/loadBook`  | Strips massive chapter bodies AND historical drafts payloads from RAM; dynamically fetches them into ChapterPage |
-| Mobile Overlay   | `ChapterPage`   | Drawer-style overlay backdrop for ReferencePanel on small screens |
-| Dynamic Mentions | `MentionExtension`| Tiptap custom nodes dynamically resolve entity names from store state during render/export |
-| Bi-Di Linking    | `EventPage`     | Inverse timeline querying mapping pinned events back to Chapters |
-| Draft Versioning | `ChapterPage`   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts. The `sync.ts` pipeline includes draft recovery logic to prevent orphaned historical drafts from being deleted if a sync arrives without body context. |
-| Foreshadow Tracker| `ChapterPage`  | `ForeshadowPanel` tracking planted ideas to payoff chapters (`appStore.books[i].foreshadows[]`) |
-| Subplot Tracking | `TimelinePage`  | `Event` filtering and tagging by `subplot` property |
-| Global Glossary  | `App.tsx`       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures |
-| Issue Tracker    | `IssuesPage`    | Direct integration with GitHub Issues API to submit bugs and feedback (`lib/githubIssues`) |
-| Equipment Config | `CharacterPage` | `EquipmentBlock` managing loadouts, dynamically resolved via `resolveEquipment.ts` |
-| AI Chat Interface| `AIChatModal`   | Unified BYOK OpenAI-compatible chat interface natively parsing the world context `buildExport()` |
-| Batch Export     | `lib/export`    | `/api/github/exportChapters` GraphQL endpoint fetches bulk chapter bodies for DOCX generation |
+| Feature            | Location                        | Store path                                                                                                                                                                                                                                       |
+| ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Books              | `BookListPage`                  | `appStore.books[]`, `.activeBookId`                                                                                                                                                                                                              |
+| World meta         | `WorldPage`                     | `appStore.books[i].title`, `.synopsis`, `.setting`, `.themes`, `.rules`                                                                                                                                                                          |
+| Nations            | `WorldPage`                     | `appStore.books[i].nations[]` (periodActive, connections[], allianceLogic)                                                                                                                                                                       |
+| Techniques         | `WorldPage`                     | `appStore.books[i].techniques[]`                                                                                                                                                                                                                 |
+| Ingredients        | `WorldPage`                     | `appStore.books[i].ingredients[]`                                                                                                                                                                                                                |
+| Monsters           | `WorldPage`                     | `appStore.books[i].monsters[]`                                                                                                                                                                                                                   |
+| Treasures          | `WorldPage`                     | `appStore.books[i].treasures[]`                                                                                                                                                                                                                  |
+| Characters         | `CharacterPage`                 | `appStore.books[i].characters[]`                                                                                                                                                                                                                 |
+| Arcs               | `CharacterPage`                 | `.arcs[]`                                                                                                                                                                                                                                        |
+| Status Timeline    | `CharacterPage`                 | `.statusTimeline[]` (includes role, archetype, power, states)                                                                                                                                                                                    |
+| Traumas            | `CharacterPage`                 | `.traumas[]`                                                                                                                                                                                                                                     |
+| Conditions         | `CharacterPage`                 | `.conditions[]`                                                                                                                                                                                                                                  |
+| Achievements       | `CharacterPage`                 | `.achievements[]`                                                                                                                                                                                                                                |
+| Losses             | `CharacterPage`                 | `.losses[]`                                                                                                                                                                                                                                      |
+| Events             | `EventPage`                     | `appStore.books[i].events[]` (chapters[], startDate, endDate)                                                                                                                                                                                    |
+| Event attributes   | `EventPage`                     | `appStore.books[i].characters[j].attributes[eventId]`                                                                                                                                                                                            |
+| Chapters           | `ChapterPage`                   | `appStore.books[i].chapters[]`                                                                                                                                                                                                                   |
+| Fight sim          | `FightPage`                     | Read-only computed via `src/lib/scoreFighter.ts`                                                                                                                                                                                                 |
+| Export             | `App.tsx` / `CharacterListPage` | `buildExport()` modal in App.tsx, batch export in list page                                                                                                                                                                                      |
+| Theme toggle       | `App.tsx`                       | `localStorage('seshat-theme')`                                                                                                                                                                                                                   |
+| @mentions          | `RichEditor`                    | Multi-trigger Tiptap Mention extension (@, #, %, ~, ^, $)                                                                                                                                                                                        |
+| Unsaved Guard      | `RichEditor`                    | Warns users before navigating away with unsaved changes                                                                                                                                                                                          |
+| Global Search      | `App.tsx` topbar                | `GlobalSearchModal` component with safe recursive deep regex replacement                                                                                                                                                                         |
+| Lore Web           | `LoreWebPage`                   | Interactive directed node graph with Temporal Timeline slider mapping connections                                                                                                                                                                |
+| Status Resolution  | `resolveStatus`                 | Computes active character status entry based on chapter timeline context                                                                                                                                                                         |
+| Toast System       | `toastStore.ts`                 | Global temporary notifications system for user actions                                                                                                                                                                                           |
+| Continuity Tracker | `ChapterPage`                   | Offline, mention-based dynamic checklist extracting Traumas and Core Wounds from pinned characters                                                                                                                                               |
+| Temporal Rels      | `CharacterPage`                 | `RelationshipBlock` mapping relationship evolution timelines                                                                                                                                                                                     |
+| Scene Outlining    | `ChapterPage`                   | `SceneOutlinePanel` for Beat Sheet generation (Goal, POV, Conflict, Outcome)                                                                                                                                                                     |
+| Cloud Sync         | `lib/githubSync`                | Push (Sync) & Pull mechanisms syncing `appStore` to GitHub branch                                                                                                                                                                                |
+| Lazy Loading       | `lib/loadBook`                  | Strips massive chapter bodies AND historical drafts payloads from RAM; dynamically fetches them into ChapterPage                                                                                                                                 |
+| Mobile Overlay     | `ChapterPage`                   | Drawer-style overlay backdrop for ReferencePanel on small screens                                                                                                                                                                                |
+| Dynamic Mentions   | `MentionExtension`              | Tiptap custom nodes dynamically resolve entity names from store state during render/export                                                                                                                                                       |
+| Bi-Di Linking      | `EventPage`                     | Inverse timeline querying mapping pinned events back to Chapters                                                                                                                                                                                 |
+| Draft Versioning   | `ChapterPage`                   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts. The `sync.ts` pipeline includes draft recovery logic to prevent orphaned historical drafts from being deleted if a sync arrives without body context. |
+| Foreshadow Tracker | `ChapterPage`                   | `ForeshadowPanel` tracking planted ideas to payoff chapters (`appStore.books[i].foreshadows[]`)                                                                                                                                                  |
+| Subplot Tracking   | `TimelinePage`                  | `Event` filtering and tagging by `subplot` property                                                                                                                                                                                              |
+| Global Glossary    | `App.tsx`                       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures                                                                                                                                           |
+| Issue Tracker      | `IssuesPage`                    | Direct integration with GitHub Issues API to submit bugs and feedback (`lib/githubIssues`)                                                                                                                                                       |
+| Equipment Config   | `CharacterPage`                 | `EquipmentBlock` managing loadouts, dynamically resolved via `resolveEquipment.ts`                                                                                                                                                               |
+| AI Chat Interface  | `AIChatModal`                   | Unified BYOK OpenAI-compatible chat interface natively parsing the world context `buildExport()`                                                                                                                                                 |
+| Batch Export       | `lib/export`                    | `/api/github/exportChapters` GraphQL endpoint fetches bulk chapter bodies for DOCX generation                                                                                                                                                    |
+
 ---
 
 ### Continuity Tracker Rules
+
 The Continuity Tracker is an offline, non-AI rule engine embedded in the Chapter Editor's Reference Panel (`ContinuityTracker.tsx`). It dynamically checks prose context without making external API calls.
 **How it tracks active constraints:**
+
 1. **Explicit Pinning:** Any character manually pinned to the chapter via the sidebar is tracked.
 2. **Implicit @Mentions:** Any character explicitly tagged in the Tiptap editor using `@` (stored as `data-mention-id`) is tracked.
 3. **Implicit Name Match:** Any string match of a character's exact `name` in the plain text body will automatically track them.
-Once a character is marked active in the current chapter, the Tracker extracts their **Core Wound** and all **unresolved Traumas**, compiling them into a visual checklist for the author. This ensures story consistency regarding physical and psychological limitations during scene writing.
+   Once a character is marked active in the current chapter, the Tracker extracts their **Core Wound** and all **unresolved Traumas**, compiling them into a visual checklist for the author. This ensures story consistency regarding physical and psychological limitations during scene writing.
 
 ### Dynamic Mentions (`MentionExtension`)
-The Tiptap text editor uses a multi-trigger custom node extension to bind plain text to specific world entities. 
+
+The Tiptap text editor uses a multi-trigger custom node extension to bind plain text to specific world entities.
 **Triggers & Resolution:**
+
 - `@` -> Characters (`appStore.books[i].characters`)
 - `#` -> Nations (`appStore.books[i].nations`)
 - `%` -> Monsters (`appStore.books[i].monsters`)
 - `~` -> Ingredients (`appStore.books[i].ingredients`)
 - `^` -> Techniques (`appStore.books[i].techniques`)
 - `$` -> Treasures (`appStore.books[i].treasures`)
-**Rules:** Mentions store only the unique `id` and the `trigger` character in the HTML (`<span data-mention-id="123" data-trigger="@">`). They do **not** store the name. During rendering or DOCX export, the name is dynamically resolved from the `appStore`. If an entity is renamed in the sidebar, every mention of them across the entire book updates instantly.
+  **Rules:** Mentions store only the unique `id` and the `trigger` character in the HTML (`<span data-mention-id="123" data-trigger="@">`). They do **not** store the name. During rendering or DOCX export, the name is dynamically resolved from the `appStore`. If an entity is renamed in the sidebar, every mention of them across the entire book updates instantly.
 
 ### Foreshadow Tracker
+
 A structural tracking system to ensure setups are properly paid off.
-**Rules:** A Foreshadow requires two chapters: a `plantChapterId` (where the idea is introduced) and a `payoffChapterId` (where it resolves). 
-- It exists in three states: `Planted`, `Payoffed`, and `Abandoned`. 
+**Rules:** A Foreshadow requires two chapters: a `plantChapterId` (where the idea is introduced) and a `payoffChapterId` (where it resolves).
+
+- It exists in three states: `Planted`, `Payoffed`, and `Abandoned`.
 - When viewing a Chapter, the `ForeshadowPanel` filters the global `appStore.books[i].foreshadows` array to only show items where the current chapter is either the Plant or the Payoff, allowing the author to immediately see what promises they need to keep in the current scene.
 
 ### Bi-Directional (Bi-Di) Linking
+
 Seshat uses implicit inverse querying rather than explicit back-pointers.
-**Rules:** When you pin a Character or an Event to a Chapter, you are modifying the Chapter's `pinnedChars` and `pinnedEventIds` arrays. You are NOT modifying the Character or Event objects. 
+**Rules:** When you pin a Character or an Event to a Chapter, you are modifying the Chapter's `pinnedChars` and `pinnedEventIds` arrays. You are NOT modifying the Character or Event objects.
+
 - When you view an Event in the `EventPage`, it runs a computed selector to map through all Chapters, find which ones contain its `id` in their `pinnedEventIds`, and generates a "Mentioned In" list dynamically.
 
 ### Smart Character Sync (Events)
+
 A quality-of-life feature to automatically sync characters to an Event based on chapter linkages. A Chapter distinguishes between the primary event it **Takes Place At** (`timeRef`) and events it merely **Mentions** (`pinnedEventIds`).
-**Rules:** The system strictly aggregates characters *only* to the primary event.
+**Rules:** The system strictly aggregates characters _only_ to the primary event.
+
 - **Takes Place At (Auto-Add):** When a Chapter sets its `timeRef` event (via the Chapter header "When did this chapter take place?"), all characters pinned to that Chapter are immediately aggregated and pushed into that specific Event's `characters` list upon saving.
-- **Mentions (Ignored):** Events listed in a chapter's `pinnedEventIds` (Mentions) do *not* automatically inherit the chapter's characters.
-- **Event Page (Auto-Remove):** When viewing an Event Page, if you unpin a Chapter, the system identifies characters unique to that Chapter. It then checks the Event's `charAttrs` state. If the character has *any* non-blank attributes set (meaning the user actively planned them for this event), they are protected. If their attributes are blank, they are safely auto-removed.
+- **Mentions (Ignored):** Events listed in a chapter's `pinnedEventIds` (Mentions) do _not_ automatically inherit the chapter's characters.
+- **Event Page (Auto-Remove):** When viewing an Event Page, if you unpin a Chapter, the system identifies characters unique to that Chapter. It then checks the Event's `charAttrs` state. If the character has _any_ non-blank attributes set (meaning the user actively planned them for this event), they are protected. If their attributes are blank, they are safely auto-removed.
 - **Event Page (Clearing Links):** Unpinning a chapter from the Event Page safely clears the chapter from both the Event's `chapters` array and deletes the Chapter's `timeRef` and `pinnedEventIds` references to that event.
 
 ### Cloud Sync Architecture (Local-First)
+
 Seshat uses a **Local-First** architecture. The browser's `localStorage` (via Legend State) is the absolute source of truth to guarantee zero-latency navigation and offline capabilities.
 **Rules:**
-- **`isFullyLoaded` Bypass:** When navigating to a book, if the local memory already flags it as `isFullyLoaded: true`, the app *will not* automatically fetch from GitHub. This protects offline, unsaved edits from being overwritten by stale cloud data.
+
+- **`isFullyLoaded` Bypass:** When navigating to a book, if the local memory already flags it as `isFullyLoaded: true`, the app _will not_ automatically fetch from GitHub. This protects offline, unsaved edits from being overwritten by stale cloud data.
 - **Push (Sync):** Pushes the current local state to the cloud.
 - **Pull:** Forces a fetch from GitHub, aggressively overwriting local memory with the cloud state. This is required when switching devices or environments (e.g., from `localhost` to `production`) because `localStorage` is domain-isolated, meaning the production site won't know about changes made on localhost unless explicitly told to Pull.
 
 ### Fight Simulation (`scoreFighter.ts`)
 
 `scoreFighter` compares two characters' power levels, skills, and equipment against modifiers (curses, statuses, event arcs) to generate a numeric value representing their theoretical combat effectiveness at a specific point in time. All balancing coefficients (e.g., equipment multipliers, status penalties) are abstracted into an external `SCORING_WEIGHTS` constant to simplify game-balance tuning without altering core algorithms.
+
 - It assigns arbitrary mathematical weights to `tier`, `rarity`, and `stats` text.
 - It is purely read-only; it does not mutate character state. It is used in `FightPage` as a sandbox for authors to check if a planned encounter makes logical sense based on the established world rules.
 
 ### Lazy Loading Architecture (`loadBook.ts`)
+
 A strict memory-management rule to prevent browser tab crashes on massive novels.
-**Rules:** When a book is loaded from the cloud or local storage, the `body` and `drafts` properties of every Chapter are explicitly `delete`d from the memory payload before being pushed to the Legend State store. 
+**Rules:** When a book is loaded from the cloud or local storage, the `body` and `drafts` properties of every Chapter are explicitly `delete`d from the memory payload before being pushed to the Legend State store.
+
 - The `ChapterPage` detects if `chapter.body === undefined`. If so, it initiates an asynchronous fetch (`loadFileFromGitHub`) for that specific `chapter_{id}.json` file, loads the massive text string into memory, injects it into the React Hook Form, and unloads it when the user navigates away.
 
 ## 9. Theme & Style Architecture
@@ -631,21 +658,25 @@ A strict memory-management rule to prevent browser tab crashes on massive novels
 
 Light/dark theming via `[data-theme="light"]` and `[data-theme="dark"]` attribute selectors. All colors, backgrounds, borders, and MUI overrides use CSS custom properties to enable instant theme switching without re-renders.
 
-| Variable group     | Examples                                   |
-| ------------------ | ------------------------------------------ |
-| Backgrounds        | `--bg-app`, `--bg-side`, `--bg-main`, `--bg-hover`, `--bg-entry` |
-| Text               | `--text-primary`, `--text-secondary`, `--text-muted`, `--text-logo` |
-| Borders            | `--border`, `--border-field`               |
-| Semantic colors    | `--color-red`, `--color-blue`, `--color-green`, `--color-purple`, `--color-orange`, `--color-teal`, `--color-dark` |
-| MUI overrides      | `--mui-input-before`, `--mui-label-color`, `--mui-text-color` |
+| Variable group  | Examples                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Backgrounds     | `--bg-app`, `--bg-side`, `--bg-main`, `--bg-hover`, `--bg-entry`                                                   |
+| Text            | `--text-primary`, `--text-secondary`, `--text-muted`, `--text-logo`                                                |
+| Borders         | `--border`, `--border-field`                                                                                       |
+| Semantic colors | `--color-red`, `--color-blue`, `--color-green`, `--color-purple`, `--color-orange`, `--color-teal`, `--color-dark` |
+| MUI overrides   | `--mui-input-before`, `--mui-label-color`, `--mui-text-color`                                                      |
 
 Dark theme semantic colors are slightly lighter for readability on dark backgrounds.
 
 ### Theme Transition (`src/index.css`)
 
 ```css
-*, *::before, *::after {
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 ```
 
@@ -658,6 +689,7 @@ MUI components are themed via CSS class overrides rather than `createTheme()`. G
 ### Modal Component (`src/components/ui/Modal.tsx`)
 
 Portal-based modal using `createPortal(document.body)`. Features:
+
 - Escape key and overlay click to close
 - Body scroll lock while open
 - Optional footer slot with auto-save pattern
@@ -689,34 +721,7 @@ Node.js v24 (for ES2023 target support in tsconfig). Run `nvm use 24` before dev
 
 ---
 
-## 11. Migration to TypeScript
-
-The original `Seshat.jsx` was converted to a modular TypeScript project:
-
-| Was in `Seshat.jsx`                  | Moves to                  |
-| ------------------------------------ | ------------------------- |
-| All constants                        | `src/lib/constants.ts`    |
-| Maker functions, `uid()`, `S` styles | `src/lib/utils.ts`        |
-| `buildExport()`                      | `src/lib/export.ts`       |
-| `scoreFighter()`                     | `src/lib/scoreFighter.ts` |
-| All UI components                    | `src/components/ui/*.tsx` |
-| Pages                                | `src/pages/*.tsx`         |
-| State logic                          | `src/store/appStore.ts` |
-| Routing                              | `src/router/index.tsx`    |
-| App shell                            | `src/App.tsx`             |
-
-TypeScript strict mode with `verbatimModuleSyntax` enforced. All style properties typed as `Record<string, React.CSSProperties | Record<string, React.CSSProperties>>`.
-
-### Type Strategy
-
-- Entity types (`Character`, `Event`, `Nation`, etc.) defined in `src/lib/types.ts` for reuse
-- Legend State observable patterns use per-field `.set()` calls in `onSubmit` to avoid dynamic property access
-- `useTheme.tsx` exports types separately to satisfy react-refresh's component-only file restriction
-- `any` keyword is banned — no `as any`, no `: any`, no `eslint-disable @typescript-eslint/no-explicit-any` anywhere in the codebase
-
----
-
-## 12. Legend State Patterns & Gotchas
+## 11. Legend State Patterns & Gotchas
 
 ### Common Bug: `.get()` on Array Elements
 
@@ -727,13 +732,19 @@ TypeError: appStore.books[idx].events.get(...).find(...)?.get is not a function
 ```
 
 **Incorrect:**
+
 ```ts
-const event = useSelector(() =>
-  appStore.books[idx].events.get().find((e) => e.id === id)?.get(), // BUG
+const event = useSelector(
+  () =>
+    appStore.books[idx].events
+      .get()
+      .find((e) => e.id === id)
+      ?.get(), // BUG
 );
 ```
 
 **Correct (for read-only access):**
+
 ```ts
 const event = useSelector(() =>
   appStore.books[idx].events.get().find((e) => e.id === id),
@@ -741,6 +752,7 @@ const event = useSelector(() =>
 ```
 
 **Correct (for updates via save, get index too):**
+
 ```ts
 const event = useSelector(() =>
   appStore.books[idx].events.get().find((e) => e.id === id),
@@ -759,7 +771,7 @@ The `appStore` is a single observable containing `activeBookId` and `books[]`. A
 const bookIdx = useActiveBookIdx();
 
 // Read data from the active book (inside useSelector)
-useSelector(() => appStore.books[bookIdx].characters.get())
+useSelector(() => appStore.books[bookIdx].characters.get());
 
 // Write to the active book
 appStore.books[bookIdx].characters.push(newChar);
@@ -807,41 +819,41 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 
 ### Pattern Summary
 
-| Purpose                  | Pattern                                                                 |
-| ----------------------   | --------------------------------------------------------------------- |
-| Read primitive           | `useSelector(() => appStore.books[idx].title.get())`                   |
-| Read array (full)        | `useSelector(() => appStore.books[idx].events.get())`                  |
+| Purpose                  | Pattern                                                                             |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| Read primitive           | `useSelector(() => appStore.books[idx].title.get())`                                |
+| Read array (full)        | `useSelector(() => appStore.books[idx].events.get())`                               |
 | Read array (find)        | `appStore.books[idx].events.get().find(e => e.id === id)` (raw object, no `.get()`) |
-| Get active book index    | `useActiveBookIdx()` — reactive hook returns index of current book     |
-| Local form state         | `useForm<FormType>()` + `reset()` from store on entity change             |
-| Persist to store on save | `handleSubmit(onSubmit)` => per-field `.set()` calls on active book      |
-| MUI Field/Sel in form    | `useWatch({ control, name })` for value, `setValue(name, v)` for change   |
-| React Compiler safety    | Prefer `useWatch` over `watch()`; extract sub-components for array items  |
-| Native input in form     | `{...register("field")}`                                                |
-| Array item sub-component | Define `ItemBlockProps` with `Control`; pass `control`, `index`          |
-| EventPage char attrs     | Separate `useState<Record<string, EventAttributes>>`, write on save      |
-| Component memoization    | Wrap pure display components in `React.memo` (primitive-only props)      |
+| Get active book index    | `useActiveBookIdx()` — reactive hook returns index of current book                  |
+| Local form state         | `useForm<FormType>()` + `reset()` from store on entity change                       |
+| Persist to store on save | `handleSubmit(onSubmit)` => per-field `.set()` calls on active book                 |
+| MUI Field/Sel in form    | `useWatch({ control, name })` for value, `setValue(name, v)` for change             |
+| React Compiler safety    | Prefer `useWatch` over `watch()`; extract sub-components for array items            |
+| Native input in form     | `{...register("field")}`                                                            |
+| Array item sub-component | Define `ItemBlockProps` with `Control`; pass `control`, `index`                     |
+| EventPage char attrs     | Separate `useState<Record<string, EventAttributes>>`, write on save                 |
+| Component memoization    | Wrap pure display components in `React.memo` (primitive-only props)                 |
 
 ---
 
-## 13. Testing
+## 12. Testing
 
 ### Stack
 
-| Concern       | Library                  | Why                                       |
-| ------------- | ------------------------ | ----------------------------------------- |
-| Runner        | Vitest v4                | Vite-native, fast, supports bench mode    |
-| DOM env       | jsdom                    | Component rendering in Node               |
-| Component     | @testing-library/react   | Renders React components for smoke tests  |
-| Matchers      | @testing-library/jest-dom | DOM assertions (`toBeInTheDocument`, etc.) |
-| User events   | @testing-library/user-event | Realistic click/type simulation        |
+| Concern     | Library                     | Why                                        |
+| ----------- | --------------------------- | ------------------------------------------ |
+| Runner      | Vitest v4                   | Vite-native, fast, supports bench mode     |
+| DOM env     | jsdom                       | Component rendering in Node                |
+| Component   | @testing-library/react      | Renders React components for smoke tests   |
+| Matchers    | @testing-library/jest-dom   | DOM assertions (`toBeInTheDocument`, etc.) |
+| User events | @testing-library/user-event | Realistic click/type simulation            |
 
 ### Scripts
 
-| Command              | Action                                    |
-| -------------------- | ----------------------------------------- |
+| Command              | Action                                     |
+| -------------------- | ------------------------------------------ |
 | `npm test`           | `vitest run` — run all `.test.ts(x)` files |
-| `npm run test:watch` | `vitest` — watch mode                     |
+| `npm run test:watch` | `vitest` — watch mode                      |
 | `npm run test:bench` | `vitest bench --run` — run `.bench.ts(x)`  |
 
 Benchmark files (`.bench.ts`) are excluded from the normal `vitest run` and must be run via the bench command.
@@ -857,22 +869,22 @@ src/components/__tests__/    # Cross-component render-performance tests
 
 ### Test Suite Summary (73 total)
 
-| File                                  | Tests | What it covers                     |
-| ------------------------------------- | ----- | ---------------------------------- |
-| `src/lib/__tests__/utils.test.ts`     | 10    | uid(), mk helpers, style object S  |
-| `src/lib/__tests__/export.test.ts`    | 12    | buildExport() plaintext generation |
-| `src/pages/__tests__/FightPage.test.ts` | 29  | scoreFighter scoring logic         |
-| `src/pages/__tests__/*Page.test.tsx`  | ~30   | Edge-to-edge component tests for Chapter, Character, World, BookList, Auth, NotFound |
-| `src/lib/__tests__/conflictUtils.test.ts` | 8   | Deep diffing and conflict resolution validation |
-| `functions/api/github/__tests__/sync.test.ts` | 1 | Draft recovery and sync integrity tests |
-| `src/components/ui/__tests__/*`       | 11    | Field, Sel, Toggle, EventPicker    |
-| `src/components/__tests__/*`          | 23    | ConflictModal, renderPerformance tests |
+| File                                          | Tests | What it covers                                                                       |
+| --------------------------------------------- | ----- | ------------------------------------------------------------------------------------ |
+| `src/lib/__tests__/utils.test.ts`             | 10    | uid(), mk helpers, style object S                                                    |
+| `src/lib/__tests__/export.test.ts`            | 12    | buildExport() plaintext generation                                                   |
+| `src/pages/__tests__/FightPage.test.ts`       | 29    | scoreFighter scoring logic                                                           |
+| `src/pages/__tests__/*Page.test.tsx`          | ~30   | Edge-to-edge component tests for Chapter, Character, World, BookList, Auth, NotFound |
+| `src/lib/__tests__/conflictUtils.test.ts`     | 8     | Deep diffing and conflict resolution validation                                      |
+| `functions/api/github/__tests__/sync.test.ts` | 1     | Draft recovery and sync integrity tests                                              |
+| `src/components/ui/__tests__/*`               | 11    | Field, Sel, Toggle, EventPicker                                                      |
+| `src/components/__tests__/*`                  | 23    | ConflictModal, renderPerformance tests                                               |
 
 ### Benchmarks
 
-| File                                    | What it measures      |
-| --------------------------------------- | --------------------- |
-| `src/lib/__tests__/export.bench.ts`     | buildExport() throughput |
+| File                                     | What it measures                     |
+| ---------------------------------------- | ------------------------------------ |
+| `src/lib/__tests__/export.bench.ts`      | buildExport() throughput             |
 | `src/pages/__tests__/FightPage.bench.ts` | scoreFighter() throughput (3 scales) |
 
 ### Conventions
@@ -889,6 +901,7 @@ src/components/__tests__/    # Cross-component render-performance tests
 ### Code Generation Reminder
 
 When generating Legend State code:
+
 - Never call `.get()` on array elements returned by `.find()`, `.map()`, or `.filter()`
 - Always get the array index if you need to update an item later (for save, not per-keystroke)
 - Use `useSelector()` for reactive reads, direct `.get()` only inside selectors
@@ -912,15 +925,15 @@ When generating Legend State code:
 
 ---
 
-## 14. Authentication & Cloud Sync
+## 13. Authentication & Cloud Sync
 
 Seshat uses a completely serverless authentication and cloud synchronization model backed by **Cloudflare Workers** and the **GitHub API**.
 
 ### JWT Authentication
 
-- **Cloudflare Worker Backend:** Endpoints (`/api/github/login`, `/api/github/register`, `/api/github/sync`) run on Cloudflare Workers. 
+- **Cloudflare Worker Backend:** Endpoints (`/api/github/login`, `/api/github/register`, `/api/github/sync`) run on Cloudflare Workers.
 - **Token Generation:** The user registers/logs in with a `username` (branch name) and `accessCode` (secret password). The backend verifies this against `users.json` on the main GitHub branch, and generates a **JWT-like token** signed via the Web Crypto API using an `AUTH_SECRET` environment variable (HMAC-SHA256).
-- **Client Storage:** The frontend *never* stores the raw `accessCode`. It saves the signed token to `localStorage`/`sessionStorage` as `seshat-auth-token`.
+- **Client Storage:** The frontend _never_ stores the raw `accessCode`. It saves the signed token to `localStorage`/`sessionStorage` as `seshat-auth-token`.
 - **AuthGuard (`src/components/AuthGuard.tsx`):** A wrapper component that intercepts rendering for protected routes. It synchronously decodes the token's payload in the browser to check the `exp` (expiration timestamp). If the token is missing or expired, it redirects to the `/auth` route natively without needing to make network requests.
 - **Performant Syncing:** Since the JWT contains the cryptographically signed `username`, the `sync.ts` backend worker bypasses fetching and parsing `users.json` for every sync request, resulting in significantly faster syncing and drastically reduced GitHub API rate-limit usage.
 
@@ -932,6 +945,7 @@ Seshat uses a completely serverless authentication and cloud synchronization mod
 ### Git-Style Conflict Resolution (Smart Merge UI)
 
 When the user executes a `Pull` operation, Seshat compares the local state with the server state using a deep, granular JSON diff via `getConflicts` (ignoring lazy-loaded body/draft properties).
+
 1. **Active Page Filtering**: The conflict list is filtered by the active context (e.g. the currently active chapter, metadata, characters, events). Non-active chapter conflicts are automatically designated to auto-resolve to the server version (preserving their local bodies and drafts).
 2. **Silent Auto-Merge**: If there are no conflicts on the active page (visible conflicts length is 0), the other chapters are auto-merged silently in the background using `autoMergeOtherChapters`. The local store and `lastSyncSha` are updated, and a success toast is shown without interrupting the user.
 3. **Interactive Conflict Resolution**: If there are active page conflicts, the `ConflictModal` is displayed. The user resolves active conflicts using the interface (`[Keep Local]` or `[Keep Cloud]`).
@@ -939,7 +953,7 @@ When the user executes a `Pull` operation, Seshat compares the local state with 
 
 > [!CAUTION]
 > **CRITICAL: GitHub Tree Syncing & Memory Constraints**
-> 
+>
 > 1. **Memory Preservation (Stubs):** `loadBook.ts` intentionally deletes the massive `body` field of chapters before sending them to the frontend to prevent RAM exhaustion. These chapters sit in local state as "stubs" (`body === undefined`) until a user explicitly visits the chapter page (which lazy-loads the body).
 > 2. **Data Loss via Stubs:** Because `JSON.stringify` drops `undefined` properties, a full sync (`sync.ts`) would blindly overwrite chapters in GitHub with bodiless files. To prevent this, `sync.ts` MUST fetch the existing recursive Git tree and use the old blob `sha` instead of `content` for any chapter where `body === undefined`.
 > 3. **The `base_tree` Bug:** When updating files via the GitHub API (`updateFile.ts`, `updateFiles.ts`), you **MUST** extract the **Tree SHA** from the latest commit and pass it as `base_tree`. If you mistakenly pass a **Commit SHA**, GitHub will silently ignore the `base_tree` entirely and create a new root tree containing ONLY the files you updated, completely deleting the rest of the repository!
@@ -949,49 +963,60 @@ When the user executes a `Pull` operation, Seshat compares the local state with 
 
 ---
 
-## 15. Local Development & Hosting Architecture
+## 14. Local Development & Hosting Architecture
 
 Seshat uses a hybrid local development environment to provide a seamless full-stack developer experience.
 
 ### Architecture Overview
+
 - **Frontend Host**: React powered by **Vite**. The frontend dev server provides ultra-fast Hot Module Replacement (HMR) and typically runs on `http://localhost:5173`.
 - **Backend Host**: Serverless API powered by **Cloudflare Pages / Wrangler**. The backend worker runs locally via Wrangler to simulate the production Cloudflare edge environment, executing the endpoints found in the `functions/api/` directory.
 
 ### How to Connect & Run (The Proxy Strategy)
+
 To run both the frontend and backend simultaneously while retaining HMR, you must use Wrangler's built-in proxy feature.
 
 **Command:**
+
 ```bash
 npx wrangler pages dev -- npm run dev
 ```
-*(Alternatively, if configured in `package.json`, use `npm run wrangler`)*
+
+_(Alternatively, if configured in `package.json`, use `npm run wrangler`)_
 
 **What this command does:**
+
 1. Wrangler spins up the backend worker environment on a local port (usually `http://localhost:8788`).
 2. It simultaneously executes `npm run dev` to start the Vite frontend.
-3. Wrangler acts as a reverse proxy: 
+3. Wrangler acts as a reverse proxy:
    - **Frontend Traffic:** Any standard page request is forwarded directly to Vite, maintaining instant HMR for UI changes.
    - **API Traffic:** Any request matching `/api/*` is intercepted by Wrangler and routed directly to the `functions/api/` handlers.
 
 ### Accessing the App Locally
-**CRITICAL:** When developing locally, you **MUST** open the browser to the Wrangler proxy port (`http://localhost:8788`), **NOT** the Vite port (`5173`). 
+
+**CRITICAL:** When developing locally, you **MUST** open the browser to the Wrangler proxy port (`http://localhost:8788`), **NOT** the Vite port (`5173`).
 If you visit the Vite port directly, your API calls will fail with 404s because Vite does not know how to execute Cloudflare Worker functions.
 
 ### Secret Management
-For local testing, backend secrets (like `GITHUB_TOKEN`, `AUTH_SECRET`) must be placed in a `.dev.vars` file in the project root. Cloudflare Workers do *not* read standard `.env` files for backend execution.
 
-## 16. Cloud Database Architecture
+For local testing, backend secrets (like `GITHUB_TOKEN`, `AUTH_SECRET`) must be placed in a `.dev.vars` file in the project root. Cloudflare Workers do _not_ read standard `.env` files for backend execution.
+
+## 15. Cloud Database Architecture
 
 The application uses Cloudflare Pages Functions to proxy communication with a GitHub repository, enabling a multi-user database architecture.
 
 ### User Isolation (Branching)
+
 Instead of storing all data in a single repository `main` branch, every user gets their own dedicated Git branch (e.g., `user-{username}`).
+
 - Login generates a secure JWT token containing the username (expires in 7 days).
 - All `/api/github/*` routes require this token.
 - The Cloudflare Worker verifies the token and dynamically reads/writes to `user-{username}`, strictly isolating each user's data.
 
 ### Granular File Structure
+
 Data inside the Git repository is broken down into modular JSON files rather than a single monolithic JSON file.
+
 - `books/book_{id}/book.json` (metadata)
 - `books/book_{id}/index.json` (manifest mapping IDs to titles)
 - `books/book_{id}/characters/char_{id}.json`
@@ -1001,29 +1026,36 @@ Data inside the Git repository is broken down into modular JSON files rather tha
 - `books/book_{id}/world/world.json` (and subdirectories for nations, monsters, etc.)
 
 ### Delta Syncing
+
 The save logic strictly adheres to delta syncing to preserve API rate limits and minimize network payloads:
+
 - **`updateFile`**: Targets a single granular JSON file (e.g. `chapters/chapter_{id}.json`) and creates a commit. Used by Chapter, Character, and Event pages.
 - **`updateFiles`**: Bundles multiple files together into a single atomic commit. Used by the World page (which updates `world.json` and associated entities simultaneously).
 - Saves bypass `react-hook-form`'s built-in `handleSubmit` to prevent blocking; they use `getValues()` directly to retrieve the form data and POST to the Cloudflare Functions.
 
 ### Loading Book (`loadBook`)
+
 Fetches all blobs recursively via the GitHub Tree API for the specified `books/book_{id}/` directory and stitches them together into a complete LegendState object before rendering.
 
 ### Async Workflow UI Requirements
+
 Any component that triggers an asynchronous workflow (API calls for load, sync, create, read, update, delete) MUST explicitly handle and display two visual states:
+
 1. **Normal State**: The default interactive state.
 2. **Pending State**: Displayed while the promise is resolving. The element should provide visual feedback (e.g., text changes to "Saving...", "Syncing...", opacity reduces) and be `disabled` to prevent duplicate submissions.
 
 ### UX Conventions
+
 - **No Native Dialogs:** The use of `window.prompt()`, `window.confirm()`, and `window.alert()` is strictly prohibited as they block the main thread and break the visual aesthetic. Always use the internal state-driven `Modal` component (`src/components/ui/Modal.tsx`) for user confirmation or text inputs.
 
 ### The `S` Utility Object
-Global style presets (like grids, input fields, layout wrappers) are centralized in the `S` object within `src/lib/utils.ts`. 
+
+Global style presets (like grids, input fields, layout wrappers) are centralized in the `S` object within `src/lib/utils.ts`.
 **Rule:** The object must be typed using `satisfies Record<string, React.CSSProperties>` rather than cast loosely. This ensures strict type safety and enables accurate IDE autocomplete for consumers (preventing silent fallbacks of undefined styles).
 
 ---
 
-## 17. Core Domain Model — Full Type Reference
+## 16. Core Domain Model — Full Type Reference
 
 Every piece of author data is organized under a **BookData** tree. `isFullyLoaded` is a runtime flag — never persisted to GitHub — that tells the app whether the full book has been fetched from the cloud.
 
@@ -1043,6 +1075,7 @@ BookData
 ```
 
 ### Character (most complex entity)
+
 ```
 Character
 ├── Core psychology: role, archetype, coreWound, coreFear, coreDesire, philosophy, secrets
@@ -1081,6 +1114,7 @@ Character
 ```
 
 ### Event
+
 ```
 Event
 ├── id, time (T-value integer), title
@@ -1093,6 +1127,7 @@ Event
 ```
 
 ### Chapter
+
 ```
 Chapter
 ├── id, number, title, timeRef (→ Event.id as string), synopsis, notes, order
@@ -1106,6 +1141,7 @@ Chapter
 ```
 
 ### Foreshadow
+
 ```
 Foreshadow
 ├── id
@@ -1117,7 +1153,7 @@ Foreshadow
 
 ---
 
-## 18. All Enum Types
+## 17. All Enum Types
 
 ```
 PowerTier:    Latent | Awakening | Capable | Skilled | Elite | Peak | Transcendent
@@ -1137,9 +1173,10 @@ Constants arrays for all the above are exported from `src/lib/constants.ts` (e.g
 
 ---
 
-## 19. GitHub-as-Storage: File Layout & Conflict Detection
+## 18. GitHub-as-Storage: File Layout & Conflict Detection
 
 ### Conflict Detection (`lastSyncSha`)
+
 - `appStore.lastSyncSha: string | null` stores the last known commit SHA of the user's branch.
 - Every `sync`, `updateFile`, and `updateFiles` call passes `lastKnownSha` to the backend.
 - If the branch HEAD has advanced beyond `lastKnownSha`, the API returns `409 { conflict: true }`.
@@ -1147,6 +1184,7 @@ Constants arrays for all the above are exported from `src/lib/constants.ts` (e.g
 - **localStorage isolation**: `lastSyncSha` from `localhost` ≠ `lastSyncSha` from production. Users must Pull when switching environments.
 
 ### Complete GitHub File Layout
+
 ```
 users.json                                  # flat user registry on main branch
                                             # { username: { accessCode, email } }
@@ -1171,6 +1209,7 @@ books/
 ### GitHub API Usage (Two Distinct APIs)
 
 #### REST API — writes, tree ops, branch management
+
 - `GET /repos/{owner}/{repo}` — get repo metadata / default branch
 - `GET /repos/{owner}/{repo}/git/ref/heads/{branch}` — get branch HEAD SHA
 - `POST /repos/{owner}/{repo}/git/refs` — create branch from another
@@ -1182,36 +1221,47 @@ books/
 - `GET/PUT /repos/{owner}/{repo}/contents/users.json` — read/write users registry
 
 #### GitHub GraphQL API — batch blob reads (load.ts, loadBook.ts)
+
 Used to fetch up to 100 file contents in a single request:
+
 ```graphql
 query {
   repository(owner: "...", name: "...") {
-    blob0: object(oid: "<sha>") { ... on Blob { text } }
-    blob1: object(oid: "<sha>") { ... on Blob { text } }
+    blob0: object(oid: "<sha>") {
+      ... on Blob {
+        text
+      }
+    }
+    blob1: object(oid: "<sha>") {
+      ... on Blob {
+        text
+      }
+    }
     # up to 100 per query
   }
 }
 ```
+
 - Endpoint: `POST https://api.github.com/graphql`
 - Auth: `Authorization: Bearer <GITHUB_TOKEN>`
 
 ---
 
-## 20. Key Library Functions Reference
+## 19. Key Library Functions Reference
 
-| Function | File | Purpose |
-|---|---|---|
-| `buildExport(state)` | `lib/export.ts` | Generates a plain-text AI context dump with all world/character/event data |
+| Function                                                                              | File                   | Purpose                                                                                                                                                |
+| ------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `buildExport(state)`                                                                  | `lib/export.ts`        | Generates a plain-text AI context dump with all world/character/event data                                                                             |
 | `resolveStatusAt(char, events, contextDate?, contextEventTime?, contextWindowStart?)` | `lib/resolveStatus.ts` | Finds the correct `StatusEntry` for a character at a chapter's time context (3-path algorithm: window → date fallback → T-value fallback → last entry) |
-| `chapterContext(pinnedEvents)` | `lib/resolveStatus.ts` | Extracts `{ contextDate, contextWindowStart, contextEventTime }` from pinned events |
-| `scoreFighter(char, events, atEventId?)` | `lib/scoreFighter.ts` | Computes a numeric combat score (power tier × 3 + skills × 1.2 + equipment − curses − conditions + arc mod + emotional mod) |
-| `computeEventSync(bookIdx, eventId, chapterId, newTimeRef, newPinnedChars)` | `lib/eventSync.ts` | Keeps `event.characters` and `event.chapters` consistent with chapter pinning (called on chapter save) |
-| `syncToGitHub(token)` | `lib/githubSync.ts` | Full push of all books (replaces entire branch tree) |
-| `loadFromGitHub(token)` | `lib/githubSync.ts` | Loads lightweight book list (only `book.json` per book) |
-| `loadBookFromGitHub(token, bookId)` | `lib/githubSync.ts` | Loads a single full book (all entities except draft bodies) |
-| `updateFileOnGitHub(token, bookId, path, content)` | `lib/githubSync.ts` | Patches a single file in one Git commit |
-| `updateFilesOnGitHub(token, bookId, files[])` | `lib/githubSync.ts` | Patches multiple files atomically in one commit |
-| `loadFileFromGitHub(token, bookId, path)` | `lib/githubSync.ts` | Lazy-loads a single raw file (e.g., draft body) |
-| `mkChar / mkEvent / mkBranch / mkTrauma / mkCond / mkSkill / mkEquip / ...` | `lib/utils.ts` | Factory functions creating blank entities with `uid()` IDs |
-| `uid()` | `lib/utils.ts` | `Math.random().toString(36).slice(2, 8)` — 6-char alphanumeric ID |
-| `S` (style object) | `lib/utils.ts` | Shared `React.CSSProperties` presets using CSS variables |
+| `chapterContext(pinnedEvents)`                                                        | `lib/resolveStatus.ts` | Extracts `{ contextDate, contextWindowStart, contextEventTime }` from pinned events                                                                    |
+| `scoreFighter(char, events, atEventId?)`                                              | `lib/scoreFighter.ts`  | Computes a numeric combat score (power tier × 3 + skills × 1.2 + equipment − curses − conditions + arc mod + emotional mod)                            |
+| `computeEventSync(bookIdx, eventId, chapterId, newTimeRef, newPinnedChars)`           | `lib/eventSync.ts`     | Keeps `event.characters` and `event.chapters` consistent with chapter pinning (called on chapter save)                                                 |
+| `syncToGitHub(token)`                                                                 | `lib/githubSync.ts`    | Full push of all books (replaces entire branch tree)                                                                                                   |
+| `loadFromGitHub(token)`                                                               | `lib/githubSync.ts`    | Loads lightweight book list (only `book.json` per book)                                                                                                |
+| `loadBookFromGitHub(token, bookId)`                                                   | `lib/githubSync.ts`    | Loads a single full book (all entities except draft bodies)                                                                                            |
+| `updateFileOnGitHub(token, bookId, path, content)`                                    | `lib/githubSync.ts`    | Patches a single file in one Git commit                                                                                                                |
+| `updateFilesOnGitHub(token, bookId, files[])`                                         | `lib/githubSync.ts`    | Patches multiple files atomically in one commit                                                                                                        |
+| `loadFileFromGitHub(token, bookId, path)`                                             | `lib/githubSync.ts`    | Lazy-loads a single raw file (e.g., draft body)                                                                                                        |
+| `mkChar / mkEvent / mkBranch / mkTrauma / mkCond / mkSkill / mkEquip / ...`           | `lib/utils.ts`         | Factory functions creating blank entities with `uid()` IDs                                                                                             |
+| `uid()`                                                                               | `lib/utils.ts`         | `Math.random().toString(36).slice(2, 8)` — 6-char alphanumeric ID                                                                                      |
+| `S` (style object)                                                                    | `lib/utils.ts`         | Shared `React.CSSProperties` presets using CSS variables                                                                                               |
