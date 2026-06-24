@@ -2,6 +2,17 @@
 // AI Oracle — static configuration constants
 // ─────────────────────────────────────────────────────────────────────────────
 
+import {
+  SmartToyIcon,
+  EditIcon,
+  MedicalInformationIcon,
+  ChatIcon,
+  PublicIcon,
+  FaceIcon,
+  ShieldIcon,
+  AutoStoriesIcon,
+} from "../ui/icons";
+
 export const AI_PROVIDERS = [
   {
     id: "openai",
@@ -60,12 +71,12 @@ export const AI_PROVIDERS = [
 export const AI_MODES = {
   GENERAL: {
     label: "General Assistant",
-    icon: "🤖",
+    icon: <SmartToyIcon sx={{ fontSize: 16 }} />,
     systemAppend: `You are an expert lorekeeper and creative assistant.`,
   },
   SCENE_WRITER: {
     label: "Write a Scene",
-    icon: "✍️",
+    icon: <EditIcon sx={{ fontSize: 16 }} />,
     systemAppend: `You are writing PROSE, not describing prose. Show don't tell.
 Structure every scene with: 
   - HOOK (first sentence creates immediate tension or intrigue)
@@ -78,7 +89,7 @@ what they notice vs ignore, all reflect their psychology.`,
   },
   PLOT_DOCTOR: {
     label: "Plot Doctor",
-    icon: "🩺",
+    icon: <MedicalInformationIcon sx={{ fontSize: 16 }} />,
     systemAppend: `You are a developmental editor diagnosing story problems.
 When presented with a plot issue:
 1. DIAGNOSE: Name the real problem (not just the symptom the writer described)
@@ -88,7 +99,7 @@ When presented with a plot issue:
   },
   DIALOGUE_COACH: {
     label: "Dialogue Coach",
-    icon: "💬",
+    icon: <ChatIcon sx={{ fontSize: 16 }} />,
     systemAppend: `You write dialogue that sounds like THESE specific characters.
 Rules for every line:
 - Every exchange should CHANGE something (power dynamic, information, relationship)
@@ -97,7 +108,7 @@ Rules for every line:
   },
   LORE_EXPANDER: {
     label: "Lore Expander",
-    icon: "🌍",
+    icon: <PublicIcon sx={{ fontSize: 16 }} />,
     systemAppend: `You are expanding the world's lore while maintaining INTERNAL CONSISTENCY.
 For every lore element you create:
 1. It must have a CAUSE in the existing world
@@ -106,7 +117,7 @@ For every lore element you create:
   },
   CHARACTER_ROLEPLAY: {
     label: "Roleplay Character",
-    icon: "🎭",
+    icon: <FaceIcon sx={{ fontSize: 16 }} />,
     systemAppend: `You are now fully embodying the focused Character. You ARE this character — not an assistant describing them.
 ### ROLEPLAY RULES ###
 1. Answer every question IN CHARACTER — first person, present tense
@@ -132,28 +143,28 @@ export const TEMP_BY_MODE: Record<ExpertMode, number> = {
 
 export const QUICK_ACTIONS = [
   {
-    icon: "🛡️",
+    icon: <ShieldIcon sx={{ fontSize: 16 }} />,
     label: "Audit World",
     mode: "GENERAL" as ExpertMode,
     message:
       "Scan my entire world for internal contradictions, plot holes, and character inconsistencies. Be specific — name the entities and the conflicting details.",
   },
   {
-    icon: "📝",
+    icon: <AutoStoriesIcon sx={{ fontSize: 16 }} />,
     label: "Next Scene",
     mode: "SCENE_WRITER" as ExpertMode,
     message:
       "Based on the chronological timeline, what is the next scene that should happen? Outline it with hook, conflict, and what changes.",
   },
   {
-    icon: "🌍",
+    icon: <PublicIcon sx={{ fontSize: 16 }} />,
     label: "Expand Lore",
     mode: "LORE_EXPANDER" as ExpertMode,
     message:
       "Suggest 3 new cultural details, traditions, or minor factions that would make this world feel more alive. Each must connect to existing canon.",
   },
   {
-    icon: "🩺",
+    icon: <MedicalInformationIcon sx={{ fontSize: 16 }} />,
     label: "Fix Plot",
     mode: "PLOT_DOCTOR" as ExpertMode,
     message: "", // empty — let writer describe the problem

@@ -48,3 +48,6 @@ export { default as LogoutIcon } from "@mui/icons-material/Logout";
 export { default as SmartToyIcon } from "@mui/icons-material/SmartToy";
 export { default as SendIcon } from "@mui/icons-material/Send";
 export { default as SettingsIcon } from "@mui/icons-material/Settings";
+export { default as EditIcon } from "@mui/icons-material/Edit";
+export { default as ChatIcon } from "@mui/icons-material/Chat";
+export { default as FaceIcon } from "@mui/icons-material/Face";

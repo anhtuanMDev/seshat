@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { SmartToyIcon } from "../components/ui/icons";
+import { SmartToyIcon, AutoStoriesIcon, ChatIcon, AutoFixHighIcon } from "../components/ui/icons";
 
 // AI-feature modules
 import "../components/ai/ai-page.css";
@@ -194,7 +194,8 @@ export default function AIPage() {
               }}
               title="Change context"
             >
-              📚 {activeBookName}
+              <AutoStoriesIcon sx={{ fontSize: 14 }} />
+              {activeBookName}
             </button>
           )}
           <button
@@ -536,7 +537,10 @@ function MobileContextStrip({
           whiteSpace: "nowrap",
         }}
       >
-        {aiMode === "chat" ? "💬 Chat" : "✨ Gen Char"}
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          {aiMode === "chat" ? <ChatIcon sx={{ fontSize: 12 }} /> : <AutoFixHighIcon sx={{ fontSize: 12 }} />}
+          {aiMode === "chat" ? "Chat" : "Gen Char"}
+        </div>
       </span>
 
       {isTyping && (

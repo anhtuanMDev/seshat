@@ -8,6 +8,8 @@ import {
   BugReportIcon,
   DarkModeIcon,
   LightModeIcon,
+  ChatIcon,
+  AutoFixHighIcon,
 } from "../components/ui/icons";
 import { CircularProgress } from "@mui/material";
 import { showToast } from "../store/toastStore";
@@ -233,10 +235,10 @@ export default function IssuesPage() {
                   {t === "all"
                     ? "All"
                     : t === "bug"
-                      ? "🐛 Bugs"
+                      ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><BugReportIcon sx={{ fontSize: 14 }} /> Bugs</span>
                       : t === "recommendation"
-                        ? "💡 Ideas"
-                        : "💬 Discussion"}
+                        ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><AutoFixHighIcon sx={{ fontSize: 14 }} /> Ideas</span>
+                        : <span style={{ display: "flex", alignItems: "center", gap: 4 }}><ChatIcon sx={{ fontSize: 14 }} /> Discussion</span>}
                 </button>
               ))}
             </div>
@@ -366,7 +368,7 @@ export default function IssuesPage() {
                         by {iss.author} · #{iss.number}
                       </span>
                       <span style={styles.commentsCountSpan}>
-                        💬 {iss.commentsCount}
+                        <ChatIcon sx={{ fontSize: 14 }} /> {iss.commentsCount}
                       </span>
                     </div>
                   </div>
@@ -389,9 +391,9 @@ export default function IssuesPage() {
               <div className="seshat-modal-type-selector">
                 {(
                   [
-                    { value: "discussion", icon: "💬", label: "Discussion" },
-                    { value: "bug",        icon: "🐛", label: "Bug Report" },
-                    { value: "recommendation", icon: "💡", label: "Feature" },
+                    { value: "discussion", icon: <ChatIcon sx={{ fontSize: 16 }} />, label: "Discussion" },
+                    { value: "bug",        icon: <BugReportIcon sx={{ fontSize: 16 }} />, label: "Bug Report" },
+                    { value: "recommendation", icon: <AutoFixHighIcon sx={{ fontSize: 16 }} />, label: "Feature" },
                   ] as const
                 ).map((opt) => (
                   <button

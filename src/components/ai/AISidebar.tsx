@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
-import { DeleteIcon } from "../ui/icons";
+import { DeleteIcon, ChatIcon, AutoFixHighIcon } from "../ui/icons";
 import { AI_PROVIDERS, AI_MODES, type ExpertMode } from "./constants";
 import type { AiMode } from "./types";
 import type { BookData } from "../../store/appStore";
@@ -172,7 +172,10 @@ export default function AISidebar({
                   cursor: "pointer",
                 }}
               >
-                {m === "chat" ? "💬 Chat" : "✨ Gen Char"}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {m === "chat" ? <ChatIcon sx={{ fontSize: 16 }} /> : <AutoFixHighIcon sx={{ fontSize: 16 }} />}
+                  {m === "chat" ? "Chat" : "Gen Char"}
+                </div>
               </button>
             );
           })}

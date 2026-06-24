@@ -91,11 +91,15 @@ export default function AIChatFeed({
             style={{ textAlign: "center", marginBottom: 32, color: "var(--text-muted)" }}
           >
             <SmartToyIcon sx={{ fontSize: 40, opacity: 0.15, marginBottom: 12 }} />
-            <p style={{ margin: 0, fontSize: 15 }}>
-              {selectedBookId !== "none"
-                ? `Oracle loaded. ${AI_MODES[expertMode].icon} ${AI_MODES[expertMode].label} mode.`
-                : "The Oracle is ready."}
-            </p>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, fontSize: 15, margin: 0 }}>
+              {selectedBookId !== "none" ? (
+                <>
+                  Oracle loaded. {AI_MODES[expertMode].icon} {AI_MODES[expertMode].label} mode.
+                </>
+              ) : (
+                "The Oracle is ready."
+              )}
+            </div>
           </div>
 
           {selectedBookId !== "none" && (
