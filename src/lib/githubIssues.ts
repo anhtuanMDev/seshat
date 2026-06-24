@@ -185,3 +185,37 @@ export const createComment = async (
     createdAt: comment.created_at,
   };
 };
+
+export const editIssue = async (
+  token: string,
+  issueNumber: number,
+  title: string,
+  body: string,
+): Promise<void> => {
+  const response = await fetch("/api/github/issues", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, issueNumber, title, body }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+};
+
+export const deleteIssue = async (
+  token: string,
+  issueNumber: number,
+): Promise<void> => {
+  const response = await fetch("/api/github/issues", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, number: issueNumber }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+};

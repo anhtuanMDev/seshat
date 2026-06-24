@@ -93,7 +93,7 @@ export default function IssuesPage() {
         return [newIssue, ...oldData];
       });
 
-      // Also invalidate to fetch fresh state in the background
+      // Also force a background refetch to ensure absolute consistency
       queryClient.invalidateQueries({ queryKey: ["issues", token] });
       navigate(`/issues/${newIssue.number}`);
     } catch (err) {
@@ -140,6 +140,15 @@ export default function IssuesPage() {
     flexShrink: 0,
     transition: "all 0.15s ease",
   });
+
+  const handleOpenCreateModal = () => {
+    if (filter !== "all") {
+      setNewType(filter);
+    } else {
+      setNewType("discussion");
+    }
+    setShowCreateModal(true);
+  };
 
   return (
     <div style={styles.container}>
@@ -208,7 +217,7 @@ export default function IssuesPage() {
             </div>
             <button
               className="seshat-forum-new-btn"
-              onClick={() => setShowCreateModal(true)}
+              onClick={handleOpenCreateModal}
               style={styles.newDiscussionBtn}
               onMouseEnter={(e) => {
                 e.currentTarget.style.opacity = "0.9";
@@ -351,7 +360,7 @@ export default function IssuesPage() {
                 Be the first to ask a question or file a report!
               </p>
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={handleOpenCreateModal}
                 style={styles.startDiscussionBtn}
               >
                 Start a Discussion
@@ -902,7 +911,7 @@ const styles = {
     fontSize: 14,
     background: "var(--bg-main)",
     color: "var(--text-primary)",
-    resize: "vertical",
+    resize: "none",
     minHeight: 120,
   },
   modalFooter: {

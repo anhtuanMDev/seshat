@@ -4,6 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   fetchIssueDetail,
   createComment,
+  editIssue,
+  deleteIssue,
 } from "../lib/githubIssues";
 import { S } from "../lib/utils";
 import { DarkModeIcon, LightModeIcon } from "../components/ui/icons";
@@ -38,27 +40,90 @@ export default function IssueDetailPage() {
   const activeIssue = data?.issue || null;
   const comments = data?.comments || [];
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  let username = "";
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      username = payload.u || "";
+    } catch {
+      // ignore
+    }
+  }
+
+  const isAuthor = activeIssue?.author === username;
+
   useEffect(() => {
     if (error) {
-      showToast("Failed to load discussion: " + (error as Error).message, "error");
+      showToast(
+        "Failed to load discussion: " + (error as Error).message,
+        "error",
+      );
       navigate("/issues");
     }
   }, [error, navigate]);
+
+  // Handle Edit Issue
+  const handleSaveEdit = async () => {
+    if (!token || !queryNum) return;
+    setIsSaving(true);
+    try {
+      await editIssue(token, queryNum, editTitle, editBody);
+      showToast("Discussion updated successfully!", "success");
+      setIsEditing(false);
+      queryClient.invalidateQueries({
+        queryKey: ["issueDetail", queryNum, token],
+      });
+    } catch (err) {
+      console.error(err);
+      showToast(
+        "Failed to edit discussion: " + (err as Error).message,
+        "error",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle Delete Issue
+  const handleDelete = async () => {
+    if (!token || !queryNum) return;
+    setIsDeleting(true);
+    try {
+      await deleteIssue(token, queryNum);
+      showToast("Discussion deleted successfully!", "success");
+      queryClient.invalidateQueries({ queryKey: ["issues", token] });
+      setShowDeleteModal(false);
+      navigate("/issues");
+    } catch (err) {
+      console.error(err);
+      showToast(
+        "Failed to delete discussion: " + (err as Error).message,
+        "error",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Handle Submit Comment
   const handleSubmitComment = async (text: string) => {
     if (!token || !number) return;
 
     try {
-      await createComment(
-        token,
-        parseInt(number, 10),
-        text,
-      );
+      await createComment(token, parseInt(number, 10), text);
       showToast("Comment added successfully!", "success");
-      
+
       // Invalidate the query to fetch fresh comments in the background
-      queryClient.invalidateQueries({ queryKey: ["issueDetail", queryNum, token] });
+      queryClient.invalidateQueries({
+        queryKey: ["issueDetail", queryNum, token],
+      });
     } catch (err) {
       console.error(err);
       showToast("Failed to add comment: " + (err as Error).message, "error");
@@ -91,8 +156,6 @@ export default function IssueDetailPage() {
     }
   };
 
-
-
   return (
     <div style={styles.container}>
       {/* ── Global Header ── */}
@@ -102,8 +165,11 @@ export default function IssueDetailPage() {
             Seshat
           </span>
           <span style={styles.headerDivider}>/</span>
-          <span style={styles.headerForumLink} onClick={() => navigate("/issues")}>
-            Forum & Feedback
+          <span
+            style={styles.headerForumLink}
+            onClick={() => navigate("/issues")}
+          >
+            Forum
           </span>
           <span style={styles.headerDivider}>/</span>
           <span style={styles.headerIssueNumber}>Discussion #{number}</span>
@@ -118,7 +184,10 @@ export default function IssueDetailPage() {
               ← Back to Book
             </button>
           )}
-          <button onClick={() => navigate("/issues")} style={styles.myDiscussionsBtn}>
+          <button
+            onClick={() => navigate("/issues")}
+            style={styles.myDiscussionsBtn}
+          >
             All Discussions
           </button>
           <button
@@ -136,7 +205,11 @@ export default function IssueDetailPage() {
       </div>
 
       {/* ── Main Details Container ── */}
-      <div ref={animRef} className="seshat-forum-main" style={styles.mainContainer}>
+      <div
+        ref={animRef}
+        className="seshat-forum-main"
+        style={styles.mainContainer}
+      >
         <div style={styles.contentWrapper}>
           {isLoading ? (
             <div style={styles.loadingWrapper}>
@@ -146,34 +219,122 @@ export default function IssueDetailPage() {
             <div style={styles.detailsCol}>
               {/* Header card info */}
               <div className="seshat-forum-info-card" style={styles.infoCard}>
-                <div style={styles.infoCardHeader}>
-                  <span
+                <div
+                  style={{
+                    ...styles.infoCardHeader,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+                  >
+                    <span
+                      style={{
+                        ...styles.badgeBase,
+                        background: getBadgeColors(activeIssue.type).bg,
+                        color: getBadgeColors(activeIssue.type).text,
+                      }}
+                    >
+                      {activeIssue.type}
+                    </span>
+                    <span style={styles.infoCardIssueNum}>
+                      Issue #{activeIssue.number}
+                    </span>
+                  </div>
+
+                  {isAuthor && !isEditing && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        style={styles.actionBtn}
+                        onClick={() => {
+                          setEditTitle(activeIssue.title);
+                          setEditBody(activeIssue.body);
+                          setIsEditing(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        style={{ ...styles.actionBtn, color: "#d32f2f" }}
+                        onClick={() => setShowDeleteModal(true)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {isEditing ? (
+                  <div
                     style={{
-                      ...styles.badgeBase,
-                      background: getBadgeColors(activeIssue.type).bg,
-                      color: getBadgeColors(activeIssue.type).text,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      marginTop: 12,
                     }}
                   >
-                    {activeIssue.type}
-                  </span>
-                  <span style={styles.infoCardIssueNum}>
-                    Issue #{activeIssue.number}
-                  </span>
-                </div>
+                    <input
+                      style={styles.editInput}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                    />
+                    <textarea
+                      style={styles.editTextarea}
+                      value={editBody}
+                      onChange={(e) => setEditBody(e.target.value)}
+                      rows={6}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <button
+                        style={styles.actionBtn}
+                        onClick={() => setIsEditing(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        style={styles.saveBtn}
+                        onClick={handleSaveEdit}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Save"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h1
+                      className="seshat-forum-detail-title"
+                      style={styles.infoCardTitle}
+                    >
+                      {activeIssue.title}
+                    </h1>
 
-                <h1 className="seshat-forum-detail-title" style={styles.infoCardTitle}>{activeIssue.title}</h1>
-
-                <div style={styles.infoCardAuthorRow}>
-                  Opened by{" "}
-                  <span style={styles.infoCardAuthorName}>
-                    {activeIssue.author}
-                  </span>{" "}
-                  on {formatDate(activeIssue.createdAt)}
-                </div>
+                    <div style={styles.infoCardAuthorRow}>
+                      Opened by{" "}
+                      <span style={styles.infoCardAuthorName}>
+                        {activeIssue.author}
+                      </span>{" "}
+                      on {formatDate(activeIssue.createdAt)}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Issue Description */}
-              <div className="seshat-forum-body" style={styles.issueBodyContainer}>{activeIssue.body}</div>
+              {!isEditing && (
+                <div
+                  className="seshat-forum-body"
+                  style={styles.issueBodyContainer}
+                >
+                  {activeIssue.body}
+                </div>
+              )}
 
               {/* Discussion Thread */}
               <h3 style={styles.discussionHeader}>
@@ -182,7 +343,11 @@ export default function IssueDetailPage() {
 
               <div style={styles.commentsList}>
                 {comments.map((comment) => (
-                  <div key={comment.id} className="seshat-forum-comment-card" style={styles.commentCard}>
+                  <div
+                    key={comment.id}
+                    className="seshat-forum-comment-card"
+                    style={styles.commentCard}
+                  >
                     <div style={styles.commentHeader}>
                       <span>
                         Posted by{" "}
@@ -215,6 +380,44 @@ export default function IssueDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ── Delete Confirmation Modal ── */}
+      {showDeleteModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContent}>
+            <h3 style={styles.modalTitle}>Delete Discussion</h3>
+            <p style={styles.modalText}>
+              Are you sure you want to delete this discussion? This action cannot be undone.
+            </p>
+            <div style={styles.modalFooter}>
+              <button
+                style={{
+                  ...styles.modalCancelBtn,
+                  opacity: isDeleting ? 0.6 : 1,
+                  cursor: isDeleting ? "default" : "pointer"
+                }}
+                onClick={() => !isDeleting && setShowDeleteModal(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  ...styles.modalDeleteBtn,
+                  opacity: isDeleting ? 0.6 : 1,
+                  cursor: isDeleting ? "default" : "pointer"
+                }}
+                onClick={() => {
+                  handleDelete();
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -275,7 +478,7 @@ const postBtnStyle = (disabled: boolean) => ({
   padding: "10px 24px",
   fontWeight: 600,
   fontSize: 13,
-  cursor: disabled ? "default" : "pointer" as const,
+  cursor: disabled ? "default" : ("pointer" as const),
   opacity: disabled ? 0.6 : 1,
   transition: "opacity 0.2s",
 });
@@ -501,6 +704,7 @@ const styles = {
     padding: "12px 16px",
     borderRadius: 8,
     fontSize: 14,
+    resize: "none",
   },
   commentFooterRow: {
     display: "flex",
@@ -520,5 +724,102 @@ const styles = {
     textTransform: "uppercase",
     padding: "3px 8px",
     borderRadius: 4,
+  },
+  actionBtn: {
+    background: "transparent",
+    border: "1px solid var(--border)",
+    color: "var(--text-secondary)",
+    padding: "4px 10px",
+    borderRadius: 4,
+    fontSize: 12,
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: "background 0.2s",
+  },
+  saveBtn: {
+    background: "var(--color-primary)",
+    border: "none",
+    color: "var(--bg-app)",
+    padding: "4px 12px",
+    borderRadius: 4,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+  },
+  editInput: {
+    ...S.input,
+    padding: "10px 14px",
+    fontSize: 16,
+    fontWeight: 600,
+    borderRadius: 8,
+  },
+  editTextarea: {
+    ...S.textarea,
+    padding: "12px 14px",
+    fontSize: 15,
+    borderRadius: 8,
+    fontFamily: "var(--font-sans)",
+    resize: "none",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0, 0, 0, 0.6)",
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+  },
+  modalContent: {
+    background: "var(--bg-card)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    padding: "24px 32px",
+    width: "100%",
+    maxWidth: 400,
+    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+  modalTitle: {
+    ...S.h2,
+    fontSize: 20,
+    margin: 0,
+  },
+  modalText: {
+    color: "var(--text-secondary)",
+    fontSize: 14,
+    margin: 0,
+  },
+  modalFooter: {
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginTop: 8,
+  },
+  modalCancelBtn: {
+    background: "transparent",
+    border: "1px solid var(--border)",
+    color: "var(--text-primary)",
+    padding: "8px 16px",
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 500,
+    cursor: "pointer",
+  },
+  modalDeleteBtn: {
+    background: "#d32f2f",
+    border: "none",
+    color: "#fff",
+    padding: "8px 16px",
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
   },
 } satisfies Record<string, React.CSSProperties>;
