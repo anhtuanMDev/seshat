@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Modal } from "./ui/Modal";
 import { S } from "../lib/utils";
 import { EMPTY_ARR } from "../lib/constants";
@@ -11,7 +11,7 @@ import {
 import { appStore } from "../store/appStore";
 import type { BookData, Character, Event, Chapter } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { syncToGitHub } from "../lib/githubSync";
+import { syncToGitHub, loadChaptersForExport } from "../lib/githubSync";
 
 interface Props {
   open: boolean;
@@ -20,7 +20,7 @@ interface Props {
 }
 
 
-export function GlobalSearchModal({ open, onClose }: Props) {
+export function GlobalSearchModal({ open, onClose, bookId }: Props) {
   const [query, setQuery] = useState("");
   const [replaceStr, setReplaceStr] = useState("");
   const [isReplacing, setIsReplacing] = useState(false);
@@ -36,7 +36,49 @@ export function GlobalSearchModal({ open, onClose }: Props) {
   const bookIdx = useActiveBookIdx();
   
   // Find how many chapters are unloaded
-  const unloadedCount = chapters.filter((c) => c.body === undefined).length;
+  const unloadedChapters = chapters.filter((c) => c.body === undefined);
+  const unloadedCount = unloadedChapters.length;
+
+  const [isFetchingChapters, setIsFetchingChapters] = useState(false);
+  const hasFetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (open) {
+      hasFetchedRef.current = false;
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (open && !hasFetchedRef.current) {
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      const unloadedIds = unloadedChapters.map((c) => c.id);
+
+      if (token && unloadedIds.length > 0) {
+        hasFetchedRef.current = true;
+        setTimeout(() => setIsFetchingChapters(true), 0);
+        loadChaptersForExport(token, bookId, unloadedIds)
+          .then((fetchedChapters) => {
+            if (bookIdx >= 0) {
+              const currentChapters = appStore.books[bookIdx].chapters.get() || [];
+              const newChapters = currentChapters.map((c) => {
+                const fetched = fetchedChapters.find((fc) => fc.id === c.id);
+                if (fetched) {
+                  return { ...c, body: fetched.body, drafts: fetched.drafts } as Chapter;
+                }
+                return c;
+              });
+              appStore.books[bookIdx].chapters.set(newChapters);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load unloaded chapters for search", err);
+          })
+          .finally(() => {
+            setIsFetchingChapters(false);
+          });
+      }
+    }
+  }, [open, unloadedChapters, bookIdx, bookId]);
 
   const results = useMemo(() => {
     if (!query || query.length < 2) return [];
@@ -178,11 +220,15 @@ export function GlobalSearchModal({ open, onClose }: Props) {
       <div className="seshat-flex-col" style={styles.content}>
         <p style={styles.helpText}>
           Search across all loaded characters, events, items, world glossary, and chapters. 
-          {unloadedCount > 0 && (
+          {isFetchingChapters ? (
             <span style={styles.warningText}>
-              ⚠️ {unloadedCount} chapters are unloaded to save memory. Their body text will not be searched or replaced until they are visited.
+              🔄 Loading {unloadedCount} chapters to ensure full search coverage...
             </span>
-          )}
+          ) : unloadedCount > 0 ? (
+            <span style={styles.warningText}>
+              ⚠️ {unloadedCount} chapters are unloaded and skipped.
+            </span>
+          ) : null}
         </p>
 
         <div style={styles.inputsRow}>

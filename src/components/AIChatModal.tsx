@@ -15,7 +15,11 @@ const AI_PROVIDERS = [
     id: "openrouter",
     name: "OpenRouter",
     url: "https://openrouter.ai/api/v1",
-    models: ["anthropic/claude-3.5-sonnet", "google/gemini-1.5-pro", "meta-llama/llama-3.1-70b-instruct"],
+    models: [
+      "anthropic/claude-3.5-sonnet",
+      "google/gemini-1.5-pro",
+      "meta-llama/llama-3.1-70b-instruct",
+    ],
   },
   {
     id: "groq",
@@ -52,7 +56,7 @@ const AI_PROVIDERS = [
     name: "Custom...",
     url: "",
     models: [],
-  }
+  },
 ];
 
 interface Message {
@@ -98,7 +102,7 @@ export function AIChatModal({ onClose, contextText }: AIChatModalProps) {
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pid = e.target.value;
     setProviderId(pid);
-    const prov = AI_PROVIDERS.find(p => p.id === pid);
+    const prov = AI_PROVIDERS.find((p) => p.id === pid);
     if (prov && pid !== "custom") {
       setBaseUrl(prov.url);
       if (prov.models.length > 0) {
@@ -145,6 +149,7 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
         model: model || "gpt-4o",
         messages: [systemMsg, ...newMsgs],
         temperature: 0.7,
+        stream: true,
       };
 
       const res = await fetch(
@@ -164,7 +169,7 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
         try {
           const parsed = JSON.parse(errText);
           const errObj = Array.isArray(parsed) ? parsed[0] : parsed;
-          
+
           if (errObj?.error?.message) {
             errText = errObj.error.message;
           } else if (errObj?.message) {
@@ -176,15 +181,55 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
         throw new Error(errText || res.statusText);
       }
 
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "";
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
 
-      setMessages([...newMsgs, { role: "assistant", content: reply }]);
+      if (!reader) throw new Error("No response body stream");
+
+      // Initialize an empty assistant message
+      setMessages([...newMsgs, { role: "assistant", content: "" }]);
+
+      let assistantMessage = "";
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        // Keep the last potentially incomplete line in the buffer
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.trim() === "") continue;
+          if (line.startsWith("data: ")) {
+            const dataStr = line.slice(6);
+            if (dataStr.trim() === "[DONE]") break;
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.choices && data.choices[0].delta?.content) {
+                assistantMessage += data.choices[0].delta.content;
+                setMessages((prev) => {
+                  const newArray = [...prev];
+                  newArray[newArray.length - 1] = {
+                    role: "assistant",
+                    content: assistantMessage,
+                  };
+                  return newArray;
+                });
+              }
+            } catch (e) {
+              console.error("errors on incomplete JSON or generic lines:", e);
+            }
+          }
+        }
+      }
     } catch (err: unknown) {
       console.error(err);
       const msg = err instanceof Error ? err.message : String(err);
       showToast(`AI Error: ${msg}`, "error");
-      
+
       // Revert the UI state so the user doesn't lose their typed prompt
       setMessages(messages);
       setInput(input.trim());
@@ -203,14 +248,29 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
         {/* LEFT SIDEBAR: Config & Controls */}
         <div className="ai-modal-sidebar">
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 8,
+              }}
+            >
               <div className="ai-brand-icon">
                 <SmartToyIcon sx={{ fontSize: 20 }} />
               </div>
               <h3 style={{ fontSize: 16, margin: 0 }}>Oracle Settings</h3>
             </div>
-            <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.4, margin: "0 0 24px 0" }}>
-              Configure your BYOK AI provider. Model settings auto-save securely to your browser.
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                lineHeight: 1.4,
+                margin: "0 0 24px 0",
+              }}
+            >
+              Configure your BYOK AI provider. Model settings auto-save securely
+              to your browser.
             </p>
           </div>
 
@@ -252,24 +312,42 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
               placeholder="gpt-4o"
             />
             {AI_PROVIDERS.find((p) => p.id === providerId)?.models.length ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                {AI_PROVIDERS.find((p) => p.id === providerId)?.models.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setModel(m)}
-                    className="ai-model-pill"
-                    style={{
-                      background: model === m ? "var(--bg-active)" : "var(--bg-panel)",
-                      borderColor: model === m ? "var(--color-purple)" : "var(--border-field)",
-                      color: model === m ? "var(--color-purple)" : "var(--text-secondary)",
-                    }}
-                  >
-                    {m}
-                  </button>
-                ))}
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginTop: 4,
+                }}
+              >
+                {AI_PROVIDERS.find((p) => p.id === providerId)?.models.map(
+                  (m) => (
+                    <button
+                      key={m}
+                      onClick={() => setModel(m)}
+                      className="ai-model-pill"
+                      style={{
+                        background:
+                          model === m ? "var(--bg-active)" : "var(--bg-panel)",
+                        borderColor:
+                          model === m
+                            ? "var(--color-purple)"
+                            : "var(--border-field)",
+                        color:
+                          model === m
+                            ? "var(--color-purple)"
+                            : "var(--text-secondary)",
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ),
+                )}
               </div>
             ) : (
-              <span className="ai-config-hint">Type the model ID manually.</span>
+              <span className="ai-config-hint">
+                Type the model ID manually.
+              </span>
             )}
           </div>
 
@@ -302,7 +380,9 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
           <div className="ai-chat-feed">
             {messages.length === 0 ? (
               <div className="ai-empty-state">
-                <SmartToyIcon sx={{ fontSize: 48, opacity: 0.1, marginBottom: 16 }} />
+                <SmartToyIcon
+                  sx={{ fontSize: 48, opacity: 0.1, marginBottom: 16 }}
+                />
                 <p>The Oracle is ready.</p>
                 <span style={{ fontSize: 13, opacity: 0.6, marginTop: 8 }}>
                   Ask about your world, characters, or request a prose scene.
@@ -310,41 +390,89 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
               </div>
             ) : (
               messages.map((m, i) => (
-                <div key={i} className={`ai-message-block ${m.role === "user" ? "ai-user-bg" : "ai-assistant-bg"}`}>
+                <div
+                  key={i}
+                  className={`ai-message-block ${m.role === "user" ? "ai-user-bg" : "ai-assistant-bg"}`}
+                >
                   <div className="ai-avatar">
-                    {m.role === "user" ? "U" : <SmartToyIcon sx={{ fontSize: 18 }} />}
+                    {m.role === "user" ? (
+                      "U"
+                    ) : (
+                      <SmartToyIcon sx={{ fontSize: 18 }} />
+                    )}
                   </div>
-                  <div className={`ai-message-content ${m.role === "user" ? "ai-user-text" : ""}`}>
+                  <div
+                    className={`ai-message-content ${m.role === "user" ? "ai-user-text" : ""}`}
+                  >
                     {m.role === "assistant" ? (
                       <ReactMarkdown
                         components={{
-                          p: ({ ...props }) => <p style={{ margin: "0 0 12px 0" }} {...props} />,
-                          ul: ({ ...props }) => <ul style={{ margin: "0 0 12px 0", paddingLeft: 24 }} {...props} />,
-                          ol: ({ ...props }) => <ol style={{ margin: "0 0 12px 0", paddingLeft: 24 }} {...props} />,
-                          li: ({ ...props }) => <li style={{ marginBottom: 6 }} {...props} />,
-                          strong: ({ ...props }) => <strong style={{ color: "var(--text-primary)", fontWeight: 600 }} {...props} />,
-                          h3: ({ ...props }) => <h3 style={{ margin: "16px 0 8px 0", fontSize: 16, color: "var(--text-primary)" }} {...props} />,
+                          p: ({ ...props }) => (
+                            <p style={{ margin: "0 0 12px 0" }} {...props} />
+                          ),
+                          ul: ({ ...props }) => (
+                            <ul
+                              style={{ margin: "0 0 12px 0", paddingLeft: 24 }}
+                              {...props}
+                            />
+                          ),
+                          ol: ({ ...props }) => (
+                            <ol
+                              style={{ margin: "0 0 12px 0", paddingLeft: 24 }}
+                              {...props}
+                            />
+                          ),
+                          li: ({ ...props }) => (
+                            <li style={{ marginBottom: 6 }} {...props} />
+                          ),
+                          strong: ({ ...props }) => (
+                            <strong
+                              style={{
+                                color: "var(--text-primary)",
+                                fontWeight: 600,
+                              }}
+                              {...props}
+                            />
+                          ),
+                          h3: ({ ...props }) => (
+                            <h3
+                              style={{
+                                margin: "16px 0 8px 0",
+                                fontSize: 16,
+                                color: "var(--text-primary)",
+                              }}
+                              {...props}
+                            />
+                          ),
                         }}
                       >
                         {m.content}
                       </ReactMarkdown>
                     ) : (
-                      <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{m.content}</div>
+                      <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                        {m.content}
+                      </div>
                     )}
                   </div>
                 </div>
               ))
             )}
-            
+
             {isTyping && (
               <div className="ai-message-block ai-assistant-bg">
-                 <div className="ai-avatar">
+                <div className="ai-avatar">
                   <SmartToyIcon sx={{ fontSize: 18 }} />
                 </div>
                 <div className="ai-typing-indicator">
                   <span className="ai-dot"></span>
-                  <span className="ai-dot" style={{ animationDelay: "0.2s" }}></span>
-                  <span className="ai-dot" style={{ animationDelay: "0.4s" }}></span>
+                  <span
+                    className="ai-dot"
+                    style={{ animationDelay: "0.2s" }}
+                  ></span>
+                  <span
+                    className="ai-dot"
+                    style={{ animationDelay: "0.4s" }}
+                  ></span>
                 </div>
               </div>
             )}
@@ -365,7 +493,12 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
                 placeholder="Ask the Oracle..."
                 className="ai-textarea"
                 rows={1}
-                style={{ height: Math.min(200, Math.max(44, input.split("\n").length * 20 + 24)) }}
+                style={{
+                  height: Math.min(
+                    200,
+                    Math.max(44, input.split("\n").length * 20 + 24),
+                  ),
+                }}
               />
               <button
                 onClick={handleSend}
@@ -375,15 +508,26 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`,
                 <SendIcon sx={{ fontSize: 18 }} />
               </button>
             </div>
-            <div style={{ fontSize: 11, textAlign: "center", marginTop: 8, color: "var(--text-muted)" }}>
-              The entire world context is automatically included in every prompt.
+            <div
+              style={{
+                fontSize: 11,
+                textAlign: "center",
+                marginTop: 8,
+                color: "var(--text-muted)",
+              }}
+            >
+              The entire world context is automatically included in every
+              prompt.
             </div>
           </div>
         </div>
       </div>
 
       {showClearConfirm && (
-        <Modal title="Clear Chat History" onClose={() => setShowClearConfirm(false)}>
+        <Modal
+          title="Clear Chat History"
+          onClose={() => setShowClearConfirm(false)}
+        >
           <div style={{ padding: "0 var(--space-5) var(--space-5)" }}>
             <p style={{ color: "var(--text-primary)", marginBottom: 24 }}>
               Are you sure you want to clear the chat history?

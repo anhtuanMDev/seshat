@@ -34,6 +34,7 @@ export const syncToGitHub = async (token: string): Promise<void> => {
       if (resData.sha) {
         appStore.lastSyncSha.set(resData.sha);
       }
+      appStore.lastSyncedCloud.set(Date.now());
 
       console.log("Successfully synced to GitHub via token!");
     } catch (error) {
@@ -81,20 +82,25 @@ export const loginToGitHub = async (username: string, accessCode: string): Promi
 
 export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
   try {
+    appStore.isSyncingRemote.set(true);
     const response = await fetchApi(`/api/github/load?token=${encodeURIComponent(token)}&t=${Date.now()}`, { cache: "no-store" });
     const data = await response.json() as { books: BookData[]; branchSha?: string };
     if (data.branchSha) {
       appStore.lastSyncSha.set(data.branchSha);
     }
+    appStore.lastSyncedCloud.set(Date.now());
     return data.books;
   } catch (error) {
     console.error("Failed to load from GitHub:", error);
     throw error;
+  } finally {
+    appStore.isSyncingRemote.set(false);
   }
 };
 
 export const loadBookFromGitHub = async (token: string, bookId: string): Promise<BookData> => {
   try {
+    appStore.isSyncingRemote.set(true);
     const response = await fetchApi(`/api/github/loadBook?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&t=${Date.now()}`, { cache: "no-store" });
     const data = (await response.json()) as { book?: BookData; books?: BookData[]; branchSha?: string };
     if (data.branchSha) {
@@ -103,10 +109,13 @@ export const loadBookFromGitHub = async (token: string, bookId: string): Promise
     const bookData = data.book || (data.books && data.books[0]);
     if (!bookData) throw new Error("No book data found in response");
     bookData.isFullyLoaded = true;
+    appStore.lastSyncedCloud.set(Date.now());
     return bookData;
   } catch (error) {
     console.error("Failed to load book from GitHub:", error);
     throw error;
+  } finally {
+    appStore.isSyncingRemote.set(false);
   }
 };
 
@@ -125,6 +134,7 @@ export const updateFileOnGitHub = async (token: string, bookId: string, path: st
       if (resData.sha) {
         appStore.lastSyncSha.set(resData.sha);
       }
+      appStore.lastSyncedCloud.set(Date.now());
     } catch (error) {
       console.error(`Failed to update ${path} on GitHub:`, error);
       throw error;
@@ -147,6 +157,7 @@ export const updateFilesOnGitHub = async (token: string, bookId: string, files: 
       if (resData.sha) {
         appStore.lastSyncSha.set(resData.sha);
       }
+      appStore.lastSyncedCloud.set(Date.now());
     } catch (error) {
       console.error(`Failed to update files on GitHub:`, error);
       throw error;

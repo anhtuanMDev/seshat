@@ -149,6 +149,9 @@ export const mkBook = (title: string): BookData => ({
 export const appStore = observable({
   activeBookId: null as string | null,
   lastSyncSha: null as string | null,
+  lastModifiedLocal: null as number | null,
+  lastSyncedCloud: null as number | null,
+  isSyncingRemote: false,
   books: [] as BookData[],
   isLoadingBooks: false,
   isBookListLoaded: false,
@@ -158,6 +161,9 @@ export const clearAppStore = () => {
   appStore.set({
     activeBookId: null,
     lastSyncSha: null,
+    lastModifiedLocal: null,
+    lastSyncedCloud: null,
+    isSyncingRemote: false,
     books: [],
     isLoadingBooks: false,
     isBookListLoaded: false,
@@ -186,3 +192,9 @@ try {
 }
 
 persistObservable(appStore, { local: "seshat-app" });
+
+appStore.books.onChange(() => {
+  if (!appStore.isSyncingRemote.get()) {
+    appStore.lastModifiedLocal.set(Date.now());
+  }
+});

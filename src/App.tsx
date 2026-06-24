@@ -493,6 +493,12 @@ export default function App() {
     return !!book?.isFullyLoaded;
   });
 
+  const hasUnsyncedChanges = useSelector(() => {
+    const loc = appStore.lastModifiedLocal.get() || 0;
+    const clo = appStore.lastSyncedCloud.get() || 0;
+    return loc > clo;
+  });
+
   // If there's no bookId in the URL, we're likely on the root path (BookListPage)
   if (!bookId) {
     return (
@@ -558,9 +564,22 @@ export default function App() {
             <button
               onClick={handleSync}
               disabled={isSyncing}
-              style={styles.syncBtn(isSyncing)}
+              style={{ ...styles.syncBtn(isSyncing), position: "relative" }}
               title="Push local data to Cloud"
             >
+              {hasUnsyncedChanges && (
+                <div style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: "#eab308",
+                  border: "2px solid var(--bg-top)",
+                  boxShadow: "0 0 8px rgba(234,179,8,0.5)"
+                }} />
+              )}
               <CloudSyncIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>
                 {isSyncing ? "Syncing..." : "Sync"}

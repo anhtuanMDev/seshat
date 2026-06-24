@@ -181,7 +181,8 @@ describe("ChapterPage Edge-to-Edge", () => {
     vi.mocked(updateFilesOnGitHub).mockResolvedValue();
     vi.mocked(computeEventSync).mockImplementation((_bookIdx, eventId) => ({
       eventId,
-      payloadStr: `{"mockPayloadFor": "${eventId}"}`
+      payloadStr: `{"mockPayloadFor": "${eventId}"}`,
+      mutate: vi.fn(),
     }));
 
     render(<ChapterPage />);
