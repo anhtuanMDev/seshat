@@ -19,6 +19,7 @@ import {
 import dagre from "dagre";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { S } from "../lib/utils";
+import { EMPTY_ARR } from "../lib/constants";
 
 // Helper to layout the graph
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
@@ -53,7 +54,6 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   return { nodes, edges };
 };
 
-const EMPTY_ARR: never[] = [];
 
 export default function LoreWebPage() {
   const characters = useCharacters() || EMPTY_ARR;

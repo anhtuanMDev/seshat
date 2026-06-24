@@ -4,9 +4,7 @@ import { RARITY } from "../../lib/constants";
 import type { BlockProps } from "./types";
 import { DiamondIcon, LocationOnIcon, WarningIcon, NotesIcon } from "../ui/icons";
 
-export function TreasureBlock({ control, index, onDelete }: BlockProps) {
-  // Bypassing unused onDelete to satisfy the linter
-  void onDelete;
+export function TreasureBlock({ control, index }: BlockProps) {
 
   return (
     <div className="seshat-modal-form-redesign" style={{ padding: "24px 28px" }}>

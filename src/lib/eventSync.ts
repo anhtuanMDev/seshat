@@ -6,7 +6,7 @@ export function computeEventSync(
   chapterId: string,
   newTimeRef: string | undefined,
   newPinnedChars: string[] | undefined
-): { eventId: string; payloadStr: string } | null {
+): { eventId: string; payloadStr: string; mutate: () => void } | null {
   const events = appStore.books[bookIdx].events.get();
   if (!events) return null;
   
@@ -72,11 +72,14 @@ export function computeEventSync(
   });
 
   if (modified) {
-    ev.characters.set(nextEvChars);
-    ev.chapters.set(nextEvChapters);
+    const updatedEvent = { ...ev.get(), characters: nextEvChars, chapters: nextEvChapters };
     return {
       eventId: ev.id.get(),
-      payloadStr: JSON.stringify(ev.get(), null, 2),
+      payloadStr: JSON.stringify(updatedEvent, null, 2),
+      mutate: () => {
+        ev.characters.set(nextEvChars);
+        ev.chapters.set(nextEvChapters);
+      }
     };
   }
   return null;

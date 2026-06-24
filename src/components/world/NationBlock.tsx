@@ -12,9 +12,7 @@ interface NationBlockProps extends BlockProps {
   onDelConnection: (connId: string) => void;
 }
 
-export function NationBlock({ control, index, onDelete, connections, onAddConnection, onDelConnection }: NationBlockProps) {
-  // Bypassing unused onDelete to satisfy the linter
-  void onDelete;
+export function NationBlock({ control, index, connections, onAddConnection, onDelConnection }: NationBlockProps) {
 
   return (
     <div className="seshat-modal-form-redesign" style={{ padding: "24px 28px" }}>

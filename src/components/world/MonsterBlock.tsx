@@ -4,9 +4,7 @@ import { MON_TIERS } from "../../lib/constants";
 import type { BlockProps } from "./types";
 import { BugReportIcon, LocationOnIcon, WarningIcon, NotesIcon } from "../ui/icons";
 
-export function MonsterBlock({ control, index, onDelete }: BlockProps) {
-  // Bypassing unused onDelete to satisfy the linter
-  void onDelete;
+export function MonsterBlock({ control, index }: BlockProps) {
 
   return (
     <div className="seshat-modal-form-redesign" style={{ padding: "24px 28px" }}>

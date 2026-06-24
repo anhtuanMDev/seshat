@@ -10,6 +10,7 @@ import {
   useActiveBookIdx,
 } from "./hooks/useWorldStore";
 import { S, mkChar, mkEvent, getLatestEventDates, uid } from "./lib/utils";
+import { EMPTY_ARR } from "./lib/constants";
 import { SideItem } from "./components/ui";
 import { ConflictModal } from "./components/ConflictModal";
 import { getConflicts, autoMergeOtherChapters } from "./lib/conflictUtils";
@@ -40,7 +41,6 @@ import { syncToGitHub, loadBookFromGitHub, loadFromGitHub } from "./lib/githubSy
 import type { Character, Event } from "./lib/types";
 import type { Chapter, BookData } from "./store/appStore";
 
-const EMPTY_ARR: never[] = [];
 
 export default function App() {
   const { bookId } = useParams();

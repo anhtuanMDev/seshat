@@ -17,5 +17,5 @@ export interface WorldForm {
 export interface BlockProps<T extends FieldValues = WorldForm> {
   control: Control<T>;
   index: number;
-  onDelete: () => void;
+  onDelete?: () => void;
 }

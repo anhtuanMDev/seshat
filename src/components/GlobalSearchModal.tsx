@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Modal } from "./ui/Modal";
 import { S } from "../lib/utils";
+import { EMPTY_ARR } from "../lib/constants";
 import {
   useCharacters,
   useEvents,
@@ -18,7 +19,6 @@ interface Props {
   bookId: string;
 }
 
-const EMPTY_ARR: unknown[] = [];
 
 export function GlobalSearchModal({ open, onClose }: Props) {
   const [query, setQuery] = useState("");

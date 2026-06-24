@@ -118,3 +118,5 @@ export const RARITY = [
   "Mythic",
 ];
 export const EQUIP_ACCESS = ["Equipped", "Stored", "No Access"];
+
+export const EMPTY_ARR: never[] = [];
