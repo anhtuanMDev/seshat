@@ -1,21 +1,21 @@
-import { useState, useEffect } from "react";
+import { CircularProgress } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchIssues, createIssue } from "../lib/githubIssues";
-import { S } from "../lib/utils";
 import { Modal } from "../components/ui/Modal";
 import {
+  AutoFixHighIcon,
   BugReportIcon,
+  ChatIcon,
   DarkModeIcon,
   LightModeIcon,
-  ChatIcon,
-  AutoFixHighIcon,
 } from "../components/ui/icons";
-import { CircularProgress } from "@mui/material";
-import { showToast } from "../store/toastStore";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useTheme } from "../hooks/useTheme";
+import { createIssue, fetchIssues, type SeshatIssue } from "../lib/githubIssues";
+import { S } from "../lib/utils";
 import { appStore } from "../store/appStore";
+import { showToast } from "../store/toastStore";
 
 type FilterType = "all" | "bug" | "recommendation" | "discussion";
 
@@ -33,9 +33,16 @@ export default function IssuesPage() {
   const [isCreatingIssue, setIsCreatingIssue] = useState(false);
   const queryClient = useQueryClient();
 
-  // Filters
+  // Filters & Pagination
   const [filter, setFilter] = useState<FilterType>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
+  const [prevFilter, setPrevFilter] = useState(filter);
+  if (filter !== prevFilter) {
+    setPrevFilter(filter);
+    setCurrentPage(1);
+  }
   // Modal form state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -76,8 +83,17 @@ export default function IssuesPage() {
       setNewTitle("");
       setNewBody("");
       setNewType("discussion");
+      
+      // Optimistically update the cache so the list instantly shows the new issue
+      queryClient.setQueryData(["issues", token], (oldData: SeshatIssue[] | undefined) => {
+        if (!oldData) return [newIssue];
+        // Ensure we don't add a duplicate if the background fetch already ran
+        const exists = oldData.find((i: SeshatIssue) => i.number === newIssue.number);
+        if (exists) return oldData;
+        return [newIssue, ...oldData];
+      });
 
-      // Invalidate queries to trigger background reload and redirect
+      // Also invalidate to fetch fresh state in the background
       queryClient.invalidateQueries({ queryKey: ["issues", token] });
       navigate(`/issues/${newIssue.number}`);
     } catch (err) {
@@ -85,17 +101,6 @@ export default function IssuesPage() {
       showToast("Failed to publish issue: " + (err as Error).message, "error");
     } finally {
       setIsCreatingIssue(false);
-    }
-  };
-
-  const getBadgeColors = (type: "bug" | "recommendation" | "discussion") => {
-    switch (type) {
-      case "bug":
-        return { bg: "rgba(211, 47, 47, 0.15)", text: "#d32f2f" };
-      case "recommendation":
-        return { bg: "rgba(2, 136, 209, 0.15)", text: "#0288d1" };
-      default:
-        return { bg: "rgba(0, 150, 136, 0.15)", text: "#009688" };
     }
   };
 
@@ -116,16 +121,11 @@ export default function IssuesPage() {
     return iss.type === filter;
   });
 
-  const getTypeAccent = (type: "bug" | "recommendation" | "discussion") => {
-    switch (type) {
-      case "bug":
-        return "#d32f2f";
-      case "recommendation":
-        return "#0288d1";
-      default:
-        return "#009688";
-    }
-  };
+  const totalPages = Math.max(1, Math.ceil(filteredIssues.length / itemsPerPage));
+  const paginatedIssues = filteredIssues.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const getFilterStyle = (active: boolean) => ({
     background: active ? "var(--color-primary)" : "var(--bg-surface)",
@@ -232,16 +232,63 @@ export default function IssuesPage() {
                   onClick={() => setFilter(t)}
                   style={getFilterStyle(filter === t)}
                 >
-                  {t === "all"
-                    ? "All"
-                    : t === "bug"
-                      ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><BugReportIcon sx={{ fontSize: 14 }} /> Bugs</span>
-                      : t === "recommendation"
-                        ? <span style={{ display: "flex", alignItems: "center", gap: 4 }}><AutoFixHighIcon sx={{ fontSize: 14 }} /> Ideas</span>
-                        : <span style={{ display: "flex", alignItems: "center", gap: 4 }}><ChatIcon sx={{ fontSize: 14 }} /> Discussion</span>}
+                  {t === "all" ? (
+                    "All"
+                  ) : t === "bug" ? (
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <BugReportIcon sx={{ fontSize: 14 }} /> Bugs
+                    </span>
+                  ) : t === "recommendation" ? (
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <AutoFixHighIcon sx={{ fontSize: 14 }} /> Ideas
+                    </span>
+                  ) : (
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 4 }}
+                    >
+                      <ChatIcon sx={{ fontSize: 14 }} /> Discussion
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div style={styles.paginationControls}>
+                <button
+                  style={{
+                    ...styles.pageBtn,
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    cursor: currentPage === 1 ? "default" : "pointer",
+                  }}
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </button>
+                <span style={styles.pageInfo}>
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  style={{
+                    ...styles.pageBtn,
+                    opacity: currentPage === totalPages ? 0.5 : 1,
+                    cursor: currentPage === totalPages ? "default" : "pointer",
+                  }}
+                  disabled={currentPage === totalPages}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
 
           {/* List Content */}
@@ -312,64 +359,68 @@ export default function IssuesPage() {
             </div>
           ) : (
             <div style={styles.issuesList}>
-              {filteredIssues.map((iss) => {
-                const badge = getBadgeColors(iss.type);
-                // Create a brief preview from body
-                const bodyPreview =
-                  iss.body.length > 180
-                    ? iss.body.slice(0, 180) + "..."
-                    : iss.body;
+              {paginatedIssues.map((iss, index) => {
+                const getIconForType = (type: string) => {
+                  switch (type) {
+                    case "bug":
+                      return (
+                        <BugReportIcon
+                          sx={{ color: "#d32f2f", fontSize: 18 }}
+                        />
+                      );
+                    case "recommendation":
+                      return (
+                        <AutoFixHighIcon
+                          sx={{ color: "#0288d1", fontSize: 18 }}
+                        />
+                      );
+                    default:
+                      return (
+                        <ChatIcon sx={{ color: "#009688", fontSize: 18 }} />
+                      );
+                  }
+                };
+                const isLast = index === paginatedIssues.length - 1;
 
                 return (
                   <div
                     key={iss.number}
-                    className="seshat-forum-card"
+                    className="seshat-forum-item"
                     onClick={() => navigate(`/issues/${iss.number}`)}
                     style={{
-                      ...styles.issueCard,
-                      borderLeft: `3px solid ${getTypeAccent(iss.type)}`,
+                      ...styles.issueItem,
+                      borderBottom: isLast ? "none" : "1px solid var(--border)",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 16px rgba(0,0,0,0.08)";
+                      e.currentTarget.style.background = "var(--bg-side)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "none";
-                      e.currentTarget.style.boxShadow =
-                        "0 1px 4px rgba(0,0,0,0.04)";
+                      e.currentTarget.style.background = "transparent";
                     }}
                   >
-                    <div style={styles.cardHeader}>
-                      <span
-                        style={{
-                          ...styles.badgeBase,
-                          background: badge.bg,
-                          color: badge.text,
-                        }}
-                      >
-                        {iss.type}
-                      </span>
-                      <span style={styles.issueDate}>
-                        {formatDate(iss.createdAt)}
-                      </span>
+                    <div style={styles.issueItemIconWrapper}>
+                      {getIconForType(iss.type)}
                     </div>
 
-                    <h3
-                      className="seshat-forum-card-title"
-                      style={styles.issueTitle}
-                    >
-                      {iss.title}
-                    </h3>
-                    <p style={styles.issueBodyPreview}>{bodyPreview}</p>
+                    <div style={styles.issueItemMain}>
+                      <div style={styles.issueItemTitleRow}>
+                        <h3 style={styles.issueItemTitle}>{iss.title}</h3>
+                      </div>
+                      <div style={styles.issueItemMetaRow}>
+                        <span style={styles.issueItemMetaText}>
+                          #{iss.number} opened on {formatDate(iss.createdAt)} by{" "}
+                          {iss.author}
+                        </span>
+                      </div>
+                    </div>
 
-                    <div style={styles.cardFooter}>
-                      <span style={styles.issueNumber}>
-                        by {iss.author} · #{iss.number}
-                      </span>
-                      <span style={styles.commentsCountSpan}>
-                        <ChatIcon sx={{ fontSize: 14 }} /> {iss.commentsCount}
-                      </span>
+                    <div style={styles.issueItemRight}>
+                      {iss.commentsCount > 0 && (
+                        <div style={styles.commentsCountBadge}>
+                          <ChatIcon sx={{ fontSize: 14 }} />
+                          <span>{iss.commentsCount}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -391,9 +442,21 @@ export default function IssuesPage() {
               <div className="seshat-modal-type-selector">
                 {(
                   [
-                    { value: "discussion", icon: <ChatIcon sx={{ fontSize: 16 }} />, label: "Discussion" },
-                    { value: "bug",        icon: <BugReportIcon sx={{ fontSize: 16 }} />, label: "Bug Report" },
-                    { value: "recommendation", icon: <AutoFixHighIcon sx={{ fontSize: 16 }} />, label: "Feature" },
+                    {
+                      value: "discussion",
+                      icon: <ChatIcon sx={{ fontSize: 16 }} />,
+                      label: "Discussion",
+                    },
+                    {
+                      value: "bug",
+                      icon: <BugReportIcon sx={{ fontSize: 16 }} />,
+                      label: "Bug Report",
+                    },
+                    {
+                      value: "recommendation",
+                      icon: <AutoFixHighIcon sx={{ fontSize: 16 }} />,
+                      label: "Feature",
+                    },
                   ] as const
                 ).map((opt) => (
                   <button
@@ -426,7 +489,9 @@ export default function IssuesPage() {
             <div className="seshat-modal-field-group">
               <div className="seshat-modal-label-row">
                 <label className="seshat-modal-field-label">Details</label>
-                <span className="seshat-modal-char-count">{newBody.length} chars</span>
+                <span className="seshat-modal-char-count">
+                  {newBody.length} chars
+                </span>
               </div>
               <textarea
                 value={newBody}
@@ -448,7 +513,9 @@ export default function IssuesPage() {
               </button>
               <button
                 onClick={handleSubmitIssue}
-                disabled={!newTitle.trim() || !newBody.trim() || isCreatingIssue}
+                disabled={
+                  !newTitle.trim() || !newBody.trim() || isCreatingIssue
+                }
                 className="seshat-modal-btn-submit"
               >
                 {isCreatingIssue && (
@@ -590,12 +657,37 @@ const styles = {
   filtersRow: {
     paddingBottom: 12,
     borderBottom: "1px solid var(--border)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
   },
   filtersScroll: {
     display: "flex",
     gap: 6,
-    overflowX: "auto",
-    scrollbarWidth: "none",
+    overflowX: "auto" as const,
+    scrollbarWidth: "none" as const,
+  },
+  paginationControls: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    flexShrink: 0,
+  },
+  pageBtn: {
+    background: "var(--bg-surface)",
+    border: "1px solid var(--border)",
+    color: "var(--text-primary)",
+    borderRadius: 6,
+    padding: "4px 12px",
+    fontSize: 13,
+    fontWeight: 500,
+    transition: "all 0.15s ease",
+  },
+  pageInfo: {
+    fontSize: 13,
+    color: "var(--text-secondary)",
+    fontWeight: 500,
   },
   loadingWrapper: {
     display: "flex",
@@ -655,64 +747,74 @@ const styles = {
   issuesList: {
     display: "flex",
     flexDirection: "column",
-    gap: 12,
-  },
-  issueCard: {
-    padding: "16px 20px",
-    borderRadius: 8,
-    cursor: "pointer",
-    background: "var(--bg-main)",
     border: "1px solid var(--border)",
-    borderLeft: "3px solid var(--border)",
-    transition: "transform 0.15s ease, box-shadow 0.15s ease",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+    borderRadius: 8,
+    background: "var(--bg-main)",
+    overflow: "hidden",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
   },
-  cardHeader: {
+  issueItem: {
     display: "flex",
-    justifyContent: "space-between",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: "16px 20px",
+    cursor: "pointer",
+    background: "transparent",
+    transition: "background 0.15s ease",
+  },
+  issueItemIconWrapper: {
+    marginTop: 2,
+    marginRight: 16,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  issueItemMain: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    minWidth: 0,
+  },
+  issueItemTitleRow: {
+    display: "flex",
     alignItems: "center",
     gap: 8,
-    marginBottom: 10,
   },
-  cardHeaderLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  },
-  issueNumber: {
-    fontSize: 12,
-    color: "var(--text-muted)",
-  },
-  issueDate: {
-    fontSize: 12,
-    color: "var(--text-muted)",
-  },
-  issueTitle: {
-    fontSize: 17,
+  issueItemTitle: {
+    fontSize: 16,
     fontWeight: 600,
     color: "var(--text-primary)",
-    margin: "0 0 8px",
-    lineHeight: 1.3,
+    margin: 0,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
-  issueBodyPreview: {
-    fontSize: 14,
-    color: "var(--text-secondary)",
-    margin: "0 0 16px",
-    lineHeight: 1.5,
-  },
-  cardFooter: {
+  issueItemMetaRow: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
-    fontSize: 12,
+    gap: 12,
+    fontSize: 13,
     color: "var(--text-secondary)",
-    borderTop: "1px solid var(--border)",
-    paddingTop: 12,
   },
-  commentsCountSpan: {
+  issueItemMetaText: {
     display: "flex",
     alignItems: "center",
     gap: 4,
+  },
+  issueItemRight: {
+    display: "flex",
+    alignItems: "center",
+    marginLeft: 16,
+    height: "100%",
+  },
+  commentsCountBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    color: "var(--text-secondary)",
+    fontSize: 13,
+    fontWeight: 500,
   },
   modalBody: {
     padding: "24px 28px 28px",

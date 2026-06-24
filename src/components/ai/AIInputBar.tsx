@@ -45,32 +45,11 @@ export default function AIInputBar({
         {QUICK_ACTIONS.map((action, i) => (
           <button
             key={i}
+            className="ai-quick-action-btn"
             onClick={() => {
               setExpertMode(action.mode);
               setAiMode("chat");
               if (action.message) setInput(action.message);
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "6px 12px",
-              background: "var(--bg-panel)",
-              border: "1px solid var(--border-field)",
-              borderRadius: 16,
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--color-purple)";
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--border-field)";
-              e.currentTarget.style.color = "var(--text-secondary)";
             }}
           >
             <span>{action.icon}</span>

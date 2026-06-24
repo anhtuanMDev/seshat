@@ -1,25 +1,25 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { SmartToyIcon, AutoStoriesIcon, ChatIcon, AutoFixHighIcon } from "../components/ui/icons";
+import { AutoStoriesIcon, SmartToyIcon } from "../components/ui/icons";
 
 // AI-feature modules
-import "../components/ai/ai-page.css";
 import "../components/ai/ai-page-mobile.css";
-import { useAIConfig } from "../components/ai/useAIConfig";
-import { useContextBuilder } from "../components/ai/useContextBuilder";
-import { useAIChat } from "../components/ai/useAIChat";
-import { useCanonModal } from "../components/ai/useCanonModal";
-import { getCanonFieldsForType } from "../components/ai/prompts";
-import { AI_MODES } from "../components/ai/constants";
+import "../components/ai/ai-page.css";
 import type { ExpertMode } from "../components/ai/constants";
+import { getCanonFieldsForType } from "../components/ai/prompts";
 import type { AiMode } from "../components/ai/types";
+import { useAIChat } from "../components/ai/useAIChat";
+import { useAIConfig } from "../components/ai/useAIConfig";
+import { useCanonModal } from "../components/ai/useCanonModal";
+import { useContextBuilder } from "../components/ai/useContextBuilder";
 
 // Sub-components
-import AISidebar from "../components/ai/AISidebar";
 import AIChatFeed from "../components/ai/AIChatFeed";
 import AIInputBar from "../components/ai/AIInputBar";
+import AISidebar from "../components/ai/AISidebar";
 import CanonModal from "../components/ai/CanonModal";
 import GeneratedCharModal from "../components/ai/GeneratedCharModal";
+import { MobileContextStrip } from "../components/ai/MobileContextStrip";
 
 export default function AIPage() {
   const navigate = useNavigate();
@@ -40,8 +40,13 @@ export default function AIPage() {
   // ── Hooks ───────────────────────────────────────────────────────────────────
   const config = useAIConfig();
 
-  const { books, selectedBookId, setSelectedBookId, contextText, isLoadingContext } =
-    useContextBuilder(focusType, focusId);
+  const {
+    books,
+    selectedBookId,
+    setSelectedBookId,
+    contextText,
+    isLoadingContext,
+  } = useContextBuilder(focusType, focusId);
 
   const {
     messages,
@@ -84,7 +89,8 @@ export default function AIPage() {
 
   const handleOpenCanon = useCallback(
     async (content: string) => {
-      const defaultType = focusType && focusType !== "none" ? focusType : "character";
+      const defaultType =
+        focusType && focusType !== "none" ? focusType : "character";
       canonModal.openCanonModal(content, defaultType, focusId || "");
 
       if (config.apiKey && selectedBookId !== "none") {
@@ -111,8 +117,13 @@ export default function AIPage() {
             },
           );
           const classData = await classRes.json();
-          const suggested = classData.choices?.[0]?.message?.content?.trim().toLowerCase();
-          if (suggested && getCanonFieldsForType(defaultType).includes(suggested)) {
+          const suggested = classData.choices?.[0]?.message?.content
+            ?.trim()
+            .toLowerCase();
+          if (
+            suggested &&
+            getCanonFieldsForType(defaultType).includes(suggested)
+          ) {
             canonModal.setCanonTargetField(suggested);
           }
         } catch {
@@ -174,8 +185,7 @@ export default function AIPage() {
             WebkitTapHighlightColor: "transparent",
           }}
         >
-          ←
-          <span className="ai-back-label">Back to Books</span>
+          ←<span className="ai-back-label">Back to Books</span>
         </button>
 
         <div style={{ flex: 1 }} />
@@ -242,7 +252,6 @@ export default function AIPage() {
 
       {/* ── Main layout ──────────────────────────────────────────────────────── */}
       <div className="ai-page-layout" style={{ flex: 1, overflow: "hidden" }}>
-
         {/* Tablet backdrop (closes drawer on outside click) */}
         <div
           className={`ai-tablet-backdrop${tabletDrawerOpen ? " open" : ""}`}
@@ -322,7 +331,11 @@ export default function AIPage() {
         className={`ai-sheet-backdrop${sheetOpen ? " open" : ""}`}
         onClick={() => setSheetOpen(false)}
       />
-      <div className={`ai-bottom-sheet${sheetOpen ? " open" : ""}`} role="dialog" aria-modal="true">
+      <div
+        className={`ai-bottom-sheet${sheetOpen ? " open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="ai-sheet-handle" />
 
         {/* Sheet header */}
@@ -335,7 +348,11 @@ export default function AIPage() {
           }}
         >
           <span
-            style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)" }}
+            style={{
+              fontWeight: 700,
+              fontSize: 16,
+              color: "var(--text-primary)",
+            }}
           >
             Oracle Settings
           </span>
@@ -367,9 +384,15 @@ export default function AIPage() {
           focusType={focusType}
           focusId={focusId}
           aiMode={aiMode}
-          setAiMode={(m) => { setAiMode(m); setSheetOpen(false); }}
+          setAiMode={(m) => {
+            setAiMode(m);
+            setSheetOpen(false);
+          }}
           expertMode={expertMode}
-          setExpertMode={(m) => { setExpertMode(m); setSheetOpen(false); }}
+          setExpertMode={(m) => {
+            setExpertMode(m);
+            setSheetOpen(false);
+          }}
           providerId={config.providerId}
           handleProviderChange={config.handleProviderChange}
           baseUrl={config.baseUrl}
@@ -379,7 +402,10 @@ export default function AIPage() {
           apiKey={config.apiKey}
           setApiKey={config.setApiKey}
           messagesLength={messages.length}
-          onClearChat={() => { setShowClearConfirm(true); setSheetOpen(false); }}
+          onClearChat={() => {
+            setShowClearConfirm(true);
+            setSheetOpen(false);
+          }}
         />
       </div>
 
@@ -408,13 +434,27 @@ export default function AIPage() {
               boxShadow: "0 16px 48px rgba(0,0,0,0.3)",
             }}
           >
-            <h3 style={{ margin: "0 0 12px 0", color: "var(--text-primary)", fontSize: 16 }}>
+            <h3
+              style={{
+                margin: "0 0 12px 0",
+                color: "var(--text-primary)",
+                fontSize: 16,
+              }}
+            >
               Clear Chat History
             </h3>
-            <p style={{ color: "var(--text-secondary)", marginBottom: 24, fontSize: 14 }}>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                marginBottom: 24,
+                fontSize: 14,
+              }}
+            >
               Are you sure? This will erase the current conversation.
             </p>
-            <div style={{ gap: 10, display: "flex", justifyContent: "flex-end" }}>
+            <div
+              style={{ gap: 10, display: "flex", justifyContent: "flex-end" }}
+            >
               <button
                 onClick={() => setShowClearConfirm(false)}
                 style={{
@@ -430,7 +470,10 @@ export default function AIPage() {
                 Cancel
               </button>
               <button
-                onClick={() => { clearMessages(); setShowClearConfirm(false); }}
+                onClick={() => {
+                  clearMessages();
+                  setShowClearConfirm(false);
+                }}
                 style={{
                   padding: "8px 16px",
                   background: "var(--color-red)",
@@ -470,92 +513,6 @@ export default function AIPage() {
         selectedBookId={selectedBookId}
         books={books}
       />
-    </div>
-  );
-}
-
-// ── Mobile context strip shown below the top bar ──────────────────────────────
-
-function MobileContextStrip({
-  expertMode,
-  aiMode,
-  isTyping,
-  onOpenSheet,
-}: {
-  expertMode: ExpertMode;
-  aiMode: AiMode;
-  isTyping: boolean;
-  onOpenSheet: () => void;
-}) {
-  return (
-    <div
-      className="ai-mobile-context-strip"
-      style={{
-        display: "none", // overridden by CSS media query
-        alignItems: "center",
-        gap: 8,
-        padding: "6px 12px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-top)",
-        overflowX: "auto",
-        scrollbarWidth: "none",
-        flexShrink: 0,
-      }}
-    >
-      {/* Persona badge */}
-      <button
-        onClick={onOpenSheet}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 5,
-          fontSize: 11,
-          fontWeight: 600,
-          padding: "4px 10px",
-          borderRadius: 20,
-          border: "1px solid var(--border-field)",
-          background: "var(--bg-panel)",
-          color: "var(--text-secondary)",
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-          WebkitTapHighlightColor: "transparent",
-        }}
-      >
-        {AI_MODES[expertMode].icon}
-        {AI_MODES[expertMode].label}
-      </button>
-
-      {/* Mode badge */}
-      <span
-        style={{
-          fontSize: 11,
-          padding: "4px 10px",
-          borderRadius: 20,
-          border: "1px solid var(--border-field)",
-          background: "var(--bg-panel)",
-          color: "var(--text-secondary)",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {aiMode === "chat" ? <ChatIcon sx={{ fontSize: 12 }} /> : <AutoFixHighIcon sx={{ fontSize: 12 }} />}
-          {aiMode === "chat" ? "Chat" : "Gen Char"}
-        </div>
-      </span>
-
-      {isTyping && (
-        <span
-          style={{
-            fontSize: 11,
-            color: "var(--color-purple)",
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            animation: "pulse 1.5s infinite",
-          }}
-        >
-          ● Thinking…
-        </span>
-      )}
     </div>
   );
 }

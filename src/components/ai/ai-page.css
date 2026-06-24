@@ -1,56 +1,58 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   AI Oracle — page-scoped styles
+   AI Oracle — Visual Architecture (Phase 2)
+   Premium Glassmorphic Design System
    Breakpoints: mobile ≤ 768px | tablet 769–1024px | desktop > 1024px
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* ── Layout shell ────────────────────────────────────────────────────────────*/
-
 .ai-page-layout {
   display: flex;
   flex: 1;
   overflow: hidden;
   position: relative;
+  background: var(--bg-app);
 }
 
 /* ── Desktop sidebar ─────────────────────────────────────────────────────────*/
-
 .ai-page-sidebar {
-  width: 300px;
+  width: 320px;
   flex-shrink: 0;
-  background: var(--bg-side);
-  border-right: 1px solid var(--border);
-  padding: 20px;
+  background: rgba(var(--bg-side-rgb), 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   overflow-y: auto;
-  transition: width 0.25s ease, opacity 0.25s ease;
+  transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }
 
 /* ── Main chat column ────────────────────────────────────────────────────────*/
-
 .ai-page-main {
   display: flex;
   flex-direction: column;
-  background: var(--bg-main);
+  background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.03) 0%, transparent 50%), var(--bg-main);
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── Chat feed ───────────────────────────────────────────────────────────────*/
-
 .ai-chat-feed {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  /* smooth momentum scroll on iOS */
+  padding-bottom: 24px;
   -webkit-overflow-scrolling: touch;
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────────────*/
-
 .ai-empty-state {
   margin: auto;
   text-align: center;
@@ -59,60 +61,74 @@
   flex-direction: column;
   align-items: center;
   padding: 40px;
+  animation: ai-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* ── Message block ───────────────────────────────────────────────────────────*/
-
 .ai-message-block {
-  padding: 28px 40px;
-  border-bottom: 1px solid var(--border);
+  padding: 24px 40px;
   display: flex;
   gap: 20px;
+  animation: ai-fade-in 0.4s ease-out forwards;
+  border-bottom: 1px solid transparent;
 }
 
 .ai-user-bg {
-  background: var(--bg-active);
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.03) 100%);
+  border-bottom-color: rgba(255,255,255,0.02);
 }
 
 .ai-assistant-bg {
-  background: var(--bg-main);
+  background: transparent;
 }
 
 /* ── Message action buttons row ──────────────────────────────────────────────*/
-
 .ai-message-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 12px;
   flex-wrap: wrap;
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.ai-message-block:hover .ai-message-actions {
+  opacity: 1;
 }
 
 /* ── Avatar ──────────────────────────────────────────────────────────────────*/
-
 .ai-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--bg-panel);
+  background: linear-gradient(135deg, var(--bg-panel) 0%, rgba(255,255,255,0.02) 100%);
   color: var(--text-secondary);
   font-weight: 600;
   font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ai-avatar-oracle {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
 }
 
 /* ── Message content ─────────────────────────────────────────────────────────*/
-
 .ai-message-content {
   flex: 1;
   min-width: 0;
   color: var(--text-primary);
   font-size: 15px;
-  line-height: 1.7;
+  line-height: 1.75;
+  letter-spacing: 0.2px;
 }
 
 .ai-message-content p:last-child {
@@ -122,26 +138,26 @@
 .ai-user-text {
   color: var(--text-secondary);
   font-size: 15px;
+  line-height: 1.6;
 }
 
-/* ── Input container ─────────────────────────────────────────────────────────*/
-
+/* ── Input container (Glassmorphic Floating Pill) ────────────────────────────*/
 .ai-input-container {
-  padding: 16px 40px;
-  background: var(--bg-main);
-  border-top: 1px solid var(--border);
+  padding: 24px 40px;
+  background: linear-gradient(to top, var(--bg-main) 40%, transparent 100%);
+  position: relative;
+  z-index: 20;
   /* safe-area for notched phones — no-op on desktop */
-  padding-bottom: max(16px, calc(12px + env(safe-area-inset-bottom)));
+  padding-bottom: max(24px, calc(16px + env(safe-area-inset-bottom)));
 }
 
 /* ── Quick-action pill strip ─────────────────────────────────────────────────*/
-
 .ai-quick-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
-  padding-bottom: 10px;
-  max-width: 1000px;
+  padding-bottom: 16px;
+  max-width: 900px;
   margin: 0 auto;
   scrollbar-width: none; /* Firefox */
 }
@@ -151,28 +167,29 @@
 }
 
 /* ── Input wrapper ───────────────────────────────────────────────────────────*/
-
 .ai-input-wrapper {
   position: relative;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-field);
-  border-radius: 12px;
+  background: rgba(var(--bg-panel-rgb), 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
   display: flex;
   align-items: flex-end;
-  padding: 8px 8px 8px 16px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  max-width: 1000px;
+  padding: 10px 10px 10px 20px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  max-width: 900px;
   margin: 0 auto;
 }
 
 .ai-input-wrapper:focus-within {
-  border-color: var(--color-purple);
-  box-shadow: 0 4px 16px rgba(var(--color-purple-rgb), 0.12);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 12px 48px rgba(139, 92, 246, 0.15), inset 0 0 0 1px rgba(168, 85, 247, 0.1);
+  background: rgba(var(--bg-panel-rgb), 0.9);
 }
 
 /* ── Textarea ────────────────────────────────────────────────────────────────*/
-
 .ai-textarea {
   flex: 1;
   background: transparent;
@@ -181,10 +198,9 @@
   color: var(--text-primary);
   resize: none;
   font-family: inherit;
-  /* 16px prevents iOS Safari auto-zoom on focus */
-  font-size: 16px;
-  line-height: 1.5;
-  padding: 10px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 12px 0;
 }
 
 .ai-textarea::placeholder {
@@ -192,45 +208,48 @@
 }
 
 /* ── Send / stop button ──────────────────────────────────────────────────────*/
-
 .ai-send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: var(--color-purple);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
   color: white;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   flex-shrink: 0;
-  margin-bottom: 4px;
-  margin-left: 8px;
+  margin-bottom: 2px;
+  margin-left: 12px;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .ai-send-btn:hover:not(:disabled) {
-  background: #7c3aed;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.5);
+  background: linear-gradient(135deg, #b875f8 0%, #9c73f7 100%);
 }
 
 .ai-send-btn:active:not(:disabled) {
-  transform: scale(0.93);
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
 }
 
 .ai-send-btn:disabled {
-  background: var(--bg-panel);
+  background: var(--bg-main);
   color: var(--text-muted);
   cursor: not-allowed;
-  border: 1px solid var(--border-field);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 /* ── Typing indicator ────────────────────────────────────────────────────────*/
-
 .ai-typing-indicator {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   height: 24px;
   padding-top: 6px;
 }
@@ -238,41 +257,54 @@
 .ai-dot {
   width: 6px;
   height: 6px;
-  background: var(--text-muted);
+  background: var(--color-purple);
   border-radius: 50%;
   animation: ai-bounce 1.4s infinite ease-in-out both;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
 }
 
+.ai-dot:nth-child(1) { animation-delay: -0.32s; }
+.ai-dot:nth-child(2) { animation-delay: -0.16s; }
+
 @keyframes ai-bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40%           { transform: scale(1); }
+  0%, 80%, 100% { transform: scale(0.4); opacity: 0.3; }
+  40%           { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ai-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ai-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ── Config group (sidebar fields) ──────────────────────────────────────────*/
-
 .ai-config-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .ai-config-label {
-  font-size: 11px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
+  letter-spacing: 1.5px;
+  font-weight: 700;
   color: var(--text-secondary);
 }
 
 .ai-config-input {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-field);
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.08);
   color: var(--text-primary);
-  border-radius: 6px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 10px 14px;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
@@ -283,59 +315,57 @@
 }
 
 .ai-config-input:focus {
-  border-color: var(--color-purple);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
 }
 
 .ai-model-pill {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-field);
-  background: var(--bg-panel);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .ai-model-pill:hover {
-  border-color: var(--text-muted);
+  border-color: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary);
 }
 
 /* ── Clear button ────────────────────────────────────────────────────────────*/
-
 .ai-clear-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px;
+  padding: 12px;
   background: transparent;
-  border: 1px solid var(--border-field);
-  color: var(--text-secondary);
-  border-radius: 6px;
+  border: 1px solid rgba(255, 60, 60, 0.2);
+  color: rgba(255, 100, 100, 0.8);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 13px;
+  font-weight: 600;
   width: 100%;
 }
 
 .ai-clear-btn:not(:disabled):hover {
-  background: rgba(255, 0, 0, 0.08);
-  color: var(--color-red);
-  border-color: var(--color-red);
+  background: rgba(255, 60, 60, 0.1);
+  color: #ff4d4d;
+  border-color: rgba(255, 60, 60, 0.4);
 }
 
 .ai-clear-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   RESPONSIVE TOP BAR EXTRAS (context + settings toggle badges)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-.ai-responsive-topbar-extras {
-  display: none;
+  border-color: rgba(255,255,255,0.05);
+  color: var(--text-muted);
 }
 
 /* tablet drawer toggle — hidden on desktop and mobile */
@@ -346,14 +376,15 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    MOBILE BOTTOM SHEET OVERLAY
    ───────────────────────────────────────────────────────────────────────────── */
-
 .ai-sheet-backdrop {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 300;
-  animation: ai-fade-in 0.2s ease;
+  animation: ai-fade-in 0.3s ease;
 }
 
 .ai-sheet-backdrop.open {
@@ -367,15 +398,16 @@
   right: 0;
   z-index: 301;
   background: var(--bg-side);
-  border-radius: 20px 20px 0 0;
-  border-top: 1px solid var(--border);
-  max-height: 88dvh;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+  max-height: 90dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 0 20px 20px;
-  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  padding: 0 24px 24px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
   transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   will-change: transform;
 }
 
@@ -385,63 +417,55 @@
 
 /* drag handle */
 .ai-sheet-handle {
-  width: 36px;
-  height: 4px;
-  background: var(--border-field);
-  border-radius: 2px;
-  margin: 12px auto 16px;
+  width: 40px;
+  height: 5px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  margin: 14px auto 20px;
   flex-shrink: 0;
-}
-
-@keyframes ai-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    TABLET — collapsible sidebar drawer overlay (769–1024px)
    ───────────────────────────────────────────────────────────────────────────── */
-
 @media (min-width: 769px) and (max-width: 1024px) {
   .ai-page-sidebar {
     position: fixed;
-    top: 50px; /* below top bar */
+    top: 50px;
     left: 0;
     bottom: 0;
     z-index: 200;
-    width: 300px;
-    border-right: 1px solid var(--border);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+    width: 320px;
+    background: rgba(var(--bg-side-rgb), 0.85);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    padding: 20px;
-    gap: 16px;
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   .ai-page-sidebar.tablet-open {
     transform: translateX(0);
   }
 
-  /* tablet backdrop behind the drawer */
   .ai-tablet-backdrop {
     display: none;
     position: fixed;
     inset: 0;
     top: 50px;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
     z-index: 199;
+    animation: ai-fade-in 0.3s ease;
   }
 
   .ai-tablet-backdrop.open {
     display: block;
   }
 
-  /* the sidebar toggle button in the top bar */
   .ai-tablet-sidebar-btn {
     display: flex !important;
   }
 
-  /* show context badge on tablet, but not mobile settings button */
   .ai-responsive-topbar-extras {
     display: flex;
     align-items: center;
@@ -451,127 +475,163 @@
     display: none !important;
   }
 
-  /* chat takes full width on tablet */
   .ai-page-main {
     width: 100%;
   }
 
-  /* reduce message padding slightly */
   .ai-message-block {
-    padding: 24px 28px;
+    padding: 24px 32px;
   }
 
   .ai-input-container {
-    padding: 14px 24px;
-    padding-bottom: max(14px, calc(10px + env(safe-area-inset-bottom)));
+    padding: 20px 32px;
+    padding-bottom: max(20px, calc(16px + env(safe-area-inset-bottom)));
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MOBILE — ≤ 768px
    ───────────────────────────────────────────────────────────────────────────── */
-
 @media (max-width: 768px) {
-  /* hide the desktop sidebar entirely */
   .ai-page-sidebar {
     display: none;
   }
 
-  /* show responsive topbar extras (book badge + settings button) */
   .ai-responsive-topbar-extras {
     display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  /* compact message padding */
   .ai-message-block {
-    padding: 16px;
-    gap: 12px;
+    padding: 20px 16px;
+    gap: 16px;
   }
 
-  /* action buttons wrap below the message on narrow screens */
   .ai-message-actions {
     justify-content: flex-start;
+    opacity: 1; /* Always visible on mobile touch */
   }
 
-  /* tighter input area */
   .ai-input-container {
-    padding: 10px 12px;
-    padding-bottom: max(10px, calc(8px + env(safe-area-inset-bottom)));
+    padding: 12px 16px;
+    padding-bottom: max(12px, calc(8px + env(safe-area-inset-bottom)));
   }
 
   .ai-input-wrapper {
-    padding: 6px 6px 6px 14px;
+    padding: 8px 8px 8px 16px;
+    border-radius: 16px;
   }
 
   .ai-quick-actions {
-    padding-bottom: 8px;
+    padding-bottom: 12px;
   }
 
   .ai-message-content {
-    font-size: 14px;
+    font-size: 14.5px;
   }
 
-  /* ensure tablet button stays hidden on mobile */
   .ai-tablet-sidebar-btn {
     display: none !important;
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Context badge pill (shown in mobile top bar)
+   Context badge pill (Responsive Top Bar)
    ───────────────────────────────────────────────────────────────────────────── */
-
 .ai-context-badge {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 20px;
-  background: rgba(139, 92, 246, 0.15);
-  color: var(--color-purple);
-  border: 1px solid rgba(139, 92, 246, 0.25);
-  max-width: 120px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+}
+
+.ai-context-badge:hover {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
 }
 
 .ai-context-badge:active {
-  background: rgba(139, 92, 246, 0.25);
+  transform: scale(0.97);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Settings icon button (mobile / tablet top bar)
+   Settings icon button (Mobile / Tablet Top Bar)
    ───────────────────────────────────────────────────────────────────────────── */
-
 .ai-settings-btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
-  border: 1px solid var(--border-field);
-  background: var(--bg-panel);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
 }
 
 .ai-settings-btn:hover,
 .ai-settings-btn.active {
-  border-color: var(--color-purple);
-  color: var(--color-purple);
-  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE TOP BAR EXTRAS (Hidden default)
+   ───────────────────────────────────────────────────────────────────────────── */
+.ai-responsive-topbar-extras {
+  display: none;
+}
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Quick Action Pills (Input Bar)
+   ───────────────────────────────────────────────────────────────────────────── */
+.ai-quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ai-quick-action-btn:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+  color: var(--text-primary);
+  background: rgba(168, 85, 247, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.ai-quick-action-btn:active {
+  transform: translateY(0) scale(0.98);
+}

@@ -159,14 +159,6 @@ export default function IssueDetailPage() {
                   <span style={styles.infoCardIssueNum}>
                     Issue #{activeIssue.number}
                   </span>
-                  <a
-                    href={activeIssue.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.viewOnGitHubLink}
-                  >
-                    View on GitHub
-                  </a>
                 </div>
 
                 <h1 className="seshat-forum-detail-title" style={styles.infoCardTitle}>{activeIssue.title}</h1>
@@ -410,13 +402,6 @@ const styles = {
   infoCardIssueNum: {
     fontSize: 13,
     color: "var(--text-muted)",
-    fontWeight: 500,
-  },
-  viewOnGitHubLink: {
-    marginLeft: "auto",
-    fontSize: 12,
-    color: "var(--color-blue)",
-    textDecoration: "underline",
     fontWeight: 500,
   },
   infoCardTitle: {

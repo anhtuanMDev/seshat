@@ -35,7 +35,7 @@ export default function AIMessageBlock({
     <div
       className={`ai-message-block ${isUser ? "ai-user-bg" : "ai-assistant-bg"}`}
     >
-      <div className="ai-avatar">
+      <div className={`ai-avatar ${!isUser ? "ai-avatar-oracle" : ""}`}>
         {isUser ? "U" : <SmartToyIcon sx={{ fontSize: 18 }} />}
       </div>
 

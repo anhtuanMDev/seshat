@@ -1,7 +1,10 @@
-/* Additional responsive helpers for AIPage top bar and context strip */
+/* ─────────────────────────────────────────────────────────────────────────────
+   AI Oracle — Mobile Additions (Phase 2)
+   Responsive adjustments and context strip
+   ───────────────────────────────────────────────────────────────────────────── */
 
 /* Hide "Back to Books" text on very small phones */
-@media (max-width: 400px) {
+@media (max-width: 450px) {
   .ai-back-label {
     display: none;
   }
@@ -18,6 +21,12 @@
 @media (max-width: 1024px) {
   .ai-mobile-context-strip {
     display: flex !important;
+    background: rgba(var(--bg-top-rgb), 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 50; /* Stay above chat */
   }
   .ai-mobile-context-strip::-webkit-scrollbar {
     display: none;
@@ -25,7 +34,7 @@
 }
 
 /* Thinking pulse animation for the context strip */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(168, 85, 247, 0.6); }
+  50%      { opacity: 0.5; text-shadow: 0 0 2px rgba(168, 85, 247, 0.2); }
 }
