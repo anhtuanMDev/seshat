@@ -232,16 +232,24 @@ export default function BookListPage() {
   return (
     <div style={styles.container}>
       <div style={styles.topBar}>
-        <button onClick={() => navigate("/ai")} style={styles.forumBtn} title="Oracle AI">
+        <button
+          onClick={() => navigate("/ai")}
+          style={styles.forumBtn}
+          title="Oracle AI"
+        >
           <SmartToyIcon sx={styles.bugIcon} />
         </button>
-        <button onClick={() => navigate("/issues")} style={styles.forumBtn} title="Issues & Forum">
+        <button
+          onClick={() => navigate("/issues")}
+          style={styles.forumBtn}
+          title="Issues & Forum"
+        >
           <BugReportIcon sx={styles.bugIcon} />
         </button>
         <button
           onClick={toggle}
           title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          style={styles.themeToggleBtn}
+          style={styles.forumBtn}
         >
           {theme === "light" ? (
             <LightModeIcon sx={styles.toggleIcon} />
