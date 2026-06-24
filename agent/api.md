@@ -339,6 +339,11 @@ Several pages operate entirely off the synchronized `appStore` memory without ma
 - **`FightPage.tsx`:** A deterministic combat simulation engine that compares two character states directly in the browser.
 - **`LoreWebPage.tsx`:** Generates a dynamic React Flow graph of relationships, computing the topology entirely client-side using `dagre`.
 
+### 9. AI Feature (`AIPage.tsx`)
+
+- **APIs Used:** `updateFilesOnGitHub` (via "Add to Canon"), Third-Party AI Providers (OpenAI, Anthropic, OpenRouter via direct fetch).
+- **Context & Why:** A standalone workspace where the AI Oracle can be prompted for brainstorming. It implements "Smarter Context Injection," meaning the context sent to the LLM is aggressively filtered. If an entity is queried (via deep-linking URL params `focusType` and `focusId` from the rest of the application), the AI automatically maps its dependency tree (e.g. only characters they know, techniques they use, ignoring unrelated magic systems) instead of feeding the entire Book structure. The "Add to Canon" flow triggers `updateFilesOnGitHub` to seamlessly patch AI-generated text directly back into the user's defined world structure (like Character Secrets or Monster Lore) and syncs it back to GitHub.
+
 ---
 
 ## Environment Variables (Cloudflare Secrets)
