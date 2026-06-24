@@ -56,7 +56,7 @@ export default function CanonModal({
   const entityList =
     canonTargetType === "book"
       ? []
-      : ((activeBook?.[collectionKey] as Array<{ id: string; name?: string; title?: string }>) ??
+      : ((activeBook?.[collectionKey] as unknown as Array<{ id: string; name?: string; title?: string }>) ??
         []);
 
   return (

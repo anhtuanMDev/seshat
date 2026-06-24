@@ -338,11 +338,7 @@
   display: none;
 }
 
-/* tablet drawer toggle — hidden by default on desktop and mobile;
-   shown only in the 769–1024px tablet media query below */
-.ai-tablet-sidebar-btn {
-  display: none;
-}
+/* tablet drawer toggle — handled at bottom of file with !important */
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MOBILE BOTTOM SHEET OVERLAY
@@ -439,7 +435,7 @@
 
   /* the sidebar toggle button in the top bar */
   .ai-tablet-sidebar-btn {
-    display: flex;
+    display: flex !important;
   }
 
   /* chat takes full width on tablet */
@@ -565,4 +561,7 @@
   background: rgba(139, 92, 246, 0.08);
 }
 
-/* (tablet toggle default moved to line ~338 — before media queries) */
+/* tablet toggle — hidden on desktop and mobile */
+.ai-tablet-sidebar-btn {
+  display: none !important;
+}
