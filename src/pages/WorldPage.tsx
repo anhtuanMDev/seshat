@@ -22,6 +22,7 @@ import {
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { useSelector } from "@legendapp/state/react";
 import { NationBlock } from "../components/world/NationBlock";
@@ -30,7 +31,7 @@ import { IngredientBlock } from "../components/world/IngredientBlock";
 import { MonsterBlock } from "../components/world/MonsterBlock";
 import { TreasureBlock } from "../components/world/TreasureBlock";
 import { Modal } from "../components/ui/Modal";
-import { DeleteIcon } from "../components/ui/icons";
+import { DeleteIcon, SmartToyIcon } from "../components/ui/icons";
 import { NationCard } from "../components/world/NationCard";
 import { TechniqueCard } from "../components/world/TechniqueCard";
 import { IngredientCard } from "../components/world/IngredientCard";
@@ -48,6 +49,7 @@ import type { NationConnection } from "../lib/types";
 
 export default function WorldPage() {
   const bookIdx = useActiveBookIdx();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -551,6 +553,16 @@ export default function WorldPage() {
                     Delete
                   </button>
                 )}
+                {!modal.isNew && (
+                  <button
+                    onClick={() => navigate(`/ai?focusType=nation&focusId=${nations[modal.idx!].id}`)}
+                    className="seshat-modal-btn-cancel"
+                    style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
+                  >
+                    <SmartToyIcon sx={{ fontSize: 16 }} />
+                    Ask AI
+                  </button>
+                )}
               </div>
               <div className="seshat-flex-align" style={{ gap: 12 }}>
                 <button
@@ -602,6 +614,16 @@ export default function WorldPage() {
                     Delete
                   </button>
                 )}
+                {!modal.isNew && (
+                  <button
+                    onClick={() => navigate(`/ai?focusType=technique&focusId=${techniques[modal.idx!].id}`)}
+                    className="seshat-modal-btn-cancel"
+                    style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
+                  >
+                    <SmartToyIcon sx={{ fontSize: 16 }} />
+                    Ask AI
+                  </button>
+                )}
               </div>
               <div className="seshat-flex-align" style={{ gap: 12 }}>
                 <button
@@ -647,6 +669,16 @@ export default function WorldPage() {
                   >
                     <DeleteIcon sx={{ fontSize: 16 }} />
                     Delete
+                  </button>
+                )}
+                {!modal.isNew && (
+                  <button
+                    onClick={() => navigate(`/ai?focusType=ingredient&focusId=${ingredients[modal.idx!].id}`)}
+                    className="seshat-modal-btn-cancel"
+                    style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
+                  >
+                    <SmartToyIcon sx={{ fontSize: 16 }} />
+                    Ask AI
                   </button>
                 )}
               </div>
@@ -697,6 +729,16 @@ export default function WorldPage() {
                     Delete
                   </button>
                 )}
+                {!modal.isNew && (
+                  <button
+                    onClick={() => navigate(`/ai?focusType=monster&focusId=${monsters[modal.idx!].id}`)}
+                    className="seshat-modal-btn-cancel"
+                    style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
+                  >
+                    <SmartToyIcon sx={{ fontSize: 16 }} />
+                    Ask AI
+                  </button>
+                )}
               </div>
               <div className="seshat-flex-align" style={{ gap: 12 }}>
                 <button
@@ -743,6 +785,16 @@ export default function WorldPage() {
                   >
                     <DeleteIcon sx={{ fontSize: 16 }} />
                     Delete
+                  </button>
+                )}
+                {!modal.isNew && (
+                  <button
+                    onClick={() => navigate(`/ai?focusType=treasure&focusId=${treasures[modal.idx!].id}`)}
+                    className="seshat-modal-btn-cancel"
+                    style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
+                  >
+                    <SmartToyIcon sx={{ fontSize: 16 }} />
+                    Ask AI
                   </button>
                 )}
               </div>

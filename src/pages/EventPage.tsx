@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { MenuItem } from "@mui/material";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../store/appStore";
@@ -17,6 +17,7 @@ import {
   LocationOnIcon,
   AutoStoriesIcon,
   InfoIcon,
+  SmartToyIcon,
 } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -61,6 +62,7 @@ export default function EventPage() {
   const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
   const allChapters = useChapters();
+  const navigate = useNavigate();
 
   const event = useSelector(() => {
     if (bookIdx < 0) return undefined;
@@ -323,8 +325,17 @@ export default function EventPage() {
             {...register("title")}
             style={styles.titleInput}
           />
-          <button
-            onClick={onSubmit}
+          <div style={{ display: "flex", gap: 12 }}>
+            <button
+              onClick={() => navigate(`/ai?focusType=event&focusId=${event.id}`)}
+              style={{ ...getSaveBtnStyle(true), background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", opacity: 1, boxShadow: "none" }}
+              title="Ask AI about this event"
+            >
+              <SmartToyIcon sx={{ fontSize: 14 }} />
+              ask ai
+            </button>
+            <button
+              onClick={onSubmit}
             title="Save changes"
             disabled={(!isDirty && !isAttrsDirty) || isSaving}
             style={getSaveBtnStyle(isDirty || isAttrsDirty)}

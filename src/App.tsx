@@ -15,7 +15,6 @@ import { SideItem } from "./components/ui";
 import { ConflictModal } from "./components/ConflictModal";
 import { getConflicts, autoMergeOtherChapters } from "./lib/conflictUtils";
 import { GlobalSearchModal } from "./components/GlobalSearchModal";
-import { AIChatModal } from "./components/AIChatModal";
 import {
   PublicIcon,
   AutoStoriesIcon,
@@ -49,7 +48,6 @@ export default function App() {
   const { theme, toggle } = useTheme();
 
   const [showSearch, setShowSearch] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
   const [conflictData, setConflictData] = useState<{ serverBook: BookData, serverSha: string } | null>(null);
 
   useEffect(() => {
@@ -586,7 +584,7 @@ export default function App() {
               </span>
             </button>
             <button
-              onClick={() => setShowAIChat(true)}
+              onClick={() => navigate("/ai")}
               style={styles.exportBtn}
             >
               <SmartToyIcon sx={{ fontSize: 16 }} />
@@ -650,7 +648,7 @@ export default function App() {
               <button
                 onClick={() => {
                   setShowMoreMenu(false);
-                  setShowAIChat(true);
+                  navigate("/ai");
                 }}
                 style={styles.moreMenuBtn(false)}
               >
@@ -1002,12 +1000,7 @@ export default function App() {
         </div>
       )}
 
-      {showAIChat && (
-        <AIChatModal
-          contextText={text}
-          onClose={() => setShowAIChat(false)}
-        />
-      )}
+
 
       <GlobalSearchModal
         open={showSearch}

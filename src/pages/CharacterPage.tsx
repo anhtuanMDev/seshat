@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { Path } from "react-hook-form";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { AchievementBlock } from "../components/character/AchievementBlock";
 import { ConditionBlock } from "../components/character/ConditionBlock";
 import { LossBlock } from "../components/character/LossBlock";
@@ -25,6 +25,7 @@ import {
   ArticleIcon,
   ShieldIcon,
   InfoIcon,
+  SmartToyIcon,
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import type {
@@ -47,6 +48,7 @@ import { scoreFighter } from "../lib/scoreFighter";
 
 export default function CharacterPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const {
     control,
@@ -195,6 +197,13 @@ export default function CharacterPage() {
             />
           </div>
           <div ref={dockedButtonsRef} style={styles.buttonsContainer}>
+            <button
+              onClick={() => navigate(`/ai?focusType=character&focusId=${char.id}`)}
+              style={styles.exportBtn}
+            >
+              <SmartToyIcon sx={{ fontSize: 12 }} />
+              ask ai
+            </button>
             <button
               onClick={() => setShowExport(true)}
               data-testid="character-export-btn"

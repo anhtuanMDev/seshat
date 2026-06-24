@@ -11,6 +11,7 @@ import {
   CloseIcon,
   BugReportIcon,
   LogoutIcon,
+  SmartToyIcon,
 } from "../components/ui/icons";
 import { Modal } from "../components/ui/Modal";
 import { useTheme } from "../hooks/useTheme";
@@ -231,7 +232,10 @@ export default function BookListPage() {
   return (
     <div style={styles.container}>
       <div style={styles.topBar}>
-        <button onClick={() => navigate("/issues")} style={styles.forumBtn}>
+        <button onClick={() => navigate("/ai")} style={styles.forumBtn} title="Oracle AI">
+          <SmartToyIcon sx={styles.bugIcon} />
+        </button>
+        <button onClick={() => navigate("/issues")} style={styles.forumBtn} title="Issues & Forum">
           <BugReportIcon sx={styles.bugIcon} />
         </button>
         <button

@@ -19,6 +19,7 @@ const LoreWebPage = lazy(() => import("../pages/LoreWebPage"));
 const IssuesPage = lazy(() => import("../pages/IssuesPage"));
 const IssueDetailPage = lazy(() => import("../pages/IssueDetailPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
+const AIPage = lazy(() => import("../pages/AIPage"));
 
 // Fallback spinner element (React Element constant)
 const PageLoading = createElement(
@@ -55,6 +56,7 @@ export const preloadPages = () => {
     () => import("../pages/IssuesPage"),
     () => import("../pages/IssueDetailPage"),
     () => import("../pages/NotFoundPage"),
+    () => import("../pages/AIPage"),
   ];
 
   const runPreloads = () => {
@@ -121,6 +123,14 @@ export const router = createBrowserRouter([
           Suspense,
           { fallback: PageLoading },
           createElement(IssueDetailPage),
+        ),
+      },
+      {
+        path: "ai",
+        element: createElement(
+          Suspense,
+          { fallback: PageLoading },
+          createElement(AIPage),
         ),
       },
       {
