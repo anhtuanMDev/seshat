@@ -93,7 +93,7 @@ export default function AISidebar({
               style={{
                 fontSize: 11,
                 background: "rgba(139, 92, 246, 0.15)",
-                color: "var(--color-purple)",
+                color: "var(--text-primary)",
                 padding: "2px 8px",
                 borderRadius: 12,
                 fontWeight: 600,
@@ -128,7 +128,7 @@ export default function AISidebar({
           ))}
         </select>
         {isLoadingContext && (
-          <div style={{ fontSize: 11, color: "var(--color-purple)", marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 8 }}>
             Loading context...
           </div>
         )}
@@ -136,7 +136,7 @@ export default function AISidebar({
           <div style={{ fontSize: 11, color: "var(--color-green)", marginTop: 8 }}>
             ✓ Context loaded ({Math.round(contextText.length / 4)} tokens)
             {focusType && focusId && focusType !== "none" && (
-              <div style={{ color: "var(--color-purple)", marginTop: 4 }}>
+              <div style={{ color: "var(--text-primary)", marginTop: 4 }}>
                 ✦ Focused on specific {focusType}. Irrelevant world data trimmed.
               </div>
             )}
@@ -165,9 +165,9 @@ export default function AISidebar({
                   padding: "8px",
                   borderRadius: 8,
                   border: "1px solid",
-                  borderColor: active ? "var(--color-purple)" : "var(--border)",
+                  borderColor: active ? "var(--text-primary)" : "var(--border)",
                   background: active ? "rgba(139, 92, 246, 0.1)" : "var(--bg-panel)",
-                  color: active ? "var(--color-purple)" : "var(--text-secondary)",
+                  color: active ? "var(--text-primary)" : "var(--text-secondary)",
                   fontWeight: 600,
                   cursor: "pointer",
                 }}
@@ -210,11 +210,11 @@ export default function AISidebar({
                       padding: "8px 12px",
                       borderRadius: 6,
                       border: "1px solid",
-                      borderColor: isSelected ? "var(--color-purple)" : "var(--border-field)",
+                      borderColor: isSelected ? "var(--text-primary)" : "var(--border-field)",
                       background: isSelected
                         ? "rgba(139, 92, 246, 0.1)"
                         : "var(--bg-panel)",
-                      color: isSelected ? "var(--color-purple)" : "var(--text-secondary)",
+                      color: isSelected ? "var(--text-primary)" : "var(--text-secondary)",
                       textAlign: "left",
                       cursor: "pointer",
                       transition: "all 0.2s",
@@ -326,9 +326,9 @@ export default function AISidebar({
                     style={{
                       background: model === m ? "var(--bg-active)" : "var(--bg-panel)",
                       borderColor:
-                        model === m ? "var(--color-purple)" : "var(--border-field)",
+                        model === m ? "var(--text-primary)" : "var(--border-field)",
                       color:
-                        model === m ? "var(--color-purple)" : "var(--text-secondary)",
+                        model === m ? "var(--text-primary)" : "var(--text-secondary)",
                     }}
                   >
                     {m}

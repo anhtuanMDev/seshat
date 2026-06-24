@@ -133,7 +133,7 @@ export default function AIChatFeed({
                     lineHeight: 1.4,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--color-purple)";
+                    e.currentTarget.style.borderColor = "var(--text-primary)";
                     e.currentTarget.style.color = "var(--text-primary)";
                   }}
                   onMouseLeave={(e) => {

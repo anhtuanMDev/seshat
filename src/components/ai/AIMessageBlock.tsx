@@ -105,8 +105,8 @@ export default function AIMessageBlock({
                 onClick={() => onAddToCanon(m.content)}
                 style={{
                   background: "transparent",
-                  border: "1px solid var(--color-purple)",
-                  color: "var(--color-purple)",
+                  border: "1px solid var(--text-primary)",
+                  color: "var(--text-primary)",
                   borderRadius: 16,
                   padding: "4px 10px",
                   fontSize: 11,
@@ -147,7 +147,7 @@ function AssistantContent({ content }: { content: string }) {
             marginBottom: 16,
             fontSize: 12,
             background: "transparent",
-            borderLeft: "2px solid var(--color-purple)",
+            borderLeft: "2px solid var(--text-primary)",
             paddingLeft: 12,
             opacity: 0.6,
           }}
