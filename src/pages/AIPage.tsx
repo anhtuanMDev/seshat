@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SmartToyIcon, SendIcon, DeleteIcon } from "../components/ui/icons";
 import ReactMarkdown from "react-markdown";
 import { showToast } from "../store/toastStore";
@@ -75,61 +75,105 @@ const AI_PROVIDERS = [
   },
 ];
 
-const PROMPT_TEMPLATES = [
+const QUICK_ACTIONS = [
   {
     icon: "🛡️",
-    label: "Audit My World",
-    prompt: `You are a story consistency auditor for a novelist.
-You will be given the full canonical context of a book.
-Your ONLY job is to find and list:
-1. Internal contradictions (a character can't be in two places at once, timeline impossibilities)
-2. Plot holes (setup without payoff, character motivations that don't add up)
-3. Character inconsistencies (behavior that contradicts their coreWound/coreFear)
-4. World-rule violations (characters using abilities they haven't acquired yet)
-
-Format your response as a markdown list grouped by category.
-Be specific: quote the entity name and the conflicting details.
-Do not suggest fixes unless asked.`,
-  },
-  {
-    icon: "🎭",
-    label: "Interview Character",
-    prompt:
-      "Roleplay as a character from the provided context. I will ask you questions and you should answer exactly how they would, based on their psychology and history.",
+    label: "Audit World",
+    mode: "GENERAL" as const,
+    message:
+      "Scan my entire world for internal contradictions, plot holes, and character inconsistencies. Be specific — name the entities and the conflicting details.",
   },
   {
     icon: "📝",
-    label: "Suggest Next Scene",
-    prompt:
-      "Based on the chronological timeline of events, suggest what the next logical scene or major event should be, and outline what happens.",
+    label: "Next Scene",
+    mode: "SCENE_WRITER" as const,
+    message:
+      "Based on the chronological timeline, what is the next scene that should happen? Outline it with hook, conflict, and what changes.",
   },
   {
     icon: "🌍",
-    label: "Flesh out World",
-    prompt:
-      "Look at my world's setting, nations, and magic systems. Suggest 3 new cultural details, traditions, or minor factions that would make the world feel more alive.",
+    label: "Expand Lore",
+    mode: "LORE_EXPANDER" as const,
+    message:
+      "Suggest 3 new cultural details, traditions, or minor factions that would make this world feel more alive. Each must connect to existing canon.",
+  },
+  {
+    icon: "🩺",
+    label: "Fix Plot",
+    mode: "PLOT_DOCTOR" as const,
+    message: "", // empty — let writer describe the problem
   },
 ];
+
+const AI_MODES = {
+  GENERAL: {
+    label: "General Assistant",
+    icon: "🤖",
+    systemAppend: `You are an expert lorekeeper and creative assistant.`,
+  },
+  SCENE_WRITER: {
+    label: "Write a Scene",
+    icon: "✍️",
+    systemAppend: `You are writing PROSE, not describing prose. Show don't tell.
+Structure every scene with: 
+  - HOOK (first sentence creates immediate tension or intrigue)
+  - BODY (advancing action through specific sensory detail + subtext in dialogue)
+  - TURN (something changes — emotionally, physically, or informationally)
+  - RESONANCE (last line echoes a theme or leaves a question open)
+
+Match the prose style to the character's POV — their vocabulary, their obsessions, 
+what they notice vs ignore, all reflect their psychology.`,
+  },
+  PLOT_DOCTOR: {
+    label: "Plot Doctor",
+    icon: "🩺",
+    systemAppend: `You are a developmental editor diagnosing story problems.
+When presented with a plot issue:
+1. DIAGNOSE: Name the real problem (not just the symptom the writer described)
+2. ROOT CAUSE: Trace it back to character motivation or world logic
+3. OPTIONS: Give exactly 3 solutions at different "costs" to the story
+4. RECOMMENDATION: Which option you'd choose and why`,
+  },
+  DIALOGUE_COACH: {
+    label: "Dialogue Coach",
+    icon: "💬",
+    systemAppend: `You write dialogue that sounds like THESE specific characters.
+Rules for every line:
+- Every exchange should CHANGE something (power dynamic, information, relationship)
+- No on-the-nose exposition disguised as dialogue
+- Read each line aloud test: if it sounds like a stage direction, rewrite it`,
+  },
+  LORE_EXPANDER: {
+    label: "Lore Expander",
+    icon: "🌍",
+    systemAppend: `You are expanding the world's lore while maintaining INTERNAL CONSISTENCY.
+For every lore element you create:
+1. It must have a CAUSE in the existing world
+2. It must have at least one CONSEQUENCE on existing characters or factions
+3. Flag any element that CONTRADICTS existing canon with: ⚠️ [POTENTIAL CONFLICT: ...]`,
+  },
+  CHARACTER_ROLEPLAY: {
+    label: "Roleplay Character",
+    icon: "🎭",
+    systemAppend: `You are now fully embodying the focused Character. You ARE this character — not an assistant describing them.
+### ROLEPLAY RULES ###
+1. Answer every question IN CHARACTER — first person, present tense
+2. Your core wound subtly colors EVERY response, even if the topic seems unrelated
+3. You will LIE or deflect if asked about your secrets — stay in character
+4. If asked something your character wouldn't know, say so in character
+5. Never break character to say "As an AI..." — if you must clarify something meta, do it as a brief OOC: [note] then return
+The writer may ask you questions, put you in scenarios, or ask "what would you do if...".
+Stay in character no matter what.`,
+  },
+};
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
-export default function AIPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const focusType = searchParams.get("focusType");
-  const focusId = searchParams.get("focusId");
-
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [aiMode, setAiMode] = useState<"chat" | "generate">("chat");
-  const [generatedChar, setGeneratedChar] = useState<Partial<Character> | null>(null);
-
-  const mkChar = (): Partial<Character> => ({
+function mkChar(): Partial<Character> {
+  return {
     id: crypto.randomUUID(),
     name: "New Character",
     color: "#8b5cf6",
@@ -151,7 +195,94 @@ export default function AIPage() {
     equipment: [],
     achievements: [],
     losses: [],
+  };
+}
+
+function getCanonFieldsForType(type: string): string[] {
+  switch (type) {
+    case "book":
+      return ["synopsis", "setting", "themes", "rules"];
+    case "character":
+      return [
+        "coreWound",
+        "coreFear",
+        "coreDesire",
+        "philosophy",
+        "secrets",
+        "appearance",
+      ];
+    case "event":
+      return ["description", "consequence", "setting", "subplot"];
+    case "nation":
+      return [
+        "geography",
+        "culture",
+        "military",
+        "economy",
+        "allianceLogic",
+        "secrets",
+        "lore",
+      ];
+    case "technique":
+      return [
+        "description",
+        "effect",
+        "requirement",
+        "cost",
+        "secret",
+        "lore",
+      ];
+    case "ingredient":
+      return ["appearance", "properties", "uses", "danger", "lore"];
+    case "monster":
+      return [
+        "appearance",
+        "abilities",
+        "weaknesses",
+        "drops",
+        "lore",
+        "behavior",
+      ];
+    case "treasure":
+      return ["description", "stats", "curses", "history"];
+    default:
+      return [];
+  }
+}
+
+export default function AIPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const focusType = searchParams.get("focusType");
+  const focusId = searchParams.get("focusId");
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const saved = sessionStorage.getItem("seshat-ai-messages");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem("seshat-ai-messages", JSON.stringify(messages));
+    } else {
+      sessionStorage.removeItem("seshat-ai-messages");
+    }
+  }, [messages]);
+
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [aiMode, setAiMode] = useState<"chat" | "generate">("chat");
+  const [expertMode, setExpertMode] =
+    useState<keyof typeof AI_MODES>("GENERAL");
+  const [generatedChar, setGeneratedChar] = useState<Partial<Character> | null>(
+    null,
+  );
 
   // Add to Canon Modal State
   const [canonModalContent, setCanonModalContent] = useState<string | null>(
@@ -185,6 +316,7 @@ export default function AIPage() {
   const books = useSelector(() => appStore.books.get() || []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Auto-save config when it changes
   useEffect(() => {
@@ -367,26 +499,58 @@ export default function AIPage() {
     }
   };
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, isTyping, scrollToBottom]);
 
-  const handleSend = async () => {
+  const buildRoleplayInjection = useCallback(() => {
+    if (expertMode !== "CHARACTER_ROLEPLAY" || !focusId) return "";
+    const bookIdx = books.findIndex((b) => b?.id === selectedBookId);
+    if (bookIdx < 0) return "";
+    const char = books[bookIdx]?.characters?.find(
+      (c: Character) => c.id === focusId,
+    );
+    if (!char) return "";
+    return `
+### YOU ARE: ${char.name} ###
+Core Wound: ${char.coreWound}
+Core Fear: ${char.coreFear}
+Core Desire: ${char.coreDesire}
+Philosophy: ${char.philosophy}
+Secrets (you NEVER reveal these directly): ${char.secrets}
+Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcStage || "unknown"}
+`;
+  }, [expertMode, focusId, books, selectedBookId]);
+
+  const handleSend = () => {
     if (!input.trim()) return;
+    sendMessage(input.trim());
+  };
+
+  const sendMessage = async (userContent: string, historyOverride?: Message[]) => {
+    if (expertMode === "CHARACTER_ROLEPLAY" && !focusId) {
+      showToast(
+        'Select a character first — use "Ask AI" from a Character page',
+        "error",
+      );
+      return;
+    }
+
     if (!apiKey.trim() && !baseUrl.includes("localhost")) {
       showToast("Please enter an API Key in settings first", "error");
       return;
     }
 
+    const baseMsgs = historyOverride ?? messages;
     const newMsgs = [
-      ...messages,
-      { role: "user" as const, content: input.trim() },
+      ...baseMsgs,
+      { role: "user" as const, content: userContent },
     ];
     setMessages(newMsgs);
     setInput("");
@@ -402,26 +566,92 @@ JSON SCHEMA: { "name": "string", "role": "string", "archetype": "string", "coreW
 ### CANONICAL CONTEXT ###
 ${contextText}`;
 
-      const systemMsgContent = aiMode === "generate" 
-        ? genSystemPrompt
-        : contextText
-          ? `You are an expert lorekeeper, editor, and creative assistant for a novelist. 
-You are given the full canonical context of the world, characters, rules, and timeline below. 
-Never contradict this context. Use it to answer questions, brainstorm, or write prose. 
-Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
-          : `You are an expert creative assistant for a novelist. Respond in Markdown.`;
+      const PUSHBACK_INSTRUCTION = `
+### PROFESSIONAL DISAGREEMENT PROTOCOL ###
+If the writer asks you to do something that would HURT their story, say so first.
+Format: "⚠️ Before I do this — [specific concern about story logic]. Do you want me to proceed anyway, or shall we find a version that preserves [the thing at risk]?"
+Then comply either way. You're a collaborator, not a gatekeeper.`;
+
+      const shouldInterview = baseMsgs.length === 0; // only on first message
+      const isGenerativeRequest = userContent
+        .toLowerCase()
+        .match(/write|create|generate|make|draft|describe|give me|suggest/);
+
+      const INTERVIEW_PROMPT =
+        shouldInterview && isGenerativeRequest
+          ? `
+### RESPONSE PROTOCOL ###
+This is the writer's FIRST message and they are requesting creative generation.
+Ask 3 targeted questions BEFORE generating anything. Make them specific to THIS request.
+After they answer, generate freely without asking more questions.
+`
+          : "";
+
+      const basePrompt = AI_MODES[expertMode].systemAppend;
+
+      const THINK_PROTOCOL = `
+### THINKING PROTOCOL ###
+You MUST reason before answering. Wrap your reasoning in <think></think> tags.
+Your reasoning must cover:
+1. What is the writer actually trying to solve? (surface request vs real need)
+2. What does the canon already establish that is relevant?  
+3. What would CONTRADICT the canon if I'm not careful?
+4. What is the single most useful thing I can give them?
+
+CRITICAL: The <think> block MUST appear FIRST, before any other text.
+The user will NEVER see this block. Write freely and honestly in it.
+Only what comes AFTER </think> is shown to the writer.
+Format: <think>[your reasoning here]</think>\n\n[your actual response here]
+`;
+
+      const systemMsgContent =
+        aiMode === "generate"
+          ? genSystemPrompt
+          : contextText
+            ? `${basePrompt}
+${buildRoleplayInjection()}
+${expertMode !== "CHARACTER_ROLEPLAY" ? PUSHBACK_INSTRUCTION : ""}
+${expertMode !== "CHARACTER_ROLEPLAY" ? INTERVIEW_PROMPT : ""}
+
+### CANONICAL CONTEXT ###
+${contextText}
+
+${THINK_PROTOCOL}`
+            : `${basePrompt}`;
 
       const systemMsg = {
         role: "system",
         content: systemMsgContent,
       };
 
+      const TEMP_BY_MODE: Record<keyof typeof AI_MODES, number> = {
+        GENERAL: 0.7,
+        SCENE_WRITER: 0.9, // more creative
+        PLOT_DOCTOR: 0.3, // more logical/consistent
+        DIALOGUE_COACH: 0.85, // natural variation
+        LORE_EXPANDER: 0.8,
+        CHARACTER_ROLEPLAY: 1.0, // maximum character voice authenticity
+      };
+
+      const cleanedMessages = newMsgs.map((msg) =>
+        msg.role === "assistant"
+          ? {
+              ...msg,
+              content: msg.content
+                .replace(/<think>[\s\S]*?<\/think>/g, "")
+                .trim(),
+            }
+          : msg,
+      );
+
       const payload = {
         model: model || "gpt-4o",
-        messages: [systemMsg, ...newMsgs],
-        temperature: 0.7,
+        messages: [systemMsg, ...cleanedMessages],
+        temperature: aiMode === "generate" ? 0.85 : TEMP_BY_MODE[expertMode],
         stream: true,
       };
+
+      abortControllerRef.current = new AbortController();
 
       const res = await fetch(
         `${baseUrl.replace(/\/$/, "")}/chat/completions`,
@@ -432,6 +662,7 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
             Authorization: `Bearer ${apiKey.trim()}`,
           },
           body: JSON.stringify(payload),
+          signal: abortControllerRef.current.signal,
         },
       );
 
@@ -480,12 +711,14 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
             try {
               const data = JSON.parse(dataStr);
               if (data.choices && data.choices[0].delta?.content) {
-                assistantMessage += data.choices[0].delta.content;
+                const chunk = data.choices[0].delta.content;
+                assistantMessage += chunk;
                 setMessages((prev) => {
                   const newArray = [...prev];
+                  const lastMsg = newArray[newArray.length - 1];
                   newArray[newArray.length - 1] = {
                     role: "assistant",
-                    content: assistantMessage,
+                    content: lastMsg.content + chunk,
                   };
                   return newArray;
                 });
@@ -508,15 +741,17 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
           showToast("Failed to parse generated character JSON", "error");
         }
       }
-
     } catch (err: unknown) {
       console.error(err);
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
       const msg = err instanceof Error ? err.message : String(err);
       showToast(`AI Error: ${msg}`, "error");
 
       // Revert the UI state so the user doesn't lose their typed prompt
-      setMessages(messages);
-      setInput(input.trim());
+      setMessages(baseMsgs);
+      setInput(userContent);
     } finally {
       setIsTyping(false);
     }
@@ -524,58 +759,6 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
 
   const clearChat = () => {
     setShowClearConfirm(true);
-  };
-
-  const getCanonFieldsForType = (type: string) => {
-    switch (type) {
-      case "book":
-        return ["synopsis", "setting", "themes", "rules"];
-      case "character":
-        return [
-          "coreWound",
-          "coreFear",
-          "coreDesire",
-          "philosophy",
-          "secrets",
-          "appearance",
-        ];
-      case "event":
-        return ["description", "consequence", "setting", "subplot"];
-      case "nation":
-        return [
-          "geography",
-          "culture",
-          "military",
-          "economy",
-          "allianceLogic",
-          "secrets",
-          "lore",
-        ];
-      case "technique":
-        return [
-          "description",
-          "effect",
-          "requirement",
-          "cost",
-          "secret",
-          "lore",
-        ];
-      case "ingredient":
-        return ["appearance", "properties", "uses", "danger", "lore"];
-      case "monster":
-        return [
-          "appearance",
-          "abilities",
-          "weaknesses",
-          "drops",
-          "lore",
-          "behavior",
-        ];
-      case "treasure":
-        return ["description", "stats", "curses", "history"];
-      default:
-        return [];
-    }
   };
 
   const handleSaveToCanon = async () => {
@@ -659,6 +842,47 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
       }
     }
   };
+
+  const starterQuestions = useMemo(() => {
+    const bookIdx = books.findIndex((b) => b && b.id === selectedBookId);
+    const book = bookIdx >= 0 ? books[bookIdx] : null;
+
+    if (!book)
+      return [
+        "What makes a compelling villain?",
+        "How do I write a satisfying plot twist?",
+      ];
+
+    if (focusType === "character" && focusId) {
+      const char = book.characters?.find((c: Character) => c.id === focusId);
+      const name = char?.name || "this character";
+      return [
+        `What does ${name} do when they're completely alone?`,
+        `How does ${name}'s core wound manifest in how they speak?`,
+        `Write a scene where ${name} almost gets what they want — then sabotages it.`,
+        `What lie does ${name} tell themselves every day?`,
+        `Interview ${name} — ask them about their biggest regret.`,
+      ];
+    }
+
+    if (focusType === "event" && focusId) {
+      const ev = book.events?.find((e: Event) => e.id === focusId);
+      const title = ev?.title || "this scene";
+      return [
+        `What is each character NOT saying in ${title}?`,
+        `What's the worst thing that could happen in ${title}?`,
+        `Write the opening paragraph of ${title}.`,
+        `Which character leaves ${title} most changed?`,
+      ];
+    }
+
+    return [
+      `What is the biggest unresolved tension in ${book.title}?`,
+      `Which character has the most interesting contradiction?`,
+      `Audit my world for internal contradictions.`,
+      `What scene should happen next based on the timeline?`,
+    ];
+  }, [selectedBookId, focusType, focusId, books]);
 
   return (
     <div
@@ -799,134 +1023,270 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
                 )}
               </div>
             )}
-            
-            <h3 style={{ fontSize: 16, margin: "24px 0 8px 0", color: "var(--text-primary)" }}>AI Mode</h3>
+
+            <h3
+              style={{
+                fontSize: 16,
+                margin: "24px 0 8px 0",
+                color: "var(--text-primary)",
+              }}
+            >
+              AI Mode
+            </h3>
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-              <button 
+              <button
                 onClick={() => setAiMode("chat")}
-                style={{ flex: 1, padding: "8px", borderRadius: 8, border: "1px solid", borderColor: aiMode === "chat" ? "var(--color-purple)" : "var(--border)", background: aiMode === "chat" ? "rgba(139, 92, 246, 0.1)" : "var(--bg-panel)", color: aiMode === "chat" ? "var(--color-purple)" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer" }}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  borderRadius: 8,
+                  border: "1px solid",
+                  borderColor:
+                    aiMode === "chat" ? "var(--color-purple)" : "var(--border)",
+                  background:
+                    aiMode === "chat"
+                      ? "rgba(139, 92, 246, 0.1)"
+                      : "var(--bg-panel)",
+                  color:
+                    aiMode === "chat"
+                      ? "var(--color-purple)"
+                      : "var(--text-secondary)",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 💬 Chat
               </button>
-              <button 
+              <button
                 onClick={() => setAiMode("generate")}
-                style={{ flex: 1, padding: "8px", borderRadius: 8, border: "1px solid", borderColor: aiMode === "generate" ? "var(--color-purple)" : "var(--border)", background: aiMode === "generate" ? "rgba(139, 92, 246, 0.1)" : "var(--bg-panel)", color: aiMode === "generate" ? "var(--color-purple)" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer" }}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  borderRadius: 8,
+                  border: "1px solid",
+                  borderColor:
+                    aiMode === "generate"
+                      ? "var(--color-purple)"
+                      : "var(--border)",
+                  background:
+                    aiMode === "generate"
+                      ? "rgba(139, 92, 246, 0.1)"
+                      : "var(--bg-panel)",
+                  color:
+                    aiMode === "generate"
+                      ? "var(--color-purple)"
+                      : "var(--text-secondary)",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 ✨ Gen Char
               </button>
             </div>
+
+            {aiMode === "chat" && (
+              <>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    margin: "0 0 8px 0",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Persona Mode
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    marginBottom: 16,
+                  }}
+                >
+                  {(Object.keys(AI_MODES) as Array<keyof typeof AI_MODES>).map(
+                    (key) => {
+                      const mode = AI_MODES[key];
+                      const isSelected = expertMode === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setExpertMode(key)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "8px 12px",
+                            borderRadius: 6,
+                            border: "1px solid",
+                            borderColor: isSelected
+                              ? "var(--color-purple)"
+                              : "var(--border-field)",
+                            background: isSelected
+                              ? "rgba(139, 92, 246, 0.1)"
+                              : "var(--bg-panel)",
+                            color: isSelected
+                              ? "var(--color-purple)"
+                              : "var(--text-secondary)",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          <span style={{ fontSize: 16 }}>{mode.icon}</span>
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: isSelected ? 600 : 400,
+                            }}
+                          >
+                            {mode.label}
+                          </span>
+                          {key === "CHARACTER_ROLEPLAY" && !focusId && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: "var(--color-orange)",
+                                marginLeft: "auto",
+                              }}
+                            >
+                              needs focus
+                            </span>
+                          )}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           <div
             style={{ height: 1, background: "var(--border)", margin: "8px 0" }}
           />
 
-          <div>
+          <div
+            onClick={() => setShowSettings((s) => !s)}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: "pointer",
+              padding: "8px 0",
+            }}
+          >
             <h3
-              style={{
-                fontSize: 16,
-                margin: "0 0 8px 0",
-                color: "var(--text-primary)",
-              }}
+              style={{ fontSize: 16, margin: 0, color: "var(--text-primary)" }}
             >
               Oracle Settings
             </h3>
-            <p
-              style={{
-                fontSize: 12,
-                color: "var(--text-muted)",
-                lineHeight: 1.4,
-                margin: "0 0 16px 0",
-              }}
-            >
-              Configure your BYOK AI provider. Auto-saved securely to your
-              browser.
-            </p>
+            <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+              {showSettings ? "▴" : "▾"}
+            </span>
           </div>
 
-          <div className="ai-config-group">
-            <label className="ai-config-label">Provider</label>
-            <select
-              className="ai-config-input"
-              value={providerId}
-              onChange={handleProviderChange}
-            >
-              {AI_PROVIDERS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {providerId === "custom" && (
-            <div className="ai-config-group">
-              <label className="ai-config-label">API Base URL</label>
-              <input
-                type="text"
-                className="ai-config-input"
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
-                placeholder="https://api.openai.com/v1"
-              />
-            </div>
-          )}
-
-          <div className="ai-config-group">
-            <label className="ai-config-label">Model ID</label>
-            <input
-              type="text"
-              className="ai-config-input"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="gpt-4o"
-            />
-            {AI_PROVIDERS.find((p) => p.id === providerId)?.models.length ? (
-              <div
+          {showSettings && (
+            <>
+              <p
                 style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  marginTop: 4,
+                  fontSize: 12,
+                  color: "var(--text-muted)",
+                  lineHeight: 1.4,
+                  margin: "0 0 16px 0",
                 }}
               >
-                {AI_PROVIDERS.find((p) => p.id === providerId)?.models.map(
-                  (m) => (
-                    <button
-                      key={m}
-                      onClick={() => setModel(m)}
-                      className="ai-model-pill"
-                      style={{
-                        background:
-                          model === m ? "var(--bg-active)" : "var(--bg-panel)",
-                        borderColor:
-                          model === m
-                            ? "var(--color-purple)"
-                            : "var(--border-field)",
-                        color:
-                          model === m
-                            ? "var(--color-purple)"
-                            : "var(--text-secondary)",
-                      }}
-                    >
-                      {m}
-                    </button>
-                  ),
-                )}
-              </div>
-            ) : null}
-          </div>
+                Configure your BYOK AI provider. Auto-saved securely to your
+                browser.
+              </p>
 
-          <div className="ai-config-group">
-            <label className="ai-config-label">API Key</label>
-            <input
-              type="password"
-              className="ai-config-input"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-            />
-          </div>
+              <div className="ai-config-group">
+                <label className="ai-config-label">Provider</label>
+                <select
+                  className="ai-config-input"
+                  value={providerId}
+                  onChange={handleProviderChange}
+                >
+                  {AI_PROVIDERS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {providerId === "custom" && (
+                <div className="ai-config-group">
+                  <label className="ai-config-label">API Base URL</label>
+                  <input
+                    type="text"
+                    className="ai-config-input"
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    placeholder="https://api.openai.com/v1"
+                  />
+                </div>
+              )}
+
+              <div className="ai-config-group">
+                <label className="ai-config-label">Model ID</label>
+                <input
+                  type="text"
+                  className="ai-config-input"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  placeholder="gpt-4o"
+                />
+                {AI_PROVIDERS.find((p) => p.id === providerId)?.models
+                  .length ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                      marginTop: 4,
+                    }}
+                  >
+                    {AI_PROVIDERS.find((p) => p.id === providerId)?.models.map(
+                      (m) => (
+                        <button
+                          key={m}
+                          onClick={() => setModel(m)}
+                          className="ai-model-pill"
+                          style={{
+                            background:
+                              model === m
+                                ? "var(--bg-active)"
+                                : "var(--bg-panel)",
+                            borderColor:
+                              model === m
+                                ? "var(--color-purple)"
+                                : "var(--border-field)",
+                            color:
+                              model === m
+                                ? "var(--color-purple)"
+                                : "var(--text-secondary)",
+                          }}
+                        >
+                          {m}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="ai-config-group">
+                <label className="ai-config-label">API Key</label>
+                <input
+                  type="password"
+                  className="ai-config-input"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-..."
+                />
+              </div>
+            </>
+          )}
 
           <div style={{ flex: 1 }} />
 
@@ -944,16 +1304,79 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
         <div className="ai-page-main">
           <div className="ai-chat-feed">
             {messages.length === 0 ? (
-              <div className="ai-empty-state">
-                <SmartToyIcon
-                  sx={{ fontSize: 48, opacity: 0.1, marginBottom: 16 }}
-                />
-                <p>The Oracle is ready.</p>
-                <span style={{ fontSize: 13, opacity: 0.6, marginTop: 8 }}>
-                  {selectedBookId !== "none"
-                    ? "Ask about your world, characters, or request a prose scene."
-                    : "Ask anything! Select a book on the left to provide specific context."}
-                </span>
+              <div
+                style={{
+                  padding: "40px",
+                  maxWidth: 700,
+                  margin: "0 auto",
+                  width: "100%",
+                }}
+              >
+                <div
+                  style={{
+                    textAlign: "center",
+                    marginBottom: 32,
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  <SmartToyIcon
+                    sx={{ fontSize: 40, opacity: 0.15, marginBottom: 12 }}
+                  />
+                  <p style={{ margin: 0, fontSize: 15 }}>
+                    {selectedBookId !== "none"
+                      ? `Oracle loaded. ${AI_MODES[expertMode].icon} ${AI_MODES[expertMode].label} mode.`
+                      : "The Oracle is ready."}
+                  </p>
+                </div>
+
+                {selectedBookId !== "none" && (
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 11,
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                        color: "var(--text-muted)",
+                        fontWeight: 600,
+                        margin: "0 0 8px 0",
+                      }}
+                    >
+                      Suggested Questions
+                    </p>
+                    {starterQuestions.map((q, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setInput(q)}
+                        style={{
+                          textAlign: "left",
+                          padding: "12px 16px",
+                          background: "var(--bg-panel)",
+                          border: "1px solid var(--border-field)",
+                          borderRadius: 8,
+                          color: "var(--text-secondary)",
+                          fontSize: 14,
+                          cursor: "pointer",
+                          transition: "all 0.15s",
+                          lineHeight: 1.4,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor =
+                            "var(--color-purple)";
+                          e.currentTarget.style.color = "var(--text-primary)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor =
+                            "var(--border-field)";
+                          e.currentTarget.style.color = "var(--text-secondary)";
+                        }}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               messages.map((m, i) => (
@@ -972,95 +1395,264 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
                     className={`ai-message-content ${m.role === "user" ? "ai-user-text" : ""}`}
                   >
                     {m.role === "assistant" ? (
-                      <ReactMarkdown
-                        components={{
-                          p: ({ ...props }) => (
-                            <p style={{ margin: "0 0 12px 0" }} {...props} />
-                          ),
-                          ul: ({ ...props }) => (
-                            <ul
-                              style={{ margin: "0 0 12px 0", paddingLeft: 24 }}
-                              {...props}
-                            />
-                          ),
-                          ol: ({ ...props }) => (
-                            <ol
-                              style={{ margin: "0 0 12px 0", paddingLeft: 24 }}
-                              {...props}
-                            />
-                          ),
-                          li: ({ ...props }) => (
-                            <li style={{ marginBottom: 6 }} {...props} />
-                          ),
-                          strong: ({ ...props }) => (
-                            <strong
-                              style={{
-                                color: "var(--text-primary)",
-                                fontWeight: 600,
-                              }}
-                              {...props}
-                            />
-                          ),
-                          h3: ({ ...props }) => (
-                            <h3
-                              style={{
-                                margin: "16px 0 8px 0",
-                                fontSize: 16,
-                                color: "var(--text-primary)",
-                              }}
-                              {...props}
-                            />
-                          ),
-                        }}
-                      >
-                        {m.content}
-                      </ReactMarkdown>
+                      (() => {
+                        const thinkMatch = m.content.match(
+                          /<think>([\s\S]*?)<\/think>/,
+                        ); // only match CLOSED tags
+                        const hasOpenThink =
+                          m.content.trimStart().startsWith("<think>") &&
+                          !m.content.includes("</think>");
+                        const cleanContent = thinkMatch
+                          ? m.content
+                              .replace(/<think>[\s\S]*?<\/think>/, "")
+                              .trim()
+                          : hasOpenThink
+                            ? "" // still thinking, show nothing yet
+                            : m.content.trim();
+
+                        return (
+                          <>
+                            {thinkMatch && (
+                              <details
+                                style={{
+                                  marginBottom: 16,
+                                  fontSize: 12,
+                                  background: "transparent",
+                                  borderLeft: "2px solid var(--color-purple)",
+                                  paddingLeft: 12,
+                                  opacity: 0.6,
+                                }}
+                              >
+                                <summary
+                                  style={{
+                                    cursor: "pointer",
+                                    color: "var(--text-muted)",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    letterSpacing: "0.5px",
+                                    textTransform: "uppercase",
+                                    listStyle: "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <span>▸</span> Reasoning trace
+                                </summary>
+                                <div
+                                  style={{
+                                    marginTop: 8,
+                                    color: "var(--text-secondary)",
+                                    whiteSpace: "pre-wrap",
+                                    fontFamily: "var(--font-mono)",
+                                    fontSize: 11,
+                                    lineHeight: 1.6,
+                                  }}
+                                >
+                                  {thinkMatch[1].trim()}
+                                </div>
+                              </details>
+                            )}
+                            {cleanContent ? (
+                              <ReactMarkdown
+                                components={{
+                                  p: ({ ...props }) => (
+                                    <p
+                                      style={{ margin: "0 0 12px 0" }}
+                                      {...props}
+                                    />
+                                  ),
+                                  ul: ({ ...props }) => (
+                                    <ul
+                                      style={{
+                                        margin: "0 0 12px 0",
+                                        paddingLeft: 24,
+                                      }}
+                                      {...props}
+                                    />
+                                  ),
+                                  ol: ({ ...props }) => (
+                                    <ol
+                                      style={{
+                                        margin: "0 0 12px 0",
+                                        paddingLeft: 24,
+                                      }}
+                                      {...props}
+                                    />
+                                  ),
+                                  li: ({ ...props }) => (
+                                    <li
+                                      style={{ marginBottom: 6 }}
+                                      {...props}
+                                    />
+                                  ),
+                                  strong: ({ ...props }) => (
+                                    <strong
+                                      style={{
+                                        color: "var(--text-primary)",
+                                        fontWeight: 600,
+                                      }}
+                                      {...props}
+                                    />
+                                  ),
+                                  h3: ({ ...props }) => (
+                                    <h3
+                                      style={{
+                                        margin: "16px 0 8px 0",
+                                        fontSize: 16,
+                                        color: "var(--text-primary)",
+                                      }}
+                                      {...props}
+                                    />
+                                  ),
+                                }}
+                              >
+                                {cleanContent}
+                              </ReactMarkdown>
+                            ) : null}
+                          </>
+                        );
+                      })()
                     ) : (
                       <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
                         {m.content}
                       </div>
                     )}
-                    {m.role === "assistant" && selectedBookId !== "none" && (
+                    {m.role === "assistant" && (
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "flex-end",
+                          gap: 8,
                           marginTop: 8,
                         }}
                       >
                         <button
                           onClick={() => {
-                            setCanonModalContent(m.content);
-                            setCanonTargetType(
-                              focusType && focusType !== "none"
-                                ? focusType
-                                : "character",
-                            );
-                            setCanonTargetId(focusId || "");
-                            setCanonTargetField(
-                              getCanonFieldsForType(
-                                focusType && focusType !== "none"
-                                  ? focusType
-                                  : "character",
-                              )[0] || "",
-                            );
+                            const text = m.content
+                              .replace(/<think>[\s\S]*?<\/think>/, "")
+                              .trim();
+                            navigator.clipboard.writeText(text);
+                            showToast("Copied to clipboard", "success");
                           }}
                           style={{
                             background: "transparent",
-                            border: "1px solid var(--color-purple)",
-                            color: "var(--color-purple)",
-                            borderRadius: 16,
-                            padding: "4px 10px",
-                            fontSize: 11,
+                            border: "none",
+                            color: "var(--text-muted)",
                             cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
+                            fontSize: 11,
+                            padding: "4px 8px",
+                            borderRadius: 4,
                           }}
                         >
-                          <AddIcon sx={{ fontSize: 12 }} />
-                          Add to Canon
+                          📋 Copy
                         </button>
+
+                        {i === messages.length - 1 && (
+                          <button
+                            onClick={() => {
+                              const lastUser = [...messages]
+                                .reverse()
+                                .find((m) => m.role === "user");
+                              if (!lastUser || isTyping) return;
+                              const trimmed = messages.slice(0, -1);
+                              setMessages(trimmed);
+                              sendMessage(lastUser.content, trimmed);
+                            }}
+                            disabled={isTyping}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid var(--border-field)",
+                              color: "var(--text-muted)",
+                              borderRadius: 16,
+                              padding: "4px 10px",
+                              fontSize: 11,
+                              cursor: isTyping ? "not-allowed" : "pointer",
+                              opacity: isTyping ? 0.4 : 1,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            ↺ Regenerate
+                          </button>
+                        )}
+
+                        {selectedBookId !== "none" && (
+                          <button
+                            onClick={async () => {
+                              setCanonModalContent(m.content);
+
+                              // Pre-fill with best guess while classifier runs
+                              const defaultType =
+                                focusType && focusType !== "none"
+                                  ? focusType
+                                  : "character";
+                              setCanonTargetType(defaultType);
+                              setCanonTargetId(focusId || "");
+                              setCanonTargetField(
+                                getCanonFieldsForType(defaultType)[0] || "",
+                              );
+
+                              // Fast field classification — no streaming needed
+                              if (apiKey && selectedBookId !== "none") {
+                                try {
+                                  const classRes = await fetch(
+                                    `${baseUrl.replace(/\/$/, "")}/chat/completions`,
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                        Authorization: `Bearer ${apiKey}`,
+                                      },
+                                      body: JSON.stringify({
+                                        model,
+                                        max_tokens: 20,
+                                        temperature: 0,
+                                        messages: [
+                                          {
+                                            role: "user",
+                                            content: `Which field does this AI response best describe for a ${defaultType}?\nAvailable fields: ${getCanonFieldsForType(defaultType).join(", ")}\nResponse: "${m.content.slice(0, 400)}"\nReply with ONLY the field name, nothing else.`,
+                                          },
+                                        ],
+                                      }),
+                                    },
+                                  );
+                                  const classData = await classRes.json();
+                                  const suggested =
+                                    classData.choices?.[0]?.message?.content
+                                      ?.trim()
+                                      .toLowerCase();
+                                  if (
+                                    suggested &&
+                                    getCanonFieldsForType(defaultType).includes(
+                                      suggested,
+                                    )
+                                  ) {
+                                    setCanonTargetField(suggested);
+                                  }
+                                } catch {
+                                  /* keep default */
+                                }
+                              }
+                            }}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid var(--color-purple)",
+                              color: "var(--color-purple)",
+                              borderRadius: 16,
+                              padding: "4px 10px",
+                              fontSize: 11,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <AddIcon sx={{ fontSize: 12 }} />
+                            Add to Canon
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1101,10 +1693,14 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
                 scrollbarWidth: "none",
               }}
             >
-              {PROMPT_TEMPLATES.map((t, i) => (
+              {QUICK_ACTIONS.map((action, i) => (
                 <button
                   key={i}
-                  onClick={() => setInput(t.prompt)}
+                  onClick={() => {
+                    setExpertMode(action.mode);
+                    setAiMode("chat");
+                    if (action.message) setInput(action.message);
+                  }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -1128,8 +1724,8 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
                     e.currentTarget.style.color = "var(--text-secondary)";
                   }}
                 >
-                  <span>{t.icon}</span>
-                  {t.label}
+                  <span>{action.icon}</span>
+                  {action.label}
                 </button>
               ))}
             </div>
@@ -1153,13 +1749,26 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
                   ),
                 }}
               />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isTyping}
-                className="ai-send-btn"
-              >
-                <SendIcon sx={{ fontSize: 18 }} />
-              </button>
+              {isTyping ? (
+                <button
+                  onClick={() => {
+                    abortControllerRef.current?.abort();
+                    setIsTyping(false);
+                  }}
+                  className="ai-send-btn"
+                  title="Stop generating"
+                >
+                  <span style={{ fontSize: 14 }}>⏹</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                  className="ai-send-btn"
+                >
+                  <SendIcon sx={{ fontSize: 18 }} />
+                </button>
+              )}
             </div>
             {selectedBookId !== "none" && (
               <div
@@ -1432,32 +2041,75 @@ Respond in Markdown.\n\n### CANONICAL CONTEXT ###\n${contextText}`
       )}
 
       {generatedChar && (
-        <Modal title="Preview Generated Character" onClose={() => setGeneratedChar(null)} variant="wide" footer={
-          <div className="seshat-flex-end" style={{ width: "100%", gap: 12 }}>
-            <button onClick={() => setGeneratedChar(null)} className="seshat-modal-btn-cancel">Cancel</button>
-            <button onClick={() => {
-              const bookIdx = books.findIndex(b => b && b.id === selectedBookId);
-              if (bookIdx >= 0) {
-                 const book = appStore.books[bookIdx];
-                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                 (book.characters as any).push(generatedChar as Character);
-                 const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
-                 if (token) {
-                   updateFilesOnGitHub(token, selectedBookId, [{ path: `characters/character_${generatedChar.id}.json`, content: JSON.stringify(generatedChar, null, 2) }]);
-                 }
-                 setGeneratedChar(null);
-                 showToast("Character created successfully!", "success");
-              }
-            }} className="seshat-modal-btn-submit" disabled={selectedBookId === "none"}>
-               <AddIcon sx={{ fontSize: 16 }} /> Save Character
-            </button>
-          </div>
-        }>
+        <Modal
+          title="Preview Generated Character"
+          onClose={() => setGeneratedChar(null)}
+          variant="wide"
+          footer={
+            <div className="seshat-flex-end" style={{ width: "100%", gap: 12 }}>
+              <button
+                onClick={() => setGeneratedChar(null)}
+                className="seshat-modal-btn-cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const bookIdx = books.findIndex(
+                    (b) => b && b.id === selectedBookId,
+                  );
+                  if (bookIdx >= 0) {
+                    const book = appStore.books[bookIdx];
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (book.characters as any).push(generatedChar as Character);
+                    const token =
+                      localStorage.getItem("seshat-auth-token") ||
+                      sessionStorage.getItem("seshat-auth-token");
+                    if (token) {
+                      updateFilesOnGitHub(token, selectedBookId, [
+                        {
+                          path: `characters/character_${generatedChar.id}.json`,
+                          content: JSON.stringify(generatedChar, null, 2),
+                        },
+                      ]);
+                    }
+                    setGeneratedChar(null);
+                    showToast("Character created successfully!", "success");
+                  }
+                }}
+                className="seshat-modal-btn-submit"
+                disabled={selectedBookId === "none"}
+              >
+                <AddIcon sx={{ fontSize: 16 }} /> Save Character
+              </button>
+            </div>
+          }
+        >
           <div style={{ padding: 16 }}>
-            <p style={{ margin: "0 0 16px 0", color: "var(--text-secondary)", fontSize: 13 }}>
-              The AI generated the following structural data. Saving it will immediately add this character to your world database.
+            <p
+              style={{
+                margin: "0 0 16px 0",
+                color: "var(--text-secondary)",
+                fontSize: 13,
+              }}
+            >
+              The AI generated the following structural data. Saving it will
+              immediately add this character to your world database.
             </p>
-            <pre style={{ whiteSpace: "pre-wrap", background: "var(--bg-card)", border: "1px solid var(--border)", padding: 16, borderRadius: 8, color: "var(--text-primary)", fontSize: 13, fontFamily: "var(--font-mono)", maxHeight: "50vh", overflowY: "auto" }}>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                padding: 16,
+                borderRadius: 8,
+                color: "var(--text-primary)",
+                fontSize: 13,
+                fontFamily: "var(--font-mono)",
+                maxHeight: "50vh",
+                overflowY: "auto",
+              }}
+            >
               {JSON.stringify(generatedChar, null, 2)}
             </pre>
           </div>

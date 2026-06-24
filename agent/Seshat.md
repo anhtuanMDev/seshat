@@ -156,6 +156,7 @@ seshat/
 │   │   ├── FightPage.tsx        # 162 lines — fight simulator
 │   │   ├── AuthPage.tsx         # 179 lines — authentication page (login/register)
 │   │   ├── LoreWebPage.tsx      # 326 lines — interactive node graph of world lore
+│   │   ├── AIPage.tsx           # ~2400 lines — AI Oracle interface with expert modes, character roleplay, streaming reasoning, and direct canon insertion
 │   │   └── __tests__/           # Page logic tests
 │   │       ├── FightPage.test.ts  # 22 tests
 │   │       └── FightPage.bench.ts
@@ -396,6 +397,7 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | FightPage         | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow                                                                                   | SportsKabaddiIcon (title), CameraAltIcon (Snapshot)                                   |
 | AuthPage          | 179   | None                                                                                                                                           | VisibilityIcon, VisibilityOffIcon                                                     |
 | LoreWebPage       | 326   | None                                                                                                                                           | None                                                                                  |
+| AIPage            | ~2400 | Fully integrated AI Oracle acting as a dynamic narrative engine with session persistence, roleplay injection, and AbortController streaming.   | SmartToyIcon, SendIcon, DeleteIcon, AddIcon                                           |
 
 ### BookListPage (`/`)
 
@@ -430,6 +432,16 @@ Login and registration page. Handles generating JWT tokens via Cloudflare worker
 ### LoreWebPage (`/book/:bookId/lore-web`)
 
 Interactive directed node graph visualizing connections between characters, nations, events, and treasures. Includes a temporal timeline slider to visualize relationships at specific points in time. Uses `@xyflow/react` and `dagre` for layout.
+
+### AIPage (`/book/:bookId/ai`)
+
+Unified BYOK (Bring Your Own Key) OpenAI-compatible narrative engine interface. Replaces the old `AIChatModal`.
+Features include:
+- **Expert Modes:** `GENERAL`, `SCENE_WRITER`, `PLOT_DOCTOR`, `DIALOGUE_COACH`, `LORE_EXPANDER`, `CHARACTER_ROLEPLAY` with dynamic prompt injection.
+- **Character Roleplay:** Automatically injects the pinned character's core wound, fear, desire, philosophy, and secrets directly into the system prompt.
+- **Streaming & Reasoning Traces:** Supports real-time text streaming via `AbortController`. Strips recursive `<think>` reasoning blocks from the visible UI and from the API history payload to prevent context pollution while allowing models to "think out loud".
+- **Direct Canon Insertion:** AI responses can be inserted directly into the `appStore` memory, with fast-field classification guessing the best target field.
+- **Session Persistence:** Retains chat history in `sessionStorage` to prevent data loss on page refresh.
 
 ### TimelinePage / ChapterListPage / CharacterListPage
 
@@ -576,7 +588,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Global Glossary    | `App.tsx`                       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures                                                                                                                                           |
 | Issue Tracker      | `IssuesPage`                    | Direct integration with GitHub Issues API to submit bugs and feedback (`lib/githubIssues`)                                                                                                                                                       |
 | Equipment Config   | `CharacterPage`                 | `EquipmentBlock` managing loadouts, dynamically resolved via `resolveEquipment.ts`                                                                                                                                                               |
-| AI Chat Interface  | `AIChatModal`                   | Unified BYOK OpenAI-compatible chat interface natively parsing the world context `buildExport()`                                                                                                                                                 |
+| AI Chat Interface  | `AIPage`                        | Unified BYOK OpenAI-compatible narrative engine with streaming, think-tag stripping, expert modes, and direct canon insertion                                                                                    |
 | Batch Export       | `lib/export`                    | `/api/github/exportChapters` GraphQL endpoint fetches bulk chapter bodies for DOCX generation                                                                                                                                                    |
 
 ---
