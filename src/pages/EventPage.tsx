@@ -336,13 +336,14 @@ export default function EventPage() {
             </button>
             <button
               onClick={onSubmit}
-            title="Save changes"
-            disabled={(!isDirty && !isAttrsDirty) || isSaving}
-            style={getSaveBtnStyle(isDirty || isAttrsDirty)}
-          >
-            <SaveIcon sx={{ fontSize: 14 }} />
-            {isSaving ? "saving..." : "save"}
-          </button>
+              title="Save changes"
+              disabled={(!isDirty && !isAttrsDirty) || isSaving}
+              style={getSaveBtnStyle(isDirty || isAttrsDirty)}
+            >
+              <SaveIcon sx={{ fontSize: 14 }} />
+              {isSaving ? "saving..." : "save"}
+            </button>
+          </div>
         </div>
 
         <div className="seshat-event-meta-grid">

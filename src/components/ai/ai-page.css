@@ -1,0 +1,568 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   AI Oracle — page-scoped styles
+   Breakpoints: mobile ≤ 768px | tablet 769–1024px | desktop > 1024px
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Layout shell ────────────────────────────────────────────────────────────*/
+
+.ai-page-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Desktop sidebar ─────────────────────────────────────────────────────────*/
+
+.ai-page-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--bg-side);
+  border-right: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  transition: width 0.25s ease, opacity 0.25s ease;
+}
+
+/* ── Main chat column ────────────────────────────────────────────────────────*/
+
+.ai-page-main {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-main);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Chat feed ───────────────────────────────────────────────────────────────*/
+
+.ai-chat-feed {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  /* smooth momentum scroll on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────*/
+
+.ai-empty-state {
+  margin: auto;
+  text-align: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
+
+/* ── Message block ───────────────────────────────────────────────────────────*/
+
+.ai-message-block {
+  padding: 28px 40px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 20px;
+}
+
+.ai-user-bg {
+  background: var(--bg-active);
+}
+
+.ai-assistant-bg {
+  background: var(--bg-main);
+}
+
+/* ── Message action buttons row ──────────────────────────────────────────────*/
+
+.ai-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Avatar ──────────────────────────────────────────────────────────────────*/
+
+.ai-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Message content ─────────────────────────────────────────────────────────*/
+
+.ai-message-content {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.ai-message-content p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.ai-user-text {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* ── Input container ─────────────────────────────────────────────────────────*/
+
+.ai-input-container {
+  padding: 16px 40px;
+  background: var(--bg-main);
+  border-top: 1px solid var(--border);
+  /* safe-area for notched phones — no-op on desktop */
+  padding-bottom: max(16px, calc(12px + env(safe-area-inset-bottom)));
+}
+
+/* ── Quick-action pill strip ─────────────────────────────────────────────────*/
+
+.ai-quick-actions {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  max-width: 1000px;
+  margin: 0 auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.ai-quick-actions::-webkit-scrollbar {
+  display: none; /* Safari / iOS */
+}
+
+/* ── Input wrapper ───────────────────────────────────────────────────────────*/
+
+.ai-input-wrapper {
+  position: relative;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-field);
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px 8px 8px 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.ai-input-wrapper:focus-within {
+  border-color: var(--color-purple);
+  box-shadow: 0 4px 16px rgba(var(--color-purple-rgb), 0.12);
+}
+
+/* ── Textarea ────────────────────────────────────────────────────────────────*/
+
+.ai-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  resize: none;
+  font-family: inherit;
+  /* 16px prevents iOS Safari auto-zoom on focus */
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 10px 0;
+}
+
+.ai-textarea::placeholder {
+  color: var(--text-dim);
+}
+
+/* ── Send / stop button ──────────────────────────────────────────────────────*/
+
+.ai-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-purple);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  flex-shrink: 0;
+  margin-bottom: 4px;
+  margin-left: 8px;
+}
+
+.ai-send-btn:hover:not(:disabled) {
+  background: #7c3aed;
+}
+
+.ai-send-btn:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.ai-send-btn:disabled {
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  border: 1px solid var(--border-field);
+}
+
+/* ── Typing indicator ────────────────────────────────────────────────────────*/
+
+.ai-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding-top: 6px;
+}
+
+.ai-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: ai-bounce 1.4s infinite ease-in-out both;
+}
+
+@keyframes ai-bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40%           { transform: scale(1); }
+}
+
+/* ── Config group (sidebar fields) ──────────────────────────────────────────*/
+
+.ai-config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-config-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ai-config-input {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-field);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ai-config-input option {
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.ai-config-input:focus {
+  border-color: var(--color-purple);
+}
+
+.ai-model-pill {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-field);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-model-pill:hover {
+  border-color: var(--text-muted);
+}
+
+/* ── Clear button ────────────────────────────────────────────────────────────*/
+
+.ai-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--border-field);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  width: 100%;
+}
+
+.ai-clear-btn:not(:disabled):hover {
+  background: rgba(255, 0, 0, 0.08);
+  color: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.ai-clear-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOBILE TOP BAR EXTRAS (context + settings toggle badges)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ai-mobile-topbar-extras {
+  display: none;
+}
+
+/* tablet drawer toggle — hidden by default on desktop and mobile;
+   shown only in the 769–1024px tablet media query below */
+.ai-tablet-sidebar-btn {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOBILE BOTTOM SHEET OVERLAY
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ai-sheet-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 300;
+  animation: ai-fade-in 0.2s ease;
+}
+
+.ai-sheet-backdrop.open {
+  display: block;
+}
+
+.ai-bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 301;
+  background: var(--bg-side);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  max-height: 88dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 20px 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+
+.ai-bottom-sheet.open {
+  transform: translateY(0);
+}
+
+/* drag handle */
+.ai-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border-field);
+  border-radius: 2px;
+  margin: 12px auto 16px;
+  flex-shrink: 0;
+}
+
+@keyframes ai-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TABLET — collapsible sidebar drawer overlay (769–1024px)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .ai-page-sidebar {
+    position: fixed;
+    top: 50px; /* below top bar */
+    left: 0;
+    bottom: 0;
+    z-index: 200;
+    width: 300px;
+    border-right: 1px solid var(--border);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .ai-page-sidebar.tablet-open {
+    transform: translateX(0);
+  }
+
+  /* tablet backdrop behind the drawer */
+  .ai-tablet-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: 50px;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 199;
+  }
+
+  .ai-tablet-backdrop.open {
+    display: block;
+  }
+
+  /* the sidebar toggle button in the top bar */
+  .ai-tablet-sidebar-btn {
+    display: flex;
+  }
+
+  /* chat takes full width on tablet */
+  .ai-page-main {
+    width: 100%;
+  }
+
+  /* reduce message padding slightly */
+  .ai-message-block {
+    padding: 24px 28px;
+  }
+
+  .ai-input-container {
+    padding: 14px 24px;
+    padding-bottom: max(14px, calc(10px + env(safe-area-inset-bottom)));
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOBILE — ≤ 768px
+   ───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* hide the desktop sidebar entirely */
+  .ai-page-sidebar {
+    display: none;
+  }
+
+  /* show mobile topbar extras (book badge + settings button) */
+  .ai-mobile-topbar-extras {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* compact message padding */
+  .ai-message-block {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  /* action buttons wrap below the message on narrow screens */
+  .ai-message-actions {
+    justify-content: flex-start;
+  }
+
+  /* tighter input area */
+  .ai-input-container {
+    padding: 10px 12px;
+    padding-bottom: max(10px, calc(8px + env(safe-area-inset-bottom)));
+  }
+
+  .ai-input-wrapper {
+    padding: 6px 6px 6px 14px;
+  }
+
+  .ai-quick-actions {
+    padding-bottom: 8px;
+  }
+
+  .ai-message-content {
+    font-size: 14px;
+  }
+
+  /* ensure tablet button stays hidden on mobile */
+  .ai-tablet-sidebar-btn {
+    display: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Context badge pill (shown in mobile top bar)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ai-context-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--color-purple);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ai-context-badge:active {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Settings icon button (mobile / tablet top bar)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.ai-settings-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border-field);
+  background: var(--bg-panel);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.ai-settings-btn:hover,
+.ai-settings-btn.active {
+  border-color: var(--color-purple);
+  color: var(--color-purple);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* (tablet toggle default moved to line ~338 — before media queries) */

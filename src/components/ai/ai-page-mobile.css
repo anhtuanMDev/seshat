@@ -1,0 +1,31 @@
+/* Additional responsive helpers for AIPage top bar and context strip */
+
+/* Hide "Back to Books" text on very small phones */
+@media (max-width: 400px) {
+  .ai-back-label {
+    display: none;
+  }
+}
+
+/* Hide "Oracle AI" wordmark on mobile (icon + badge take its place) */
+@media (max-width: 768px) {
+  .ai-oracle-label {
+    display: none;
+  }
+}
+
+/* Show the mobile context strip below the top bar */
+@media (max-width: 768px) {
+  .ai-mobile-context-strip {
+    display: flex !important;
+  }
+  .ai-mobile-context-strip::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Thinking pulse animation for the context strip */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}

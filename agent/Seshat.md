@@ -141,6 +141,22 @@ seshat/
 │   │   │   ├── EventRef.tsx          # Event quick-ref card
 │   │   │   └── WorldTabContent.tsx    # World info display (memo)
 │   │   │
+│   │   ├── ai/                # AIPage modules (refactored from monolith)
+│   │   │   ├── constants.ts         # AI_PROVIDERS, AI_MODES, QUICK_ACTIONS, TEMP_BY_MODE, ExpertMode type
+│   │   │   ├── types.ts             # Message, CanonModalState, AiMode interfaces
+│   │   │   ├── prompts.ts           # Pure prompt builders: buildGenSystemPrompt, buildChatSystemPrompt, cleanMessagesForApi, getCanonFieldsForType
+│   │   │   ├── ai-page.css          # All .ai-* scoped styles (extracted from inline <style>)
+│   │   │   ├── useAIConfig.ts       # Provider / key / model state + localStorage persistence
+│   │   │   ├── useContextBuilder.ts # Book selection, lazy loading, focus-type context filtering
+│   │   │   ├── useAIChat.ts         # Streaming fetch, AbortController, SSE parsing, sessionStorage, generated-char parsing
+│   │   │   ├── useCanonModal.ts     # Canon modal state + handleSaveToCanon (store write + GitHub sync)
+│   │   │   ├── AISidebar.tsx        # Left panel: context selector, AI mode toggle, persona picker, settings accordion
+│   │   │   ├── AIChatFeed.tsx       # Scrollable message list, empty state (starter questions), typing indicator
+│   │   │   ├── AIMessageBlock.tsx   # Single message: think-tag collapsible, ReactMarkdown, copy/regen/canon buttons
+│   │   │   ├── AIInputBar.tsx       # Textarea + send/stop button + quick-action pills
+│   │   │   ├── CanonModal.tsx       # "Add to Canon" modal with entity type/id/field selectors
+│   │   │   └── GeneratedCharModal.tsx # Generated character JSON preview + save to appStore
+│   │   │
 │   │   └── __tests__/         # Render performance tests
 │   │       └── renderPerformance.test.tsx  # 18 tests
 │   │
@@ -156,7 +172,7 @@ seshat/
 │   │   ├── FightPage.tsx        # 162 lines — fight simulator
 │   │   ├── AuthPage.tsx         # 179 lines — authentication page (login/register)
 │   │   ├── LoreWebPage.tsx      # 326 lines — interactive node graph of world lore
-│   │   ├── AIPage.tsx           # ~2400 lines — AI Oracle interface with expert modes, character roleplay, streaming reasoning, and direct canon insertion
+│   │   ├── AIPage.tsx           # ~320 lines — AI Oracle orchestrator; wires hooks + sub-components from src/components/ai/
 │   │   └── __tests__/           # Page logic tests
 │   │       ├── FightPage.test.ts  # 22 tests
 │   │       └── FightPage.bench.ts
@@ -175,7 +191,7 @@ seshat/
 └── package.json
 ```
 
-**Total: 182 tests across 27 test files. 11 pages totaling ~2300 lines (incl. icons). Note: API sync logic (including race condition and data-loss edge cases) is explicitly tested. Core pages like ChapterPage, CharacterPage, and WorldPage now have comprehensive edge-to-edge testing.**
+**Total: 182 tests across 27 test files. 11 pages totaling ~2300 lines (incl. icons). Note: API sync logic (including race condition and data-loss edge cases) is explicitly tested. Core pages like ChapterPage, CharacterPage, and WorldPage now have comprehensive edge-to-edge testing. AIPage has been fully refactored from a 2413-line monolith into 14 focused modules under `src/components/ai/`.**
 
 ---
 
@@ -397,7 +413,7 @@ function ItemBlock({ control, index, onDelete }: ItemBlockProps) {
 | FightPage         | 162   | FighterPicker, WinBar, SnapshotCard, ScoreBreakdown, NoteRow                                                                                   | SportsKabaddiIcon (title), CameraAltIcon (Snapshot)                                   |
 | AuthPage          | 179   | None                                                                                                                                           | VisibilityIcon, VisibilityOffIcon                                                     |
 | LoreWebPage       | 326   | None                                                                                                                                           | None                                                                                  |
-| AIPage            | ~2400 | Fully integrated AI Oracle acting as a dynamic narrative engine with session persistence, roleplay injection, and AbortController streaming.   | SmartToyIcon, SendIcon, DeleteIcon, AddIcon                                           |
+| AIPage            | ~320  | AI Oracle orchestrator — wires 4 custom hooks + 5 sub-components from `src/components/ai/`. All logic extracted; zero inline styles.           | SmartToyIcon, SendIcon, DeleteIcon, AddIcon                                           |
 
 ### BookListPage (`/`)
 
@@ -436,10 +452,32 @@ Interactive directed node graph visualizing connections between characters, nati
 ### AIPage (`/book/:bookId/ai`)
 
 Unified BYOK (Bring Your Own Key) OpenAI-compatible narrative engine interface. Replaces the old `AIChatModal`.
-Features include:
+**Architecture:** `AIPage.tsx` (~320 lines) is a pure orchestrator — it wires four custom hooks and five sub-components. All business logic, styles, and UI live in `src/components/ai/`.
+
+**Custom hooks:**
+- `useAIConfig` — provider / key / model config, auto-persisted to `localStorage`
+- `useContextBuilder` — book selection, lazy GitHub loading, focus-type context filtering (`focusType` / `focusId` URL params)
+- `useAIChat` — streaming SSE fetch, `AbortController`, `sessionStorage` message persistence, generated character parsing
+- `useCanonModal` — "Add to Canon" modal state + save-to-`appStore` + background GitHub sync
+
+**Sub-components (`src/components/ai/`):**
+- `AISidebar` — left panel: context book selector, AI mode toggle (Chat / Gen Char), persona picker, collapsible settings
+- `AIChatFeed` — scrollable message list with context-aware starter questions, typing indicator, auto-scroll
+- `AIMessageBlock` — single message renderer: collapsible `<think>` trace, ReactMarkdown output, copy / regenerate / Add-to-Canon action buttons
+- `AIInputBar` — auto-resizing textarea, send/stop button, quick-action pill strip
+- `CanonModal` — entity type / id / field selector modal for appending AI text directly to canon fields
+- `GeneratedCharModal` — JSON preview + one-click save for AI-generated characters
+
+**Pure modules:**
+- `constants.ts` — `AI_PROVIDERS`, `AI_MODES`, `QUICK_ACTIONS`, `TEMP_BY_MODE`, `ExpertMode` type
+- `types.ts` — `Message`, `AiMode` interfaces
+- `prompts.ts` — `buildGenSystemPrompt()`, `buildChatSystemPrompt()`, `cleanMessagesForApi()`, `getCanonFieldsForType()` — all side-effect-free
+- `ai-page.css` — all `.ai-*` scoped CSS (extracted from the old inline `<style>` block)
+
+**Features:**
 - **Expert Modes:** `GENERAL`, `SCENE_WRITER`, `PLOT_DOCTOR`, `DIALOGUE_COACH`, `LORE_EXPANDER`, `CHARACTER_ROLEPLAY` with dynamic prompt injection.
 - **Character Roleplay:** Automatically injects the pinned character's core wound, fear, desire, philosophy, and secrets directly into the system prompt.
-- **Streaming & Reasoning Traces:** Supports real-time text streaming via `AbortController`. Strips recursive `<think>` reasoning blocks from the visible UI and from the API history payload to prevent context pollution while allowing models to "think out loud".
+- **Streaming & Reasoning Traces:** Supports real-time text streaming via `AbortController`. Strips `<think>` reasoning blocks from the visible UI and from the API history payload to prevent context pollution.
 - **Direct Canon Insertion:** AI responses can be inserted directly into the `appStore` memory, with fast-field classification guessing the best target field.
 - **Session Persistence:** Retains chat history in `sessionStorage` to prevent data loss on page refresh.
 
