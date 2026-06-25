@@ -83,12 +83,13 @@ export default function AISidebar({
 }: Props) {
   const [sidebarTab, setSidebarTab] = useState<"chat" | "history" | "settings">("chat");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
   const rootClass = inSheet
     ? "" // no sidebar shell class when rendered inside the bottom sheet
     : `ai-page-sidebar${className ? ` ${className}` : ""}`;
 
   return (
-    <div className={rootClass} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className={rootClass} style={inSheet ? { display: "flex", flexDirection: "column", height: "100%" } : {}}>
       {/* ── Premium Tab Bar ── */}
       <div style={{ 
         display: "flex", 
@@ -367,17 +368,8 @@ export default function AISidebar({
             return (
               <div 
                 key={s.id} 
-                style={{ 
-                  display: "flex", 
-                  alignItems: "center",
-                  padding: "8px 12px",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  background: "transparent",
-                  transition: "background 0.2s ease"
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--text-primary) 5%, transparent)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onMouseEnter={() => setHoveredSessionId(s.id)}
+                onMouseLeave={() => setHoveredSessionId(null)}
                 className={`ai-session-item ${active ? 'active' : ''}`}
               >
                 <div
@@ -426,6 +418,8 @@ export default function AISidebar({
                     display: "flex", 
                     alignItems: "center", 
                     justifyContent: "center",
+                    opacity: hoveredSessionId === s.id ? 1 : 0,
+                    pointerEvents: hoveredSessionId === s.id ? "auto" : "none",
                     transition: "all 0.2s ease"
                   }}
                   title="Delete Chat"
