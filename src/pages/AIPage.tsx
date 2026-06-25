@@ -88,18 +88,28 @@ export default function AIPage() {
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!input.trim()) return;
-    sendMessage(input.trim());
+    const previousInput = input.trim();
     setInput("");
+    await sendMessage(previousInput);
   }, [input, sendMessage]);
 
-  const handleRegenerate = useCallback(() => {
-    const lastUser = [...messages].reverse().find((m) => m.role === "user");
-    if (!lastUser || isTyping) return;
-    const trimmed = messages.slice(0, -1);
+  const handleRegenerate = useCallback(async () => {
+    let lastUserIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        lastUserIndex = i;
+        break;
+      }
+    }
+    if (lastUserIndex === -1 || isTyping) return;
+    
+    const lastUser = messages[lastUserIndex];
+    const trimmed = messages.slice(0, lastUserIndex);
+    
     setMessages(trimmed);
-    sendMessage(lastUser.content, trimmed);
+    await sendMessage(lastUser.content, trimmed);
   }, [messages, isTyping, setMessages, sendMessage]);
 
   const handleOpenCanon = useCallback(

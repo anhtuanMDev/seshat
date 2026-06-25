@@ -2,7 +2,7 @@
 // AIMessageBlock — renders a single chat message with think-tag collapsible,
 // ReactMarkdown, copy button, regenerate button, and Add to Canon button.
 // ─────────────────────────────────────────────────────────────────────────────
-
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { SmartToyIcon, AddIcon } from "../ui/icons";
 import { showToast } from "../../store/toastStore";
@@ -30,6 +30,22 @@ export default function AIMessageBlock({
   onRegenerate,
 }: Props) {
   const isUser = m.role === "user";
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!isUser && isTyping && i === totalMessages - 1 && m.startTime) {
+      const interval = setInterval(() => {
+        setElapsed(Date.now() - m.startTime!);
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [isUser, isTyping, i, totalMessages, m.startTime]);
+
+  const latencyStr = m.latency 
+    ? (m.latency / 1000).toFixed(0) + "s" 
+    : (isTyping && i === totalMessages - 1 && elapsed > 0)
+      ? (elapsed / 1000).toFixed(0) + "s" 
+      : "";
 
   return (
     <div
@@ -46,6 +62,12 @@ export default function AIMessageBlock({
           <AssistantContent content={m.content} />
         )}
 
+        {!isUser && latencyStr && (
+          <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 4, fontFamily: "var(--font-mono)", opacity: 0.7 }}>
+            {m.latency ? `Took ${latencyStr}` : `Thinking ${latencyStr}`}
+          </div>
+        )}
+
         {!isUser && (
           <div
             className="ai-message-actions"
@@ -57,24 +79,26 @@ export default function AIMessageBlock({
             }}
           >
             {/* Copy */}
-            <button
-              onClick={() => {
-                const text = m.content.replace(/<think>[\s\S]*?<\/think>/, "").trim();
-                navigator.clipboard.writeText(text);
-                showToast("Copied to clipboard", "success");
-              }}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "var(--text-muted)",
-                cursor: "pointer",
-                fontSize: 11,
-                padding: "4px 8px",
-                borderRadius: 4,
-              }}
-            >
-              📋 Copy
-            </button>
+            {!m.isError && (
+              <button
+                onClick={() => {
+                  const text = m.content.replace(/<think>[\s\S]*?<\/think>/, "").trim();
+                  navigator.clipboard.writeText(text);
+                  showToast("Copied to clipboard", "success");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                  fontSize: 11,
+                  padding: "4px 8px",
+                  borderRadius: 4,
+                }}
+              >
+                📋 Copy
+              </button>
+            )}
 
             {/* Regenerate — only on last message */}
             {i === totalMessages - 1 && (
@@ -100,7 +124,7 @@ export default function AIMessageBlock({
             )}
 
             {/* Add to Canon — only when a book is selected */}
-            {selectedBookId !== "none" && (
+            {selectedBookId !== "none" && !m.isError && (
               <button
                 onClick={() => onAddToCanon(m.content)}
                 style={{

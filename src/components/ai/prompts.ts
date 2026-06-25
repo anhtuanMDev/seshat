@@ -90,11 +90,13 @@ ${THINK_PROTOCOL}`;
  * to the API, preventing context pollution.
  */
 export function cleanMessagesForApi(messages: Message[]): Message[] {
-  return messages.map((msg) =>
-    msg.role === "assistant"
-      ? { ...msg, content: msg.content.replace(/<think>[\s\S]*?<\/think>/g, "").trim() }
-      : msg,
-  );
+  return messages
+    .filter((msg) => !msg.isError)
+    .map((msg) =>
+      msg.role === "assistant"
+        ? { ...msg, content: msg.content.replace(/<think>[\s\S]*?<\/think>/g, "").trim() }
+        : msg,
+    );
 }
 
 /** Returns the fields available for canon injection for a given entity type. */

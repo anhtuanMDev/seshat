@@ -5,6 +5,9 @@
 export interface Message {
   role: "user" | "assistant";
   content: string;
+  startTime?: number;
+  latency?: number;
+  isError?: boolean;
 }
 
 /** State carried by the "Add to Canon" modal */

@@ -105,15 +105,15 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
   }, [expertMode, focusId, books, selectedBookId]);
 
   const sendMessage = useCallback(
-    async (userContent: string, historyOverride?: Message[]) => {
+    async (userContent: string, historyOverride?: Message[]): Promise<boolean> => {
       if (expertMode === "CHARACTER_ROLEPLAY" && !focusId) {
         showToast('Select a character first — use "Ask AI" from a Character page', "error");
-        return;
+        return false;
       }
 
       if (!apiKey.trim() && !baseUrl.includes("localhost")) {
         showToast("Please enter an API Key in settings first", "error");
-        return;
+        return false;
       }
 
       const baseMsgs = historyOverride ?? messages;
@@ -173,7 +173,8 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
         if (!reader) throw new Error("No response body stream");
 
         // Initialize empty assistant message to stream into
-        setMessages([...newMsgs, { role: "assistant", content: "" }]);
+        const startTimestamp = Date.now();
+        setMessages([...newMsgs, { role: "assistant", content: "", startTime: startTimestamp }]);
 
         let assistantMessage = "";
         let buffer = "";
@@ -200,7 +201,7 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
                     const arr = [...prev];
                     const last = arr[arr.length - 1];
                     arr[arr.length - 1] = {
-                      role: "assistant",
+                      ...last,
                       content: last.content + chunk,
                     };
                     return arr;
@@ -225,13 +226,40 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
             showToast("Failed to parse generated character JSON", "error");
           }
         }
+
+        // Final latency update
+        setMessages((prev) => {
+          const arr = [...prev];
+          const last = arr[arr.length - 1];
+          if (last.role === "assistant" && last.startTime) {
+            arr[arr.length - 1] = {
+              ...last,
+              latency: Date.now() - last.startTime,
+            };
+          }
+          return arr;
+        });
+
+        return true;
       } catch (err: unknown) {
         console.error(err);
-        if (err instanceof Error && err.name === "AbortError") return;
+        if (err instanceof Error && err.name === "AbortError") return false;
         const msg = err instanceof Error ? err.message : String(err);
-        showToast(`AI Error: ${msg}`, "error");
-        // Revert so the user doesn't lose their typed prompt
-        setMessages(baseMsgs);
+        
+        // Show brief toast
+        showToast("AI Request Failed", "error");
+        
+        // Append error to chat feed for better UX
+        setMessages([
+          ...baseMsgs,
+          { 
+            role: "assistant", 
+            content: `**Request Failed**\n\n${msg}`, 
+            isError: true 
+          }
+        ]);
+        
+        return false;
       } finally {
         setIsTyping(false);
       }

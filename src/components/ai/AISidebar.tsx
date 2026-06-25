@@ -8,6 +8,7 @@ import { DeleteIcon, ChatIcon, AutoFixHighIcon } from "../ui/icons";
 import { AI_PROVIDERS, AI_MODES, type ExpertMode } from "./constants";
 import type { AiMode } from "./types";
 import type { BookData } from "../../store/appStore";
+import ModelDropdown from "./ModelDropdown";
 
 interface Props {
   // Context
@@ -69,8 +70,6 @@ export default function AISidebar({
   inSheet = false,
 }: Props) {
   const [showSettings, setShowSettings] = useState(false);
-  const currentProvider = AI_PROVIDERS.find((p) => p.id === providerId);
-
   const rootClass = inSheet
     ? "" // no sidebar shell class when rendered inside the bottom sheet
     : `ai-page-sidebar${className ? ` ${className}` : ""}`;
@@ -339,45 +338,32 @@ export default function AISidebar({
 
           <div className="ai-config-group">
             <label className="ai-config-label">Model ID</label>
-            <input
-              type="text"
-              className="ai-config-input"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="gpt-4o"
+            <ModelDropdown 
+              providerId={providerId}
+              apiKey={apiKey}
+              baseUrl={baseUrl}
+              model={model}
+              setModel={setModel}
             />
-            {currentProvider && currentProvider.models.length > 0 && (
-              <div
-                style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}
-              >
-                {currentProvider.models.map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setModel(m)}
-                    className="ai-model-pill"
-                    style={{
-                      background: model === m ? "var(--bg-active)" : "var(--bg-panel)",
-                      borderColor:
-                        model === m ? "var(--text-primary)" : "var(--border-field)",
-                      color:
-                        model === m ? "var(--text-primary)" : "var(--text-secondary)",
-                    }}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           <div className="ai-config-group">
             <label className="ai-config-label">API Key</label>
+            {/* Defeat Chrome's aggressive password autofill heuristics */}
+            <div style={{ position: "absolute", opacity: 0, pointerEvents: "none", zIndex: -1 }}>
+              <input type="text" name="dummy-username" autoComplete="username" tabIndex={-1} />
+              <input type="password" name="dummy-password" autoComplete="current-password" tabIndex={-1} />
+            </div>
             <input
               type="password"
               className="ai-config-input"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-..."
+              autoComplete="new-password"
+              spellCheck="false"
+              data-1p-ignore="true"
+              data-lpignore="true"
             />
           </div>
         </>
