@@ -15,19 +15,16 @@
 
 /* ── Desktop sidebar ─────────────────────────────────────────────────────────*/
 .ai-page-sidebar {
-  width: 320px;
+  width: 280px;
   flex-shrink: 0;
-  background: rgba(var(--bg-side-rgb), 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 12px 16px;
+  background: var(--bg-side);
+  border-right: 1px solid var(--border);
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 20px;
   overflow-y: auto;
   transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
   z-index: 10;
 }
 
@@ -35,13 +32,7 @@
 .ai-page-main {
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(
-      circle at top left,
-      color-mix(in srgb, var(--text-primary) 3%, transparent) 0%,
-      transparent 50%
-    ),
-    var(--bg-main);
+  background: var(--bg-main);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -70,6 +61,16 @@
   animation: ai-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
+.ai-session-item .ai-session-delete {
+  opacity: 0;
+  pointer-events: none;
+}
+.ai-session-item:hover .ai-session-delete,
+.ai-session-item.active .ai-session-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* ── Message block ───────────────────────────────────────────────────────────*/
 .ai-message-block {
   padding: 24px 40px;
@@ -80,12 +81,7 @@
 }
 
 .ai-user-bg {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--text-primary) 3%, transparent) 100%
-  );
-  border-bottom-color: rgba(255, 255, 255, 0.02);
+  background: transparent;
 }
 
 .ai-assistant-bg {
@@ -129,14 +125,9 @@
 }
 
 .ai-avatar-oracle {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--text-primary) 15%, transparent) 0%,
-    color-mix(in srgb, var(--text-primary) 5%, transparent) 100%
-  );
+  background: var(--bg-active);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--text-primary) 20%, transparent);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--text-primary) 15%, transparent);
+  border: 1px solid var(--border);
 }
 
 /* ── Message content ─────────────────────────────────────────────────────────*/
@@ -162,7 +153,7 @@
 /* ── Input container (Glassmorphic Floating Pill) ────────────────────────────*/
 .ai-input-container {
   padding: 24px 40px;
-  background: linear-gradient(to top, var(--bg-main) 40%, transparent 100%);
+  background: var(--bg-main);
   position: relative;
   z-index: 20;
   /* safe-area for notched phones — no-op on desktop */
@@ -187,29 +178,19 @@
 /* ── Input wrapper ───────────────────────────────────────────────────────────*/
 .ai-input-wrapper {
   position: relative;
-  background: rgba(var(--bg-panel-rgb), 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  background: var(--bg-active);
+  border: 1px solid var(--border);
+  border-radius: 24px;
   display: flex;
   align-items: flex-end;
   padding: 10px 10px 10px 20px;
-  transition:
-    border-color 0.3s ease,
-    box-shadow 0.3s ease,
-    background 0.3s ease;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease;
   max-width: 900px;
   margin: 0 auto;
 }
 
 .ai-input-wrapper:focus-within {
   border-color: color-mix(in srgb, var(--text-primary) 40%, transparent);
-  box-shadow:
-    0 12px 48px color-mix(in srgb, var(--text-primary) 15%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
-  background: rgba(var(--bg-panel-rgb), 0.9);
 }
 
 /* ── Textarea ────────────────────────────────────────────────────────────────*/
@@ -232,9 +213,9 @@
 
 /* ── Send / stop button ──────────────────────────────────────────────────────*/
 .ai-send-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: var(--text-primary);
   color: var(--bg-app);
   border: none;
@@ -242,19 +223,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.2s ease;
   flex-shrink: 0;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   margin-left: 12px;
-  box-shadow: 0 4px 12px
-    color-mix(in srgb, var(--text-primary) 30%, transparent);
 }
 
 .ai-send-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px
-    color-mix(in srgb, var(--text-primary) 50%, transparent);
-  background: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .ai-send-btn:active:not(:disabled) {

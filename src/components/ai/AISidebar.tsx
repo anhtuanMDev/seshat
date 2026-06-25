@@ -95,9 +95,8 @@ export default function AISidebar({
         gap: 4, 
         marginBottom: 20, 
         padding: 4, 
-        background: "rgba(0, 0, 0, 0.2)", 
+        background: "var(--bg-active)", 
         borderRadius: 8, 
-        border: "1px solid rgba(255, 255, 255, 0.05)",
         flexShrink: 0 
       }}>
         {(["chat", "history", "settings"] as const).map((tab) => {
@@ -116,10 +115,9 @@ export default function AISidebar({
                 border: "none",
                 borderRadius: 4,
                 cursor: "pointer",
-                textTransform: "uppercase",
+                textTransform: "capitalize",
                 letterSpacing: "0.5px",
                 transition: "all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
-                boxShadow: active ? "0 2px 8px rgba(255, 255, 255, 0.15)" : "none",
               }}
             >
               {tab}
@@ -340,20 +338,19 @@ export default function AISidebar({
               setSidebarTab("chat");
             }}
             style={{
-              padding: "10px", 
+              padding: "12px", 
               borderRadius: 8, 
-              background: "var(--text-primary)", 
-              color: "var(--bg-app)",
-              border: "none", 
+              background: "transparent", 
+              color: "var(--text-primary)",
+              border: "1px solid var(--border-field)", 
               fontWeight: 600, 
               cursor: "pointer", 
               marginBottom: 16, 
               display: "flex", 
               alignItems: "center", 
-              justifyContent: "center", 
-              gap: 8,
+              justifyContent: "flex-start", 
+              gap: 12,
               transition: "all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)",
-              boxShadow: "0 4px 12px rgba(255, 255, 255, 0.1)"
             }}
           >
             <ChatIcon sx={{ fontSize: 16 }} /> New Chat Session
@@ -368,44 +365,63 @@ export default function AISidebar({
           {sessions.map((s) => {
             const active = s.id === activeSessionId;
             return (
-              <div key={s.id} style={{ display: "flex", gap: 4, alignItems: "stretch" }}>
-                <button
+              <div 
+                key={s.id} 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center",
+                  padding: "8px 12px",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  background: "transparent",
+                  transition: "background 0.2s ease"
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb, var(--text-primary) 5%, transparent)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                className={`ai-session-item ${active ? 'active' : ''}`}
+              >
+                <div
                   onClick={() => setActiveSessionId(s.id)}
                   style={{
                     flex: 1, 
-                    padding: "12px 14px", 
-                    borderRadius: 8, 
-                    border: "1px solid", 
-                    textAlign: "left", 
-                    cursor: "pointer",
-                    borderColor: active ? "var(--text-primary)" : "var(--border-field)",
-                    background: active ? "color-mix(in srgb, var(--text-primary) 5%, transparent)" : "var(--bg-panel)",
-                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
                     display: "flex", 
                     flexDirection: "column", 
-                    gap: 6,
-                    transition: "all 0.2s ease"
+                    gap: 2,
+                    overflow: "hidden"
                   }}
                 >
-                  <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span style={{ 
+                    fontSize: 14, 
+                    fontWeight: active ? 600 : 400, 
+                    color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                    whiteSpace: "nowrap", 
+                    overflow: "hidden", 
+                    textOverflow: "ellipsis" 
+                  }}>
                     {s.title}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      {s.aiMode === "chat" ? <ChatIcon sx={{ fontSize: 12 }} /> : <AutoFixHighIcon sx={{ fontSize: 12 }} />}
-                      {s.aiMode === "chat" ? "Chat" : "Gen Char"}
-                    </span>
-                    <span>{new Date(s.updatedAt).toLocaleDateString()}</span>
+                  <span style={{ 
+                    fontSize: 11, 
+                    color: "color-mix(in srgb, var(--text-secondary) 70%, transparent)", 
+                    display: "flex", 
+                    gap: 6,
+                    alignItems: "center"
+                  }}>
+                    {s.aiMode === "chat" ? <ChatIcon sx={{ fontSize: 10 }} /> : <AutoFixHighIcon sx={{ fontSize: 10 }} />}
+                    {s.aiMode === "chat" ? "Chat" : "Gen Char"} • {new Date(s.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </span>
-                </button>
+                </div>
                 <button
-                  onClick={() => deleteSession(s.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteSession(s.id);
+                  }}
                   style={{
-                    width: 40, 
-                    background: "var(--bg-panel)", 
-                    border: "1px solid var(--border-field)", 
-                    borderRadius: 8,
-                    color: "color-mix(in srgb, var(--text-primary) 50%, var(--bg-panel))", 
+                    width: 28, 
+                    height: 28,
+                    background: "transparent", 
+                    border: "none", 
+                    color: "color-mix(in srgb, var(--text-secondary) 50%, transparent)", 
                     cursor: "pointer", 
                     display: "flex", 
                     alignItems: "center", 
@@ -413,10 +429,11 @@ export default function AISidebar({
                     transition: "all 0.2s ease"
                   }}
                   title="Delete Chat"
-                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-red)"; e.currentTarget.style.borderColor = "var(--color-red)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = "color-mix(in srgb, var(--text-primary) 50%, var(--bg-panel))"; e.currentTarget.style.borderColor = "var(--border-field)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-red)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "color-mix(in srgb, var(--text-secondary) 50%, transparent)"; }}
+                  className="ai-session-delete"
                 >
-                  <DeleteIcon sx={{ fontSize: 16 }} />
+                  <DeleteIcon sx={{ fontSize: 14 }} />
                 </button>
               </div>
             );
