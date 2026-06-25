@@ -865,6 +865,10 @@ svg circle {
     flex-direction: column;
   }
 
+  .seshat-chapter-prose {
+    padding-bottom: 100px;
+  }
+
   .seshat-chapter-prose.panel-open {
     padding-right: 0;
   }
@@ -1411,6 +1415,7 @@ svg circle {
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;

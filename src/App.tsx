@@ -1,45 +1,47 @@
-import { Outlet, useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ConflictModal } from "./components/ConflictModal";
+import { GlobalSearchModal } from "./components/GlobalSearchModal";
+import { SideItem } from "./components/ui";
+import {
+  AddIcon,
+  AutoStoriesIcon,
+  BugReportIcon,
+  CloudSyncIcon,
+  DarkModeIcon,
+  LightModeIcon,
+  LogoutIcon,
+  MenuIcon,
+  PeopleIcon,
+  PublicIcon,
+  SearchIcon,
+  SmartToyIcon,
+  SportsKabaddiIcon,
+  TimelineIcon,
+} from "./components/ui/icons";
+import {
+  useActiveBookIdx,
+  useChapters,
+  useCharacters,
+  useEvents,
+  useWorldTitle,
+} from "./hooks/useWorldStore";
+import { autoMergeOtherChapters, getConflicts } from "./lib/conflictUtils";
+import { EMPTY_ARR } from "./lib/constants";
+import { S, getLatestEventDates, mkChar, mkEvent, uid } from "./lib/utils";
 import { appStore, clearAppStore, mkBook } from "./store/appStore";
 import { showToast } from "./store/toastStore";
-import {
-  useEvents,
-  useCharacters,
-  useChapters,
-  useWorldTitle,
-  useActiveBookIdx,
-} from "./hooks/useWorldStore";
-import { S, mkChar, mkEvent, getLatestEventDates, uid } from "./lib/utils";
-import { EMPTY_ARR } from "./lib/constants";
-import { SideItem } from "./components/ui";
-import { ConflictModal } from "./components/ConflictModal";
-import { getConflicts, autoMergeOtherChapters } from "./lib/conflictUtils";
-import { GlobalSearchModal } from "./components/GlobalSearchModal";
-import {
-  PublicIcon,
-  AutoStoriesIcon,
-  TimelineIcon,
-  PeopleIcon,
-  SportsKabaddiIcon,
-  FileDownloadIcon,
-  LightModeIcon,
-  DarkModeIcon,
-  AddIcon,
-  CloudSyncIcon,
-  MenuIcon,
-  SearchIcon,
-  BugReportIcon,
-  LogoutIcon,
-  SmartToyIcon,
-} from "./components/ui/icons";
-import { buildExport } from "./lib/export";
-import { useEffect, useRef, useState, useMemo, Suspense } from "react";
-import { animate } from "animejs";
-import { useTheme } from "./hooks/useTheme";
-import { syncToGitHub, loadBookFromGitHub, loadFromGitHub } from "./lib/githubSync";
-import type { Character, Event } from "./lib/types";
-import type { Chapter, BookData } from "./store/appStore";
 
+import { animate } from "animejs";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useTheme } from "./hooks/useTheme";
+import {
+  loadBookFromGitHub,
+  loadFromGitHub,
+  syncToGitHub,
+} from "./lib/githubSync";
+import type { Character, Event } from "./lib/types";
+import type { BookData, Chapter } from "./store/appStore";
 
 export default function App() {
   const { bookId } = useParams();
@@ -48,7 +50,10 @@ export default function App() {
   const { theme, toggle } = useTheme();
 
   const [showSearch, setShowSearch] = useState(false);
-  const [conflictData, setConflictData] = useState<{ serverBook: BookData, serverSha: string } | null>(null);
+  const [conflictData, setConflictData] = useState<{
+    serverBook: BookData;
+    serverSha: string;
+  } | null>(null);
 
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
@@ -74,7 +79,9 @@ export default function App() {
           appStore.books.set((prevBooks) => {
             const newBooks = [...(prevBooks || [])].filter(Boolean);
             for (const cb of cloudBooks) {
-              const existingIdx = newBooks.findIndex((b) => b && b.id === cb.id);
+              const existingIdx = newBooks.findIndex(
+                (b) => b && b.id === cb.id,
+              );
               if (existingIdx >= 0) {
                 // Update basic metadata, preserving deep entities if already loaded/modified locally
                 newBooks[existingIdx] = {
@@ -269,8 +276,6 @@ export default function App() {
     (a, b) => a.order - b.order,
   );
 
-  const [showExport, setShowExport] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
   const [prevPath, setPrevPath] = useState(location.pathname);
@@ -338,27 +343,37 @@ export default function App() {
     try {
       setIsSyncing(true);
       showToast("Pulling latest data from cloud...", "info");
-      const response = await loadBookFromGitHub(savedToken, bookId) as BookData;
+      const response = (await loadBookFromGitHub(
+        savedToken,
+        bookId,
+      )) as BookData;
       if (response && response.id) {
-         const localBook = appStore.books[bookIdx].get();
-         const conflictsList = getConflicts(localBook, response);
-         const visibleConflicts = conflictsList.filter(c => {
-           if (c.type === "chapter") {
-             const originalId = c.id.replace("chapter_", "");
-             if (selChapter && originalId !== selChapter) {
-               return false;
-             }
-           }
-           return true;
-         });
+        const localBook = appStore.books[bookIdx].get();
+        const conflictsList = getConflicts(localBook, response);
+        const visibleConflicts = conflictsList.filter((c) => {
+          if (c.type === "chapter") {
+            const originalId = c.id.replace("chapter_", "");
+            if (selChapter && originalId !== selChapter) {
+              return false;
+            }
+          }
+          return true;
+        });
 
-         if (visibleConflicts.length === 0) {
-           const mergedBook = autoMergeOtherChapters(localBook, conflictsList, selChapter);
-           appStore.books[bookIdx].set(mergedBook);
-           showToast("Local data is already up to date. No conflicts found!", "success");
-         } else {
-           setConflictData({ serverBook: response, serverSha: "merged" });
-         }
+        if (visibleConflicts.length === 0) {
+          const mergedBook = autoMergeOtherChapters(
+            localBook,
+            conflictsList,
+            selChapter,
+          );
+          appStore.books[bookIdx].set(mergedBook);
+          showToast(
+            "Local data is already up to date. No conflicts found!",
+            "success",
+          );
+        } else {
+          setConflictData({ serverBook: response, serverSha: "merged" });
+        }
       }
     } catch (err) {
       showToast(
@@ -375,9 +390,11 @@ export default function App() {
     if (bookIdx >= 0) {
       appStore.books[bookIdx].set(mergedBook);
       showToast("Conflicts resolved and merged!", "success");
-      
+
       // Auto-trigger sync to push the resolved state to the server
-      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      const token =
+        localStorage.getItem("seshat-auth-token") ||
+        sessionStorage.getItem("seshat-auth-token");
       if (token) {
         try {
           setIsSyncing(true);
@@ -442,34 +459,6 @@ export default function App() {
     ],
   );
 
-  const text = useMemo(
-    () =>
-      buildExport({
-        title: bookIdx >= 0 ? appStore.books[bookIdx].title.get() : "",
-        synopsis: bookIdx >= 0 ? appStore.books[bookIdx].synopsis.get() : "",
-        setting: bookIdx >= 0 ? appStore.books[bookIdx].setting.get() : "",
-        themes: bookIdx >= 0 ? appStore.books[bookIdx].themes.get() : "",
-        rules: bookIdx >= 0 ? appStore.books[bookIdx].rules.get() : "",
-        nations: worldNations || [],
-        techniques: worldTechniques || [],
-        ingredients: worldIngredients || [],
-        monsters: worldMonsters || [],
-        treasures: worldTreasures || [],
-        events: events || [],
-        characters: characters || [],
-      }),
-    [
-      bookIdx,
-      worldNations,
-      worldTechniques,
-      worldIngredients,
-      worldMonsters,
-      worldTreasures,
-      events,
-      characters,
-    ],
-  );
-
   const mainRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (mainRef.current) {
@@ -481,7 +470,6 @@ export default function App() {
       });
     }
   }, [location.pathname]);
-
 
   const isFullyLoaded = useSelector(() => {
     const activeId = appStore.activeBookId.get();
@@ -566,27 +554,26 @@ export default function App() {
               title="Push local data to Cloud"
             >
               {hasUnsyncedChanges && (
-                <div style={{
-                  position: "absolute",
-                  top: -4,
-                  right: -4,
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: "#eab308",
-                  border: "2px solid var(--bg-top)",
-                  boxShadow: "0 0 8px rgba(234,179,8,0.5)"
-                }} />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: "#eab308",
+                    border: "2px solid var(--bg-top)",
+                    boxShadow: "0 0 8px rgba(234,179,8,0.5)",
+                  }}
+                />
               )}
               <CloudSyncIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>
                 {isSyncing ? "Syncing..." : "Sync"}
               </span>
             </button>
-            <button
-              onClick={() => navigate("/ai")}
-              style={styles.exportBtn}
-            >
+            <button onClick={() => navigate("/ai")} style={styles.exportBtn}>
               <SmartToyIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>Ask AI</span>
             </button>
@@ -631,7 +618,6 @@ export default function App() {
             >
               More ▾
             </button>
-
           </div>
         </div>
       </div>
@@ -670,16 +656,6 @@ export default function App() {
               <button
                 onClick={() => {
                   setShowMoreMenu(false);
-                  setShowExport(true);
-                }}
-                style={styles.moreMenuBtn(false)}
-              >
-                <FileDownloadIcon sx={{ fontSize: 20 }} />
-                Export for AI
-              </button>
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
                   handlePull();
                 }}
                 disabled={isSyncing}
@@ -696,8 +672,26 @@ export default function App() {
                   handleSync();
                 }}
                 disabled={isSyncing}
-                style={styles.moreMenuBtn(false)}
+                style={{
+                  ...styles.moreMenuBtn(false),
+                  position: "relative" as React.CSSProperties["position"],
+                }}
               >
+                {hasUnsyncedChanges && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 14,
+                      left: 32,
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "#eab308",
+                      border: "2px solid var(--bg-card)",
+                      boxShadow: "0 0 8px rgba(234,179,8,0.5)",
+                    }}
+                  />
+                )}
                 <CloudSyncIcon sx={{ fontSize: 20 }} />
                 {isSyncing ? "Syncing..." : "Sync"}
               </button>
@@ -969,46 +963,13 @@ export default function App() {
         </div>
       </div>
 
-      {showExport && (
-        <div style={styles.exportOverlay}>
-          <div style={styles.exportContent}>
-            <div style={styles.exportHeader}>
-              <span style={S.h2}>Export for AI</span>
-              <div style={styles.exportActions}>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(text);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  style={styles.exportCopyBtn(copied)}
-                >
-                  {copied ? "Copied!" : "Copy all"}
-                </button>
-                <button onClick={() => setShowExport(false)} style={S.ghost}>
-                  Close
-                </button>
-              </div>
-            </div>
-            <p style={S.dim}>
-              Paste into your AI's system prompt. Full psychology, conditions,
-              skills, equipment, achievements, losses, relationships, world
-              entities, and behavioral guidance.
-            </p>
-            <textarea readOnly value={text} style={styles.exportTextarea} />
-          </div>
-        </div>
-      )}
-
-
-
       <GlobalSearchModal
         open={showSearch}
         onClose={() => setShowSearch(false)}
         bookId={bookId || ""}
       />
 
-       {conflictData && bookIdx >= 0 && (
+      {conflictData && bookIdx >= 0 && (
         <ConflictModal
           localBook={appStore.books[bookIdx].get()}
           serverBook={conflictData.serverBook}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useRouteError, useNavigate, isRouteErrorResponse } from "react-router-dom";
 import { Button } from "@mui/material";
 import { useAnimateIn } from "../hooks/useAnimateIn";
@@ -21,6 +22,17 @@ export default function ErrorPage() {
   } else if (error && typeof error === "object" && "message" in error) {
     errorMessage = String((error as Record<string, unknown>).message);
   }
+
+  useEffect(() => {
+    const msg = errorMessage.toLowerCase();
+    if (msg.includes("failed to fetch dynamically imported module") || msg.includes("importing a module script failed")) {
+      const reloaded = sessionStorage.getItem("app-update-reload");
+      if (!reloaded) {
+        sessionStorage.setItem("app-update-reload", "true");
+        window.location.reload();
+      }
+    }
+  }, [errorMessage]);
 
   return (
     <>
