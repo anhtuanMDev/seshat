@@ -17,6 +17,8 @@ import {
 
 
 interface UseAIChatOptions {
+  sessionId: string;
+  updateSessionTitle?: (id: string, title: string) => void;
   expertMode: ExpertMode;
   aiMode: AiMode;
   contextText: string;
@@ -29,6 +31,8 @@ interface UseAIChatOptions {
 }
 
 export function useAIChat({
+  sessionId,
+  updateSessionTitle,
   expertMode,
   aiMode,
   contextText,
@@ -39,27 +43,31 @@ export function useAIChat({
   apiKey,
   model,
 }: UseAIChatOptions) {
-  const [messages, setMessages] = useState<Message[]>(() => {
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Load messages when sessionId changes
+  useEffect(() => {
     try {
-      const saved = sessionStorage.getItem("seshat-ai-messages");
-      return saved ? JSON.parse(saved) : [];
+      const saved = localStorage.getItem(`seshat-chat-${sessionId}`);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMessages(saved ? JSON.parse(saved) : []);
     } catch {
-      return [];
+      setMessages([]);
     }
-  });
+  }, [sessionId]);
 
   const [isTyping, setIsTyping] = useState(false);
   const [generatedChar, setGeneratedChar] = useState<Partial<Character> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Persist messages to sessionStorage
+  // Persist messages to localStorage for this session
   useEffect(() => {
     if (messages.length > 0) {
-      sessionStorage.setItem("seshat-ai-messages", JSON.stringify(messages));
+      localStorage.setItem(`seshat-chat-${sessionId}`, JSON.stringify(messages));
     } else {
-      sessionStorage.removeItem("seshat-ai-messages");
+      localStorage.removeItem(`seshat-chat-${sessionId}`);
     }
-  }, [messages]);
+  }, [messages, sessionId]);
 
   /** Build the roleplay persona injection for CHARACTER_ROLEPLAY mode */
   const buildRoleplayInjection = useCallback((): string => {
@@ -95,6 +103,11 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
       const newMsgs = [...baseMsgs, { role: "user" as const, content: userContent }];
       setMessages(newMsgs);
       setIsTyping(true);
+
+      // Auto-title if it's the first message
+      if (newMsgs.length === 1 && updateSessionTitle) {
+        updateSessionTitle(sessionId, userContent.slice(0, 30) + (userContent.length > 30 ? "..." : ""));
+      }
 
       try {
         const systemMsgContent =
@@ -236,6 +249,8 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
       apiKey,
       model,
       messages,
+      sessionId,
+      updateSessionTitle,
     ],
   );
 

@@ -12,20 +12,34 @@ export function useAIConfig() {
   const [baseUrl, setBaseUrl] = useState(
     () => localStorage.getItem("seshat-ai-url") || "https://api.openai.com/v1",
   );
-  const [apiKey, setApiKey] = useState(
-    () => localStorage.getItem("seshat-ai-key") || "",
-  );
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>(() => {
+    try {
+      const stored = localStorage.getItem("seshat-ai-keys");
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      // ignore
+      console.error(e);
+    }
+    // Fallback: migrate old single key if present
+    const oldKey = localStorage.getItem("seshat-ai-key");
+    const initProvider = localStorage.getItem("seshat-ai-provider") || "openai";
+    if (oldKey) {
+      return { [initProvider]: oldKey };
+    }
+    return {};
+  });
+
   const [model, setModel] = useState(
     () => localStorage.getItem("seshat-ai-model") || "gpt-4o-mini",
   );
 
-  // Auto-persist whenever any config value changes
+  // Auto-persist whenever config values change
   useEffect(() => {
     localStorage.setItem("seshat-ai-provider", providerId);
     localStorage.setItem("seshat-ai-url", baseUrl);
-    localStorage.setItem("seshat-ai-key", apiKey);
+    localStorage.setItem("seshat-ai-keys", JSON.stringify(apiKeys));
     localStorage.setItem("seshat-ai-model", model);
-  }, [providerId, baseUrl, apiKey, model]);
+  }, [providerId, baseUrl, apiKeys, model]);
 
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const pid = e.target.value;
@@ -37,11 +51,16 @@ export function useAIConfig() {
     }
   };
 
+  const currentApiKey = apiKeys[providerId] || "";
+  const setApiKey = (v: string) => {
+    setApiKeys((prev) => ({ ...prev, [providerId]: v }));
+  };
+
   return {
     providerId,
     baseUrl,
     setBaseUrl,
-    apiKey,
+    apiKey: currentApiKey,
     setApiKey,
     model,
     setModel,

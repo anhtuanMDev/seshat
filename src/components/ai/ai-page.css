@@ -21,7 +21,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 24px;
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -35,7 +35,13 @@
 .ai-page-main {
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at top left, color-mix(in srgb, var(--text-primary) 3%, transparent) 0%, transparent 50%), var(--bg-main);
+  background:
+    radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--text-primary) 3%, transparent) 0%,
+      transparent 50%
+    ),
+    var(--bg-main);
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -74,8 +80,12 @@
 }
 
 .ai-user-bg {
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-primary) 3%, transparent) 100%);
-  border-bottom-color: rgba(255,255,255,0.02);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--text-primary) 3%, transparent) 100%
+  );
+  border-bottom-color: rgba(255, 255, 255, 0.02);
 }
 
 .ai-assistant-bg {
@@ -106,7 +116,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--bg-panel) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--bg-panel) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
   color: var(--text-secondary);
   font-weight: 600;
   font-size: 14px;
@@ -115,7 +129,11 @@
 }
 
 .ai-avatar-oracle {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 15%, transparent) 0%, color-mix(in srgb, var(--text-primary) 5%, transparent) 100%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--text-primary) 15%, transparent) 0%,
+    color-mix(in srgb, var(--text-primary) 5%, transparent) 100%
+  );
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--text-primary) 20%, transparent);
   box-shadow: 0 0 20px color-mix(in srgb, var(--text-primary) 15%, transparent);
@@ -177,7 +195,10 @@
   display: flex;
   align-items: flex-end;
   padding: 10px 10px 10px 20px;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   max-width: 900px;
   margin: 0 auto;
@@ -185,7 +206,9 @@
 
 .ai-input-wrapper:focus-within {
   border-color: color-mix(in srgb, var(--text-primary) 40%, transparent);
-  box-shadow: 0 12px 48px color-mix(in srgb, var(--text-primary) 15%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
+  box-shadow:
+    0 12px 48px color-mix(in srgb, var(--text-primary) 15%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 10%, transparent);
   background: rgba(var(--bg-panel-rgb), 0.9);
 }
 
@@ -223,12 +246,14 @@
   flex-shrink: 0;
   margin-bottom: 2px;
   margin-left: 12px;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--text-primary) 30%, transparent);
+  box-shadow: 0 4px 12px
+    color-mix(in srgb, var(--text-primary) 30%, transparent);
 }
 
 .ai-send-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--text-primary) 50%, transparent);
+  box-shadow: 0 6px 16px
+    color-mix(in srgb, var(--text-primary) 50%, transparent);
   background: var(--text-secondary);
 }
 
@@ -263,22 +288,44 @@
   box-shadow: 0 0 8px color-mix(in srgb, var(--text-primary) 40%, transparent);
 }
 
-.ai-dot:nth-child(1) { animation-delay: -0.32s; }
-.ai-dot:nth-child(2) { animation-delay: -0.16s; }
+.ai-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.ai-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
 
 @keyframes ai-bounce {
-  0%, 80%, 100% { transform: scale(0.4); opacity: 0.3; }
-  40%           { transform: scale(1); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: scale(0.4);
+    opacity: 0.3;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes ai-fade-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes ai-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ── Config group (sidebar fields) ──────────────────────────────────────────*/
@@ -297,8 +344,8 @@
 }
 
 .ai-config-input {
-  background: rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 10px 14px;
@@ -324,16 +371,16 @@
   font-weight: 500;
   padding: 6px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .ai-model-pill:hover {
-  border-color: rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
 }
 
@@ -364,7 +411,7 @@
 .ai-clear-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-  border-color: rgba(255,255,255,0.05);
+  border-color: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
 }
 
@@ -399,8 +446,8 @@
   z-index: 301;
   background: var(--bg-side);
   border-radius: 24px 24px 0 0;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
   max-height: 90dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -419,7 +466,7 @@
 .ai-sheet-handle {
   width: 40px;
   height: 5px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
   margin: 14px auto 20px;
   flex-shrink: 0;
@@ -437,7 +484,7 @@
     z-index: 200;
     width: 320px;
     background: rgba(var(--bg-side-rgb), 0.85);
-    border-right: 1px solid rgba(255,255,255,0.08);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.4);
     transform: translateX(-100%);
     transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
@@ -547,7 +594,11 @@
   font-weight: 600;
   padding: 6px 12px;
   border-radius: 20px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--text-primary) 10%, transparent) 0%, color-mix(in srgb, var(--text-primary) 5%, transparent) 100%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--text-primary) 10%, transparent) 0%,
+    color-mix(in srgb, var(--text-primary) 5%, transparent) 100%
+  );
   color: var(--text-primary);
   border: 1px solid color-mix(in srgb, var(--text-primary) 20%, transparent);
   max-width: 140px;
@@ -563,7 +614,8 @@
 .ai-context-badge:hover {
   background: color-mix(in srgb, var(--text-primary) 15%, transparent);
   border-color: color-mix(in srgb, var(--text-primary) 30%, transparent);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--text-primary) 15%, transparent);
+  box-shadow: 0 4px 12px
+    color-mix(in srgb, var(--text-primary) 15%, transparent);
 }
 
 .ai-context-badge:active {
@@ -577,8 +629,8 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
   display: flex;
   align-items: center;
@@ -594,7 +646,8 @@
   border-color: color-mix(in srgb, var(--text-primary) 40%, transparent);
   color: var(--text-primary);
   background: color-mix(in srgb, var(--text-primary) 10%, transparent);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--text-primary) 15%, transparent);
+  box-shadow: 0 4px 12px
+    color-mix(in srgb, var(--text-primary) 15%, transparent);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -629,7 +682,8 @@
   color: var(--text-primary);
   background: color-mix(in srgb, var(--text-primary) 8%, transparent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--text-primary) 15%, transparent);
+  box-shadow: 0 4px 12px
+    color-mix(in srgb, var(--text-primary) 15%, transparent);
 }
 
 .ai-quick-action-btn:active {

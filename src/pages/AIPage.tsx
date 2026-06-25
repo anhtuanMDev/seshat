@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AutoStoriesIcon, SmartToyIcon } from "../components/ui/icons";
 
@@ -10,6 +10,7 @@ import { getCanonFieldsForType } from "../components/ai/prompts";
 import type { AiMode } from "../components/ai/types";
 import { useAIChat } from "../components/ai/useAIChat";
 import { useAIConfig } from "../components/ai/useAIConfig";
+import { useChatSessions } from "../components/ai/useChatSessions";
 import { useCanonModal } from "../components/ai/useCanonModal";
 import { useContextBuilder } from "../components/ai/useContextBuilder";
 
@@ -64,6 +65,24 @@ export default function AIPage() {
   } = useContextBuilder(focusType, focusId);
 
   const {
+    sessions,
+    activeSessionId,
+    setActiveSessionId,
+    createSession,
+    deleteSession,
+    updateSessionTitle,
+  } = useChatSessions();
+
+  // Sync session's aiMode when activeSessionId changes
+  useEffect(() => {
+    const session = sessions.find((s) => s.id === activeSessionId);
+    if (session) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAiMode(session.aiMode);
+    }
+  }, [activeSessionId, sessions]);
+
+  const {
     messages,
     setMessages,
     isTyping,
@@ -73,6 +92,8 @@ export default function AIPage() {
     stopGenerating,
     clearMessages,
   } = useAIChat({
+    sessionId: activeSessionId,
+    updateSessionTitle,
     expertMode,
     aiMode,
     contextText,
@@ -301,7 +322,10 @@ export default function AIPage() {
           focusId={focusId}
           setFocusId={setFocusId}
           aiMode={aiMode}
-          setAiMode={setAiMode}
+          setAiMode={(m) => {
+            setAiMode(m);
+            // Optionally update the session aiMode
+          }}
           expertMode={expertMode}
           setExpertMode={setExpertMode}
           providerId={config.providerId}
@@ -314,6 +338,11 @@ export default function AIPage() {
           setApiKey={config.setApiKey}
           messagesLength={messages.length}
           onClearChat={() => setShowClearConfirm(true)}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          setActiveSessionId={setActiveSessionId}
+          createSession={createSession}
+          deleteSession={deleteSession}
         />
 
         {/* Chat area */}
@@ -440,6 +469,11 @@ export default function AIPage() {
             setShowClearConfirm(true);
             setSheetOpen(false);
           }}
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          setActiveSessionId={setActiveSessionId}
+          createSession={createSession}
+          deleteSession={deleteSession}
         />
       </div>
 

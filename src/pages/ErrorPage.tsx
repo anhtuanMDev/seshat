@@ -129,7 +129,8 @@ const styles = {
     height: "100dvh",
     backgroundColor: "#080a0f",
     color: "#fff",
-    overflow: "hidden",
+    overflowY: "auto",
+    overflowX: "hidden",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -250,6 +251,8 @@ const styles = {
     lineHeight: 1.6,
     wordBreak: "break-all",
     minHeight: 140,
+    maxHeight: "50vh",
+    overflowY: "auto",
   },
   errorLabel: {
     color: "#ff2a5f",
