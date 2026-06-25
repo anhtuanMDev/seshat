@@ -2,6 +2,7 @@
 // AIInputBar — textarea + send/stop button + quick-action pills
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useRef, useEffect } from "react";
 import { SendIcon } from "../ui/icons";
 import { QUICK_ACTIONS, type ExpertMode } from "./constants";
 import type { AiMode } from "./types";
@@ -27,6 +28,16 @@ export default function AIInputBar({
   setExpertMode,
   setAiMode,
 }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(200, Math.max(44, scrollHeight))}px`;
+    }
+  }, [input]);
+
   return (
     <div className="ai-input-container">
       {/* Quick-action pills */}
@@ -61,6 +72,7 @@ export default function AIInputBar({
       {/* Textarea + send/stop */}
       <div className="ai-input-wrapper">
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -73,7 +85,9 @@ export default function AIInputBar({
           className="ai-textarea"
           rows={1}
           style={{
-            height: Math.min(200, Math.max(44, input.split("\n").length * 20 + 24)),
+            overflowY: "hidden",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         />
         {isTyping ? (

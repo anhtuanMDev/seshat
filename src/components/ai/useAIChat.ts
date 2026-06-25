@@ -251,7 +251,7 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
         
         // Append error to chat feed for better UX
         setMessages([
-          ...baseMsgs,
+          ...newMsgs,
           { 
             role: "assistant", 
             content: `**Request Failed**\n\n${msg}`, 

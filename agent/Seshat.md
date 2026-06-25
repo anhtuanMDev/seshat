@@ -143,16 +143,17 @@ seshat/
 │   │   │
 │   │   ├── ai/                # AIPage modules (refactored from monolith)
 │   │   │   ├── constants.ts         # AI_PROVIDERS, AI_MODES, QUICK_ACTIONS, TEMP_BY_MODE, ExpertMode type
-│   │   │   ├── types.ts             # Message, CanonModalState, AiMode interfaces
+│   │   │   ├── types.ts             # Message (latency, isError), CanonModalState, AiMode interfaces
 │   │   │   ├── prompts.ts           # Pure prompt builders: buildGenSystemPrompt, buildChatSystemPrompt, cleanMessagesForApi, getCanonFieldsForType
 │   │   │   ├── ai-page.css          # All .ai-* scoped styles (extracted from inline <style>)
 │   │   │   ├── useAIConfig.ts       # Provider / key / model state + localStorage persistence
 │   │   │   ├── useContextBuilder.ts # Book selection, lazy loading, focus-type context filtering
-│   │   │   ├── useAIChat.ts         # Streaming fetch, AbortController, SSE parsing, sessionStorage, generated-char parsing
+│   │   │   ├── useAIChat.ts         # Streaming fetch, AbortController, SSE parsing, latency tracking, error recovery
 │   │   │   ├── useCanonModal.ts     # Canon modal state + handleSaveToCanon (store write + GitHub sync)
 │   │   │   ├── AISidebar.tsx        # Left panel: context selector, AI mode toggle, persona picker, settings accordion
+│   │   │   ├── ModelDropdown.tsx    # Dynamic model discovery fetching models from Google/OpenAI endpoints with error handling
 │   │   │   ├── AIChatFeed.tsx       # Scrollable message list, empty state (starter questions), typing indicator
-│   │   │   ├── AIMessageBlock.tsx   # Single message: think-tag collapsible, ReactMarkdown, copy/regen/canon buttons
+│   │   │   ├── AIMessageBlock.tsx   # Single message: think-tag, ReactMarkdown, latency timers, error styling
 │   │   │   ├── AIInputBar.tsx       # Textarea + send/stop button + quick-action pills
 │   │   │   ├── CanonModal.tsx       # "Add to Canon" modal with entity type/id/field selectors
 │   │   │   └── GeneratedCharModal.tsx # Generated character JSON preview + save to appStore
@@ -452,25 +453,26 @@ Interactive directed node graph visualizing connections between characters, nati
 ### AIPage (`/book/:bookId/ai`)
 
 Unified BYOK (Bring Your Own Key) OpenAI-compatible narrative engine interface. Replaces the old `AIChatModal`.
-**Architecture:** `AIPage.tsx` (~320 lines) is a pure orchestrator — it wires four custom hooks and five sub-components. All business logic, styles, and UI live in `src/components/ai/`.
+**Architecture:** `AIPage.tsx` (~320 lines) is a pure orchestrator — it wires four custom hooks and six sub-components. All business logic, styles, and UI live in `src/components/ai/`.
 
 **Custom hooks:**
 - `useAIConfig` — provider / key / model config, auto-persisted to `localStorage`
 - `useContextBuilder` — book selection, lazy GitHub loading, focus-type context filtering (`focusType` / `focusId` URL params)
-- `useAIChat` — streaming SSE fetch, `AbortController`, `sessionStorage` message persistence, generated character parsing
+- `useAIChat` — streaming SSE fetch, `AbortController`, latency tracking (`startTime`/`latency`), inline error recovery, `sessionStorage`
 - `useCanonModal` — "Add to Canon" modal state + save-to-`appStore` + background GitHub sync
 
 **Sub-components (`src/components/ai/`):**
 - `AISidebar` — left panel: context book selector, AI mode toggle (Chat / Gen Char), persona picker, collapsible settings
+- `ModelDropdown` — dynamic API-driven model list with infinite scroll pagination, capability filtering, and auth protection
 - `AIChatFeed` — scrollable message list with context-aware starter questions, typing indicator, auto-scroll
-- `AIMessageBlock` — single message renderer: collapsible `<think>` trace, ReactMarkdown output, copy / regenerate / Add-to-Canon action buttons
+- `AIMessageBlock` — single message renderer: collapsible `<think>` trace, ReactMarkdown, latency timer ("Thinking..." / "Took..."), inline error UX
 - `AIInputBar` — auto-resizing textarea, send/stop button, quick-action pill strip
 - `CanonModal` — entity type / id / field selector modal for appending AI text directly to canon fields
 - `GeneratedCharModal` — JSON preview + one-click save for AI-generated characters
 
 **Pure modules:**
 - `constants.ts` — `AI_PROVIDERS`, `AI_MODES`, `QUICK_ACTIONS`, `TEMP_BY_MODE`, `ExpertMode` type
-- `types.ts` — `Message`, `AiMode` interfaces
+- `types.ts` — `Message` (with `latency`, `isError`), `AiMode` interfaces
 - `prompts.ts` — `buildGenSystemPrompt()`, `buildChatSystemPrompt()`, `cleanMessagesForApi()`, `getCanonFieldsForType()` — all side-effect-free
 - `ai-page.css` — all `.ai-*` scoped CSS (extracted from the old inline `<style>` block)
 

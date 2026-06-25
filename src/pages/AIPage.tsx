@@ -92,7 +92,10 @@ export default function AIPage() {
     if (!input.trim()) return;
     const previousInput = input.trim();
     setInput("");
-    await sendMessage(previousInput);
+    const success = await sendMessage(previousInput);
+    if (!success) {
+      setInput(previousInput);
+    }
   }, [input, sendMessage]);
 
   const handleRegenerate = useCallback(async () => {
@@ -109,7 +112,10 @@ export default function AIPage() {
     const trimmed = messages.slice(0, lastUserIndex);
     
     setMessages(trimmed);
-    await sendMessage(lastUser.content, trimmed);
+    const success = await sendMessage(lastUser.content, trimmed);
+    if (!success && lastUser.content) {
+       setInput(lastUser.content);
+    }
   }, [messages, isTyping, setMessages, sendMessage]);
 
   const handleOpenCanon = useCallback(
