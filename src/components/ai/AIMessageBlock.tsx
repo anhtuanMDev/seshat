@@ -18,6 +18,8 @@ interface Props {
   onAddToCanon: (content: string) => void;
   /** Called when user clicks "Regenerate" */
   onRegenerate: () => void;
+  /** Called to open the Character Modal */
+  onOpenGeneratedCharModal?: (char: Record<string, string>) => void;
 }
 
 export default function AIMessageBlock({
@@ -28,6 +30,7 @@ export default function AIMessageBlock({
   selectedBookId,
   onAddToCanon,
   onRegenerate,
+  onOpenGeneratedCharModal,
 }: Props) {
   const isUser = m.role === "user";
   const [elapsed, setElapsed] = useState(0);
@@ -59,7 +62,7 @@ export default function AIMessageBlock({
         {isUser ? (
           <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>{m.content}</div>
         ) : (
-          <AssistantContent content={m.content} />
+          <AssistantContent content={m.content} onOpenGeneratedCharModal={onOpenGeneratedCharModal} />
         )}
 
         {!isUser && latencyStr && (
@@ -153,7 +156,7 @@ export default function AIMessageBlock({
 
 // ── Internal: renders assistant content with think-tag collapsible ────────────
 
-function AssistantContent({ content }: { content: string }) {
+function AssistantContent({ content, onOpenGeneratedCharModal }: { content: string, onOpenGeneratedCharModal?: (char: Record<string, string>) => void }) {
   const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/);
   const hasOpenThink = content.trimStart().startsWith("<think>") && !content.includes("</think>");
 
@@ -162,6 +165,26 @@ function AssistantContent({ content }: { content: string }) {
     : hasOpenThink
       ? "" // still thinking — show nothing until tag closes
       : content.trim();
+
+  // Custom renderer for Character JSON outputs
+  let jsonPreview: Record<string, string> | null = null;
+  const isLikelyJson = cleanContent.startsWith("{") || cleanContent.startsWith("```json");
+  if (isLikelyJson) {
+    try {
+      const raw = cleanContent.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && parsed.name) {
+        jsonPreview = parsed;
+      }
+    } catch {
+      // JSON is likely incomplete due to streaming.
+    }
+  }
+
+  // If it looks like raw JSON but isn't wrapped in markdown, wrap it so it streams nicely
+  const finalContent = (!jsonPreview && isLikelyJson && !cleanContent.includes("```"))
+    ? "```json\n" + cleanContent + "\n```"
+    : cleanContent;
 
   return (
     <>
@@ -207,7 +230,52 @@ function AssistantContent({ content }: { content: string }) {
         </details>
       )}
 
-      {cleanContent ? (
+      {jsonPreview ? (
+        <div style={{ background: "rgba(0,0,0,0.2)", padding: 20, borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", marginTop: 8 }}>
+          <h3 style={{ margin: "0 0 16px 0", display: "flex", alignItems: "center", gap: 10, color: "var(--text-primary)" }}>
+            {jsonPreview.name}
+            {jsonPreview.role && (
+              <span style={{ fontSize: 12, padding: "4px 10px", background: "rgba(255,255,255,0.05)", borderRadius: 12, fontWeight: 500, color: "var(--text-secondary)" }}>
+                {jsonPreview.role}
+              </span>
+            )}
+          </h3>
+          <div style={{ display: "grid", gap: 10 }}>
+            {jsonPreview.archetype && (
+              <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                <strong>Archetype:</strong> {jsonPreview.archetype}
+              </div>
+            )}
+            {jsonPreview.coreWound && (
+              <div style={{ fontSize: 13, color: "var(--text-primary)" }}>
+                <strong style={{ color: "rgba(255, 100, 100, 0.9)" }}>Core Wound:</strong> {jsonPreview.coreWound}
+              </div>
+            )}
+            {jsonPreview.coreDesire && (
+              <div style={{ fontSize: 13, color: "var(--text-primary)" }}>
+                <strong style={{ color: "rgba(100, 255, 100, 0.9)" }}>Core Desire:</strong> {jsonPreview.coreDesire}
+              </div>
+            )}
+            {jsonPreview.coreFear && (
+              <div style={{ fontSize: 13, color: "var(--text-primary)" }}>
+                <strong style={{ color: "rgba(200, 150, 255, 0.9)" }}>Core Fear:</strong> {jsonPreview.coreFear}
+              </div>
+            )}
+            {jsonPreview.philosophy && (
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4, fontStyle: "italic" }}>
+                "{jsonPreview.philosophy}"
+              </div>
+            )}
+          </div>
+          <button 
+             onClick={() => onOpenGeneratedCharModal?.(jsonPreview)}
+             className="ai-quick-action-btn"
+             style={{ marginTop: 16, width: "fit-content", background: "rgba(255,255,255,0.05)" }}
+          >
+            <AddIcon sx={{ fontSize: 14 }} /> Review & Save Character
+          </button>
+        </div>
+      ) : finalContent ? (
         <ReactMarkdown
           components={{
             p: ({ ...props }) => <p style={{ margin: "0 0 12px 0" }} {...props} />,
@@ -232,7 +300,7 @@ function AssistantContent({ content }: { content: string }) {
             ),
           }}
         >
-          {cleanContent}
+          {finalContent}
         </ReactMarkdown>
       ) : null}
     </>

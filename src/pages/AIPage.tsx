@@ -342,6 +342,7 @@ export default function AIPage() {
             books={books}
             onAddToCanon={handleOpenCanon}
             onRegenerate={handleRegenerate}
+            onOpenGeneratedCharModal={setGeneratedChar}
             setInput={setInput}
           />
 

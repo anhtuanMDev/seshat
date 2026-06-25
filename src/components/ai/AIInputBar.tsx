@@ -85,7 +85,7 @@ export default function AIInputBar({
           className="ai-textarea"
           rows={1}
           style={{
-            overflowY: "hidden",
+            overflowY: "auto",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}

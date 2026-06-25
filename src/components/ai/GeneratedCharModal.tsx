@@ -8,6 +8,7 @@ import { appStore } from "../../store/appStore";
 import type { Character, BookData } from "../../store/appStore";
 import { showToast } from "../../store/toastStore";
 import { updateFilesOnGitHub } from "../../lib/githubSync";
+import { mkChar } from "../../lib/utils";
 
 interface Props {
   generatedChar: Partial<Character> | null;
@@ -28,8 +29,37 @@ export default function GeneratedCharModal({
     const bookIdx = books.findIndex((b) => b && b.id === selectedBookId);
     if (bookIdx >= 0) {
       const book = appStore.books[bookIdx];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (book.characters as any).push(generatedChar as Character);
+      const currentChars = book.characters.get() || [];
+      
+      let finalChar = { ...mkChar(generatedChar.name || "Unknown", generatedChar.color || "#ffffff"), ...generatedChar } as Character;
+      
+      if (!finalChar.name || finalChar.name === "Unknown") {
+        showToast("Character name is missing!", "error");
+        return;
+      }
+
+      const existingIdx = currentChars.findIndex(
+        (c) => c.name.toLowerCase() === finalChar.name.toLowerCase()
+      );
+
+      const newChars = [...currentChars];
+
+      if (existingIdx >= 0) {
+        if (
+          !window.confirm(
+            `A character named "${finalChar.name}" already exists. Do you want to overwrite it?`
+          )
+        ) {
+          return;
+        }
+        // Overwrite existing, keep original ID
+        finalChar = { ...currentChars[existingIdx], ...finalChar, id: currentChars[existingIdx].id };
+        newChars[existingIdx] = finalChar;
+      } else {
+        newChars.push(finalChar);
+      }
+
+      book.characters.set(newChars);
 
       const token =
         localStorage.getItem("seshat-auth-token") ||
@@ -37,13 +67,13 @@ export default function GeneratedCharModal({
       if (token) {
         updateFilesOnGitHub(token, selectedBookId, [
           {
-            path: `characters/character_${generatedChar.id}.json`,
-            content: JSON.stringify(generatedChar, null, 2),
+            path: `characters/character_${finalChar.id}.json`,
+            content: JSON.stringify(finalChar, null, 2),
           },
         ]);
       }
       onClose();
-      showToast("Character created successfully!", "success");
+      showToast("Character saved successfully!", "success");
     }
   };
 

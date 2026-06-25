@@ -20,6 +20,7 @@ interface Props {
   books: BookData[];
   onAddToCanon: (content: string) => void;
   onRegenerate: () => void;
+  onOpenGeneratedCharModal: (char: Record<string, string>) => void;
   setInput: (v: string) => void;
 }
 
@@ -33,6 +34,7 @@ export default function AIChatFeed({
   books,
   onAddToCanon,
   onRegenerate,
+  onOpenGeneratedCharModal,
   setInput,
 }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -158,6 +160,7 @@ export default function AIChatFeed({
             selectedBookId={selectedBookId}
             onAddToCanon={onAddToCanon}
             onRegenerate={onRegenerate}
+            onOpenGeneratedCharModal={onOpenGeneratedCharModal}
           />
         ))
       )}

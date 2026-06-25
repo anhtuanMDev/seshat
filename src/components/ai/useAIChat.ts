@@ -14,32 +14,7 @@ import {
   cleanMessagesForApi,
 } from "./prompts";
 
-// mkChar factory — self-contained, produces a blank Character shell
-function mkChar(): Partial<Character> {
-  return {
-    id: crypto.randomUUID(),
-    name: "New Character",
-    color: "#8b5cf6",
-    role: "minor",
-    archetype: "",
-    coreWound: "",
-    coreFear: "",
-    coreDesire: "",
-    philosophy: "",
-    secrets: "",
-    arcs: [],
-    statusTimeline: [],
-    traumas: [],
-    relationships: [],
-    branch: [],
-    attributes: {},
-    conditions: [],
-    skills: [],
-    equipment: [],
-    achievements: [],
-    losses: [],
-  };
-}
+
 
 interface UseAIChatOptions {
   expertMode: ExpertMode;
@@ -176,7 +151,7 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
         const startTimestamp = Date.now();
         setMessages([...newMsgs, { role: "assistant", content: "", startTime: startTimestamp }]);
 
-        let assistantMessage = "";
+
         let buffer = "";
 
         while (true) {
@@ -196,7 +171,6 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
                 const data = JSON.parse(dataStr);
                 if (data.choices && data.choices[0].delta?.content) {
                   const chunk = data.choices[0].delta.content;
-                  assistantMessage += chunk;
                   setMessages((prev) => {
                     const arr = [...prev];
                     const last = arr[arr.length - 1];
@@ -214,19 +188,7 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
           }
         }
 
-        // After stream completes: parse generated character if in generate mode
-        if (aiMode === "generate") {
-          try {
-            const raw = assistantMessage.replace(/```json|```/g, "").trim();
-            const generated = JSON.parse(raw);
-            const merged = { ...mkChar(), ...generated };
-            setGeneratedChar(merged as Partial<Character>);
-          } catch (e) {
-            console.error("Failed to parse generated character JSON", e);
-            showToast("Failed to parse generated character JSON", "error");
-          }
-        }
-
+        // Note: We no longer auto-open the modal. The user can open it manually from the chat UI.
         // Final latency update
         setMessages((prev) => {
           const arr = [...prev];
