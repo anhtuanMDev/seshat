@@ -283,7 +283,12 @@ function Stage({
         )}
         {!isLoading && !loadErr && cat === "image" && objectUrl && (
           <div className="ap-img-wrap">
-            <img src={objectUrl} alt={asset.filename} className="ap-img" draggable={false} />
+            <img
+              src={objectUrl}
+              alt={asset.filename}
+              className="ap-img"
+              draggable={false}
+            />
           </div>
         )}
         {!isLoading && !loadErr && cat === "audio" && (
@@ -542,18 +547,6 @@ export default function AssetsPage() {
 
       {/* ── Top command bar ── */}
       <div className="ap-topbar">
-        <div className="ap-topbar-left">
-          <FolderOpenIcon
-            sx={{ fontSize: 14 }}
-            style={{ color: "var(--text-muted)" }}
-          />
-          <h1 className="ap-title">
-            Assets
-            {assets.length > 0 && (
-              <span className="ap-badge">{assets.length}</span>
-            )}
-          </h1>
-        </div>
         <UploadBar
           onFiles={handleUpload}
           isUploading={isUploading}
