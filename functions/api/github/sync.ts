@@ -384,15 +384,28 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
-    // Explicitly delete files that are no longer in the payload
+    // Explicitly delete files that are no longer in the payload,
+    // except asset files which are managed separately via uploadAsset/uploadAssets
     for (const filePath of unseenFiles) {
       if (filePath.startsWith("books/")) {
-        treeFiles.push({
-          path: filePath,
-          mode: "100644",
-          type: "blob",
-          sha: null,
-        });
+        if (filePath.includes("/assets/")) {
+          const existingSha = existingFiles.get(filePath);
+          if (existingSha) {
+            treeFiles.push({
+              path: filePath,
+              mode: "100644",
+              type: "blob",
+              sha: existingSha,
+            });
+          }
+        } else {
+          treeFiles.push({
+            path: filePath,
+            mode: "100644",
+            type: "blob",
+            sha: null,
+          });
+        }
       }
     }
 

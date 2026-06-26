@@ -1,5 +1,27 @@
 import { verifyToken } from "./authUtils";
 
+const MIME_MAP: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  svg: "image/svg+xml",
+  pdf: "application/pdf",
+  txt: "text/plain",
+  md: "text/markdown",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  mp3: "audio/mpeg",
+  mp4: "video/mp4",
+  zip: "application/zip",
+};
+
+function guessMime(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() || "";
+  return MIME_MAP[ext] || "application/octet-stream";
+}
+
 export async function onRequestGet({
   request,
   env,
@@ -15,14 +37,18 @@ export async function onRequestGet({
   if (!token) return new Response("Unauthorized", { status: 401 });
   if (!bookId) return new Response("Missing bookId", { status: 400 });
   if (!path) return new Response("Missing path", { status: 400 });
+  if (path.includes(".."))
+    return new Response(JSON.stringify({ error: "Invalid path" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
 
   const githubToken = env.GITHUB_TOKEN;
   const owner = env.GITHUB_OWNER;
   const repo = env.GITHUB_REPO;
-  const headers = {
+  const authHeaders = {
     Authorization: `Bearer ${githubToken}`,
     "User-Agent": "Seshat-App",
-    "Content-Type": "application/json",
   };
 
   try {
@@ -32,52 +58,43 @@ export async function onRequestGet({
     const username = payload.username as string;
     const branchName = `user-${username}`;
 
-    const query = `query {
-      repository(owner: "${owner}", name: "${repo}") {
-        object(expression: "${branchName}:books/book_${bookId}/${path}") {
-          ... on Blob {
-            text
-          }
-        }
-      }
-    }`;
+    const fullPath = `books/book_${bookId}/${path}`;
 
-    const graphqlRes = await fetch("https://api.github.com/graphql", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ query }),
-    });
+    // Use the raw content API: Accept: application/vnd.github.raw returns
+    // the file bytes directly instead of base64-encoded JSON.
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/${fullPath}?ref=${branchName}`,
+      {
+        headers: {
+          ...authHeaders,
+          Accept: "application/vnd.github.raw",
+        },
+      },
+    );
 
-    if (!graphqlRes.ok) {
-      return new Response(JSON.stringify({ error: "GraphQL request failed" }), {
-        status: 500,
+    if (!response.ok) {
+      return new Response(JSON.stringify({ error: "Failed to load file" }), {
+        status: response.status,
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    const graphqlData = (await graphqlRes.json()) as {
-      data?: { repository: { object?: { text?: string | null } } };
-      errors?: unknown;
-    };
+    const bytes = await response.arrayBuffer();
+    const filename = path.split("/").pop() || "";
+    const contentType = guessMime(filename);
 
-    if (graphqlData.errors || !graphqlData.data?.repository?.object) {
-      return new Response(
-        JSON.stringify({ error: "File not found or GraphQL error" }),
-        { status: 404 },
-      );
-    }
-
-    const content = graphqlData.data.repository.object.text;
-
-    return new Response(content || "{}", {
+    return new Response(bytes, {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": contentType,
         "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    console.error(error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
+      headers: { "Content-Type": "application/json" },
     });
   }
 }
