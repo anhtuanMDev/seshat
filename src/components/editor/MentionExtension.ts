@@ -415,7 +415,7 @@ export const Mention = Extension.create<MentionOptions, {}>({
   },
 });
 
-function insertMention(view: EditorView, item: MentionItem, range: Range, trigger: string) {
+function insertMention(view: EditorView, item: MentionItem, range: Range, trigger: string, scanned = false) {
   const { state, dispatch } = view;
   const tr = state.tr.replaceWith(
     range.from,
@@ -423,12 +423,16 @@ function insertMention(view: EditorView, item: MentionItem, range: Range, trigge
     state.schema.nodes.entityMention.create({
       id: item.id,
       trigger: trigger,
-      label: item.name
+      label: item.name,
+      scanned,
     })
   );
-  // Insert a space after the mention
-  const insertPos = range.from + 1; // Since node size is 1
-  tr.insertText(" ", insertPos);
+  // Insert a space after the mention ONLY if it was manually typed via the @ popup.
+  // If it was scanned from existing prose, it already has correct surrounding spacing.
+  if (!scanned) {
+    const insertPos = range.from + 1; // Since node size is 1
+    tr.insertText(" ", insertPos);
+  }
   dispatch(tr);
   hidePopup();
   view.focus();
@@ -455,7 +459,8 @@ export function insertMentionAtRange(
   const effectiveItem = displayLabel
     ? { ...item, name: displayLabel }
     : item;
-  insertMention(view, effectiveItem, { from, to }, trigger);
+  // scanned=true when a displayLabel was passed (Scan & Link flow)
+  insertMention(view, effectiveItem, { from, to }, trigger, !!displayLabel);
 }
 
 export function buildMentionExtension(getMentionItems: (trigger: string) => MentionItem[]) {

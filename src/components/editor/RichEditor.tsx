@@ -1,5 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { createPortal } from "react-dom";
+import { TextSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -189,16 +190,37 @@ function RichEditorCore({
   const closeScanLink = () => { setScanLink(null); setPickerOpen(false); };
 
   // ── Smart link state ─────────────────────────────────────────
-  const [smartLinkEntity, setSmartLinkEntity] = useState<(MentionItem & { trigger: string }) | null>(null);
+  const [smartLinkEntities, setSmartLinkEntities] = useState<(MentionItem & { trigger: string })[]>([]);
+  const [activeSmartLinkIdx, setActiveSmartLinkIdx] = useState(0);
+
+  const smartLinkEntity = smartLinkEntities[activeSmartLinkIdx] || null;
 
   useEffect(() => {
     const handleInsert = (e: Event) => {
       const { item, trigger } = (e as CustomEvent).detail;
-      setSmartLinkEntity({ ...item, trigger });
+      setSmartLinkEntities((prev) => {
+        const existingIdx = prev.findIndex((p) => p.id === item.id);
+        if (existingIdx >= 0) {
+          setActiveSmartLinkIdx(existingIdx);
+          return prev;
+        }
+        setActiveSmartLinkIdx(prev.length);
+        return [...prev, { ...item, trigger }];
+      });
     };
     window.addEventListener("seshat-mention-inserted", handleInsert);
     return () => window.removeEventListener("seshat-mention-inserted", handleInsert);
   }, []);
+
+  const removeCurrentSmartLink = useCallback(() => {
+    setSmartLinkEntities((prev) => {
+      const next = prev.filter((_, i) => i !== activeSmartLinkIdx);
+      return next;
+    });
+    setActiveSmartLinkIdx((curr) => Math.max(0, curr - 1));
+  }, [activeSmartLinkIdx]);
+
+
 
 
 
@@ -343,6 +365,92 @@ function RichEditorCore({
     },
   });
 
+  // ── Smart link navigation handlers ─────────────────────────────
+  const handleSmartLinkNext = useCallback(() => {
+    if (!smartLinkEntity || !editor) return;
+    const { state, view } = editor;
+    const currentPos = state.selection.to;
+    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    let matchAfter: { from: number; to: number } | null = null;
+    let matchBefore: { from: number; to: number } | null = null;
+    state.doc.descendants((node, pos) => {
+      if (matchAfter) return false;
+      if (node.isText) {
+        const text = node.text || "";
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          const from = pos + m.index;
+          const to = from + m[0].length;
+          if (from >= currentPos) { if (!matchAfter) matchAfter = { from, to }; }
+          else { if (!matchBefore) matchBefore = { from, to }; }
+        }
+      }
+    });
+    const target = matchAfter || matchBefore;
+    if (target) {
+      view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, target.from, target.to)).scrollIntoView());
+      view.focus();
+    } else {
+      removeCurrentSmartLink();
+    }
+  }, [editor, smartLinkEntity, removeCurrentSmartLink]);
+
+  const handleSmartLinkAccept = useCallback(() => {
+    if (!smartLinkEntity || !editor) return;
+    const { state, view } = editor;
+    const { selection } = state;
+    const selectedText = state.doc.textBetween(selection.from, selection.to, " ");
+    if (selectedText.toLowerCase() === smartLinkEntity.name.toLowerCase()) {
+      const tr = state.tr.replaceWith(
+        selection.from, selection.to,
+        state.schema.nodes.entityMention.create({
+          id: smartLinkEntity.id,
+          trigger: smartLinkEntity.trigger,
+          label: selectedText,
+          scanned: true,
+        })
+      );
+      view.dispatch(tr);
+      view.focus();
+      setTimeout(handleSmartLinkNext, 10);
+    } else {
+      handleSmartLinkNext();
+    }
+  }, [editor, smartLinkEntity, handleSmartLinkNext]);
+
+  const handleSmartLinkAcceptAll = useCallback(() => {
+    if (!smartLinkEntity || !editor) return;
+    const { state, view } = editor;
+    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    let tr = state.tr;
+    const matches: { from: number; to: number; text: string }[] = [];
+    state.doc.descendants((node, pos) => {
+      if (node.isText) {
+        const text = node.text || "";
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          matches.push({ from: pos + m.index, to: pos + m.index + m[0].length, text: m[0] });
+        }
+      }
+    });
+    matches.sort((a, b) => b.from - a.from);
+    for (const match of matches) {
+      tr = tr.replaceWith(match.from, match.to,
+        state.schema.nodes.entityMention.create({
+          id: smartLinkEntity.id,
+          trigger: smartLinkEntity.trigger,
+          label: match.text,
+          scanned: true,
+        })
+      );
+    }
+    view.dispatch(tr);
+    view.focus();
+    removeCurrentSmartLink();
+  }, [editor, smartLinkEntity, removeCurrentSmartLink]);
+
   useEffect(() => {
     if (!editor || !containerRef.current) return;
     const obs = new ResizeObserver(() => updatePinpoints(editor));
@@ -383,13 +491,14 @@ function RichEditorCore({
         }
       });
       
-      if (found && !smartLinkEntity) {
-        setSmartLinkEntity(found);
+      if (found && smartLinkEntities.length === 0) {
+        setSmartLinkEntities([found]);
+        setActiveSmartLinkIdx(0);
       }
     }, 600); // Give the editor content time to mount and parse
     
     return () => clearTimeout(t);
-  }, [editor, characters, extraEntities, smartLinkEntity]);
+  }, [editor, characters, extraEntities, smartLinkEntities.length]);
 
   // ── Hover + click on mention spans ────────────────────────────────────────
   useEffect(() => {
@@ -687,10 +796,75 @@ function RichEditorCore({
       <MenuBar
         editor={editor}
         showMentionHelp={characters.length > 0}
-        smartLinkEntity={smartLinkEntity}
-        onClearSmartLink={() => setSmartLinkEntity(null)}
       />
       <EditorContent editor={editor} />
+
+      {/* Smart Link floating bar — fixed portal so it persists during scroll */}
+      {smartLinkEntity && editor && createPortal(
+        <div style={floatingSmartBarStyle}>
+          <div style={floatingSmartBarLeft}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5" />
+            </svg>
+            <span style={floatingSmartLabel}>Smart Link</span>
+            <span style={{ ...floatingSmartName, color: smartLinkEntity.color || "var(--color-primary)" }}>
+              {smartLinkEntity.name}
+            </span>
+          </div>
+          <div style={floatingSmartActions}>
+            <button style={floatingSmartBtn} title="Jump to next occurrence" onClick={handleSmartLinkNext}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-active)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+              <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              Next
+            </button>
+            <button style={floatingSmartBtnPrimary} title="Link this occurrence and jump to next" onClick={handleSmartLinkAccept}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}>
+              <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+              Accept
+            </button>
+            <button style={{ ...floatingSmartBtnPrimary, opacity: 0.82 }} title="Link all occurrences in this chapter" onClick={handleSmartLinkAcceptAll}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.82"; }}>
+              <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3" /></svg>
+              Accept All
+            </button>
+            <button style={floatingSmartDismiss} title="Dismiss Smart Link" onClick={removeCurrentSmartLink}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-active)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
+          </div>
+          
+          {/* Queue Navigation */}
+          {smartLinkEntities.length > 1 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 8, paddingLeft: 8, borderLeft: "1px solid var(--border)" }}>
+              {smartLinkEntities.map((entity, i) => (
+                <button
+                  key={entity.id}
+                  onClick={() => setActiveSmartLinkIdx(i)}
+                  title={`Switch to ${entity.name}`}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    background: i === activeSmartLinkIdx ? (entity.color || "var(--color-primary)") : "var(--border)",
+                    opacity: i === activeSmartLinkIdx ? 1 : 0.5,
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = i === activeSmartLinkIdx ? "1" : "0.5"; }}
+                />
+              ))}
+            </div>
+          )}
+        </div>,
+        document.body,
+      )}
 
       {tooltip &&
         createPortal(
@@ -788,6 +962,81 @@ const styles = {
     boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
   },
 } satisfies Record<string, React.CSSProperties>;
+
+// ── Floating Smart Link bar styles (fixed portal) ────────────────────────────
+const floatingSmartBarStyle: React.CSSProperties = {
+  position: "fixed",
+  bottom: 24,
+  left: "50%",
+  transform: "translateX(-50%)",
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "8px 12px",
+  background: "var(--bg-side)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+  zIndex: 1100,
+  flexWrap: "wrap",
+  maxWidth: "90vw",
+};
+const floatingSmartBarLeft: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  flexShrink: 0,
+  color: "var(--text-muted)",
+};
+const floatingSmartLabel: React.CSSProperties = {
+  fontSize: 10,
+  fontWeight: 600,
+  letterSpacing: "0.08em",
+  textTransform: "uppercase",
+  color: "var(--text-muted)",
+};
+const floatingSmartName: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  fontFamily: "var(--font-serif)",
+};
+const floatingSmartActions: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4,
+};
+const floatingSmartBtn: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 5,
+  border: "1px solid var(--border)",
+  borderRadius: 4,
+  cursor: "pointer",
+  fontSize: 11,
+  padding: "3px 9px",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  fontWeight: 500,
+  transition: "background 0.1s ease",
+};
+const floatingSmartBtnPrimary: React.CSSProperties = {
+  ...floatingSmartBtn,
+  background: "var(--color-primary)",
+  border: "1px solid transparent",
+  color: "var(--bg-app)",
+};
+const floatingSmartDismiss: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  border: "none",
+  borderRadius: 4,
+  cursor: "pointer",
+  padding: "4px 5px",
+  background: "transparent",
+  color: "var(--text-muted)",
+  transition: "background 0.1s ease",
+  marginLeft: 2,
+};
 
 // ── Controlled wrapper ────────────────────────────────────────────────────────
 function ControlledRichEditor<T extends FieldValues>({
