@@ -9,6 +9,7 @@ import {
   BugReportIcon,
   CloudSyncIcon,
   DarkModeIcon,
+  FolderOpenIcon,
   LightModeIcon,
   LogoutIcon,
   MenuIcon,
@@ -767,6 +768,15 @@ export default function App() {
             >
               <TimelineIcon sx={{ fontSize: 14 }} />
               Lore Web
+            </button>
+            <button
+              onClick={() => navigate(`/book/${bookId}/assets`)}
+              style={navBtnStyle(
+                location.pathname.startsWith(`/book/${bookId}/assets`),
+              )}
+            >
+              <FolderOpenIcon sx={{ fontSize: 14 }} />
+              Assets
             </button>
             <button
               onClick={() => navigate("/issues")}

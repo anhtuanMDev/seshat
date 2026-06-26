@@ -62,6 +62,14 @@ export default function AIPage() {
     setSelectedBookId,
     contextText,
     isLoadingContext,
+    selectedCharacterIds,
+    setSelectedCharacterIds,
+    selectedEventIds,
+    setSelectedEventIds,
+    selectedChapterIds,
+    setSelectedChapterIds,
+    selectedFileContents,
+    setSelectedFileContents,
   } = useContextBuilder(focusType, focusId);
 
   const {
@@ -323,10 +331,17 @@ export default function AIPage() {
           focusType={focusType}
           focusId={focusId}
           setFocusId={setFocusId}
+          selectedCharacterIds={selectedCharacterIds}
+          setSelectedCharacterIds={setSelectedCharacterIds}
+          selectedEventIds={selectedEventIds}
+          setSelectedEventIds={setSelectedEventIds}
+          selectedChapterIds={selectedChapterIds}
+          setSelectedChapterIds={setSelectedChapterIds}
+          selectedFileContents={selectedFileContents}
+          setSelectedFileContents={setSelectedFileContents}
           aiMode={aiMode}
           setAiMode={(m) => {
             setAiMode(m);
-            // Optionally update the session aiMode
           }}
           expertMode={expertMode}
           setExpertMode={setExpertMode}
@@ -448,6 +463,14 @@ export default function AIPage() {
           focusType={focusType}
           focusId={focusId}
           setFocusId={setFocusId}
+          selectedCharacterIds={selectedCharacterIds}
+          setSelectedCharacterIds={setSelectedCharacterIds}
+          selectedEventIds={selectedEventIds}
+          setSelectedEventIds={setSelectedEventIds}
+          selectedChapterIds={selectedChapterIds}
+          setSelectedChapterIds={setSelectedChapterIds}
+          selectedFileContents={selectedFileContents}
+          setSelectedFileContents={setSelectedFileContents}
           aiMode={aiMode}
           setAiMode={(m) => {
             setAiMode(m);

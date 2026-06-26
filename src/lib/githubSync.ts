@@ -1,5 +1,13 @@
 import { appStore, type BookData } from "../store/appStore";
 
+export interface AssetEntry {
+  filename: string;
+  path: string;
+  sha: string;
+  size: number;
+  mimeType: string;
+}
+
 async function fetchApi(url: string, options?: RequestInit) {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -189,4 +197,136 @@ export const loadFileFromGitHub = async (token: string, bookId: string, path: st
     console.error(`Failed to load file ${path} from GitHub:`, error);
     throw error;
   }
+};
+
+/**
+ * Upload a binary asset file to the book's assets/ folder on GitHub.
+ * The file is base64-encoded in the browser and committed via the Git blobs API.
+ */
+export const uploadAssetToGitHub = async (
+  token: string,
+  bookId: string,
+  file: File,
+): Promise<{ sha: string; path: string; filename: string }> => {
+  return navigator.locks.request("seshat-sync", async () => {
+    // Read file as base64
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const contentBase64 = btoa(binary);
+
+    const response = await fetchApi("/api/github/uploadAsset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        bookId,
+        filename: file.name,
+        contentBase64,
+        mimeType: file.type || "application/octet-stream",
+        lastKnownSha: appStore.lastSyncSha.get(),
+      }),
+    });
+
+    const resData = (await response.json()) as {
+      sha: string;
+      path: string;
+      filename: string;
+    };
+    if (resData.sha) {
+      appStore.lastSyncSha.set(resData.sha);
+    }
+    appStore.lastSyncedCloud.set(Date.now());
+    return resData;
+  });
+};
+
+/**
+ * Upload multiple binary asset files concurrently to the book's assets/ folder on GitHub.
+ */
+export const uploadAssetsToGitHub = async (
+  token: string,
+  bookId: string,
+  files: File[],
+): Promise<{ sha: string; files: { filename: string; mimeType: string }[] }> => {
+  return navigator.locks.request("seshat-sync", async () => {
+    const payloads = await Promise.all(files.map(async (file) => {
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return {
+        filename: file.name,
+        contentBase64: btoa(binary),
+        mimeType: file.type || "application/octet-stream",
+      };
+    }));
+
+    const response = await fetchApi("/api/github/uploadAssets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        bookId,
+        files: payloads,
+        lastKnownSha: appStore.lastSyncSha.get(),
+      }),
+    });
+
+    const resData = (await response.json()) as {
+      sha: string;
+      files: { filename: string; mimeType: string }[];
+    };
+    if (resData.sha) {
+      appStore.lastSyncSha.set(resData.sha);
+    }
+    appStore.lastSyncedCloud.set(Date.now());
+    return resData;
+  });
+};
+
+/**
+ * List all assets stored in the book's assets/ folder on GitHub.
+ */
+export const listAssetsFromGitHub = async (
+  token: string,
+  bookId: string,
+): Promise<AssetEntry[]> => {
+  try {
+    const response = await fetchApi(
+      `/api/github/listAssets?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&t=${Date.now()}`,
+      { cache: "no-store" },
+    );
+    const data = (await response.json()) as {
+      assets: AssetEntry[];
+      branchSha?: string;
+    };
+    if (data.branchSha) {
+      appStore.lastSyncSha.set(data.branchSha);
+    }
+    return data.assets || [];
+  } catch (error) {
+    console.error("Failed to list assets from GitHub:", error);
+    throw error;
+  }
+};
+
+/**
+ * Build a raw GitHub content URL for a given asset path.
+ * Uses the authenticated raw URL via the Contents API.
+ */
+export const buildAssetRawUrl = (
+  bookId: string,
+  filename: string,
+  username: string,
+  githubOwner: string,
+  githubRepo: string,
+): string => {
+  const branch = `user-${username}`;
+  return `https://raw.githubusercontent.com/${githubOwner}/${githubRepo}/${branch}/books/book_${bookId}/assets/${encodeURIComponent(filename)}`;
 };

@@ -46,7 +46,7 @@ export function useChatSessions() {
       return filtered;
     });
     if (activeSessionId === id) {
-      setActiveSessionId((prev) => {
+      setActiveSessionId(() => {
         const remaining = sessions.filter((s) => s.id !== id);
         return remaining.length > 0 ? remaining[0].id : "default";
       });

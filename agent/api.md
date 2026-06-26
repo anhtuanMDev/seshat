@@ -254,6 +254,45 @@ All endpoints are relative to the application origin. The base path is `/api/git
 **Response:**
 - `200 OK` (GET) or `201 Created` (POST) with issue/comment JSON payload from GitHub.
 
+---
+
+### 11. Upload Asset
+
+**Endpoint:** `/api/github/uploadAsset`
+**Method:** `POST`
+**Purpose:** Uploads a binary file to a book's `assets/` directory on GitHub. This creates a new blob directly and updates the tree, enabling robust file management for images, audio, video, and documents.
+
+**Request Form Data (`multipart/form-data`):**
+- `token`: `string`
+- `bookId`: `string`
+- `file`: `File` (The binary file blob)
+
+**Response:**
+- `200 OK` on success, returns `{ "success": true, "sha": "new_commit_sha", "filename": "uploaded_filename.ext", "mimeType": "...", "size": number }`.
+- `409 Conflict` on race conditions (if branch advances).
+- `500 Server Error` if GitHub API blob creation or tree update fails.
+
+---
+
+### 12. List Assets
+
+**Endpoint:** `/api/github/listAssets`
+**Method:** `GET`
+**Purpose:** Fetches a list of all files inside a book's `assets/` folder, returning metadata including filename, MIME type, and file size in bytes, using the GraphQL API to avoid heavy tree operations.
+
+**Query Parameters:**
+- `token`: `string` (URL Encoded)
+- `bookId`: `string` (URL Encoded)
+- `t`: `number` - (Cache Buster) Unix timestamp
+
+**Response:**
+- `200 OK` with JSON:
+  ```typescript
+  {
+    "assets": Array<{ filename: string, mimeType: string, size: number }>
+  }
+  ```
+
 ## Local-First Architecture & Conflict Resolution
 
 Seshat employs a true "Local-First" architecture using `@legendapp/state` and `react-hook-form` connected to Cloudflare Workers. To ensure absolute data safety and offline resilience, the application guarantees the following synchronization flows:
@@ -339,10 +378,15 @@ Several pages operate entirely off the synchronized `appStore` memory without ma
 - **`FightPage.tsx`:** A deterministic combat simulation engine that compares two character states directly in the browser.
 - **`LoreWebPage.tsx`:** Generates a dynamic React Flow graph of relationships, computing the topology entirely client-side using `dagre`.
 
-### 9. AI Feature (`AIPage.tsx`)
+### 9. Assets Management Feature (`AssetsPage.tsx`)
+
+- **APIs Used:** `uploadAsset`, `listAssets`, `loadFile`
+- **Context & Why:** Manages binary files (images, audio, video, documents) completely separately from the `appStore` state. `listAssets` is used to build the filmstrip sidebar. `uploadAsset` bypasses the JSON tree building and pushes binary blobs directly into GitHub via `multipart/form-data`. `loadFile` is repurposed to lazily fetch the binary files (or text files) on-demand to display them in the visual stage preview, utilizing `URL.createObjectURL` to map blobs to native HTML5 `<audio>`, `<video>`, and `<img>` tags.
+
+### 10. AI Feature (`AIPage.tsx`)
 
 - **APIs Used:** `updateFilesOnGitHub` (via "Add to Canon"), Third-Party AI Providers (OpenAI, Anthropic, OpenRouter via direct fetch).
-- **Context & Why:** A standalone workspace where the AI Oracle can be prompted for brainstorming. It implements "Smarter Context Injection," meaning the context sent to the LLM is aggressively filtered. If an entity is queried (via deep-linking URL params `focusType` and `focusId` from the rest of the application), the AI automatically maps its dependency tree (e.g. only characters they know, techniques they use, ignoring unrelated magic systems) instead of feeding the entire Book structure.
+- **Context & Why:** A standalone workspace where the AI Oracle can be prompted for brainstorming. It implements "Smarter Context Injection", meaning the user can granularly select specific Characters, Events, Chapters, and Attached Files to inject, rather than loading the entire world.
 - **Key Sub-Features:**
   - **Context Token Budget:** Real-time calculation of token payload weight, dynamically displayed to the user based on filter logic.
   - **Persona Mode Selector (Expert Prompts):** A UI allowing the user to select predefined expert identities (e.g. Scene Writer, Plot Doctor, Dialogue Coach, Lore Expander). This injects unique heuristics directly into the AI's base prompt to format and focus its responses.
@@ -539,6 +583,14 @@ updateFilesOnGitHub(token: string, bookId: string, files: { path: string; conten
 // Lazy-load a single raw file (used by ChapterPage to fetch draft bodies)
 loadFileFromGitHub(token: string, bookId: string, path: string): Promise<Record<string, unknown>>
 // GET /api/github/loadFile?token=...&bookId=...&path=...
+
+// Upload a binary asset file directly to the book's assets directory
+uploadAssetToGitHub(token: string, bookId: string, file: File): Promise<{ filename: string; mimeType: string; size: number }>
+// POST /api/github/uploadAsset
+
+// List all metadata for files in the assets directory
+listAssetsFromGitHub(token: string, bookId: string): Promise<AssetEntry[]>
+// GET /api/github/listAssets?token=...&bookId=...
 ```
 
 All wrappers re-throw errors so callers can show `showToast("...", "error")` and handle auth redirects (on 401 → clear token from storage → `navigate("/auth")`).

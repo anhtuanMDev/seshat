@@ -1,0 +1,652 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Assets Page — Command-Center Design
+   Layout: horizontal split — compact filmstrip list ║ immersive preview stage
+   Paradigm differs completely from the grid+viewer split of the first design.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Color tokens ─────────────────────────────────────────────────────────── */
+:root,
+[data-theme="light"] {
+  --asset-c-image:     #7c3aed;
+  --asset-c-audio:     #0369a1;
+  --asset-c-video:     #0d9488;
+  --asset-c-doc:       #b45309;
+
+  --ap-panel-bg:       #f7f5f2;
+  --ap-panel-border:   #e6e2db;
+  --ap-row-hover:      #f0eae4;
+  --ap-row-active-bg:  #ffffff;
+  --ap-row-active-border: #2c5282;
+
+  --ap-stage-bg:       #fdfcfb;
+  --ap-stage-border:   #e6e2db;
+  --ap-stage-bar-bg:   rgba(253,252,251,0.92);
+
+  --ap-upload-bg:      #fdfcfb;
+  --ap-upload-border:  #cfcac2;
+  --ap-tab-active-bg:  #2c5282;
+  --ap-tab-active-fg:  #fff;
+
+  --ap-drag-bg:        rgba(44,82,130,0.94);
+  --ap-code-bg:        #f0eae4;
+  --ap-checker-a:      rgba(0,0,0,0.04);
+  --ap-checker-b:      transparent;
+  --ap-search-bg:      rgba(255,255,255,0.6);
+}
+
+[data-theme="dark"] {
+  --asset-c-image:     #a78bfa;
+  --asset-c-audio:     #38bdf8;
+  --asset-c-video:     #2dd4bf;
+  --asset-c-doc:       #fbbf24;
+
+  --ap-panel-bg:       #080808;
+  --ap-panel-border:   #1a1a1a;
+  --ap-row-hover:      #111111;
+  --ap-row-active-bg:  #0d0d0d;
+  --ap-row-active-border: #90cdf4;
+
+  --ap-stage-bg:       #050505;
+  --ap-stage-border:   #1a1a1a;
+  --ap-stage-bar-bg:   rgba(5,5,5,0.92);
+
+  --ap-upload-bg:      #0a0a0a;
+  --ap-upload-border:  #2a2a2a;
+  --ap-tab-active-bg:  #90cdf4;
+  --ap-tab-active-fg:  #000;
+
+  --ap-drag-bg:        rgba(144,205,244,0.92);
+  --ap-code-bg:        #0d0d0d;
+  --ap-checker-a:      rgba(255,255,255,0.025);
+  --ap-checker-b:      transparent;
+  --ap-search-bg:      rgba(255,255,255,0.03);
+}
+
+/* ─── Page ────────────────────────────────────────────────────────────────── */
+.ap-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 0;
+  position: relative;
+  /* Fill the seshat-main scroll area */
+  flex: 1;
+}
+
+/* Drag overlay — covers the entire page */
+.ap-drag-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--ap-drag-bg);
+  color: #fff;
+  font-size: 18px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: 1px;
+  backdrop-filter: blur(4px);
+  border-radius: 10px;
+  pointer-events: none;
+  animation: ap-fade-in 0.15s ease;
+}
+
+[data-theme="dark"] .ap-drag-overlay { color: #000; }
+
+@keyframes ap-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Top command bar ─────────────────────────────────────────────────────── */
+.ap-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 16px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.ap-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ap-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+.ap-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+/* ─── Upload bar ──────────────────────────────────────────────────────────── */
+.ap-upload-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 10px;
+  border: 1px solid var(--ap-upload-border);
+  border-radius: 8px;
+  background: var(--ap-upload-bg);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ap-upload-bar.drag-over {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.ap-upload-bar.busy { opacity: 0.65; }
+
+.ap-upload-icon {
+  color: var(--text-muted) !important;
+  flex-shrink: 0;
+}
+
+.ap-upload-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ap-upload-btn {
+  padding: 3px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg-active);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  letter-spacing: 0.3px;
+}
+
+.ap-upload-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ─── Body split ──────────────────────────────────────────────────────────── */
+.ap-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  border: 1px solid var(--ap-panel-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ─── Left panel: filmstrip list ──────────────────────────────────────────── */
+.ap-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  background: var(--ap-panel-bg);
+}
+
+.ap-body.ap-body--split .ap-panel {
+  width: 260px;
+  border-right: 1px solid var(--ap-panel-border);
+}
+
+@media (max-width: 640px) {
+  .ap-body.ap-body--split { flex-direction: column; }
+  .ap-body.ap-body--split .ap-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--ap-panel-border);
+    max-height: 40vh;
+  }
+}
+
+/* ─── Controls (search + tabs) ────────────────────────────────────────────── */
+.ap-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 10px 0;
+  flex-shrink: 0;
+}
+
+.ap-search {
+  background: var(--ap-search-bg);
+  border: 1px solid var(--ap-panel-border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s ease;
+}
+
+.ap-search:focus {
+  border-color: var(--color-primary);
+}
+
+.ap-search::placeholder { color: var(--text-muted); }
+
+.ap-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.ap-tabs::-webkit-scrollbar { display: none; }
+
+.ap-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font-sans);
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.ap-tab:hover { background: var(--ap-row-hover); color: var(--text-primary); }
+
+.ap-tab.active {
+  background: var(--ap-tab-active-bg);
+  color: var(--ap-tab-active-fg);
+}
+
+.ap-tab-count {
+  opacity: 0.65;
+  font-size: 9px;
+}
+
+/* ─── Filmstrip scroll area ───────────────────────────────────────────────── */
+.ap-film {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 8px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.ap-film::-webkit-scrollbar { width: 4px; }
+.ap-film::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ─── Film row ────────────────────────────────────────────────────────────── */
+.ap-film-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  min-width: 0;
+}
+
+.ap-film-row:hover {
+  background: var(--ap-row-hover);
+}
+
+.ap-film-row.active {
+  background: var(--ap-row-active-bg);
+  border-color: color-mix(in srgb, var(--ap-row-active-border) 40%, transparent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.ap-film-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ap-row-active-border) 8%, var(--bg-active));
+  flex-shrink: 0;
+}
+
+.ap-film-row.active .ap-film-icon {
+  background: color-mix(in srgb, var(--ap-row-active-border) 12%, transparent);
+}
+
+.ap-film-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ap-film-name {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ap-film-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  text-transform: capitalize;
+}
+
+.ap-film-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ap-row-active-border);
+  flex-shrink: 0;
+}
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
+.ap-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  text-align: center;
+}
+
+.ap-empty-title {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ap-empty-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 200px;
+  opacity: 0.8;
+}
+
+/* ─── Stage: preview area ─────────────────────────────────────────────────── */
+.ap-stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: var(--ap-stage-bg);
+}
+
+.ap-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--ap-stage-border);
+  background: var(--ap-stage-bar-bg);
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+}
+
+.ap-stage-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ap-stage-bar-name {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+.ap-stage-bar-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ap-stage-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ap-stage-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.13s ease;
+}
+
+.ap-stage-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+
+.ap-stage-close:hover { color: var(--color-red); }
+
+/* Stage canvas — the main display area */
+.ap-stage-canvas {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ap-stage-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  min-height: 200px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-sans);
+}
+
+.ap-stage-err { color: var(--color-red); }
+.ap-stage-hint { font-size: 11px; color: var(--text-muted); }
+
+/* Image preview — checkerboard for transparency */
+.ap-img-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  min-height: 200px;
+  background:
+    repeating-conic-gradient(
+      var(--ap-checker-a) 0% 25%,
+      var(--ap-checker-b) 0% 50%
+    ) 0 0 / 20px 20px;
+}
+
+.ap-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.14);
+}
+
+/* Audio */
+.ap-audio-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex: 1;
+  min-height: 200px;
+  padding: 40px 24px;
+}
+
+.ap-audio-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--asset-c-audio) 10%, var(--bg-active));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--asset-c-audio);
+}
+
+.ap-audio {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Video */
+.ap-video {
+  width: 100%;
+  flex: 1;
+  min-height: 240px;
+  background: #000;
+  object-fit: contain;
+}
+
+/* PDF */
+.ap-pdf {
+  width: 100%;
+  flex: 1;
+  min-height: 400px;
+  border: none;
+}
+
+/* Text */
+.ap-text {
+  margin: 0;
+  padding: 20px;
+  background: var(--ap-code-bg);
+  color: var(--text-secondary);
+  font-family: "JetBrains Mono", "Fira Mono", monospace;
+  font-size: 11.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+}
+
+/* ─── Stage placeholder (split mode, nothing selected) ────────────────────── */
+.ap-stage-placeholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ap-stage-bg);
+  border-left: 1px solid var(--ap-stage-border);
+}
+
+.ap-placeholder-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.25;
+  user-select: none;
+}
+
+.ap-placeholder-icon {
+  color: var(--text-muted);
+}
+
+.ap-placeholder-text {
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--text-muted);
+}
+
+/* ─── Spinner ─────────────────────────────────────────────────────────────── */
+.ap-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: ap-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+.ap-spinner--sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+@keyframes ap-spin { to { transform: rotate(360deg); } }

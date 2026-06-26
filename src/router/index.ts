@@ -20,6 +20,8 @@ const IssuesPage = lazy(() => import("../pages/IssuesPage"));
 const IssueDetailPage = lazy(() => import("../pages/IssueDetailPage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const AIPage = lazy(() => import("../pages/AIPage"));
+const AssetsPage = lazy(() => import("../pages/AssetsPage"));
+
 
 // Fallback spinner element (React Element constant)
 const PageLoading = createElement(
@@ -214,6 +216,14 @@ export const router = createBrowserRouter([
               Suspense,
               { fallback: PageLoading },
               createElement(LoreWebPage),
+            ),
+          },
+          {
+            path: "assets",
+            element: createElement(
+              Suspense,
+              { fallback: PageLoading },
+              createElement(AssetsPage),
             ),
           },
           {
