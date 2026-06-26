@@ -188,22 +188,33 @@ All endpoints are relative to the application origin. The base path is `/api/git
 
 ---
 
-### 8. Load Specific File
+### 8. Load / Stream Specific File
 
 **Endpoint:** `/api/github/loadFile`
 **Method:** `GET`
-**Purpose:** Lazily loads the raw contents of a specific file inside a book directory without fetching the entire book payload. Uses a GraphQL Blob query to directly fetch the plain text, bypassing the REST Contents API's 1MB file size limit and eliminating the need for base64 decoding.
+**Purpose:** Serves any file inside a book's directory — text files as proxied JSON, binary assets as streamed bytes. Implements a three-tier routing strategy depending on the file type.
 
 **Query Parameters:**
-
 - `token`: `string` (URL Encoded)
 - `bookId`: `string` (URL Encoded)
-- `path`: `string` (URL Encoded)
-- `t`: `number` - (Cache Buster) Unix timestamp to ensure a fresh file fetch.
+- `path`: `string` (URL Encoded) — relative to `books/book_<bookId>/` (e.g. `assets/video.mp4`)
+- `t`: `number` — (Cache Buster) Unix timestamp.
+
+**⚡ Three-Tier Routing Strategy** (implemented in `functions/api/github/loadFile.ts`):
+
+> **Why three tiers?** Browsers strip HTTP Basic Auth credentials (`token@hostname`) from cross-origin `Location` redirect URLs when loading `<video>` / `<audio>` elements. A plain 302 redirect to `https://token@raw.githubusercontent.com/...` arrives at GitHub unauthenticated → 404 → blank player.
+
+| Tier | Extensions | Method | Reason |
+|---|---|---|---|
+| **A — Streaming Proxy** | `mp4 webm mov avi mkv ogv mp3 wav m4a flac ogg` | Worker fetches `raw.githubusercontent.com` with `Authorization: Bearer <token>`, pipes `upstream.body` directly | Cannot redirect for media — auth gets stripped. Piping is memory-free (runtime handles stream, not JS) |
+| **B — Contents API Proxy** | Images, text, pdf, docx (non-Range requests) | Worker fetches Contents API (`Accept: application/vnd.github.raw`), proxies response | Keeps private files behind auth; fine for small files |
+| **C — Redirect** | Everything else / Range requests on non-media | `302` to `https://token@raw.githubusercontent.com/...` | Credentials work for non-media fetch/iframe targets |
+
+**CPU/Memory note:** Tier A streaming uses near-zero CPU — only the initial `fetch()` setup is JS; the body pipe is handled by the runtime. This is safe on the Cloudflare free tier (10ms CPU limit only counts active JS execution).
 
 **Response:**
-
-- `200 OK` with JSON payload representing the file contents.
+- `200 OK` or `206 Partial Content` (Range request) — `Content-Type` matches file extension, `Accept-Ranges: bytes` always set for media, `Content-Length` / `Content-Range` forwarded from GitHub upstream.
+- For Tier B (text/JSON files): `200 OK` with the raw file body.
 
 ---
 
@@ -278,7 +289,7 @@ All endpoints are relative to the application origin. The base path is `/api/git
 
 **Endpoint:** `/api/github/listAssets`
 **Method:** `GET`
-**Purpose:** Fetches a list of all files inside a book's `assets/` folder, returning metadata including filename, MIME type, and file size in bytes, using the GraphQL API to avoid heavy tree operations.
+**Purpose:** Fetches a list of all files inside a book's `assets/` folder, returning metadata including filename, MIME type, SHA, and file size using the GraphQL API.
 
 **Query Parameters:**
 - `token`: `string` (URL Encoded)
@@ -289,9 +300,37 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `200 OK` with JSON:
   ```typescript
   {
-    "assets": Array<{ filename: string, mimeType: string, size: number }>
+    "assets": Array<{ filename: string, mimeType: string, size: number, sha: string }>
   }
   ```
+
+**⚠️ MIME Map Dependency:** The `mimeType` field is derived from a static `MIME_MAP` in `listAssets.ts`. If a file extension is missing from this map, it falls back to `application/octet-stream`. This causes `categorize()` to return `"other"` → the file appears under the "Other" tab instead of "Video"/"Audio" → the `<video>`/`<audio>` element is never rendered → "Preview unavailable".
+
+Both `listAssets.ts` **and** `loadFile.ts` must maintain matching, complete MIME maps. Current coverage: `png jpg jpeg gif webp svg` (images), `pdf txt md doc docx` (documents), `mp3 wav m4a flac ogg` (audio), `mp4 webm mov avi mkv ogv` (video), `zip` (archives).
+
+---
+
+### 13. Delete File(s)
+
+**Endpoint:** `/api/github/deleteFile`
+**Method:** `POST`
+**Purpose:** Deletes one or more files from a book's directory in a single atomic Git commit. Supports both single-file deletion (via `path`) and bulk deletion (via `paths[]`).
+
+**Request Body (JSON):**
+```typescript
+{
+  "token": "string",
+  "bookId": "string",
+  "path"?: "string",     // Single file path (e.g. "assets/image.png")
+  "paths"?: string[]    // Multiple file paths for batch deletion
+}
+```
+Either `path` or `paths` must be provided.
+
+**Response:**
+- `200 OK` on success, returns `{ "success": true, "sha": "new_commit_sha" }`.
+- `409 Conflict` on concurrent race condition.
+- `500 Server Error` if GitHub API fails.
 
 ## Local-First Architecture & Conflict Resolution
 
@@ -380,10 +419,76 @@ Several pages operate entirely off the synchronized `appStore` memory without ma
 
 ### 9. Assets Management Feature (`AssetsPage.tsx`)
 
-- **APIs Used:** `uploadAsset`, `listAssets`, `loadFile`
-- **Context & Why:** Manages binary files (images, audio, video, documents) completely separately from the `appStore` state. `listAssets` is used to build the filmstrip sidebar. `uploadAsset` bypasses the JSON tree building and pushes binary blobs directly into GitHub via `multipart/form-data`. `loadFile` is repurposed to lazily fetch the binary files (or text files) on-demand to display them in the visual stage preview, utilizing `URL.createObjectURL` to map blobs to native HTML5 `<audio>`, `<video>`, and `<img>` tags.
+- **APIs Used:** `uploadAssetsToGitHub`, `listAssetsFromGitHub`, `loadFile` (direct fetch), `deleteFile` (direct fetch)
+- **Context & Why:** Manages binary files (images, audio, video, documents) completely separately from the `appStore` state.
+  - `listAssetsFromGitHub` builds the filmstrip sidebar. The `mimeType` returned by this API determines which tab the file appears in AND which preview element (`<video>`, `<audio>`, `<img>`, etc.) is rendered. Missing MIME entries → "Preview unavailable".
+  - `uploadAssetsToGitHub` accepts `File[]` and pushes all files as a single Git commit via the Trees API.
+  - `loadFile` (direct `fetch` to `/api/github/loadFile?...`) serves binary data using the **Three-Tier Routing Strategy** (see Endpoint 8). Video/audio are streamed through the Worker with a `Range`-forwarding proxy; small files proxy via Contents API.
+  - `deleteFile` (direct `fetch` to `/api/github/deleteFile`) deletes assets. Supports bulk deletion via `paths[]` in one commit.
+- **Bulk Delete UI Pattern:** Uses a two-step inline confirmation (`confirmingDelete: boolean` state) — no `window.confirm()`. First click arms the bar (turns red, shows warning label); second click executes. Selection changes reset the confirm state with a 200ms debounce to prevent flicker.
+- **Drag-and-Drop:** An `isInternalDragRef` prevents native browser image drags from triggering the upload handler. Only external file drops call `uploadAssetsToGitHub`.
+
+#### §9a — File Preview Pipeline (`Stage` component)
+
+The `Stage` component (`AssetsPage.tsx`) handles previewing a selected asset. It uses a decision tree driven by `categorize(mimeType)` and file size to choose the correct rendering strategy.
+
+**Preview Size Cap:** `MAX_PREVIEW_SIZE = 70 MB`. Files exceeding this size immediately short-circuit with an error state — no fetch is made.
+
+**Decision tree (runs inside a `useEffect` that re-fires on `asset.filename` change):**
+
+```
+asset.size > 70MB?
+  → show "The file too big" error
+
+categorize(mimeType) === "video" OR "audio"?  (isStreamable = true)
+  → skip fetch entirely
+  → set isLoading = false
+  → render <video src={apiUrl}> or <audio src={apiUrl}>
+    where apiUrl = /api/github/loadFile?token=...&bookId=...&path=assets/<filename>
+    The Worker's Tier A Streaming Proxy handles auth and Range requests.
+
+asset.filename ends with ".docx"?
+  → fetch blob → blob.arrayBuffer()
+  → mammoth.convertToHtml({ arrayBuffer })
+  → render <div dangerouslySetInnerHTML={{ __html: result.value }} className="ap-docx">
+
+categorize === "document" OR "other" (non-docx)?
+  → fetch as text → render <pre className="ap-text">
+
+mimeType === "application/pdf"?
+  → fetch blob → URL.createObjectURL(blob)
+  → render <iframe src={objectUrl}>
+
+categorize === "image" (all others)?
+  → fetch blob → URL.createObjectURL(blob)
+  → render <img src={objectUrl}>
+```
+
+**Blob lifecycle:** `URL.createObjectURL()` is called for images and PDFs. The cleanup function in the `useEffect` calls `URL.revokeObjectURL(objectUrl)` when the user selects a different file, preventing memory leaks.
+
+**`apiUrl` construction:**
+```ts
+`/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(`assets/${asset.filename}`)}`
+```
+- Used directly as `src` for `<video>` and `<audio>` (streaming proxy handles seeking via Range headers)
+- Used as the `fetch` URL (with `&t=Date.now()` cache-buster appended) for blob/text downloads
+- Used as the `href` for the Download button
+
+**Rendering elements per category:**
+
+| Category | Element | Data source |
+|---|---|---|
+| `video` | `<video controls src={apiUrl}>` | Direct API URL (streaming proxy) |
+| `audio` | `<audio controls src={apiUrl}>` | Direct API URL (streaming proxy) |
+| `image` | `<img src={objectUrl}>` | `URL.createObjectURL(blob)` |
+| `document` (`.docx`) | `<div dangerouslySetInnerHTML>` | mammoth HTML conversion |
+| `document` / `other` (text) | `<pre>` | `response.text()` |
+| `pdf` | `<iframe src={objectUrl}>` | `URL.createObjectURL(blob)` |
+
+**Slide-in animation:** A separate `useEffect` fires on `asset.filename` change to animate the stage panel sliding in from the right (`translateX(12px) → 0`, `opacity 0 → 1`, 240ms ease).
 
 ### 10. AI Feature (`AIPage.tsx`)
+
 
 - **APIs Used:** `updateFilesOnGitHub` (via "Add to Canon"), Third-Party AI Providers (OpenAI, Anthropic, OpenRouter via direct fetch).
 - **Context & Why:** A standalone workspace where the AI Oracle can be prompted for brainstorming. It implements "Smarter Context Injection", meaning the user can granularly select specific Characters, Events, Chapters, and Attached Files to inject, rather than loading the entire world.
@@ -584,13 +689,14 @@ updateFilesOnGitHub(token: string, bookId: string, files: { path: string; conten
 loadFileFromGitHub(token: string, bookId: string, path: string): Promise<Record<string, unknown>>
 // GET /api/github/loadFile?token=...&bookId=...&path=...
 
-// Upload a binary asset file directly to the book's assets directory
-uploadAssetToGitHub(token: string, bookId: string, file: File): Promise<{ filename: string; mimeType: string; size: number }>
-// POST /api/github/uploadAsset
+// Upload one or more binary asset files as a single Git commit
+uploadAssetsToGitHub(token: string, bookId: string, files: File[]): Promise<void>
+// Calls POST /api/github/uploadAsset for each file (Trees API, one commit per file currently)
 
 // List all metadata for files in the assets directory
 listAssetsFromGitHub(token: string, bookId: string): Promise<AssetEntry[]>
 // GET /api/github/listAssets?token=...&bookId=...
+// AssetEntry: { filename: string, mimeType: string, size: number, sha: string }
 ```
 
 All wrappers re-throw errors so callers can show `showToast("...", "error")` and handle auth redirects (on 401 → clear token from storage → `navigate("/auth")`).
