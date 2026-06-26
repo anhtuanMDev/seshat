@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   AttachFileIcon,
@@ -23,6 +23,8 @@ import { showToast } from "../store/toastStore";
 import "./assets-page.css";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
+
+const MAX_PREVIEW_SIZE = 70 * 1024 * 1024; // 70 MB — matches server limit
 
 const getToken = (): string | null =>
   localStorage.getItem("seshat-auth-token") ||
@@ -103,9 +105,38 @@ function Stage({
   const { objectUrl, textContent, isLoading, loadErr } = state;
   const stageRef = useRef<HTMLDivElement>(null);
   const cat = categorize(asset.mimeType);
+  const isStreamable = cat === "video" || cat === "audio";
+  const apiUrl = useMemo(() => {
+    if (!token) return "";
+    return `/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(`assets/${asset.filename}`)}`;
+  }, [token, bookId, asset.filename]);
 
   useEffect(() => {
     if (!token) return;
+
+    if (asset.size > MAX_PREVIEW_SIZE) {
+      setState({
+        objectUrl: null,
+        textContent: null,
+        isLoading: false,
+        loadErr: "The file too big",
+      });
+      return;
+    }
+
+    // Streamable media (video/audio) uses the API URL directly — no blob loading
+    if (isStreamable) {
+      setState({
+        objectUrl: null,
+        textContent: null,
+        isLoading: false,
+        loadErr: null,
+      });
+      return;
+    }
+
+    const fetchUrl = `${apiUrl}&t=${Date.now()}`;
+
     setTimeout(
       () =>
         setState({
@@ -117,11 +148,9 @@ function Stage({
       0,
     );
 
-    const apiUrl = `/api/github/loadFile?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&path=${encodeURIComponent(`assets/${asset.filename}`)}&t=${Date.now()}`;
-
     if (cat === "document" || cat === "other") {
       if (asset.filename.endsWith(".docx")) {
-        fetch(apiUrl, { cache: "no-store" })
+        fetch(fetchUrl, { cache: "no-store" })
           .then((r) => r.blob())
           .then(async (blob) => {
             try {
@@ -149,7 +178,7 @@ function Stage({
             })),
           );
       } else {
-        fetch(apiUrl, { cache: "no-store" })
+        fetch(fetchUrl, { cache: "no-store" })
           .then((r) => r.text())
           .then((t) =>
             setState((p) => ({ ...p, textContent: t, isLoading: false })),
@@ -163,13 +192,14 @@ function Stage({
           );
       }
     } else {
-      fetch(apiUrl, { cache: "no-store" })
+      fetch(fetchUrl, { cache: "no-store" })
         .then((r) => r.blob())
         .then((blob) => {
-          const url = URL.createObjectURL(
-            new Blob([blob], { type: asset.mimeType }),
-          );
-          setState((p) => ({ ...p, objectUrl: url, isLoading: false }));
+          setState((p) => ({
+            ...p,
+            objectUrl: URL.createObjectURL(blob),
+            isLoading: false,
+          }));
         })
         .catch(() =>
           setState((p) => ({
@@ -212,10 +242,10 @@ function Stage({
           <span className="ap-stage-bar-meta">{formatBytes(asset.size)}</span>
         </div>
         <div className="ap-stage-bar-actions">
-          {objectUrl && (
+          {apiUrl && (
             <a
               className="ap-stage-icon-btn"
-              href={objectUrl}
+              href={apiUrl}
               download={asset.filename}
               title="Download"
             >
@@ -248,17 +278,17 @@ function Stage({
             <img src={objectUrl} alt={asset.filename} className="ap-img" />
           </div>
         )}
-        {!isLoading && !loadErr && cat === "audio" && objectUrl && (
+        {!isLoading && !loadErr && cat === "audio" && (
           <div className="ap-audio-wrap">
             <div className="ap-audio-icon">
               <AudiotrackIcon sx={{ fontSize: 72 }} />
             </div>
-            <audio controls src={objectUrl} className="ap-audio" />
+            <audio controls src={apiUrl} className="ap-audio" />
             <span className="ap-stage-hint">{asset.filename}</span>
           </div>
         )}
-        {!isLoading && !loadErr && cat === "video" && objectUrl && (
-          <video controls src={objectUrl} className="ap-video" />
+        {!isLoading && !loadErr && cat === "video" && (
+          <video controls src={apiUrl} className="ap-video" />
         )}
         {!isLoading &&
           !loadErr &&
