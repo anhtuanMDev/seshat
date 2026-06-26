@@ -281,7 +281,10 @@ function RichEditorCore({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: false,
+        underline: false,
+      }),
       Underline,
       Link.configure({ openOnClick: false }),
       Highlight,
@@ -298,7 +301,15 @@ function RichEditorCore({
     ],
     content,
     editorProps: {
+      handleKeyDown(view, event) {
+        console.log(`[EDITOR EVENT] KeyDown: key="${event.key}" code="${event.code}"`);
+        console.log(`[EDITOR STATE] Selection: from=${view.state.selection.from} to=${view.state.selection.to} empty=${view.state.selection.empty}`);
+        console.log(`[EDITOR STATE] Active DOM Element:`, document.activeElement);
+        // Let ProseMirror handle the event normally
+        return false;
+      },
       handlePaste(view, event) {
+        console.log(`[EDITOR EVENT] Paste`);
         const text = event.clipboardData?.getData("text/plain");
         if (text) {
           const isHtml =
@@ -318,7 +329,8 @@ function RichEditorCore({
         return false;
       },
     },
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor, transaction }) => {
+      console.log(`[EDITOR UPDATE] Document changed! Steps:`, transaction.steps.length);
       onChange?.(editor.getHTML());
       updatePinpoints(editor);
     },
@@ -329,10 +341,31 @@ function RichEditorCore({
       if (characters.length === 0) return;
       const { state } = editor;
       const { selection } = state;
+      
+      console.log(`[EDITOR EVENT] SelectionUpdate: from=${selection.from} to=${selection.to} empty=${selection.empty}`);
+      
       if (selection.empty) {
         closeScanLink();
         return;
       }
+
+      // ⚠️ Bail out if the selection spans any entityMention atom nodes.
+      // Calling textBetween across an atom causes ProseMirror to insert a
+      // separator into the doc, which triggers a phantom document-change
+      // and collapses the selection — this was the root cause of lost keystrokes.
+      let selectionContainsMention = false;
+      state.doc.nodesBetween(selection.from, selection.to, (node) => {
+        if (node.type.name === "entityMention") {
+          selectionContainsMention = true;
+          return false;
+        }
+      });
+      if (selectionContainsMention) {
+        console.log(`[EDITOR EVENT] SelectionUpdate SKIPPED — selection spans an entityMention node`);
+        closeScanLink();
+        return;
+      }
+
       const selectedText = state.doc
         .textBetween(selection.from, selection.to, " ")
         .trim();
