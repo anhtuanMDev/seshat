@@ -233,7 +233,15 @@ function Stage({
   }, [asset.filename]);
 
   return (
-    <div className="ap-stage" ref={stageRef}>
+    <div
+      className="ap-stage"
+      ref={stageRef}
+      onDragOver={(e) => e.stopPropagation()}
+      onDrop={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+      }}
+    >
       {/* Stage topbar */}
       <div className="ap-stage-bar">
         <div className="ap-stage-bar-info">
