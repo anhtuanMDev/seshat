@@ -344,14 +344,13 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 9px 10px;
+  padding: 4px 6px 4px 8px;
   border-radius: 7px;
   border: 1px solid transparent;
   background: transparent;
   text-align: left;
-  cursor: pointer;
   transition:
     background 0.12s ease,
     border-color 0.12s ease;
@@ -422,6 +421,127 @@
   border-radius: 50%;
   background: var(--ap-row-active-border);
   flex-shrink: 0;
+}
+
+/* The inner button (wraps icon + info) */
+.ap-film-row-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Checkbox — hidden until row is hovered or checked */
+.ap-film-check {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--ap-row-active-border);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.ap-film-row:hover .ap-film-check,
+.ap-film-row--checked .ap-film-check {
+  opacity: 1;
+}
+
+/* Checked row highlight */
+.ap-film-row--checked {
+  background: color-mix(in srgb, var(--ap-row-active-border) 8%, transparent);
+  border-color: color-mix(in srgb, var(--ap-row-active-border) 25%, transparent);
+}
+
+/* ─── Bulk-action bar ─────────────────────────────────────────────────────── */
+.ap-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid var(--ap-panel-border);
+  border-bottom: 1px solid var(--ap-panel-border);
+  background: color-mix(in srgb, var(--ap-row-active-border) 6%, var(--ap-panel-bg));
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.ap-bulk-bar--confirm {
+  background: color-mix(in srgb, var(--color-red) 8%, var(--ap-panel-bg));
+  border-top-color: color-mix(in srgb, var(--color-red) 20%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--color-red) 20%, transparent);
+}
+
+.ap-bulk-confirm-label {
+  font-size: 11px;
+  color: var(--color-red);
+  font-family: var(--font-sans);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ap-bulk-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  flex: 1;
+  white-space: nowrap;
+}
+
+.ap-bulk-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--color-red) 40%, transparent);
+  background: color-mix(in srgb, var(--color-red) 8%, transparent);
+  color: var(--color-red);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.ap-bulk-delete-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-red) 16%, transparent);
+}
+
+.ap-bulk-delete-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ap-bulk-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  flex-shrink: 0;
+}
+
+.ap-bulk-clear-btn:hover {
+  background: var(--ap-row-hover);
+  color: var(--text-primary);
+  border-color: var(--border);
 }
 
 /* ─── Empty state ─────────────────────────────────────────────────────────── */

@@ -4,6 +4,7 @@ import {
   AttachFileIcon,
   AudiotrackIcon,
   CloseIcon,
+  DeleteIcon,
   DescriptionIcon,
   DownloadIcon,
   FolderOpenIcon,
@@ -89,10 +90,12 @@ function Stage({
   asset,
   bookId,
   onClose,
+  onDelete,
 }: {
   asset: AssetEntry;
   bookId: string;
   onClose: () => void;
+  onDelete: () => void;
 }) {
   const token = getToken();
   const [state, setState] = useState<{
@@ -104,6 +107,37 @@ function Stage({
 
   const { objectUrl, textContent, isLoading, loadErr } = state;
   const stageRef = useRef<HTMLDivElement>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${asset.filename}?`))
+      return;
+    setIsDeleting(true);
+    try {
+      const token = getToken();
+      if (!token) throw new Error("Unauthorized");
+      const res = await fetch("/api/github/deleteFile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          bookId,
+          path: `assets/${asset.filename}`,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete");
+      }
+      onDelete();
+    } catch (e) {
+      console.error(e);
+      alert((e as Error).message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const cat = categorize(asset.mimeType);
   const isStreamable = cat === "video" || cat === "audio";
   const apiUrl = useMemo(() => {
@@ -250,6 +284,18 @@ function Stage({
           <span className="ap-stage-bar-meta">{formatBytes(asset.size)}</span>
         </div>
         <div className="ap-stage-bar-actions">
+          <button
+            className="ap-stage-icon-btn"
+            onClick={handleDelete}
+            title="Delete"
+            disabled={isDeleting}
+            style={{
+              color: isDeleting ? "var(--text-muted)" : "var(--color-red)",
+              opacity: isDeleting ? 0.5 : 1,
+            }}
+          >
+            <DeleteIcon sx={{ fontSize: 15 }} />
+          </button>
           {apiUrl && (
             <a
               className="ap-stage-icon-btn"
@@ -331,30 +377,43 @@ function Stage({
 function FilmRow({
   asset,
   isActive,
+  isChecked,
+  onCheck,
   onClick,
 }: {
   asset: AssetEntry;
   isActive: boolean;
+  isChecked: boolean;
+  onCheck: (sha: string, checked: boolean) => void;
   onClick: () => void;
 }) {
   const cat = categorize(asset.mimeType);
   return (
-    <button
-      className={`ap-film-row ${isActive ? "active" : ""} ap-film-row--${cat}`}
-      onClick={onClick}
+    <div
+      className={`ap-film-row ${isActive ? "active" : ""} ${isChecked ? "ap-film-row--checked" : ""} ap-film-row--${cat}`}
       title={asset.filename}
     >
-      <div className="ap-film-icon">
-        <FileTypeIcon mimeType={asset.mimeType} size={16} />
-      </div>
-      <div className="ap-film-info">
-        <span className="ap-film-name">{asset.filename}</span>
-        <span className="ap-film-meta">
-          {cat} · {formatBytes(asset.size)}
-        </span>
-      </div>
-      {isActive && <div className="ap-film-dot" />}
-    </button>
+      <input
+        type="checkbox"
+        className="ap-film-check"
+        checked={isChecked}
+        onChange={(e) => onCheck(asset.sha, e.target.checked)}
+        onClick={(e) => e.stopPropagation()}
+        aria-label={`Select ${asset.filename}`}
+      />
+      <button className="ap-film-row-btn" onClick={onClick}>
+        <div className="ap-film-icon">
+          <FileTypeIcon mimeType={asset.mimeType} size={16} />
+        </div>
+        <div className="ap-film-info">
+          <span className="ap-film-name">{asset.filename}</span>
+          <span className="ap-film-meta">
+            {cat} · {formatBytes(asset.size)}
+          </span>
+        </div>
+        {isActive && <div className="ap-film-dot" />}
+      </button>
+    </div>
   );
 }
 
@@ -429,7 +488,10 @@ export default function AssetsPage() {
   const [assets, setAssets] = useState<AssetEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [selected, setSelected] = useState<AssetEntry | null>(null);
+  const [checkedShas, setCheckedShas] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FileCategory>("all");
   const [search, setSearch] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
@@ -474,6 +536,55 @@ export default function AssetsPage() {
     },
     [bookId, loadAssets],
   );
+
+  const handleCheck = useCallback((sha: string, checked: boolean) => {
+    setCheckedShas((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(sha);
+      else next.delete(sha);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = useCallback(async () => {
+    const toDelete = assets.filter((a) => checkedShas.has(a.sha));
+    if (!toDelete.length) return;
+    const token = getToken();
+    if (!token || !bookId) return;
+    setIsDeleting(true);
+    setConfirmingDelete(false);
+    try {
+      const res = await fetch("/api/github/deleteFile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          bookId,
+          paths: toDelete.map((a) => `assets/${a.filename}`),
+        }),
+      });
+      if (!res.ok) {
+        const err = (await res.json()) as { error: string };
+        throw new Error(err.error || "Failed to delete");
+      }
+      const deletedShas = new Set(toDelete.map((a) => a.sha));
+      setAssets((prev) => prev.filter((a) => !deletedShas.has(a.sha)));
+      setCheckedShas(new Set());
+      if (selected && deletedShas.has(selected.sha)) setSelected(null);
+      showToast(`Deleted ${toDelete.length} file(s)`, "success");
+    } catch (e) {
+      showToast((e as Error).message, "error");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [assets, checkedShas, bookId, selected]);
+
+  // Clear confirm state whenever selection changes
+  useEffect(() => {
+    setTimeout(() => {
+      setConfirmingDelete(false);
+    }, 200);
+  }, [checkedShas.size]);
 
   // Track drags that start within the page (e.g. native image drag)
   const handleDragStart = () => {
@@ -525,6 +636,13 @@ export default function AssetsPage() {
   };
 
   const hasFiles = filtered.length > 0;
+
+  const handleCheckAll = useCallback(
+    (check: boolean) => {
+      setCheckedShas(check ? new Set(filtered.map((a) => a.sha)) : new Set());
+    },
+    [filtered],
+  );
 
   return (
     <div
@@ -587,6 +705,75 @@ export default function AssetsPage() {
             </div>
           </div>
 
+          {/* Bulk-action bar — visible when at least one item is checked */}
+          {checkedShas.size > 0 && (
+            <div
+              className={`ap-bulk-bar ${confirmingDelete ? "ap-bulk-bar--confirm" : ""}`}
+            >
+              {confirmingDelete ? (
+                /* ── Confirm mode ── */
+                <>
+                  <span className="ap-bulk-confirm-label">
+                    Delete {checkedShas.size} file
+                    {checkedShas.size > 1 ? "s" : ""}? This cannot be undone.
+                  </span>
+                  <button
+                    className="ap-bulk-delete-btn"
+                    onClick={handleBulkDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <div className="ap-spinner ap-spinner--sm" />
+                    ) : (
+                      <DeleteIcon sx={{ fontSize: 14 }} />
+                    )}
+                    {isDeleting ? "Deleting…" : "Yes, delete"}
+                  </button>
+                  <button
+                    className="ap-bulk-clear-btn"
+                    onClick={() => setConfirmingDelete(false)}
+                    title="Cancel"
+                  >
+                    <CloseIcon sx={{ fontSize: 12 }} />
+                  </button>
+                </>
+              ) : (
+                /* ── Normal mode ── */
+                <>
+                  <input
+                    type="checkbox"
+                    className="ap-film-check"
+                    checked={
+                      checkedShas.size === filtered.length &&
+                      filtered.length > 0
+                    }
+                    onChange={(e) => handleCheckAll(e.target.checked)}
+                    aria-label="Select all"
+                  />
+                  <span className="ap-bulk-count">
+                    {checkedShas.size} selected
+                  </span>
+                  <button
+                    className="ap-bulk-delete-btn"
+                    onClick={() => setConfirmingDelete(true)}
+                    disabled={isDeleting}
+                    title="Delete selected"
+                  >
+                    <DeleteIcon sx={{ fontSize: 14 }} />
+                    Delete
+                  </button>
+                  <button
+                    className="ap-bulk-clear-btn"
+                    onClick={() => setCheckedShas(new Set())}
+                    title="Clear selection"
+                  >
+                    <CloseIcon sx={{ fontSize: 12 }} />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* File list */}
           <div className="ap-film">
             {isLoading && (
@@ -628,6 +815,8 @@ export default function AssetsPage() {
                   key={asset.sha}
                   asset={asset}
                   isActive={selected?.sha === asset.sha}
+                  isChecked={checkedShas.has(asset.sha)}
+                  onCheck={handleCheck}
                   onClick={() =>
                     setSelected((p) => (p?.sha === asset.sha ? null : asset))
                   }
@@ -642,6 +831,10 @@ export default function AssetsPage() {
             asset={selected}
             bookId={bookId!}
             onClose={() => setSelected(null)}
+            onDelete={() => {
+              setAssets((prev) => prev.filter((a) => a.sha !== selected.sha));
+              setSelected(null);
+            }}
           />
         )}
 
