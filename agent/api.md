@@ -216,6 +216,9 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `200 OK` or `206 Partial Content` (Range request) — `Content-Type` matches file extension, `Accept-Ranges: bytes` always set for media, `Content-Length` / `Content-Range` forwarded from GitHub upstream.
 - For Tier B (text/JSON files): `200 OK` with the raw file body.
 
+> [!WARNING]
+> **Known Tech Debt — Dual MIME maps.** Both `loadFile.ts` and `listAssets.ts` maintain separate, independent MIME maps. A format added to one but not the other causes silent breakage (e.g. file previews as "Preview unavailable" or misroutes to redirect instead of streaming). **Fix:** extract a shared `functions/api/github/mimeMap.ts` module and import it in both files.
+
 ---
 
 ### 9. Export Chapters (Bulk Fetch)
@@ -238,6 +241,9 @@ All endpoints are relative to the application origin. The base path is `/api/git
     "chapters": Array<{ id: string, title: string, body: string, drafts: any[] }>
   }
   ```
+
+> [!WARNING]
+> **Known Gap — Stale `lastSyncSha` after export.** This endpoint does not return a `branchSha`, so `appStore.lastSyncSha` is not updated after a bulk export. If the user exports then immediately edits and saves, the next `updateFile` call will fire with a stale SHA and receive an unexpected `409 Conflict`. **Fix:** return `branchSha` from this endpoint and update `appStore.lastSyncSha` on the client after export completes.
 
 ---
 
@@ -282,6 +288,9 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `200 OK` on success, returns `{ "success": true, "sha": "new_commit_sha", "filename": "uploaded_filename.ext", "mimeType": "...", "size": number }`.
 - `409 Conflict` on race conditions (if branch advances).
 - `500 Server Error` if GitHub API blob creation or tree update fails.
+
+> [!WARNING]
+> **Known Tech Debt — One commit per file.** The client currently calls this endpoint once per file. Uploading 10 images = 10 Git commits + 10 API round-trips. **Fix:** batch-create all blobs in parallel, then build one Git tree (following the `updateFiles.ts` pattern) and commit once. This reduces API usage and keeps commit history clean.
 
 ---
 
@@ -487,11 +496,17 @@ categorize === "image" (all others)?
 
 **Slide-in animation:** A separate `useEffect` fires on `asset.filename` change to animate the stage panel sliding in from the right (`translateX(12px) → 0`, `opacity 0 → 1`, 240ms ease).
 
+> [!WARNING]
+> **Known Tech Debt — `window.confirm` in single-file delete.** The `handleDelete` function inside the `Stage` component still uses `window.confirm()` for the individual file delete action. Only the bulk delete flow was upgraded to the inline two-step confirm pattern (`confirmingDelete` state). **Fix:** Replace `window.confirm` with the inline confirm pattern (or the `Modal` component from `src/components/ui/Modal.tsx`) to match UX Conventions (see Seshat.md §15 — "No Native Dialogs").
+
 ### 10. AI Feature (`AIPage.tsx`)
 
 
 - **APIs Used:** `updateFilesOnGitHub` (via "Add to Canon"), Third-Party AI Providers (OpenAI, Anthropic, OpenRouter via direct fetch).
 - **Context & Why:** A standalone workspace where the AI Oracle can be prompted for brainstorming. It implements "Smarter Context Injection", meaning the user can granularly select specific Characters, Events, Chapters, and Attached Files to inject, rather than loading the entire world.
+
+> [!CAUTION]
+> **Security Gap — AI provider keys are sent client-side.** The user's personal API key (OpenAI / Anthropic / OpenRouter) is stored in `localStorage` and transmitted directly from the browser to the provider. The key is fully visible in the DevTools network tab. **Fix:** Implement a `/api/ai/chat` Cloudflare Pages Function proxy. The client sends the message payload only; the Worker injects the key server-side. This also enables rate limiting and server-side provider switching without UI changes.
 - **Key Sub-Features:**
   - **Context Token Budget:** Real-time calculation of token payload weight, dynamically displayed to the user based on filter logic.
   - **Persona Mode Selector (Expert Prompts):** A UI allowing the user to select predefined expert identities (e.g. Scene Writer, Plot Doctor, Dialogue Coach, Lore Expander). This injects unique heuristics directly into the AI's base prompt to format and focus its responses.
@@ -539,6 +554,9 @@ Custom HS256 JWT implemented in `functions/api/github/authUtils.ts` using the We
 ### Token Storage Convention
 - Key: `"seshat-auth-token"` in `localStorage` or `sessionStorage` (user's choice at login)
 - Passed in the request **body** (not as `Authorization` header) for all Cloudflare Pages Functions
+
+> [!WARNING]
+> **Known Gap — No token refresh.** Tokens expire after 7 days with no silent refresh mechanism. The user is abruptly redirected to `/auth` mid-session. Because `appStore` persists to IndexedDB, unsaved work is not lost — but the UX interruption is jarring. **Fix:** Add `POST /api/github/refresh` that accepts a still-valid JWT and returns a new one. `AuthGuard` can proactively refresh when `exp` is within 24h of expiry, storing the new token transparently.
 
 ---
 

@@ -1318,3 +1318,135 @@ query {
 | `mkChar / mkEvent / mkBranch / mkTrauma / mkCond / mkSkill / mkEquip / ...`           | `lib/utils.ts`         | Factory functions creating blank entities with `uid()` IDs                                                                                             |
 | `uid()`                                                                               | `lib/utils.ts`         | `Math.random().toString(36).slice(2, 8)` — 6-char alphanumeric ID                                                                                      |
 | `S` (style object)                                                                    | `lib/utils.ts`         | Shared `React.CSSProperties` presets using CSS variables                                                                                               |
+
+---
+
+## 20. Gap Analysis & Known Improvement Areas
+
+*Last reviewed: 2026-06-26. Use this section to track honest gaps — missing features, tech debt, and polish items — so future development can prioritize correctly.*
+
+---
+
+### 🔴 High-Impact Gaps (Fix Soon)
+
+#### 1. AI API Keys Are Client-Side (Security Risk)
+AI calls (`AIPage.tsx`) go directly from the browser to OpenAI/Anthropic/OpenRouter using the user's personal BYOK key stored in `localStorage`. The key is visible in the DevTools network tab in request headers.
+
+**Risk:** On any shared device or inspected session, the raw API key is exposed.
+
+**Resolution path:** Add a `/api/ai/chat` Cloudflare Pages Function proxy that accepts the user's request payload (messages, model, system prompt) and injects the key server-side per user session. The client never transmits the raw key. Rate limiting and provider switching become server-side concerns.
+
+---
+
+#### 2. `AssetsPage` and `IssuesPage` Routes May Be Orphaned
+
+The router definition (§3) only lists routes up to `lore-web`. `AssetsPage` (`/book/:bookId/assets`) and `IssuesPage` are both listed in the Features Map (§8) but must be verified in the active router config.
+
+**Action:** Confirm `/book/:bookId/assets` and `/book/:bookId/issues` are declared in the `<Routes>` block in `App.tsx`. If missing, add them.
+
+---
+
+#### 3. `exportChapters` Leaves `lastSyncSha` Stale
+
+`/api/github/exportChapters` is a read-only GET endpoint that fetches bulk chapter bodies for DOCX export. It does not return a `branchSha`, so after a bulk export the client's `lastSyncSha` may lag behind the real branch HEAD. A user who exports then immediately edits will get a `409 Conflict` on the next save that feels unexpected.
+
+**Resolution path:** Have `exportChapters` return `branchSha` in its response and update `appStore.lastSyncSha` on the client after export.
+
+---
+
+### 🟡 Missing Features Worth Adding
+
+#### 4. Full-Text Search Across Chapter Bodies
+`GlobalSearchModal` searches world entities (nations, monsters, etc.) but chapter `body` content is lazy-loaded and never fully in memory. There's no way to search prose text (e.g. "find all chapters mentioning 'betrayal'").
+
+**Resolution path:** Add a `/api/github/searchChapters` endpoint that fetches all draft blobs and runs a server-side text search, returning matched chapter IDs + snippet context. Or maintain a `search-index.json` file in the repo updated on every chapter save.
+
+---
+
+#### 5. JWT Token Refresh
+Tokens expire after 7 days with no silent refresh. The user gets kicked to `/auth` mid-session with no warning, potentially losing unsaved work (though optimistic UI saves to IndexedDB first).
+
+**Resolution path:** Add `POST /api/github/refresh` that accepts a still-valid JWT and issues a new one. `AuthGuard` can proactively refresh when `exp` is within 1 day of expiry, storing the new token transparently.
+
+---
+
+#### 6. Bulk Asset Upload — One Commit Per File
+`uploadAssetsToGitHub` currently creates one Git commit per file. Uploading 10 images = 10 commits + 10 GitHub API round-trips, polluting commit history and hitting rate limits faster.
+
+**Resolution path:** Adapt the `updateFiles` batch pattern — create all blobs first (parallel), then build one tree with all new paths, then commit once. See `updateFiles.ts` for the reference implementation.
+
+---
+
+#### 7. Chapter Drag-and-Drop Reorder
+Chapters have an `order` field, but `ChapterListPage` has no drag-and-drop UI. Reordering a 30-chapter book requires editing each chapter's `order` field individually.
+
+**Resolution path:** Add a drag-and-drop reorder to `ChapterListPage` (e.g. `@dnd-kit/sortable`). On drop, batch-update all affected chapters' `order` fields via `updateFilesOnGitHub`.
+
+---
+
+#### 8. Chapter Read Mode / Preview
+`ChapterPage` always renders Tiptap in edit mode. A clean read-only rendered view (no toolbar, typography-focused) would help proofreading.
+
+**Resolution path:** Add a `readMode: boolean` state toggle in `ChapterPage`. When active, render the Tiptap HTML as a styled `dangerouslySetInnerHTML` div instead of the editor, with a "Edit" button to switch back.
+
+---
+
+#### 9. Draft Diff / Compare View
+`DraftsPanel` lets users snapshot and restore drafts but offers no diff between two draft versions. Restoring a draft is a blind operation.
+
+**Resolution path:** Add a "Compare" mode to `DraftsPanel` that renders a side-by-side or unified diff between two selected drafts (using a library like `diff` or `jsdiff`).
+
+---
+
+#### 10. No Collaborative / Multi-User Awareness
+Each user writes to their own branch. There's no mechanism to see when another user last pushed, share a book read-only, or merge branches.
+
+**Note:** This is a known architectural limitation of the per-branch model. Low priority unless the use case explicitly requires collaboration.
+
+---
+
+### 🟢 Polish / Tech Debt
+
+#### 11. Shared MIME Map (Maintenance Trap)
+Both `functions/api/github/listAssets.ts` and `functions/api/github/loadFile.ts` maintain independent MIME maps that must stay in sync manually. A drift between the two causes "Preview unavailable" for newly added formats.
+
+**Resolution path:** Extract a single `functions/api/github/mimeMap.ts` shared module and import it in both files. One place to update when adding a new file type.
+
+---
+
+#### 12. No 404 Catch-All Route
+The router has no `path="*"` catch-all. Navigating to an invalid URL (e.g. `/book/bad-id/chapters/xyz`) likely renders blank or crashes instead of a friendly `NotFoundPage`.
+
+**Resolution path:** Add `<Route path="*" element={<NotFoundPage />} />` as the last route in `App.tsx`. `NotFoundPage` already exists in the test suite — verify it's registered.
+
+---
+
+#### 13. `window.confirm` Still Used in Single-File Delete
+The `Stage` component's `handleDelete` function (single-file delete in `AssetsPage.tsx`) still uses `window.confirm()`. The bulk delete UI was upgraded to an inline two-step confirm, but the individual file delete was not.
+
+**Established pattern:** Use the `confirmingDelete`-style two-step state or the `Modal` component (`src/components/ui/Modal.tsx`) — see UX Conventions in §15.
+
+---
+
+#### 14. `IssuesPage` Has No Tests
+The test suite (§12) covers sync integrity, conflict utils, `scoreFighter`, and UI components, but has no tests for the GitHub issues endpoint or the `IssuesPage` component.
+
+---
+
+### Priority Table
+
+| Priority | Item | Effort |
+|---|---|---|
+| 🔴 Fix | AI key exposed client-side → proxy via Cloudflare | Medium |
+| 🔴 Verify | `AssetsPage` + `IssuesPage` missing from router check | Low |
+| 🔴 Fix | `exportChapters` stale `lastSyncSha` | Low |
+| 🟡 Add | JWT token refresh endpoint | Low |
+| 🟡 Add | Bulk asset upload in one commit | Medium |
+| 🟡 Add | Full-text chapter search | High |
+| 🟡 Add | Chapter drag-and-drop reorder | Medium |
+| 🟡 Add | Chapter read mode | Low |
+| 🟡 Add | Draft diff/compare view | Medium |
+| 🟢 Polish | Shared MIME map module | Low |
+| 🟢 Polish | 404 catch-all route | Low |
+| 🟢 Polish | Single-file delete → inline confirm | Low |
+| 🟢 Polish | `IssuesPage` test coverage | Medium |
