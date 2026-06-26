@@ -115,23 +115,31 @@ function Stage({
     if (!token) return;
 
     if (asset.size > MAX_PREVIEW_SIZE) {
-      setState({
-        objectUrl: null,
-        textContent: null,
-        isLoading: false,
-        loadErr: "The file too big",
-      });
+      setTimeout(
+        () =>
+          setState({
+            objectUrl: null,
+            textContent: null,
+            isLoading: false,
+            loadErr: "The file too big",
+          }),
+        0,
+      );
       return;
     }
 
     // Streamable media (video/audio) uses the API URL directly — no blob loading
     if (isStreamable) {
-      setState({
-        objectUrl: null,
-        textContent: null,
-        isLoading: false,
-        loadErr: null,
-      });
+      setTimeout(
+        () =>
+          setState({
+            objectUrl: null,
+            textContent: null,
+            isLoading: false,
+            loadErr: null,
+          }),
+        0,
+      );
       return;
     }
 
@@ -233,15 +241,7 @@ function Stage({
   }, [asset.filename]);
 
   return (
-    <div
-      className="ap-stage"
-      ref={stageRef}
-      onDragOver={(e) => e.stopPropagation()}
-      onDrop={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-      }}
-    >
+    <div className="ap-stage" ref={stageRef}>
       {/* Stage topbar */}
       <div className="ap-stage-bar">
         <div className="ap-stage-bar-info">
@@ -283,7 +283,7 @@ function Stage({
         )}
         {!isLoading && !loadErr && cat === "image" && objectUrl && (
           <div className="ap-img-wrap">
-            <img src={objectUrl} alt={asset.filename} className="ap-img" />
+            <img src={objectUrl} alt={asset.filename} className="ap-img" draggable={false} />
           </div>
         )}
         {!isLoading && !loadErr && cat === "audio" && (
@@ -429,6 +429,7 @@ export default function AssetsPage() {
   const [search, setSearch] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const dragCounterRef = useRef(0);
+  const isInternalDragRef = useRef(false);
 
   const loadAssets = useCallback(async () => {
     const token = getToken();
@@ -469,7 +470,15 @@ export default function AssetsPage() {
     [bookId, loadAssets],
   );
 
-  // Page-level drag-and-drop
+  // Track drags that start within the page (e.g. native image drag)
+  const handleDragStart = () => {
+    isInternalDragRef.current = true;
+  };
+  const handleDragEnd = () => {
+    isInternalDragRef.current = false;
+  };
+
+  // Page-level drag-and-drop (external file upload only)
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
     dragCounterRef.current++;
@@ -485,6 +494,10 @@ export default function AssetsPage() {
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDragOver(false);
+    if (isInternalDragRef.current) {
+      isInternalDragRef.current = false;
+      return;
+    }
     const files = Array.from(e.dataTransfer.files);
     if (files.length) handleUpload(files);
   };
@@ -512,6 +525,8 @@ export default function AssetsPage() {
     <div
       className={`ap-page ${isDragOver ? "ap-page--drag" : ""}`}
       ref={pageRef}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
