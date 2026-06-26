@@ -96,6 +96,13 @@ export default function MentionHelpButton() {
                       body="Select any word or phrase already in your prose. A 'Link to character' bubble will appear above the selection. Pick a character from the list to convert the selected text into a live @mention — no need to retype anything."
                     />
                   </div>
+                  <div style={styles.fullWidthCol}>
+                    <Tip
+                      symbol="🪄"
+                      title="Smart Link — Auto-Find Missing Links"
+                      body="After linking an entity, a Smart Link bar appears. Use it to automatically find and highlight all other unlinked occurrences of that name in the chapter. Click 'Accept' to link one-by-one, or 'All' to convert them instantly. You can also re-trigger Smart Link by clicking the 🪄 wand inside any entity tooltip."
+                    />
+                  </div>
                 </div>
 
                 <div style={styles.tipBox}>

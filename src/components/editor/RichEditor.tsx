@@ -369,16 +369,16 @@ function RichEditorCore({
       if (hasAutoInitializedSmartLink.current) return;
       hasAutoInitializedSmartLink.current = true;
       
+      const allItems = buildAllScanItems(characters, [], extraEntities);
       let found: (MentionItem & { trigger: string }) | null = null;
+      
       editor.state.doc.descendants((node) => {
         if (found) return false;
         if (node.type.name === "entityMention") {
           const { id, trigger, label } = node.attrs;
-          if (trigger === "@") {
-            const char = characters.find(c => c.id === id);
-            if (char) {
-              found = { id: char.id, name: label || char.name, color: char.color, role: char.role || "Character", trigger: "@" };
-            }
+          const matched = allItems.find(item => item.id === id && item.trigger === trigger);
+          if (matched) {
+            found = { ...matched, name: label || matched.name };
           }
         }
       });
@@ -389,7 +389,7 @@ function RichEditorCore({
     }, 600); // Give the editor content time to mount and parse
     
     return () => clearTimeout(t);
-  }, [editor, characters, smartLinkEntity]);
+  }, [editor, characters, extraEntities, smartLinkEntity]);
 
   // ── Hover + click on mention spans ────────────────────────────────────────
   useEffect(() => {

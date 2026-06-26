@@ -621,7 +621,8 @@ Each domain directory mirrors a page and contains components that are only used 
 | Cloud Sync         | `lib/githubSync`                | Push (Sync) & Pull mechanisms syncing `appStore` to GitHub branch                                                                                                                                                                                |
 | Lazy Loading       | `lib/loadBook`                  | Strips massive chapter bodies AND historical drafts payloads from RAM; dynamically fetches them into ChapterPage                                                                                                                                 |
 | Mobile Overlay     | `ChapterPage`                   | Drawer-style overlay backdrop for ReferencePanel on small screens                                                                                                                                                                                |
-| Dynamic Mentions   | `MentionExtension`              | Tiptap custom nodes dynamically resolve entity names from store state during render/export                                                                                                                                                       |
+| Dynamic Mentions   | `MentionExtension`              | Tiptap custom nodes dynamically resolve entity names from store state during render/export. Stores alias labels to preserve prose variations while pointing to the canonical entity ID.                                                          |
+| Smart Linking      | `MenuBar` & Tooltips            | Auto-find and replace system to scan prose for missing links of a specific entity. Triggered automatically after a manual link, or via the 🪄 wand in entity tooltips. Supports individual confirmation (Next/Accept) or bulk Accept All.              |
 | Bi-Di Linking      | `EventPage`                     | Inverse timeline querying mapping pinned events back to Chapters                                                                                                                                                                                 |
 | Draft Versioning   | `ChapterPage`                   | `DraftsPanel` allowing authors to snapshot, name, and restore historical body text drafts. The `sync.ts` pipeline includes draft recovery logic to prevent orphaned historical drafts from being deleted if a sync arrives without body context. |
 | Foreshadow Tracker | `ChapterPage`                   | `ForeshadowPanel` tracking planted ideas to payoff chapters (`appStore.books[i].foreshadows[]`)                                                                                                                                                  |
@@ -655,7 +656,11 @@ The Tiptap text editor uses a multi-trigger custom node extension to bind plain 
 - `~` -> Ingredients (`appStore.books[i].ingredients`)
 - `^` -> Techniques (`appStore.books[i].techniques`)
 - `$` -> Treasures (`appStore.books[i].treasures`)
-  **Rules:** Mentions store only the unique `id` and the `trigger` character in the HTML (`<span data-mention-id="123" data-trigger="@">`). They do **not** store the name. During rendering or DOCX export, the name is dynamically resolved from the `appStore`. If an entity is renamed in the sidebar, every mention of them across the entire book updates instantly.
+  **Rules:** Mentions store only the unique `id`, the `trigger` character, and the `label` in the HTML (`<span data-mention-id="123" data-trigger="@" data-label="Lão Tiều">`). During rendering or DOCX export, the name is dynamically resolved from the `appStore` (unless overridden by a custom label like an alias). If an entity is renamed in the sidebar, every mention of them across the entire book updates instantly.
+
+  **Implicit Scan & Link:** Users can highlight any existing text in the editor. A 400ms debounced UI will offer to link that exact string to a canonical entity. The node preserves the original text case and phrasing (as `data-label`) while still pointing to the canonical entity ID.
+
+  **Smart Link (Auto-Find):** When a user explicitly links an entity (via typing or Scan & Link), or clicks the 🪄 wand on an existing link, a Smart Link bar appears. This uses regex iteration against `editor.state.doc.descendants` to find unlinked instances of the entity's label/name in the chapter, allowing quick Next/Accept/Accept All workflows.
 
 ### Foreshadow Tracker
 
