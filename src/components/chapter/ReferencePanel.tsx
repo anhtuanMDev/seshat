@@ -75,6 +75,7 @@ export function ReferencePanel({
 }: ReferencePanelProps) {
   const [showCharModal, setShowCharModal] = useState(false);
   const [charInput, setCharInput] = useState("");
+  const [modalSearch, setModalSearch] = useState("");
 
   const pinnedCharObjs = characters.filter((c: Character) =>
     pinnedCharIds.includes(c.id),
@@ -203,27 +204,70 @@ export function ReferencePanel({
               ))
             )}
 
-            {showCharModal && (
-              <Modal title="Pin Characters" onClose={() => setShowCharModal(false)}>
-                <div style={styles.tagWrapGrid}>
-                  {characters.map((c: Character) => (
-                    <ContextTag
-                      key={c.id}
-                      label={c.name}
-                      color={c.color}
-                      active={pinnedCharIds.includes(c.id)}
-                      onClick={() => onTogglePinChar(c.id)}
+            {showCharModal && (() => {
+              const filtered = modalSearch
+                ? characters.filter(c => c.name.toLowerCase().includes(modalSearch.toLowerCase()))
+                : characters;
+              return (
+                <Modal title="Pin Characters" onClose={() => { setShowCharModal(false); setModalSearch(""); }}>
+                  <div style={{ marginBottom: 16 }}>
+                    <input
+                      type="text"
+                      placeholder="Search characters..."
+                      value={modalSearch}
+                      onChange={(e) => setModalSearch(e.target.value)}
+                      style={{ ...S.input, width: "100%", padding: "8px 12px", fontSize: 13 }}
+                      autoFocus
                     />
-                  ))}
-                  {!characters.length && <p style={S.dim}>No characters yet.</p>}
-                </div>
-                <div style={styles.modalFooter}>
-                  <button style={styles.modalDoneBtn} onClick={() => setShowCharModal(false)}>
-                    Done
-                  </button>
-                </div>
-              </Modal>
-            )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: "50vh", overflowY: "auto", paddingRight: 4 }}>
+                    {filtered.map((c: Character) => {
+                      const isPinned = pinnedCharIds.includes(c.id);
+                      return (
+                        <div
+                          key={c.id}
+                          onClick={() => onTogglePinChar(c.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            padding: "8px 12px",
+                            cursor: "pointer",
+                            background: isPinned ? "var(--bg-active)" : "transparent",
+                            border: "1px solid",
+                            borderColor: isPinned ? c.color : "var(--border)",
+                            borderRadius: 4,
+                            transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => { if (!isPinned) e.currentTarget.style.background = "var(--bg-hover)"; }}
+                          onMouseLeave={(e) => { if (!isPinned) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <span style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, flexShrink: 0 }} />
+                          <span style={{ flex: 1, fontSize: 14, color: isPinned ? "var(--text-primary)" : "var(--text-secondary)", fontWeight: isPinned ? 500 : 400 }}>
+                            {c.name}
+                          </span>
+                          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{c.role}</span>
+                          <div style={{
+                            width: 18, height: 18, borderRadius: 3,
+                            border: `2px solid ${isPinned ? c.color : "var(--text-muted)"}`,
+                            background: isPinned ? c.color : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center"
+                          }}>
+                            {isPinned && <span style={{ color: "#fff", fontSize: 14, lineHeight: 1 }}>✓</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!filtered.length && <p style={{ ...S.dim, textAlign: "center", padding: "20px 0" }}>No characters found.</p>}
+                  </div>
+                  <div style={styles.modalFooter}>
+                    <button style={styles.modalDoneBtn} onClick={() => { setShowCharModal(false); setModalSearch(""); }}>
+                      Done
+                    </button>
+                  </div>
+                </Modal>
+              );
+            })()}
           </div>
         )}
 

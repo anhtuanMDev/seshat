@@ -9,15 +9,19 @@ import Typography from "@tiptap/extension-typography";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Controller } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "@legendapp/state/react";
 import { appStore } from "../../store/appStore";
 import { useActiveBookIdx } from "../../hooks/useWorldStore";
-import type { Character, Event } from "../../lib/types";
+import type { Character, Event as AppEvent } from "../../lib/types";
 import type { Editor } from "@tiptap/core";
 import { DOMParser } from "@tiptap/pm/model";
-import { buildMentionExtension, type MentionItem } from "./MentionExtension";
+import {
+  buildMentionExtension,
+  insertMentionAtRange,
+  type MentionItem,
+} from "./MentionExtension";
 import { EntityMention } from "./EntityMentionNode";
 import { PinPointExtension } from "./PinPointExtension";
 import CharMentionTooltip from "./CharMentionTooltip";
@@ -31,12 +35,94 @@ interface RichEditorProps<T extends FieldValues = FieldValues> {
   control?: Control<T>;
   name?: Path<T>;
   characters?: Character[];
-  events?: Event[];
-  pinnedEvents?: Event[];
+  events?: AppEvent[];
+  pinnedEvents?: AppEvent[];
   pinnedCharIds?: string[];
   isDirty?: boolean;
   onSave?: () => void;
   bookId?: string;
+}
+
+interface ExtraEntity {
+  id: string;
+  name: string;
+}
+
+function buildMentionItems(
+  trigger: string,
+  characters: Character[],
+  pinnedCharIds: string[],
+  extraEntities: {
+    nations: ExtraEntity[];
+    monsters: ExtraEntity[];
+    ingredients: ExtraEntity[];
+    techniques: ExtraEntity[];
+    treasures: ExtraEntity[];
+  },
+): MentionItem[] {
+  const items: MentionItem[] = [];
+
+  if (trigger === "@") {
+    const pinned =
+      pinnedCharIds.length > 0
+        ? characters.filter((c) => pinnedCharIds.includes(c.id))
+        : characters;
+    pinned.forEach((c) =>
+      items.push({
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        role: c.role || "Character",
+      }),
+    );
+  } else if (trigger === "#") {
+    extraEntities.nations.forEach((n) =>
+      items.push({
+        id: n.id,
+        name: n.name,
+        color: "#5e35b1",
+        role: "Nation",
+      }),
+    );
+  } else if (trigger === "%") {
+    extraEntities.monsters.forEach((m) =>
+      items.push({
+        id: m.id,
+        name: m.name,
+        color: "#d32f2f",
+        role: "Monster",
+      }),
+    );
+  } else if (trigger === "~") {
+    extraEntities.ingredients.forEach((i) =>
+      items.push({
+        id: i.id,
+        name: i.name,
+        color: "#388e3c",
+        role: "Ingredient",
+      }),
+    );
+  } else if (trigger === "^") {
+    extraEntities.techniques.forEach((t) =>
+      items.push({
+        id: t.id,
+        name: t.name,
+        color: "#0288d1",
+        role: "Technique",
+      }),
+    );
+  } else if (trigger === "$") {
+    extraEntities.treasures.forEach((t) =>
+      items.push({
+        id: t.id,
+        name: t.name,
+        color: "#fbc02d",
+        role: "Treasure",
+      }),
+    );
+  }
+
+  return items;
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
@@ -72,6 +158,21 @@ function RichEditorCore({
     { id: string; comment: string; top: number; node: HTMLElement }[]
   >([]);
 
+  // ── Scan-and-link bubble state ─────────────────────────────────────────
+  const [scanLink, setScanLink] = useState<{
+    from: number;
+    to: number;
+    text: string;
+    rect: {
+      top: number;
+      left: number;
+      right: number;
+      bottom: number;
+      width: number;
+    };
+    query: string;
+  } | null>(null);
+
   const bookIdx = useActiveBookIdx();
   const extraEntities = useSelector(() => {
     if (bookIdx < 0)
@@ -102,70 +203,7 @@ function RichEditorCore({
   // ── Mention list builder based on trigger ─────────────────────────────────
   const getMentionItems = useCallback((trigger: string): MentionItem[] => {
     const { characters, pinnedCharIds, extraEntities } = mentionDepsRef.current;
-    const items: MentionItem[] = [];
-
-    if (trigger === "@") {
-      // Original logic: Only offer pinned characters if any are pinned, else all
-      const pinned =
-        pinnedCharIds.length > 0
-          ? characters.filter((c) => pinnedCharIds.includes(c.id))
-          : characters;
-      pinned.forEach((c) =>
-        items.push({
-          id: c.id,
-          name: c.name,
-          color: c.color,
-          role: c.role || "Character",
-        }),
-      );
-    } else if (trigger === "#") {
-      extraEntities.nations.forEach((n) =>
-        items.push({
-          id: n.id,
-          name: n.name,
-          color: "#5e35b1",
-          role: "Nation",
-        }),
-      );
-    } else if (trigger === "%") {
-      extraEntities.monsters.forEach((m) =>
-        items.push({
-          id: m.id,
-          name: m.name,
-          color: "#d32f2f",
-          role: "Monster",
-        }),
-      );
-    } else if (trigger === "~") {
-      extraEntities.ingredients.forEach((i) =>
-        items.push({
-          id: i.id,
-          name: i.name,
-          color: "#388e3c",
-          role: "Ingredient",
-        }),
-      );
-    } else if (trigger === "^") {
-      extraEntities.techniques.forEach((t) =>
-        items.push({
-          id: t.id,
-          name: t.name,
-          color: "#0288d1",
-          role: "Technique",
-        }),
-      );
-    } else if (trigger === "$") {
-      extraEntities.treasures.forEach((t) =>
-        items.push({
-          id: t.id,
-          name: t.name,
-          color: "#fbc02d",
-          role: "Treasure",
-        }),
-      );
-    }
-
-    return items;
+    return buildMentionItems(trigger, characters, pinnedCharIds, extraEntities);
   }, []);
 
   const updatePinpoints = useCallback((editorInstance: Editor) => {
@@ -212,11 +250,11 @@ function RichEditorCore({
       handlePaste(view, event) {
         const text = event.clipboardData?.getData("text/plain");
         if (text) {
-          const isHtml = /<\/?[a-z]+[^>]*>/i.test(text) && (
-            /<\/[a-z]+>/i.test(text) ||
-            /<br\s*\/?>/i.test(text) ||
-            /<img\s[^>]*\/?>/i.test(text)
-          );
+          const isHtml =
+            /<\/?[a-z]+[^>]*>/i.test(text) &&
+            (/<\/[a-z]+>/i.test(text) ||
+              /<br\s*\/?>/i.test(text) ||
+              /<img\s[^>]*\/?>/i.test(text));
           if (isHtml) {
             const parser = DOMParser.fromSchema(view.state.schema);
             const tempDiv = document.createElement("div");
@@ -232,6 +270,45 @@ function RichEditorCore({
     onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
       updatePinpoints(editor);
+    },
+    onSelectionUpdate: ({ editor }) => {
+      if (characters.length === 0) return;
+      const { state } = editor;
+      const { selection } = state;
+      if (selection.empty) {
+        setScanLink(null);
+        return;
+      }
+      const selectedText = state.doc
+        .textBetween(selection.from, selection.to, " ")
+        .trim();
+      if (!selectedText) {
+        setScanLink(null);
+        return;
+      }
+      // Delay slightly to let the browser DOM range settle
+      setTimeout(() => {
+        const domRange = window.getSelection()?.getRangeAt(0);
+        if (!domRange || domRange.collapsed) return;
+        const rect = domRange.getBoundingClientRect();
+
+        // Don't show if the selection is outside the viewport (or invalid rect)
+        if (rect.width === 0 || rect.height === 0) return;
+
+        setScanLink({
+          from: selection.from,
+          to: selection.to,
+          text: selectedText,
+          rect: {
+            top: rect.top,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom,
+            width: rect.width,
+          },
+          query: selectedText.toLowerCase(),
+        });
+      }, 10);
     },
   });
 
@@ -308,6 +385,187 @@ function RichEditorCore({
     };
   }, [editor, characters, isDirty, bookId, navigate]);
 
+  const scanBubble = useMemo(() => {
+    if (!scanLink || !editor) return null;
+
+    const allItems: (MentionItem & { trigger: string })[] = [
+      ...buildMentionItems("@", characters, pinnedCharIds, extraEntities).map(
+        (i) => ({ ...i, trigger: "@" }),
+      ),
+      ...buildMentionItems("#", characters, pinnedCharIds, extraEntities).map(
+        (i) => ({ ...i, trigger: "#" }),
+      ),
+      ...buildMentionItems("%", characters, pinnedCharIds, extraEntities).map(
+        (i) => ({ ...i, trigger: "%" }),
+      ),
+      ...buildMentionItems("~", characters, pinnedCharIds, extraEntities).map(
+        (i) => ({ ...i, trigger: "~" }),
+      ),
+      ...buildMentionItems("^", characters, pinnedCharIds, extraEntities).map(
+        (i) => ({ ...i, trigger: "^" }),
+      ),
+      ...buildMentionItems("$", characters, pinnedCharIds, extraEntities).map(
+        (i) => ({ ...i, trigger: "$" }),
+      ),
+    ];
+    const q = scanLink.query;
+    const filtered =
+      q.length > 0
+        ? allItems.filter((c) => c.name.toLowerCase().includes(q))
+        : allItems;
+    if (filtered.length === 0) return null;
+
+    const bubbleLeft = Math.min(
+      Math.max(8, scanLink.rect.left + scanLink.rect.width / 2 - 110),
+      window.innerWidth - 228,
+    );
+    const bubbleTop = scanLink.rect.top - 8;
+
+    return createPortal(
+      <div
+        className="seshat-scan-bubble"
+        style={{
+          position: "fixed",
+          top: bubbleTop,
+          left: bubbleLeft,
+          transform: "translateY(-100%)",
+          zIndex: 1200,
+          background: "var(--bg-side)",
+          border: "1px solid var(--border)",
+          borderRadius: 6,
+          boxShadow: "0 6px 24px rgba(0,0,0,0.18)",
+          minWidth: 220,
+          maxWidth: 280,
+          overflow: "hidden",
+          fontFamily: "var(--font-serif)",
+        }}
+        onMouseDown={(e) => e.preventDefault()}
+      >
+        <div
+          style={{
+            padding: "7px 12px",
+            fontSize: 10,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            color: "var(--text-muted)",
+            borderBottom: "1px solid var(--border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span>Link to entity</span>
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: 13,
+              lineHeight: 1,
+              padding: "0 2px",
+            }}
+            onClick={() => setScanLink(null)}
+          >
+            ×
+          </button>
+        </div>
+        <div
+          style={{
+            padding: "6px 10px",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          <input
+            autoFocus
+            value={scanLink.query}
+            onChange={(e) =>
+              setScanLink((s) =>
+                s ? { ...s, query: e.target.value.toLowerCase() } : null,
+              )
+            }
+            placeholder={`Filter "${scanLink.text}"…`}
+            style={{
+              width: "100%",
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontSize: 12,
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-serif)",
+            }}
+          />
+        </div>
+        <div style={{ maxHeight: 180, overflowY: "auto" }}>
+          {filtered.slice(0, 12).map((item) => (
+            <div
+              key={item.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "7px 12px",
+                cursor: "pointer",
+                transition: "background 0.08s",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLDivElement).style.background =
+                  "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLDivElement).style.background =
+                  "transparent";
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                if (!editor) return;
+                insertMentionAtRange(
+                  editor.view,
+                  item,
+                  scanLink.from,
+                  scanLink.to,
+                  item.trigger,
+                );
+                setScanLink(null);
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  background: item.color,
+                  flexShrink: 0,
+                  display: "inline-block",
+                }}
+              />
+              <span
+                style={{ fontSize: 13, color: "var(--text-primary)", flex: 1 }}
+              >
+                {item.name}
+              </span>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                {item.role}
+              </span>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div
+              style={{
+                padding: "10px 12px",
+                fontSize: 12,
+                color: "var(--text-muted)",
+              }}
+            >
+              No entities match
+            </div>
+          )}
+        </div>
+      </div>,
+      document.body,
+    );
+  }, [scanLink, editor, characters, pinnedCharIds, extraEntities]);
+
   if (!editor) return null;
 
   const tooltipStyle = tooltip
@@ -345,6 +603,9 @@ function RichEditorCore({
           </div>,
           document.body,
         )}
+
+      {/* Scan-and-link bubble */}
+      {scanBubble}
 
       {guard && (
         <UnsavedGuard

@@ -411,7 +411,6 @@ export const Mention = Extension.create<MentionOptions, {}>({
         };
       },
     });
-
     return [decorationPlugin, suggestionPlugin];
   },
 });
@@ -433,6 +432,17 @@ function insertMention(view: EditorView, item: MentionItem, range: Range, trigge
   dispatch(tr);
   hidePopup();
   view.focus();
+}
+
+/** Public helper: replace an arbitrary from/to range with a mention node. */
+export function insertMentionAtRange(
+  view: EditorView,
+  item: MentionItem,
+  from: number,
+  to: number,
+  trigger: string,
+) {
+  insertMention(view, item, { from, to }, trigger);
 }
 
 export function buildMentionExtension(getMentionItems: (trigger: string) => MentionItem[]) {

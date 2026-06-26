@@ -89,6 +89,13 @@ export default function MentionHelpButton() {
                       body="Hover over any @character mention to see their status resolved to this chapter's timeline. Click to navigate. (Interactive previews for other world entities are not yet available.)"
                     />
                   </div>
+                  <div style={styles.fullWidthCol}>
+                    <Tip
+                      symbol="⬡"
+                      title="Scan & Link — Select Text to Link"
+                      body="Select any word or phrase already in your prose. A 'Link to character' bubble will appear above the selection. Pick a character from the list to convert the selected text into a live @mention — no need to retype anything."
+                    />
+                  </div>
                 </div>
 
                 <div style={styles.tipBox}>
