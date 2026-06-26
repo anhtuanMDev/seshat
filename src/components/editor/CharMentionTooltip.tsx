@@ -3,6 +3,7 @@ import { resolveStatusAt, chapterContext } from "../../lib/resolveStatus";
 
 interface CharMentionTooltipProps {
   char: Character;
+  nodeLabel: string;
   events: Event[];
   pinnedEvents: Event[];
   anchorEl: HTMLElement;
@@ -11,6 +12,7 @@ interface CharMentionTooltipProps {
 
 export default function CharMentionTooltip({
   char,
+  nodeLabel,
   events,
   pinnedEvents,
   onClose,
@@ -48,6 +50,24 @@ export default function CharMentionTooltip({
           <div style={styles.nameText}>{char.name}</div>
           {activeRole && <div style={styles.roleText}>{activeRole}</div>}
         </div>
+        
+        <button 
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("seshat-mention-inserted", {
+                detail: { 
+                  item: { id: char.id, name: nodeLabel, color: char.color, role: char.role }, 
+                  trigger: "@" 
+                },
+              })
+            );
+            onClose();
+          }}
+          title="Smart link this character"
+          style={styles.smartLinkBtn}
+        >
+          🪄
+        </button>
         <button onClick={onClose} style={styles.closeBtn}>
           ×
         </button>
@@ -211,7 +231,16 @@ const styles = {
     cursor: "pointer",
     color: "var(--text-muted)",
     padding: "2px 4px",
-    marginLeft: "auto",
+    marginLeft: 4,
+    fontSize: 14,
+    lineHeight: 1,
+  },
+  smartLinkBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "2px 4px",
+    marginLeft: "auto", // Pushes the buttons to the right
     fontSize: 14,
     lineHeight: 1,
   },

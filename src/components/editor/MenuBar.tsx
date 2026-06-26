@@ -1,17 +1,21 @@
 import { useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { Editor } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import MentionHelpButton from "./MentionHelpButton";
 import { WordCountDisplay } from "./WordCountDisplay";
 import { uid } from "../../lib/utils";
 import { Modal } from "../ui/Modal";
+import type { MentionItem } from "./MentionExtension";
 
 interface MenuBarProps {
   editor: Editor;
   showMentionHelp: boolean;
+  smartLinkEntity?: (MentionItem & { trigger: string }) | null;
+  onClearSmartLink?: () => void;
 }
 
-export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
+export function MenuBar({ editor, showMentionHelp, smartLinkEntity, onClearSmartLink }: MenuBarProps) {
   const [showPinpointModal, setShowPinpointModal] = useState(false);
   const [pinpointComment, setPinpointComment] = useState("");
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -41,6 +45,108 @@ export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
     },
     [],
   );
+
+  const handleSmartLinkNext = useCallback(() => {
+    if (!smartLinkEntity) return;
+    const { state, view } = editor;
+    const { selection } = state;
+    const currentPos = selection.to;
+    
+    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    
+    let matchAfter: { from: number, to: number } | null = null;
+    let matchBefore: { from: number, to: number } | null = null;
+
+    state.doc.descendants((node, pos) => {
+      if (matchAfter) return false;
+      if (node.isText) {
+        const text = node.text || "";
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          const from = pos + match.index;
+          const to = from + match[0].length;
+          
+          if (from >= currentPos) {
+            if (!matchAfter) matchAfter = { from, to };
+          } else {
+            if (!matchBefore) matchBefore = { from, to };
+          }
+        }
+      }
+    });
+
+    const targetMatch = matchAfter || matchBefore;
+    
+    if (targetMatch) {
+      view.dispatch(state.tr.setSelection(
+        TextSelection.create(state.doc, targetMatch.from, targetMatch.to)
+      ).scrollIntoView());
+      view.focus();
+    } else {
+      onClearSmartLink?.();
+    }
+  }, [editor, smartLinkEntity, onClearSmartLink]);
+
+  const handleSmartLinkAccept = useCallback(() => {
+    if (!smartLinkEntity) return;
+    const { state, view } = editor;
+    const { selection } = state;
+    
+    const selectedText = state.doc.textBetween(selection.from, selection.to, " ");
+    if (selectedText.toLowerCase() === smartLinkEntity.name.toLowerCase()) {
+      const tr = state.tr.replaceWith(
+        selection.from,
+        selection.to,
+        state.schema.nodes.entityMention.create({
+          id: smartLinkEntity.id,
+          trigger: smartLinkEntity.trigger,
+          label: selectedText
+        })
+      );
+      view.dispatch(tr);
+      view.focus();
+      setTimeout(handleSmartLinkNext, 10);
+    } else {
+      handleSmartLinkNext();
+    }
+  }, [editor, smartLinkEntity, handleSmartLinkNext]);
+
+  const handleSmartLinkAcceptAll = useCallback(() => {
+    if (!smartLinkEntity) return;
+    const { state, view } = editor;
+    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+    
+    let tr = state.tr;
+    const matches: { from: number, to: number, text: string }[] = [];
+    
+    state.doc.descendants((node, pos) => {
+      if (node.isText) {
+        const text = node.text || "";
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          matches.push({ from: pos + match.index, to: pos + match.index + match[0].length, text: match[0] });
+        }
+      }
+    });
+
+    matches.sort((a, b) => b.from - a.from);
+    for (const m of matches) {
+      tr = tr.replaceWith(
+        m.from,
+        m.to,
+        state.schema.nodes.entityMention.create({
+          id: smartLinkEntity.id,
+          trigger: smartLinkEntity.trigger,
+          label: m.text
+        })
+      );
+    }
+    view.dispatch(tr);
+    view.focus();
+    onClearSmartLink?.();
+  }, [editor, smartLinkEntity, onClearSmartLink]);
 
   return (
     <div className="seshat-flex-align" style={styles.container}>
@@ -117,6 +223,20 @@ export function MenuBar({ editor, showMentionHelp }: MenuBarProps) {
       )}
       <span style={styles.divider} />
       {btn("📍", handleAddPinpoint, false, "Add Pinpoint Comment")}
+
+      {/* Smart Link UI */}
+      {smartLinkEntity && (
+        <>
+          <span style={styles.divider} />
+          <div style={{ display: "flex", alignItems: "center", gap: 4, background: "var(--bg-hover)", padding: "2px 6px", borderRadius: 4 }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>🪄 {smartLinkEntity.name}</span>
+            <button style={{ ...styles.btn, color: "var(--color-primary)", fontWeight: 500 }} onClick={handleSmartLinkNext} title="Find next">Next</button>
+            <button style={{ ...styles.btn, color: "var(--color-primary)", fontWeight: 500 }} onClick={handleSmartLinkAccept} title="Replace and find next">Accept</button>
+            <button style={{ ...styles.btn, color: "var(--color-primary)", fontWeight: 500 }} onClick={handleSmartLinkAcceptAll} title="Replace all in document">All</button>
+            <button style={styles.btn} onClick={onClearSmartLink} title="Dismiss">×</button>
+          </div>
+        </>
+      )}
 
       {/* @ mention help button — always shown when characters exist */}
       {showMentionHelp && (

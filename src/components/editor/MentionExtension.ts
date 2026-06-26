@@ -432,17 +432,30 @@ function insertMention(view: EditorView, item: MentionItem, range: Range, trigge
   dispatch(tr);
   hidePopup();
   view.focus();
+
+  window.dispatchEvent(
+    new CustomEvent("seshat-mention-inserted", {
+      detail: { item, trigger },
+    })
+  );
 }
 
-/** Public helper: replace an arbitrary from/to range with a mention node. */
+/** Public helper: replace an arbitrary from/to range with a mention node.
+ *  Pass `displayLabel` to keep the original selected text as the visible label
+ *  (e.g. scan-and-link: select "Lão Tiều", link to Trần Mộc Sơn → keeps "Lão Tiều").
+ */
 export function insertMentionAtRange(
   view: EditorView,
   item: MentionItem,
   from: number,
   to: number,
   trigger: string,
+  displayLabel?: string,
 ) {
-  insertMention(view, item, { from, to }, trigger);
+  const effectiveItem = displayLabel
+    ? { ...item, name: displayLabel }
+    : item;
+  insertMention(view, effectiveItem, { from, to }, trigger);
 }
 
 export function buildMentionExtension(getMentionItems: (trigger: string) => MentionItem[]) {

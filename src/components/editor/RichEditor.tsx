@@ -77,52 +77,60 @@ function buildMentionItems(
     );
   } else if (trigger === "#") {
     extraEntities.nations.forEach((n) =>
-      items.push({
-        id: n.id,
-        name: n.name,
-        color: "#5e35b1",
-        role: "Nation",
-      }),
+      items.push({ id: n.id, name: n.name, color: "#5e35b1", role: "Nation" }),
     );
   } else if (trigger === "%") {
     extraEntities.monsters.forEach((m) =>
-      items.push({
-        id: m.id,
-        name: m.name,
-        color: "#d32f2f",
-        role: "Monster",
-      }),
+      items.push({ id: m.id, name: m.name, color: "#d32f2f", role: "Monster" }),
     );
   } else if (trigger === "~") {
     extraEntities.ingredients.forEach((i) =>
-      items.push({
-        id: i.id,
-        name: i.name,
-        color: "#388e3c",
-        role: "Ingredient",
-      }),
+      items.push({ id: i.id, name: i.name, color: "#388e3c", role: "Ingredient" }),
     );
   } else if (trigger === "^") {
     extraEntities.techniques.forEach((t) =>
-      items.push({
-        id: t.id,
-        name: t.name,
-        color: "#0288d1",
-        role: "Technique",
-      }),
+      items.push({ id: t.id, name: t.name, color: "#0288d1", role: "Technique" }),
     );
   } else if (trigger === "$") {
     extraEntities.treasures.forEach((t) =>
-      items.push({
-        id: t.id,
-        name: t.name,
-        color: "#fbc02d",
-        role: "Treasure",
-      }),
+      items.push({ id: t.id, name: t.name, color: "#fbc02d", role: "Treasure" }),
     );
   }
 
   return items;
+}
+
+/** Build the full scan list — uses ALL characters (ignores pin filter), Unicode-normalised. */
+type ScanItem = MentionItem & { trigger: string };
+function buildAllScanItems(
+  characters: Character[],
+  pinnedCharIds: string[],
+  extraEntities: {
+    nations: ExtraEntity[];
+    monsters: ExtraEntity[];
+    ingredients: ExtraEntity[];
+    techniques: ExtraEntity[];
+    treasures: ExtraEntity[];
+  },
+): ScanItem[] {
+  // Only show pinned characters (if any are pinned), same logic as @ mention typing
+  const chars = pinnedCharIds.length > 0
+    ? characters.filter((c) => pinnedCharIds.includes(c.id))
+    : characters;
+  return [
+    ...chars.map((c) => ({ id: c.id, name: c.name, color: c.color, role: c.role || "Character", trigger: "@" })),
+    ...extraEntities.nations.map((n) => ({ id: n.id, name: n.name, color: "#5e35b1", role: "Nation", trigger: "#" })),
+    ...extraEntities.monsters.map((m) => ({ id: m.id, name: m.name, color: "#d32f2f", role: "Monster", trigger: "%" })),
+    ...extraEntities.ingredients.map((i) => ({ id: i.id, name: i.name, color: "#388e3c", role: "Ingredient", trigger: "~" })),
+    ...extraEntities.techniques.map((t) => ({ id: t.id, name: t.name, color: "#0288d1", role: "Technique", trigger: "^" })),
+    ...extraEntities.treasures.map((t) => ({ id: t.id, name: t.name, color: "#fbc02d", role: "Treasure", trigger: "$" })),
+  ].filter((item) => !!item.name);
+}
+
+function filterScanItems(items: ScanItem[], query: string): ScanItem[] {
+  if (!query) return items;
+  const q = query.normalize("NFC").toLowerCase();
+  return items.filter((item) => item.name.normalize("NFC").toLowerCase().includes(q));
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
@@ -150,8 +158,10 @@ function RichEditorCore({
     anchor: HTMLElement;
     x: number;
     y: number;
+    nodeLabel: string;
   } | null>(null);
   const tooltipTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanLinkDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [guard, setGuard] = useState<{ char: Character } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [pinpoints, setPinpoints] = useState<
@@ -172,6 +182,25 @@ function RichEditorCore({
     };
     query: string;
   } | null>(null);
+  // pickerOpen = false → show only the tiny 'Link' pill
+  // pickerOpen = true  → show the full entity-picker dropdown
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const closeScanLink = () => { setScanLink(null); setPickerOpen(false); };
+
+  // ── Smart link state ─────────────────────────────────────────
+  const [smartLinkEntity, setSmartLinkEntity] = useState<(MentionItem & { trigger: string }) | null>(null);
+
+  useEffect(() => {
+    const handleInsert = (e: Event) => {
+      const { item, trigger } = (e as CustomEvent).detail;
+      setSmartLinkEntity({ ...item, trigger });
+    };
+    window.addEventListener("seshat-mention-inserted", handleInsert);
+    return () => window.removeEventListener("seshat-mention-inserted", handleInsert);
+  }, []);
+
+
 
   const bookIdx = useActiveBookIdx();
   const extraEntities = useSelector(() => {
@@ -272,29 +301,31 @@ function RichEditorCore({
       updatePinpoints(editor);
     },
     onSelectionUpdate: ({ editor }) => {
+      // Always cancel the previous pending debounce
+      if (scanLinkDebounce.current) clearTimeout(scanLinkDebounce.current);
+
       if (characters.length === 0) return;
       const { state } = editor;
       const { selection } = state;
       if (selection.empty) {
-        setScanLink(null);
+        closeScanLink();
         return;
       }
       const selectedText = state.doc
         .textBetween(selection.from, selection.to, " ")
         .trim();
       if (!selectedText) {
-        setScanLink(null);
+        closeScanLink();
         return;
       }
-      // Delay slightly to let the browser DOM range settle
-      setTimeout(() => {
+      // Debounce: only show the bubble once the selection has been stable for 400ms
+      scanLinkDebounce.current = setTimeout(() => {
         const domRange = window.getSelection()?.getRangeAt(0);
         if (!domRange || domRange.collapsed) return;
         const rect = domRange.getBoundingClientRect();
-
-        // Don't show if the selection is outside the viewport (or invalid rect)
         if (rect.width === 0 || rect.height === 0) return;
 
+        setPickerOpen(false); // Reset to pill-only each time selection changes
         setScanLink({
           from: selection.from,
           to: selection.to,
@@ -308,7 +339,7 @@ function RichEditorCore({
           },
           query: selectedText.toLowerCase(),
         });
-      }, 10);
+      }, 400);
     },
   });
 
@@ -316,7 +347,6 @@ function RichEditorCore({
     if (!editor || !containerRef.current) return;
     const obs = new ResizeObserver(() => updatePinpoints(editor));
     obs.observe(containerRef.current);
-    obs.observe(editor.view.dom);
     return () => obs.disconnect();
   }, [editor, updatePinpoints]);
 
@@ -330,10 +360,41 @@ function RichEditorCore({
     }
   }, [editor, content]);
 
+  const hasAutoInitializedSmartLink = useRef(false);
+
+  useEffect(() => {
+    if (!editor || characters.length === 0 || hasAutoInitializedSmartLink.current) return;
+    
+    const t = setTimeout(() => {
+      if (hasAutoInitializedSmartLink.current) return;
+      hasAutoInitializedSmartLink.current = true;
+      
+      let found: (MentionItem & { trigger: string }) | null = null;
+      editor.state.doc.descendants((node) => {
+        if (found) return false;
+        if (node.type.name === "entityMention") {
+          const { id, trigger, label } = node.attrs;
+          if (trigger === "@") {
+            const char = characters.find(c => c.id === id);
+            if (char) {
+              found = { id: char.id, name: label || char.name, color: char.color, role: char.role || "Character", trigger: "@" };
+            }
+          }
+        }
+      });
+      
+      if (found && !smartLinkEntity) {
+        setSmartLinkEntity(found);
+      }
+    }, 600); // Give the editor content time to mount and parse
+    
+    return () => clearTimeout(t);
+  }, [editor, characters, smartLinkEntity]);
+
   // ── Hover + click on mention spans ────────────────────────────────────────
   useEffect(() => {
-    if (!editor) return;
-    const el = editor.view.dom as HTMLElement;
+    if (!editor || !containerRef.current) return;
+    const el = containerRef.current;
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest(
@@ -346,7 +407,8 @@ function RichEditorCore({
       if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
       tooltipTimeout.current = setTimeout(() => {
         const rect = target.getBoundingClientRect();
-        setTooltip({ char, anchor: target, x: rect.left, y: rect.bottom + 4 });
+        const nodeLabel = target.getAttribute("data-label") || char.name;
+        setTooltip({ char, anchor: target, x: rect.left, y: rect.bottom + 4, nodeLabel });
       }, 120);
     };
 
@@ -388,59 +450,100 @@ function RichEditorCore({
   const scanBubble = useMemo(() => {
     if (!scanLink || !editor) return null;
 
-    const allItems: (MentionItem & { trigger: string })[] = [
-      ...buildMentionItems("@", characters, pinnedCharIds, extraEntities).map(
-        (i) => ({ ...i, trigger: "@" }),
-      ),
-      ...buildMentionItems("#", characters, pinnedCharIds, extraEntities).map(
-        (i) => ({ ...i, trigger: "#" }),
-      ),
-      ...buildMentionItems("%", characters, pinnedCharIds, extraEntities).map(
-        (i) => ({ ...i, trigger: "%" }),
-      ),
-      ...buildMentionItems("~", characters, pinnedCharIds, extraEntities).map(
-        (i) => ({ ...i, trigger: "~" }),
-      ),
-      ...buildMentionItems("^", characters, pinnedCharIds, extraEntities).map(
-        (i) => ({ ...i, trigger: "^" }),
-      ),
-      ...buildMentionItems("$", characters, pinnedCharIds, extraEntities).map(
-        (i) => ({ ...i, trigger: "$" }),
-      ),
-    ];
-    const q = scanLink.query;
-    const filtered =
-      q.length > 0
-        ? allItems.filter((c) => c.name.toLowerCase().includes(q))
-        : allItems;
-    if (filtered.length === 0) return null;
+    const allItems = buildAllScanItems(characters, pinnedCharIds, extraEntities);
+    const filtered = filterScanItems(allItems, scanLink.query);
 
-    const bubbleLeft = Math.min(
-      Math.max(8, scanLink.rect.left + scanLink.rect.width / 2 - 110),
-      window.innerWidth - 228,
-    );
+    const bubbleCentreX = scanLink.rect.left + scanLink.rect.width / 2;
     const bubbleTop = scanLink.rect.top - 8;
 
+    if (!pickerOpen) {
+      // ── Phase 1: tiny non-intrusive pill ───────────────────────────────
+      const pillLeft = Math.min(Math.max(4, bubbleCentreX - 44), window.innerWidth - 96);
+      return createPortal(
+        <div
+          className="seshat-scan-pill"
+          style={{
+            position: "fixed",
+            top: bubbleTop,
+            left: pillLeft,
+            transform: "translateY(-100%)",
+            zIndex: 1200,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            background: "var(--bg-side)",
+            border: "1px solid var(--border)",
+            borderRadius: 20,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            overflow: "hidden",
+            fontFamily: "var(--font-serif)",
+            fontSize: 11,
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--color-primary)",
+              padding: "4px 10px",
+              fontSize: 11,
+              letterSpacing: 0.5,
+              whiteSpace: "nowrap",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setPickerOpen(true);
+            }}
+          >
+            ⬡ Link entity
+          </button>
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              borderLeft: "1px solid var(--border)",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              padding: "4px 7px",
+              fontSize: 12,
+              lineHeight: 1,
+            }}
+            onMouseDown={(e) => { e.preventDefault(); closeScanLink(); }}
+          >
+            ×
+          </button>
+        </div>,
+        document.body,
+      );
+    }
+
+    // ── Phase 2: full entity picker ─────────────────────────────────────
+    const pickerLeft = Math.min(Math.max(8, bubbleCentreX - 120), window.innerWidth - 248);
     return createPortal(
       <div
         className="seshat-scan-bubble"
         style={{
           position: "fixed",
           top: bubbleTop,
-          left: bubbleLeft,
+          left: pickerLeft,
           transform: "translateY(-100%)",
           zIndex: 1200,
           background: "var(--bg-side)",
           border: "1px solid var(--border)",
           borderRadius: 6,
           boxShadow: "0 6px 24px rgba(0,0,0,0.18)",
-          minWidth: 220,
-          maxWidth: 280,
+          minWidth: 230,
+          maxWidth: 290,
           overflow: "hidden",
           fontFamily: "var(--font-serif)",
         }}
         onMouseDown={(e) => e.preventDefault()}
       >
+        {/* Header */}
         <div
           style={{
             padding: "7px 12px",
@@ -454,7 +557,7 @@ function RichEditorCore({
             justifyContent: "space-between",
           }}
         >
-          <span>Link to entity</span>
+          <span>Link "{scanLink.text}"</span>
           <button
             style={{
               background: "none",
@@ -465,11 +568,12 @@ function RichEditorCore({
               lineHeight: 1,
               padding: "0 2px",
             }}
-            onClick={() => setScanLink(null)}
+            onMouseDown={(e) => { e.preventDefault(); closeScanLink(); }}
           >
             ×
           </button>
         </div>
+        {/* Search box */}
         <div
           style={{
             padding: "6px 10px",
@@ -481,7 +585,7 @@ function RichEditorCore({
             value={scanLink.query}
             onChange={(e) =>
               setScanLink((s) =>
-                s ? { ...s, query: e.target.value.toLowerCase() } : null,
+                s ? { ...s, query: e.target.value } : null,
               )
             }
             placeholder={`Filter "${scanLink.text}"…`}
@@ -496,10 +600,11 @@ function RichEditorCore({
             }}
           />
         </div>
-        <div style={{ maxHeight: 180, overflowY: "auto" }}>
-          {filtered.slice(0, 12).map((item) => (
+        {/* Entity list */}
+        <div style={{ maxHeight: 200, overflowY: "auto" }}>
+          {filtered.slice(0, 14).map((item) => (
             <div
-              key={item.id}
+              key={`${item.trigger}-${item.id}`}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -525,8 +630,9 @@ function RichEditorCore({
                   scanLink.from,
                   scanLink.to,
                   item.trigger,
+                  scanLink.text, // keep original text visible, not character's canonical name
                 );
-                setScanLink(null);
+                closeScanLink();
               }}
             >
               <span
@@ -564,7 +670,7 @@ function RichEditorCore({
       </div>,
       document.body,
     );
-  }, [scanLink, editor, characters, pinnedCharIds, extraEntities]);
+  }, [scanLink, pickerOpen, editor, characters, pinnedCharIds, extraEntities]);
 
   if (!editor) return null;
 
@@ -578,7 +684,12 @@ function RichEditorCore({
 
   return (
     <div ref={containerRef} style={styles.container}>
-      <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
+      <MenuBar
+        editor={editor}
+        showMentionHelp={characters.length > 0}
+        smartLinkEntity={smartLinkEntity}
+        onClearSmartLink={() => setSmartLinkEntity(null)}
+      />
       <EditorContent editor={editor} />
 
       {tooltip &&
@@ -595,6 +706,7 @@ function RichEditorCore({
           >
             <CharMentionTooltip
               char={tooltip.char}
+              nodeLabel={tooltip.nodeLabel}
               events={events}
               pinnedEvents={pinnedEvents}
               anchorEl={tooltip.anchor}

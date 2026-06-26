@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { mergeAttributes, Node } from "@tiptap/core";
+import { Node } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import type { NodeViewProps } from "@tiptap/react";
 import { useSelector } from "@legendapp/state/react";
@@ -37,12 +37,19 @@ function MentionNodeView(props: NodeViewProps) {
     }
   });
 
-  const displayName = entity ? entity.name : label || "Unknown";
+  // label attr = custom display text (e.g. original prose in scan-and-link).
+  // If label is set and differs from entity.name, we respect it as the visual text.
+  const hasCustomLabel = !!label && (!entity || label !== entity.name);
+  const displayName = hasCustomLabel
+    ? label
+    : entity
+      ? entity.name
+      : label || "Unknown";
 
   let color = "inherit";
   if (entity) {
     if (trigger === "@" && "color" in entity) color = entity.color || "inherit";
-    else if (trigger === "#") color = "#00acc1"; // Teal
+    else if (trigger === "#") color = "#00acc1";
     else if (trigger === "%") color = "#d32f2f";
     else if (trigger === "~") color = "#388e3c";
     else if (trigger === "^") color = "#0288d1";
@@ -60,7 +67,8 @@ function MentionNodeView(props: NodeViewProps) {
         color,
       }}
     >
-      {trigger}
+      {/* Only show trigger prefix for standard @mentions, not scan-linked prose */}
+      {!hasCustomLabel && trigger}
       {displayName}
     </NodeViewWrapper>
   );
@@ -95,19 +103,19 @@ export const EntityMention = Node.create({
     ];
   },
 
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node }) {
+    const { id, trigger, label } = node.attrs;
+    // If label differs from canonical name (scan-linked prose), render without trigger prefix
+    const content = label ? label : `${trigger}${label || ""}`;
     return [
       "span",
-      mergeAttributes(
-        {
-          "data-mention-id": node.attrs.id,
-          "data-trigger": node.attrs.trigger,
-          "data-label": node.attrs.label,
-          class: "char-mention",
-        },
-        HTMLAttributes,
-      ),
-      `${node.attrs.trigger}${node.attrs.label}`,
+      {
+        "data-mention-id": id,
+        "data-trigger": trigger,
+        "data-label": label,
+        class: "char-mention",
+      },
+      content,
     ];
   },
 
