@@ -21,6 +21,14 @@ import { useAnimateIn } from "../hooks/useAnimateIn";
 import { S } from "../lib/utils";
 import { EMPTY_ARR } from "../lib/constants";
 
+// Helper to safely and consistently resolve text references between entities
+const normalizeName = (name: string) => name ? name.normalize("NFC").trim().toLowerCase() : "";
+const resolveEntityByName = <T extends { name: string }>(entities: T[], name: string): T | undefined => {
+  const normalized = normalizeName(name);
+  if (!normalized) return undefined;
+  return entities.find((e) => normalizeName(e.name) === normalized);
+};
+
 // Helper to layout the graph
 const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const dagreGraph = new dagre.graphlib.Graph();
@@ -32,8 +40,31 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     dagreGraph.setNode(node.id, { width: 150, height: 50 });
   });
 
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
+  // Cycle breaking logic (DFS) to prevent dagre from throwing on world-building cycles
+  const adjacency = new Map<string, string[]>();
+  nodes.forEach(n => adjacency.set(n.id, []));
+  edges.forEach(edge => adjacency.get(edge.source)?.push(edge.target));
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  
+  const dfs = (nodeId: string) => {
+    visiting.add(nodeId);
+    const neighbors = adjacency.get(nodeId) || [];
+    for (const target of neighbors) {
+      if (visiting.has(target)) {
+        console.warn(`[LoreWebPage] Cycle detected: dropping layout edge ${nodeId} -> ${target}`);
+      } else {
+        dagreGraph.setEdge(nodeId, target);
+        if (!visited.has(target)) dfs(target);
+      }
+    }
+    visiting.delete(nodeId);
+    visited.add(nodeId);
+  };
+
+  nodes.forEach(n => {
+    if (!visited.has(n.id)) dfs(n.id);
   });
 
   dagre.layout(dagreGraph);
@@ -77,13 +108,21 @@ export default function LoreWebPage() {
   const baseLayoutPositions = useMemo(() => {
     const rawNodes: Node[] = [];
     const rawEdges: Edge[] = [];
+    const seenGhosts = new Set<string>();
 
     nations.forEach((n) => {
       rawNodes.push({ id: `nation_${n.id}`, position: { x: 0, y: 0 }, data: { label: "" } });
       n.connections?.forEach((conn) => {
-        const targetNation = nations.find((x) => x.name.toLowerCase() === conn.withNation.toLowerCase());
+        const targetNation = resolveEntityByName(nations, conn.withNation);
         if (targetNation) {
           rawEdges.push({ id: `e_nat_${n.id}_${targetNation.id}`, source: `nation_${n.id}`, target: `nation_${targetNation.id}` });
+        } else if (conn.withNation) {
+          const ghostId = `ghost_nat_${conn.withNation.replace(/\s+/g, '_')}`;
+          if (!seenGhosts.has(ghostId)) {
+            seenGhosts.add(ghostId);
+            rawNodes.push({ id: ghostId, position: { x: 0, y: 0 }, data: { label: "" } });
+          }
+          rawEdges.push({ id: `e_nat_${n.id}_${ghostId}`, source: `nation_${n.id}`, target: ghostId });
         }
       });
     });
@@ -105,9 +144,16 @@ export default function LoreWebPage() {
     treasures.forEach((t) => {
       rawNodes.push({ id: `tr_${t.id}`, position: { x: 0, y: 0 }, data: { label: "" } });
       if (t.creator) {
-        const creatorChar = characters.find((c) => c.name.toLowerCase() === t.creator.toLowerCase());
+        const creatorChar = resolveEntityByName(characters, t.creator);
         if (creatorChar) {
           rawEdges.push({ id: `e_tr_${t.id}_${creatorChar.id}`, source: `char_${creatorChar.id}`, target: `tr_${t.id}` });
+        } else {
+          const ghostId = `ghost_char_${t.creator.replace(/\s+/g, '_')}`;
+          if (!seenGhosts.has(ghostId)) {
+            seenGhosts.add(ghostId);
+            rawNodes.push({ id: ghostId, position: { x: 0, y: 0 }, data: { label: "" } });
+          }
+          rawEdges.push({ id: `e_tr_${t.id}_${ghostId}`, source: ghostId, target: `tr_${t.id}` });
         }
       }
     });
@@ -123,6 +169,7 @@ export default function LoreWebPage() {
   const initialElements = useMemo(() => {
     const rawNodes: Node[] = [];
     const rawEdges: Edge[] = [];
+    const seenGhosts = new Set<string>();
 
     const applyPos = (id: string) => {
       const pos = baseLayoutPositions.get(id);
@@ -133,6 +180,11 @@ export default function LoreWebPage() {
       };
     };
 
+    // Note: We intentionally DO NOT break cycles here. The DFS cycle-breaker in
+    // getLayoutedElements protects dagre from throwing a fatal error during layout,
+    // but we still want cyclical relationships (e.g. Nation A <-> Nation B) to
+    // render visibly on the React Flow canvas.
+    
     // NATIONS
     nations.forEach((n) => {
       rawNodes.push({
@@ -150,9 +202,7 @@ export default function LoreWebPage() {
 
       // Nation connections
       n.connections?.forEach((conn) => {
-        const targetNation = nations.find(
-          (x) => x.name.toLowerCase() === conn.withNation.toLowerCase(),
-        );
+        const targetNation = resolveEntityByName(nations, conn.withNation);
         if (targetNation) {
           rawEdges.push({
             id: `e_nat_${n.id}_${targetNation.id}`,
@@ -161,10 +211,32 @@ export default function LoreWebPage() {
             label: conn.relation,
             animated: true,
             style: { stroke: "var(--color-green)", strokeWidth: 1.5 },
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: "var(--color-green)",
-            },
+            markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-green)" },
+          });
+        } else if (conn.withNation) {
+          const ghostId = `ghost_nat_${conn.withNation.replace(/\s+/g, '_')}`;
+          if (!seenGhosts.has(ghostId)) {
+            seenGhosts.add(ghostId);
+            rawNodes.push({
+              id: ghostId,
+              data: { label: `? ${conn.withNation}` },
+              ...applyPos(ghostId),
+              style: {
+                background: "var(--bg-main)",
+                color: "#ff2a5f",
+                border: "2px dashed #ff2a5f",
+                borderRadius: 8,
+                fontWeight: "bold",
+              }
+            });
+          }
+          rawEdges.push({
+            id: `e_nat_${n.id}_${ghostId}`,
+            source: `nation_${n.id}`,
+            target: ghostId,
+            label: conn.relation,
+            animated: true,
+            style: { stroke: "#ff2a5f", strokeWidth: 1.5, strokeDasharray: "4 4" },
           });
         }
       });
@@ -268,9 +340,7 @@ export default function LoreWebPage() {
 
       if (t.creator) {
         // If creator matches a character name (rough mapping)
-        const creatorChar = characters.find(
-          (c) => c.name.toLowerCase() === t.creator.toLowerCase(),
-        );
+        const creatorChar = resolveEntityByName(characters, t.creator);
         if (creatorChar) {
           rawEdges.push({
             id: `e_tr_${t.id}_${creatorChar.id}`,
@@ -278,10 +348,31 @@ export default function LoreWebPage() {
             target: `tr_${t.id}`,
             label: "Created",
             style: { stroke: "var(--color-orange)", strokeWidth: 1.5 },
-            markerEnd: {
-              type: MarkerType.ArrowClosed,
-              color: "var(--color-orange)",
-            },
+            markerEnd: { type: MarkerType.ArrowClosed, color: "var(--color-orange)" },
+          });
+        } else {
+          const ghostId = `ghost_char_${t.creator.replace(/\s+/g, '_')}`;
+          if (!seenGhosts.has(ghostId)) {
+            seenGhosts.add(ghostId);
+            rawNodes.push({
+              id: ghostId,
+              data: { label: `? ${t.creator}` },
+              ...applyPos(ghostId),
+              style: {
+                background: "var(--bg-main)",
+                color: "#ff2a5f",
+                border: "2px dashed #ff2a5f",
+                borderRadius: 20,
+                fontWeight: "bold",
+              }
+            });
+          }
+          rawEdges.push({
+            id: `e_tr_${t.id}_${ghostId}`,
+            source: ghostId,
+            target: `tr_${t.id}`,
+            label: "Created",
+            style: { stroke: "#ff2a5f", strokeWidth: 1.5, strokeDasharray: "4 4" },
           });
         }
       }
@@ -308,7 +399,14 @@ export default function LoreWebPage() {
           padding: isFullscreen ? "10px 20px" : 0,
         }}
       >
-        <h2 style={styles.title}>Lore & Relationship Web</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <h2 style={styles.title}>Lore & Relationship Web</h2>
+          {initialElements.nodes.length > 150 && (
+            <span style={{ color: "#ffbd2e", fontSize: 12, fontWeight: "bold", background: "rgba(255, 189, 46, 0.1)", padding: "2px 8px", borderRadius: 12 }}>
+              ⚠️ Large Graph (Layout may lag)
+            </span>
+          )}
+        </div>
 
         <div className="seshat-flex-align" style={styles.sliderContainer}>
           <span style={styles.sliderLabel}>
