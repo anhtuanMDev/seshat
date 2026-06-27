@@ -106,7 +106,6 @@ const getLayoutedElements = (
 const EntityInspector = memo(
   ({
     spotlightNodeId,
-    renderedNodes,
     characters,
     events,
     nations,
@@ -118,7 +117,6 @@ const EntityInspector = memo(
     deferredTime,
   }: {
     spotlightNodeId: string;
-    renderedNodes: Node[];
     characters: Character[];
     events: Event[];
     nations: Nation[];
@@ -131,12 +129,10 @@ const EntityInspector = memo(
   }) => {
     const navigate = useNavigate();
     if (!spotlightNodeId) return null;
-    const node = renderedNodes.find((n) => n.id === spotlightNodeId);
-    if (!node) return null;
 
     let badgeText = "Node";
     let badgeColor = "var(--border)";
-    let title = node.data.label as string;
+    let title = "Unknown Entity";
     let buttonText = "";
     let buttonLink = "";
     const fields: Array<{ label: string; value: React.ReactNode }> = [];
@@ -149,7 +145,7 @@ const EntityInspector = memo(
         badgeColor = char.color || "var(--color-primary)";
         title = char.name;
         buttonText = "Open character →";
-        buttonLink = `/book/${bookId}/characters`;
+        buttonLink = `/book/${bookId}/characters/${char.id}`;
 
         const status = resolveStatusAt(char, events, undefined, deferredTime);
         if (status) {
@@ -196,7 +192,7 @@ const EntityInspector = memo(
       if (ev) {
         title = ev.title;
         buttonText = "Open event →";
-        buttonLink = `/book/${bookId}/events`;
+        buttonLink = `/book/${bookId}/events/${ev.id}`;
         fields.push({ label: "Time", value: `T${ev.time}` });
         if (ev.description)
           fields.push({ label: "Description", value: ev.description });
@@ -1251,7 +1247,6 @@ export default function LoreWebPage() {
         {spotlightNodeId ? (
           <EntityInspector
             spotlightNodeId={spotlightNodeId}
-            renderedNodes={renderedNodes}
             characters={characters}
             events={events}
             nations={nations}
