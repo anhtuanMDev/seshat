@@ -75,6 +75,11 @@ export const useChapters = () => {
   return useSelector(() => idx >= 0 ? appStore.books[idx].chapters.get() : []);
 };
 
+export const useForeshadows = () => {
+  const idx = useActiveBookIdx();
+  return useSelector(() => idx >= 0 ? appStore.books[idx].foreshadows.get() : []);
+};
+
 export const useBookEvent = (id: string) => {
   const idx = useActiveBookIdx();
   return useSelector(() => {

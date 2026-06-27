@@ -323,6 +323,8 @@ export interface Monster {
   lore: string;
   behavior: string;
   firstSeen: string;
+  region?: string;
+  description?: string;
 }
 
 export interface Technique {
@@ -338,6 +340,9 @@ export interface Technique {
   cost: string;
   secret: string;
   lore: string;
+  usableBy?: string[];
+  unlockedAt?: string;
+  firstUsedAt?: string;
 }
 
 export interface Ingredient {
