@@ -86,15 +86,30 @@ function buildMentionItems(
     );
   } else if (trigger === "~") {
     extraEntities.ingredients.forEach((i) =>
-      items.push({ id: i.id, name: i.name, color: "#388e3c", role: "Ingredient" }),
+      items.push({
+        id: i.id,
+        name: i.name,
+        color: "#388e3c",
+        role: "Ingredient",
+      }),
     );
   } else if (trigger === "^") {
     extraEntities.techniques.forEach((t) =>
-      items.push({ id: t.id, name: t.name, color: "#0288d1", role: "Technique" }),
+      items.push({
+        id: t.id,
+        name: t.name,
+        color: "#0288d1",
+        role: "Technique",
+      }),
     );
   } else if (trigger === "$") {
     extraEntities.treasures.forEach((t) =>
-      items.push({ id: t.id, name: t.name, color: "#fbc02d", role: "Treasure" }),
+      items.push({
+        id: t.id,
+        name: t.name,
+        color: "#fbc02d",
+        role: "Treasure",
+      }),
     );
   }
 
@@ -115,23 +130,62 @@ function buildAllScanItems(
   },
 ): ScanItem[] {
   // Only show pinned characters (if any are pinned), same logic as @ mention typing
-  const chars = pinnedCharIds.length > 0
-    ? characters.filter((c) => pinnedCharIds.includes(c.id))
-    : characters;
+  const chars =
+    pinnedCharIds.length > 0
+      ? characters.filter((c) => pinnedCharIds.includes(c.id))
+      : characters;
   return [
-    ...chars.map((c) => ({ id: c.id, name: c.name, color: c.color, role: c.role || "Character", trigger: "@" })),
-    ...extraEntities.nations.map((n) => ({ id: n.id, name: n.name, color: "#5e35b1", role: "Nation", trigger: "#" })),
-    ...extraEntities.monsters.map((m) => ({ id: m.id, name: m.name, color: "#d32f2f", role: "Monster", trigger: "%" })),
-    ...extraEntities.ingredients.map((i) => ({ id: i.id, name: i.name, color: "#388e3c", role: "Ingredient", trigger: "~" })),
-    ...extraEntities.techniques.map((t) => ({ id: t.id, name: t.name, color: "#0288d1", role: "Technique", trigger: "^" })),
-    ...extraEntities.treasures.map((t) => ({ id: t.id, name: t.name, color: "#fbc02d", role: "Treasure", trigger: "$" })),
+    ...chars.map((c) => ({
+      id: c.id,
+      name: c.name,
+      color: c.color,
+      role: c.role || "Character",
+      trigger: "@",
+    })),
+    ...extraEntities.nations.map((n) => ({
+      id: n.id,
+      name: n.name,
+      color: "#5e35b1",
+      role: "Nation",
+      trigger: "#",
+    })),
+    ...extraEntities.monsters.map((m) => ({
+      id: m.id,
+      name: m.name,
+      color: "#d32f2f",
+      role: "Monster",
+      trigger: "%",
+    })),
+    ...extraEntities.ingredients.map((i) => ({
+      id: i.id,
+      name: i.name,
+      color: "#388e3c",
+      role: "Ingredient",
+      trigger: "~",
+    })),
+    ...extraEntities.techniques.map((t) => ({
+      id: t.id,
+      name: t.name,
+      color: "#0288d1",
+      role: "Technique",
+      trigger: "^",
+    })),
+    ...extraEntities.treasures.map((t) => ({
+      id: t.id,
+      name: t.name,
+      color: "#fbc02d",
+      role: "Treasure",
+      trigger: "$",
+    })),
   ].filter((item) => !!item.name);
 }
 
 function filterScanItems(items: ScanItem[], query: string): ScanItem[] {
   if (!query) return items;
   const q = query.normalize("NFC").toLowerCase();
-  return items.filter((item) => item.name.normalize("NFC").toLowerCase().includes(q));
+  return items.filter((item) =>
+    item.name.normalize("NFC").toLowerCase().includes(q),
+  );
 }
 
 // ── Core ──────────────────────────────────────────────────────────────────────
@@ -187,10 +241,15 @@ function RichEditorCore({
   // pickerOpen = true  → show the full entity-picker dropdown
   const [pickerOpen, setPickerOpen] = useState(false);
 
-  const closeScanLink = () => { setScanLink(null); setPickerOpen(false); };
+  const closeScanLink = () => {
+    setScanLink(null);
+    setPickerOpen(false);
+  };
 
   // ── Smart link state ─────────────────────────────────────────
-  const [smartLinkEntities, setSmartLinkEntities] = useState<(MentionItem & { trigger: string })[]>([]);
+  const [smartLinkEntities, setSmartLinkEntities] = useState<
+    (MentionItem & { trigger: string })[]
+  >([]);
   const [activeSmartLinkIdx, setActiveSmartLinkIdx] = useState(0);
 
   const smartLinkEntity = smartLinkEntities[activeSmartLinkIdx] || null;
@@ -209,7 +268,8 @@ function RichEditorCore({
       });
     };
     window.addEventListener("seshat-mention-inserted", handleInsert);
-    return () => window.removeEventListener("seshat-mention-inserted", handleInsert);
+    return () =>
+      window.removeEventListener("seshat-mention-inserted", handleInsert);
   }, []);
 
   const removeCurrentSmartLink = useCallback(() => {
@@ -219,10 +279,6 @@ function RichEditorCore({
     });
     setActiveSmartLinkIdx((curr) => Math.max(0, curr - 1));
   }, [activeSmartLinkIdx]);
-
-
-
-
 
   const bookIdx = useActiveBookIdx();
   const extraEntities = useSelector(() => {
@@ -301,15 +357,7 @@ function RichEditorCore({
     ],
     content,
     editorProps: {
-      handleKeyDown(view, event) {
-        console.log(`[EDITOR EVENT] KeyDown: key="${event.key}" code="${event.code}"`);
-        console.log(`[EDITOR STATE] Selection: from=${view.state.selection.from} to=${view.state.selection.to} empty=${view.state.selection.empty}`);
-        console.log(`[EDITOR STATE] Active DOM Element:`, document.activeElement);
-        // Let ProseMirror handle the event normally
-        return false;
-      },
       handlePaste(view, event) {
-        console.log(`[EDITOR EVENT] Paste`);
         const text = event.clipboardData?.getData("text/plain");
         if (text) {
           const isHtml =
@@ -329,8 +377,7 @@ function RichEditorCore({
         return false;
       },
     },
-    onUpdate: ({ editor, transaction }) => {
-      console.log(`[EDITOR UPDATE] Document changed! Steps:`, transaction.steps.length);
+    onUpdate: ({ editor }) => {
       onChange?.(editor.getHTML());
       updatePinpoints(editor);
     },
@@ -341,9 +388,7 @@ function RichEditorCore({
       if (characters.length === 0) return;
       const { state } = editor;
       const { selection } = state;
-      
-      console.log(`[EDITOR EVENT] SelectionUpdate: from=${selection.from} to=${selection.to} empty=${selection.empty}`);
-      
+
       if (selection.empty) {
         closeScanLink();
         return;
@@ -361,7 +406,6 @@ function RichEditorCore({
         }
       });
       if (selectionContainsMention) {
-        console.log(`[EDITOR EVENT] SelectionUpdate SKIPPED — selection spans an entityMention node`);
         closeScanLink();
         return;
       }
@@ -403,8 +447,8 @@ function RichEditorCore({
     if (!smartLinkEntity || !editor) return;
     const { state, view } = editor;
     const currentPos = state.selection.to;
-    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escaped, 'gi');
+    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "gi");
     let matchAfter: { from: number; to: number } | null = null;
     let matchBefore: { from: number; to: number } | null = null;
     state.doc.descendants((node, pos) => {
@@ -415,14 +459,21 @@ function RichEditorCore({
         while ((m = regex.exec(text)) !== null) {
           const from = pos + m.index;
           const to = from + m[0].length;
-          if (from >= currentPos) { if (!matchAfter) matchAfter = { from, to }; }
-          else { if (!matchBefore) matchBefore = { from, to }; }
+          if (from >= currentPos) {
+            if (!matchAfter) matchAfter = { from, to };
+          } else {
+            if (!matchBefore) matchBefore = { from, to };
+          }
         }
       }
     });
     const target = matchAfter || matchBefore;
     if (target) {
-      view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, target.from, target.to)).scrollIntoView());
+      view.dispatch(
+        state.tr
+          .setSelection(TextSelection.create(state.doc, target.from, target.to))
+          .scrollIntoView(),
+      );
       view.focus();
     } else {
       removeCurrentSmartLink();
@@ -433,16 +484,21 @@ function RichEditorCore({
     if (!smartLinkEntity || !editor) return;
     const { state, view } = editor;
     const { selection } = state;
-    const selectedText = state.doc.textBetween(selection.from, selection.to, " ");
+    const selectedText = state.doc.textBetween(
+      selection.from,
+      selection.to,
+      " ",
+    );
     if (selectedText.toLowerCase() === smartLinkEntity.name.toLowerCase()) {
       const tr = state.tr.replaceWith(
-        selection.from, selection.to,
+        selection.from,
+        selection.to,
         state.schema.nodes.entityMention.create({
           id: smartLinkEntity.id,
           trigger: smartLinkEntity.trigger,
           label: selectedText,
           scanned: true,
-        })
+        }),
       );
       view.dispatch(tr);
       view.focus();
@@ -455,8 +511,8 @@ function RichEditorCore({
   const handleSmartLinkAcceptAll = useCallback(() => {
     if (!smartLinkEntity || !editor) return;
     const { state, view } = editor;
-    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escaped, 'gi');
+    const escaped = smartLinkEntity.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "gi");
     let tr = state.tr;
     const matches: { from: number; to: number; text: string }[] = [];
     state.doc.descendants((node, pos) => {
@@ -464,19 +520,25 @@ function RichEditorCore({
         const text = node.text || "";
         let m;
         while ((m = regex.exec(text)) !== null) {
-          matches.push({ from: pos + m.index, to: pos + m.index + m[0].length, text: m[0] });
+          matches.push({
+            from: pos + m.index,
+            to: pos + m.index + m[0].length,
+            text: m[0],
+          });
         }
       }
     });
     matches.sort((a, b) => b.from - a.from);
     for (const match of matches) {
-      tr = tr.replaceWith(match.from, match.to,
+      tr = tr.replaceWith(
+        match.from,
+        match.to,
         state.schema.nodes.entityMention.create({
           id: smartLinkEntity.id,
           trigger: smartLinkEntity.trigger,
           label: match.text,
           scanned: true,
-        })
+        }),
       );
     }
     view.dispatch(tr);
@@ -504,32 +566,40 @@ function RichEditorCore({
   const hasAutoInitializedSmartLink = useRef(false);
 
   useEffect(() => {
-    if (!editor || editor.isDestroyed || characters.length === 0 || hasAutoInitializedSmartLink.current) return;
-    
+    if (
+      !editor ||
+      editor.isDestroyed ||
+      characters.length === 0 ||
+      hasAutoInitializedSmartLink.current
+    )
+      return;
+
     const t = setTimeout(() => {
       if (hasAutoInitializedSmartLink.current) return;
       hasAutoInitializedSmartLink.current = true;
-      
+
       const allItems = buildAllScanItems(characters, [], extraEntities);
       let found: (MentionItem & { trigger: string }) | null = null;
-      
+
       editor.state.doc.descendants((node) => {
         if (found) return false;
         if (node.type.name === "entityMention") {
           const { id, trigger, label } = node.attrs;
-          const matched = allItems.find(item => item.id === id && item.trigger === trigger);
+          const matched = allItems.find(
+            (item) => item.id === id && item.trigger === trigger,
+          );
           if (matched) {
             found = { ...matched, name: label || matched.name };
           }
         }
       });
-      
+
       if (found && smartLinkEntities.length === 0) {
         setSmartLinkEntities([found]);
         setActiveSmartLinkIdx(0);
       }
     }, 600); // Give the editor content time to mount and parse
-    
+
     return () => clearTimeout(t);
   }, [editor, characters, extraEntities, smartLinkEntities.length]);
 
@@ -550,7 +620,13 @@ function RichEditorCore({
       tooltipTimeout.current = setTimeout(() => {
         const rect = target.getBoundingClientRect();
         const nodeLabel = target.getAttribute("data-label") || char.name;
-        setTooltip({ char, anchor: target, x: rect.left, y: rect.bottom + 4, nodeLabel });
+        setTooltip({
+          char,
+          anchor: target,
+          x: rect.left,
+          y: rect.bottom + 4,
+          nodeLabel,
+        });
       }, 120);
     };
 
@@ -592,7 +668,11 @@ function RichEditorCore({
   const scanBubble = useMemo(() => {
     if (!scanLink || !editor || editor.isDestroyed) return null;
 
-    const allItems = buildAllScanItems(characters, pinnedCharIds, extraEntities);
+    const allItems = buildAllScanItems(
+      characters,
+      pinnedCharIds,
+      extraEntities,
+    );
     const filtered = filterScanItems(allItems, scanLink.query);
 
     const bubbleCentreX = scanLink.rect.left + scanLink.rect.width / 2;
@@ -600,7 +680,10 @@ function RichEditorCore({
 
     if (!pickerOpen) {
       // ── Phase 1: tiny non-intrusive pill ───────────────────────────────
-      const pillLeft = Math.min(Math.max(4, bubbleCentreX - 44), window.innerWidth - 96);
+      const pillLeft = Math.min(
+        Math.max(4, bubbleCentreX - 44),
+        window.innerWidth - 96,
+      );
       return createPortal(
         <div
           className="seshat-scan-pill"
@@ -634,8 +717,12 @@ function RichEditorCore({
               letterSpacing: 0.5,
               whiteSpace: "nowrap",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-hover)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--bg-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "none";
+            }}
             onMouseDown={(e) => {
               e.preventDefault();
               setPickerOpen(true);
@@ -654,7 +741,10 @@ function RichEditorCore({
               fontSize: 12,
               lineHeight: 1,
             }}
-            onMouseDown={(e) => { e.preventDefault(); closeScanLink(); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              closeScanLink();
+            }}
           >
             ×
           </button>
@@ -664,7 +754,10 @@ function RichEditorCore({
     }
 
     // ── Phase 2: full entity picker ─────────────────────────────────────
-    const pickerLeft = Math.min(Math.max(8, bubbleCentreX - 120), window.innerWidth - 248);
+    const pickerLeft = Math.min(
+      Math.max(8, bubbleCentreX - 120),
+      window.innerWidth - 248,
+    );
     return createPortal(
       <div
         className="seshat-scan-bubble"
@@ -710,7 +803,10 @@ function RichEditorCore({
               lineHeight: 1,
               padding: "0 2px",
             }}
-            onMouseDown={(e) => { e.preventDefault(); closeScanLink(); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              closeScanLink();
+            }}
           >
             ×
           </button>
@@ -726,9 +822,7 @@ function RichEditorCore({
             autoFocus
             value={scanLink.query}
             onChange={(e) =>
-              setScanLink((s) =>
-                s ? { ...s, query: e.target.value } : null,
-              )
+              setScanLink((s) => (s ? { ...s, query: e.target.value } : null))
             }
             placeholder={`Filter "${scanLink.text}"…`}
             style={{
@@ -826,78 +920,189 @@ function RichEditorCore({
 
   return (
     <div ref={containerRef} style={styles.container}>
-      <MenuBar
-        editor={editor}
-        showMentionHelp={characters.length > 0}
-      />
+      <MenuBar editor={editor} showMentionHelp={characters.length > 0} />
       <EditorContent editor={editor} />
 
       {/* Smart Link floating bar — fixed portal so it persists during scroll */}
-      {smartLinkEntity && editor && createPortal(
-        <div style={floatingSmartBarStyle}>
-          <div style={floatingSmartBarLeft}>
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5" />
-            </svg>
-            <span style={floatingSmartLabel}>Smart Link</span>
-            <span style={{ ...floatingSmartName, color: smartLinkEntity.color || "var(--color-primary)" }}>
-              {smartLinkEntity.name}
-            </span>
-          </div>
-          <div style={floatingSmartActions}>
-            <button style={floatingSmartBtn} title="Jump to next occurrence" onClick={handleSmartLinkNext}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-active)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
-              <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              Next
-            </button>
-            <button style={floatingSmartBtnPrimary} title="Link this occurrence and jump to next" onClick={handleSmartLinkAccept}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.85"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}>
-              <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-              Accept
-            </button>
-            <button style={{ ...floatingSmartBtnPrimary, opacity: 0.82 }} title="Link all occurrences in this chapter" onClick={handleSmartLinkAcceptAll}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.82"; }}>
-              <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3" /></svg>
-              Accept All
-            </button>
-            <button style={floatingSmartDismiss} title="Dismiss Smart Link" onClick={removeCurrentSmartLink}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-active)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}>
-              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
-            </button>
-          </div>
-          
-          {/* Queue Navigation */}
-          {smartLinkEntities.length > 1 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 8, paddingLeft: 8, borderLeft: "1px solid var(--border)" }}>
-              {smartLinkEntities.map((entity, i) => (
-                <button
-                  key={entity.id}
-                  onClick={() => setActiveSmartLinkIdx(i)}
-                  title={`Switch to ${entity.name}`}
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    background: i === activeSmartLinkIdx ? (entity.color || "var(--color-primary)") : "var(--border)",
-                    opacity: i === activeSmartLinkIdx ? 1 : 0.5,
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = i === activeSmartLinkIdx ? "1" : "0.5"; }}
-                />
-              ))}
+      {smartLinkEntity &&
+        editor &&
+        createPortal(
+          <div style={floatingSmartBarStyle}>
+            <div style={floatingSmartBarLeft}>
+              <svg
+                width={12}
+                height={12}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8 19 13M17.8 6.2 19 5M3 21l9-9M12.2 6.2 11 5" />
+              </svg>
+              <span style={floatingSmartLabel}>Smart Link</span>
+              <span
+                style={{
+                  ...floatingSmartName,
+                  color: smartLinkEntity.color || "var(--color-primary)",
+                }}
+              >
+                {smartLinkEntity.name}
+              </span>
             </div>
-          )}
-        </div>,
-        document.body,
-      )}
+            <div style={floatingSmartActions}>
+              <button
+                style={floatingSmartBtn}
+                title="Jump to next occurrence"
+                onClick={handleSmartLinkNext}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "var(--bg-active)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "transparent";
+                }}
+              >
+                <svg
+                  width={11}
+                  height={11}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+                Next
+              </button>
+              <button
+                style={floatingSmartBtnPrimary}
+                title="Link this occurrence and jump to next"
+                onClick={handleSmartLinkAccept}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.opacity = "0.85";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.opacity = "1";
+                }}
+              >
+                <svg
+                  width={11}
+                  height={11}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                Accept
+              </button>
+              <button
+                style={{ ...floatingSmartBtnPrimary, opacity: 0.82 }}
+                title="Link all occurrences in this chapter"
+                onClick={handleSmartLinkAcceptAll}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.opacity = "1";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.opacity = "0.82";
+                }}
+              >
+                <svg
+                  width={11}
+                  height={11}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3" />
+                </svg>
+                Accept All
+              </button>
+              <button
+                style={floatingSmartDismiss}
+                title="Dismiss Smart Link"
+                onClick={removeCurrentSmartLink}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "var(--bg-active)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "transparent";
+                }}
+              >
+                <svg
+                  width={12}
+                  height={12}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Queue Navigation */}
+            {smartLinkEntities.length > 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  marginLeft: 8,
+                  paddingLeft: 8,
+                  borderLeft: "1px solid var(--border)",
+                }}
+              >
+                {smartLinkEntities.map((entity, i) => (
+                  <button
+                    key={entity.id}
+                    onClick={() => setActiveSmartLinkIdx(i)}
+                    title={`Switch to ${entity.name}`}
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      background:
+                        i === activeSmartLinkIdx
+                          ? entity.color || "var(--color-primary)"
+                          : "var(--border)",
+                      opacity: i === activeSmartLinkIdx ? 1 : 0.5,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.opacity =
+                        "1";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.opacity =
+                        i === activeSmartLinkIdx ? "1" : "0.5";
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
 
       {tooltip &&
         createPortal(
