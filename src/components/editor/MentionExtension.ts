@@ -1,6 +1,6 @@
 import { Extension, type Range } from "@tiptap/core";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import type { EditorState } from "@tiptap/pm/state";
 import type { EditorView } from "@tiptap/pm/view";
 
@@ -429,13 +429,26 @@ function insertMention(view: EditorView, item: MentionItem, range: Range, trigge
   );
   // Insert a space after the mention ONLY if it was manually typed via the @ popup.
   // If it was scanned from existing prose, it already has correct surrounding spacing.
+  let newPos = range.from + 1; // Since node size is 1
   if (!scanned) {
-    const insertPos = range.from + 1; // Since node size is 1
-    tr.insertText(" ", insertPos);
+    tr.insertText(" ", newPos);
+    newPos += 1;
   }
+  
+  // ⚠️ CRITICAL BUGFIX: Explicitly collapse the selection to a TextSelection AFTER the node.
+  // If we don't do this, ProseMirror leaves it as a NodeSelection covering the atom.
+  // When the user types, the browser's native cursor handling over an uneditable
+  // NodeSelection will collapse the cursor and swallow all subsequent keystrokes!
+  tr.setSelection(TextSelection.create(tr.doc, newPos));
+  
   dispatch(tr);
   hidePopup();
-  view.focus();
+  
+  // Defer focus slightly so the browser's mouseup event doesn't steal focus 
+  // back after the popup unmounts.
+  setTimeout(() => {
+    if (!view.isDestroyed) view.focus();
+  }, 10);
 
   window.dispatchEvent(
     new CustomEvent("seshat-mention-inserted", {

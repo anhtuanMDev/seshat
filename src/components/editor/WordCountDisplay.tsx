@@ -16,6 +16,10 @@ export function WordCountDisplay({ editor }: WordCountDisplayProps) {
     };
   }, [editor]);
 
+  if (editor.isDestroyed) {
+    return null;
+  }
+
   const text = editor.getText().trim();
   const wordCount = text === "" ? 0 : text.split(/\s+/).length;
 

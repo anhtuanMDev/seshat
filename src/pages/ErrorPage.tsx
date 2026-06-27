@@ -1,6 +1,10 @@
-import { useEffect } from "react";
-import { useRouteError, useNavigate, isRouteErrorResponse } from "react-router-dom";
 import { Button } from "@mui/material";
+import { useLayoutEffect } from "react";
+import {
+  isRouteErrorResponse,
+  useNavigate,
+  useRouteError,
+} from "react-router-dom";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 
 export default function ErrorPage() {
@@ -23,12 +27,17 @@ export default function ErrorPage() {
     errorMessage = String((error as Record<string, unknown>).message);
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const msg = errorMessage.toLowerCase();
-    if (msg.includes("failed to fetch dynamically imported module") || msg.includes("importing a module script failed")) {
-      const reloaded = sessionStorage.getItem("app-update-reload");
-      if (!reloaded) {
-        sessionStorage.setItem("app-update-reload", "true");
+    if (
+      msg.includes("failed to fetch dynamically imported module") ||
+      msg.includes("importing a module script failed")
+    ) {
+      const lastReload = sessionStorage.getItem("app-update-reload");
+      const now = Date.now();
+      // If we haven't reloaded in the last 10 seconds, force a reload to get new chunks
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+        sessionStorage.setItem("app-update-reload", now.toString());
         window.location.reload();
       }
     }

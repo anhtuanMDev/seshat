@@ -493,7 +493,7 @@ function RichEditorCore({
 
   // Sync external content changes (e.g. from lazy load or form reset) into the editor
   useEffect(() => {
-    if (editor && content !== undefined) {
+    if (editor && !editor.isDestroyed && content !== undefined) {
       const current = editor.getHTML();
       if (current !== content && !(current === "<p></p>" && content === "")) {
         editor.commands.setContent(content, { emitUpdate: false });
@@ -504,7 +504,7 @@ function RichEditorCore({
   const hasAutoInitializedSmartLink = useRef(false);
 
   useEffect(() => {
-    if (!editor || characters.length === 0 || hasAutoInitializedSmartLink.current) return;
+    if (!editor || editor.isDestroyed || characters.length === 0 || hasAutoInitializedSmartLink.current) return;
     
     const t = setTimeout(() => {
       if (hasAutoInitializedSmartLink.current) return;
@@ -543,7 +543,7 @@ function RichEditorCore({
         ".char-mention",
       ) as HTMLElement | null;
       if (!target) return;
-      const id = target.getAttribute("data-id");
+      const id = target.getAttribute("data-mention-id");
       const char = characters.find((c) => c.id === id);
       if (!char) return;
       if (tooltipTimeout.current) clearTimeout(tooltipTimeout.current);
@@ -567,7 +567,7 @@ function RichEditorCore({
       ) as HTMLElement | null;
       if (!target) return;
       e.preventDefault();
-      const id = target.getAttribute("data-id");
+      const id = target.getAttribute("data-mention-id");
       const char = characters.find((c) => c.id === id);
       if (!char || !bookId) return;
       setTooltip(null);
@@ -590,7 +590,7 @@ function RichEditorCore({
   }, [editor, characters, isDirty, bookId, navigate]);
 
   const scanBubble = useMemo(() => {
-    if (!scanLink || !editor) return null;
+    if (!scanLink || !editor || editor.isDestroyed) return null;
 
     const allItems = buildAllScanItems(characters, pinnedCharIds, extraEntities);
     const filtered = filterScanItems(allItems, scanLink.query);
