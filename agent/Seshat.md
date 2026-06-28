@@ -452,7 +452,7 @@ Interactive directed node graph visualizing connections between characters, nati
 
 ### AIPage (`/book/:bookId/ai`)
 
-Unified BYOK (Bring Your Own Key) OpenAI-compatible narrative engine interface. Replaces the old `AIChatModal`.
+Unified server-proxied OpenAI-compatible narrative engine interface. Replaces the old `AIChatModal`.
 **Architecture:** `AIPage.tsx` (~320 lines) is a pure orchestrator — it wires four custom hooks and six sub-components. All business logic, styles, and UI live in `src/components/ai/`.
 
 **Custom hooks:**
@@ -630,7 +630,7 @@ Each domain directory mirrors a page and contains components that are only used 
 | Global Glossary    | `App.tsx`                       | `GlobalSearchModal` extended to instantly search nations, techniques, ingredients, monsters, treasures                                                                                                                                           |
 | Issue Tracker      | `IssuesPage`                    | Direct integration with GitHub Issues API to submit bugs and feedback (`lib/githubIssues`)                                                                                                                                                       |
 | Equipment Config   | `CharacterPage`                 | `EquipmentBlock` managing loadouts, dynamically resolved via `resolveEquipment.ts`                                                                                                                                                               |
-| AI Chat Interface  | `AIPage`                        | Unified BYOK OpenAI-compatible narrative engine with streaming, think-tag stripping, expert modes, and direct canon insertion                                                                                    |
+| AI Chat Interface  | `AIPage`                        | Secure server-proxied OpenAI-compatible narrative engine with streaming, think-tag stripping, expert modes, and direct canon insertion                                                                                    |
 | Batch Export       | `lib/export`                    | `/api/github/exportChapters` GraphQL endpoint fetches bulk chapter bodies for DOCX generation                                                                                                                                                    |
 
 ---
@@ -1361,14 +1361,15 @@ query {
 
 ### 🔴 High-Impact Gaps (Fix Soon)
 
-#### 1. AI API Keys Are Client-Side (Security Risk)
-AI calls (`AIPage.tsx`) go directly from the browser to OpenAI/Anthropic/OpenRouter using the user's personal BYOK key stored in `localStorage`. The key is visible in the DevTools network tab in request headers.
+#### 1. Weak Auth Model (`accessCode` is unscalable)
 
-**Risk:** On any shared device or inspected session, the raw API key is exposed.
+The current auth model uses a `username` + `accessCode` mechanism backed by a `users.json` file in the main GitHub branch. This acts as a shared secret/password with no identity provider, no password reset, and poor scaling.
 
-**Resolution path:** Add a `/api/ai/chat` Cloudflare Pages Function proxy that accepts the user's request payload (messages, model, system prompt) and injects the key server-side per user session. The client never transmits the raw key. Rate limiting and provider switching become server-side concerns.
+**Action:** Migrate to a real identity provider. Given the heavy reliance on the GitHub API, implementing GitHub OAuth via Cloudflare Workers (or using email/password with bcrypt) is the required next step. The `/api/github/login` and `/api/github/register` functions will need to be rewritten to handle OAuth callbacks and issue JWTs based on the authenticated GitHub identity.
 
 ---
+
+
 
 #### 2. `AssetsPage` and `IssuesPage` Routes May Be Orphaned
 

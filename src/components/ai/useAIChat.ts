@@ -94,10 +94,7 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
         return false;
       }
 
-      if (!apiKey.trim() && !baseUrl.includes("localhost")) {
-        showToast("Please enter an API Key in settings first", "error");
-        return false;
-      }
+
 
       const baseMsgs = historyOverride ?? messages;
       const newMsgs = [...baseMsgs, { role: "user" as const, content: userContent }];
@@ -133,11 +130,12 @@ Current Arc Stage: ${char.statusTimeline?.[char.statusTimeline.length - 1]?.arcS
 
         abortControllerRef.current = new AbortController();
 
-        const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        const token = localStorage.getItem("seshat-auth-token") || "";
+        const res = await fetch(`/api/ai/chat`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey.trim()}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
           signal: abortControllerRef.current.signal,

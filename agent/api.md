@@ -384,6 +384,9 @@ This section maps the Seshat application's pages and features to the APIs they c
 
 ### 1. Auth Feature (`AuthPage.tsx`)
 
+> [!WARNING]
+> **Auth Model Deprecation:** The current `username` + `accessCode` (shared secret) authentication model is unscalable and deprecated. The architecture is actively migrating to **GitHub OAuth** via Cloudflare Workers. Future iterations of `/api/github/login` and `/api/github/register` will act as OAuth callback handlers to issue JWTs based on the authenticated GitHub identity.
+
 - **APIs Used:** `loginToGitHub`, `registerToGitHub`
 - **Context & Why:** This page acts as the authentication gateway. It needs to call these POST endpoints to validate user credentials against the shared access code logic or to create a new user profile/branch on the GitHub backend. The successful response provides a JWT token, which is stored in `localStorage`/`sessionStorage` and attached to all future requests.
 
@@ -505,8 +508,8 @@ categorize === "image" (all others)?
 - **APIs Used:** `updateFilesOnGitHub` (via "Add to Canon"), Third-Party AI Providers (OpenAI, Anthropic, OpenRouter via direct fetch).
 - **Context & Why:** A standalone workspace where the AI Oracle can be prompted for brainstorming. It implements "Smarter Context Injection", meaning the user can granularly select specific Characters, Events, Chapters, and Attached Files to inject, rather than loading the entire world.
 
-> [!CAUTION]
-> **Security Gap — AI provider keys are sent client-side.** The user's personal API key (OpenAI / Anthropic / OpenRouter) is stored in `localStorage` and transmitted directly from the browser to the provider. The key is fully visible in the DevTools network tab. **Fix:** Implement a `/api/ai/chat` Cloudflare Pages Function proxy. The client sends the message payload only; the Worker injects the key server-side. This also enables rate limiting and server-side provider switching without UI changes.
+> [!NOTE]
+> **Secure Server-Side AI Proxy.** The application routes all AI chat payloads through a secure Cloudflare Pages Function proxy (`/api/ai/chat`). The client does not send API keys. The Worker injects the `AI_API_KEY` (and optionally `AI_BASE_URL`) from environment variables server-side, fully hiding credentials from the browser.
 - **Key Sub-Features:**
   - **Context Token Budget:** Real-time calculation of token payload weight, dynamically displayed to the user based on filter logic.
   - **Persona Mode Selector (Expert Prompts):** A UI allowing the user to select predefined expert identities (e.g. Scene Writer, Plot Doctor, Dialogue Coach, Lore Expander). This injects unique heuristics directly into the AI's base prompt to format and focus its responses.
