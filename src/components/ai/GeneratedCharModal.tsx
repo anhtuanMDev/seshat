@@ -7,7 +7,7 @@ import { Modal } from "../ui/Modal";
 import { appStore } from "../../store/appStore";
 import type { Character, BookData } from "../../store/appStore";
 import { showToast } from "../../store/toastStore";
-import { updateFilesOnGitHub } from "../../lib/githubSync";
+
 import { mkChar } from "../../lib/utils";
 
 interface Props {
@@ -94,17 +94,7 @@ export default function GeneratedCharModal({
 
     book.characters.set(newChars);
 
-    const token =
-      localStorage.getItem("seshat-auth-token") ||
-      sessionStorage.getItem("seshat-auth-token");
-    if (token) {
-      updateFilesOnGitHub(token, targetBookId, [
-        {
-          path: `characters/character_${finalChar.id}.json`,
-          content: JSON.stringify(finalChar, null, 2),
-        },
-      ]);
-    }
+
     setOverwriteConfirm(null);
     onClose();
     showToast("Character saved successfully!", "success");

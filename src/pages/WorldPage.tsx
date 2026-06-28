@@ -183,78 +183,8 @@ export default function WorldPage() {
       appStore.books[bookIdx].monsters.set(data.monsters || []);
       appStore.books[bookIdx].treasures.set(data.treasures || []);
 
-      const token =
-        localStorage.getItem("seshat-auth-token") ||
-        sessionStorage.getItem("seshat-auth-token");
-      const bookId = appStore.activeBookId.get();
-      if (token && bookId) {
-        setIsSaving(true);
-        try {
-          const files: { path: string; content: string }[] = [];
-
-          files.push({
-            path: "book.json",
-            content: JSON.stringify(
-              {
-                id: bookId,
-                title: data.title || "",
-                synopsis: data.synopsis || "",
-                setting: data.setting || "",
-                themes: data.themes || "",
-                rules: data.rules || "",
-              },
-              null,
-              2,
-            ),
-          });
-
-          files.push({
-            path: "world/world.json",
-            content: JSON.stringify(
-              { id: bookId, title: data.title || "" },
-              null,
-              2,
-            ),
-          });
-
-          (data.nations || []).forEach((n) =>
-            files.push({
-              path: `world/nations/nation_${n.id}.json`,
-              content: JSON.stringify(n, null, 2),
-            }),
-          );
-          (data.techniques || []).forEach((t) =>
-            files.push({
-              path: `world/techniques/technique_${t.id}.json`,
-              content: JSON.stringify(t, null, 2),
-            }),
-          );
-          (data.ingredients || []).forEach((i) =>
-            files.push({
-              path: `world/ingredients/ingredient_${i.id}.json`,
-              content: JSON.stringify(i, null, 2),
-            }),
-          );
-          (data.monsters || []).forEach((m) =>
-            files.push({
-              path: `world/monsters/monster_${m.id}.json`,
-              content: JSON.stringify(m, null, 2),
-            }),
-          );
-          (data.treasures || []).forEach((tr) =>
-            files.push({
-              path: `world/treasures/treasure_${tr.id}.json`,
-              content: JSON.stringify(tr, null, 2),
-            }),
-          );
-
-          await updateFilesOnGitHub(token, bookId, files);
-          showToast("World synced to cloud", "success");
-          reset(data);
-        } finally {
-          setIsSaving(false);
-        }
-      }
+      showToast("World saved locally", "success");
+      reset(data);
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : String(err);

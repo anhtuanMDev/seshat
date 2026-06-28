@@ -424,6 +424,27 @@ export default function App() {
     }
   };
 
+  // Background auto-sync every 3 minutes to prevent commit history pollution
+  // while ensuring data is backed up to the cloud.
+  useEffect(() => {
+    const autoSyncInterval = setInterval(() => {
+      const savedToken =
+        localStorage.getItem("seshat-auth-token") ||
+        sessionStorage.getItem("seshat-auth-token");
+      if (!savedToken) return;
+
+      const loc = appStore.lastModifiedLocal.get() || 0;
+      const clo = appStore.lastSyncedCloud.get() || 0;
+
+      if (loc > clo && !appStore.isSyncingRemote.get()) {
+        console.log("Auto-syncing to cloud to prevent data loss...");
+        syncToGitHub(savedToken).catch(console.error);
+      }
+    }, 3 * 60 * 1000); // 3 minutes
+
+    return () => clearInterval(autoSyncInterval);
+  }, []);
+
   const worldNations =
     bookIdx >= 0
       ? appStore.books[bookIdx].nations.get() || EMPTY_ARR

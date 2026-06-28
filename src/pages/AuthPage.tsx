@@ -1,137 +1,63 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { S } from "../lib/utils";
-import { Field, GhostButton } from "../components/ui";
-import { VisibilityIcon, VisibilityOffIcon } from "../components/ui/icons";
-import { InputAdornment, IconButton } from "@mui/material";
-import { registerToGitHub, loginToGitHub } from "../lib/githubSync";
+import { GhostButton } from "../components/ui";
 import { showToast } from "../store/toastStore";
 import { checkTokenValidity } from "../lib/auth";
+import GitHubIcon from "@mui/icons-material/GitHub";
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
-  const [loginUser, setLoginUser] = useState("");
-  const [loginCode, setLoginCode] = useState("");
-  const [loginEmail, setLoginEmail] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    // 1. Check if we just returned from GitHub OAuth Callback
+    const searchParams = new URLSearchParams(window.location.search);
+    const oauthToken = searchParams.get("token");
+    const user = searchParams.get("user") || "";
+    
+    if (oauthToken) {
+      // Pick storage based on user's previous selection or default (true)
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem("seshat-auth-token", oauthToken);
+      
+      // Clean up the URL so the token doesn't leak in the browser history
+      window.history.replaceState({}, document.title, "/auth");
+      
+      showToast(user ? `Welcome, ${user}!` : `Welcome back!`, "success");
+      navigate("/");
+      return;
+    }
+
+    // 2. Otherwise check if already logged in
     if (checkTokenValidity()) {
       navigate("/");
     }
-  }, [navigate]);
+  }, [navigate, rememberMe]);
 
-  const submitAuth = async () => {
-    const u = loginUser.trim();
-    const c = loginCode.trim();
-    if (!u || !c) return;
-
-    try {
-      setIsLoading(true);
-      if (isRegisterMode) {
-        if (!loginEmail.trim()) {
-          showToast("Please provide an email address for password recovery.", "error");
-          setIsLoading(false);
-          return;
-        }
-        await registerToGitHub(u, loginEmail.trim(), c);
-        showToast(`Registration successful! Welcome to Seshat, ${u}.`, "success");
-      }
-      
-      const token = await loginToGitHub(u, c);
-
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem("seshat-auth-token", token);
-      
-      // If remember me is unchecked, clean up local storage just in case
-      if (!rememberMe) {
-        localStorage.removeItem("seshat-auth-token");
-      }
-
-      if (!isRegisterMode) {
-        showToast(`Welcome back, ${u}!`, "success");
-      }
-
-      navigate("/");
-    } catch (err) {
-      showToast("Authentication failed: " + (err as Error).message, "error");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGitHubLogin = () => {
+    // Redirect to our secure Cloudflare Worker proxy which handles the OAuth flow
+    window.location.href = "/api/github/oauth/login";
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.headerWrapper}>
-          <h1 style={styles.title}>
-            {isRegisterMode ? "Create Account" : "Welcome to Seshat"}
-          </h1>
+          <h1 style={styles.title}>Welcome to Seshat</h1>
           <p style={styles.subtitle}>
-            {isRegisterMode 
-              ? "Choose a unique username and a secure password."
-              : "Enter your username and access code to continue."}
+            Authenticate with GitHub to access your worlds.
           </p>
         </div>
 
         <div style={styles.form}>
-          <Field
-            label="Username (Branch Name)"
-            value={loginUser}
-            onChange={setLoginUser}
-            placeholder="e.g. alex"
-          />
-          {isRegisterMode && (
-            <Field
-              label="Email Address"
-              value={loginEmail}
-              onChange={setLoginEmail}
-              placeholder="For password recovery"
-              type="email"
-            />
-          )}
-          <Field
-            label="Access Code"
-            value={loginCode}
-            onChange={(v) => setLoginCode(v)}
-            placeholder="Enter secret code"
-            type={showPassword ? "text" : "password"}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton 
-                      onClick={() => setShowPassword(!showPassword)} 
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end" 
-                      size="small" 
-                      style={styles.passwordToggleBtn}
-                    >
-                      {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                )
-              }
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton 
-                    onClick={() => setShowPassword(!showPassword)} 
-                    onMouseDown={(e) => e.preventDefault()}
-                    edge="end" 
-                    size="small" 
-                    style={styles.passwordToggleBtn}
-                  >
-                    {showPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
+          <button 
+            onClick={handleGitHubLogin}
+            style={styles.githubBtn}
+          >
+            <GitHubIcon style={{ marginRight: 8 }} />
+            Login with GitHub
+          </button>
           
           <label style={styles.checkboxLabel}>
             <input 
@@ -140,25 +66,13 @@ export default function AuthPage() {
               onChange={(e) => setRememberMe(e.target.checked)} 
               style={styles.checkboxInput}
             />
-            Remember me
+            Keep me logged in
           </label>
         </div>
 
         <div style={styles.actionsWrapper}>
-          <button 
-            onClick={submitAuth}
-            disabled={isLoading || !loginUser.trim() || !loginCode.trim()}
-            style={{
-              ...styles.submitBtn,
-              cursor: (isLoading || !loginUser.trim() || !loginCode.trim()) ? "default" : "pointer",
-              opacity: (isLoading || !loginUser.trim() || !loginCode.trim()) ? 0.6 : 1,
-            }}
-          >
-            {isLoading ? "Please wait..." : (isRegisterMode ? "Register" : "Login")}
-          </button>
-          
-          <GhostButton onClick={() => setIsRegisterMode(!isRegisterMode)} style={{ width: "100%", padding: 12 }}>
-            {isRegisterMode ? "Already have an account? Login" : "Need an account? Register"}
+          <GhostButton onClick={() => window.open("https://github.com", "_blank")} style={{ width: "100%", padding: 12 }}>
+            Don't have a GitHub account?
           </GhostButton>
         </div>
       </div>
@@ -178,12 +92,12 @@ const styles = {
     background: "var(--bg-main)",
     border: "1px solid var(--border)",
     borderRadius: 8,
-    padding: "32px",
+    padding: "40px 32px",
     width: "100%",
     maxWidth: 400,
     display: "flex",
     flexDirection: "column",
-    gap: 24,
+    gap: 32,
     boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
   },
   headerWrapper: {
@@ -198,15 +112,28 @@ const styles = {
   subtitle: {
     ...S.dim,
     fontSize: 14,
+    lineHeight: 1.5,
   },
   form: {
     display: "flex",
     flexDirection: "column",
     gap: 16,
+    alignItems: "center",
   },
-  passwordToggleBtn: {
-    color: "var(--text-secondary)",
-    marginRight: -8,
+  githubBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    padding: "12px",
+    background: "#24292e", // Standard GitHub Dark
+    color: "#ffffff",
+    border: "none",
+    borderRadius: 6,
+    fontSize: 16,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background 0.2s",
   },
   checkboxLabel: {
     display: "flex",
@@ -215,6 +142,7 @@ const styles = {
     cursor: "pointer",
     color: "var(--text-secondary)",
     fontSize: 14,
+    marginTop: 8,
   },
   checkboxInput: {
     accentColor: "var(--color-blue)",
@@ -226,15 +154,5 @@ const styles = {
     flexDirection: "column",
     gap: 12,
     marginTop: 8,
-  },
-  submitBtn: {
-    padding: "12px",
-    background: "var(--color-blue)",
-    color: "var(--bg-app)",
-    border: "none",
-    borderRadius: 4,
-    fontSize: 16,
-    fontWeight: 600,
-    transition: "opacity 0.2s",
   },
 } satisfies Record<string, React.CSSProperties>;

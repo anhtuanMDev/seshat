@@ -384,11 +384,8 @@ This section maps the Seshat application's pages and features to the APIs they c
 
 ### 1. Auth Feature (`AuthPage.tsx`)
 
-> [!WARNING]
-> **Auth Model Deprecation:** The current `username` + `accessCode` (shared secret) authentication model is unscalable and deprecated. The architecture is actively migrating to **GitHub OAuth** via Cloudflare Workers. Future iterations of `/api/github/login` and `/api/github/register` will act as OAuth callback handlers to issue JWTs based on the authenticated GitHub identity.
-
-- **APIs Used:** `loginToGitHub`, `registerToGitHub`
-- **Context & Why:** This page acts as the authentication gateway. It needs to call these POST endpoints to validate user credentials against the shared access code logic or to create a new user profile/branch on the GitHub backend. The successful response provides a JWT token, which is stored in `localStorage`/`sessionStorage` and attached to all future requests.
+- **Endpoints Used:** `/api/github/oauth/login`, `/api/github/oauth/callback`
+- **Context & Why:** This page acts as the authentication gateway. It renders a "Login with GitHub" button that navigates the user to the `/api/github/oauth/login` Worker endpoint. The user authorizes the application via GitHub OAuth, and is redirected to the `/api/github/oauth/callback` endpoint which fetches their GitHub profile, signs a JWT using the `AUTH_SECRET`, and redirects back to this page with the token. The `AuthPage` intercepts this token from the URL, stores it in `localStorage`/`sessionStorage`, and routes the user into the app.
 
 ### 2. Book Management Feature (`BookListPage.tsx`)
 

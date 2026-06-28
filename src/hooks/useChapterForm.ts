@@ -295,106 +295,29 @@ export function useChapterForm(
 
       eventsToSync.forEach((eid) => processEventSync(eid));
 
-      const token =
-        localStorage.getItem("seshat-auth-token") ||
-        sessionStorage.getItem("seshat-auth-token");
-        
-      if (token) {
-        try {
-          isSavingRef.current = true;
-          setIsSaving(true);
-          const draftUpdate = getUpdatedDrafts(overrideDrafts || ch.drafts.get(), activeDraftId, data.body);
-          
-          if (activeDraftId !== draftUpdate.newActiveDraftId) {
-            setActiveDraftId(draftUpdate.newActiveDraftId);
-          }
-          
-          const currentDrafts = draftUpdate.updatedDrafts;
-          const activeDraftObj = draftUpdate.activeDraft;
+      // Local store persistence
+      ch.number.set(data.number);
+      ch.title.set(data.title);
+      ch.synopsis.set(data.synopsis);
+      ch.body.set(data.body);
+      ch.notes.set(data.notes);
+      ch.pinnedChars.set(data.pinnedChars);
+      ch.pinnedEventIds.set(data.pinnedEventIds);
+      ch.scenes.set(data.scenes);
+      ch.timeRef.set(data.timeRef);
 
-          const metadataPayload = {
-            id,
-            order: ch.order.get(),
-            number: data.number,
-            title: data.title,
-            timeRef: data.timeRef,
-            synopsis: data.synopsis,
-            notes: data.notes,
-            pinnedChars: data.pinnedChars,
-            pinnedEventIds: data.pinnedEventIds,
-            scenes: data.scenes,
-            drafts: currentDrafts.map((d) => ({
-              id: d.id,
-              name: d.name,
-              createdAt: d.createdAt,
-              isDeleted: d.isDeleted,
-            })),
-          };
-
-          const filesToSync = [
-            {
-              path: `chapters/chapter_${id}/metadata.json`,
-              content: JSON.stringify(metadataPayload, null, 2),
-            },
-          ];
-
-          if (activeDraftObj) {
-            filesToSync.push({
-              path: `chapters/chapter_${id}/${activeDraftObj.id}.json`,
-              content: JSON.stringify(activeDraftObj, null, 2),
-            });
-          }
-
-          for (const ep of eventPayloadsToSync) {
-            filesToSync.push({
-              path: `events/event_${ep.eventId}.json`,
-              content: ep.payloadStr,
-            });
-          }
-
-          ch.number.set(data.number);
-          ch.title.set(data.title);
-          ch.synopsis.set(data.synopsis);
-          ch.body.set(data.body);
-          ch.notes.set(data.notes);
-          ch.pinnedChars.set(data.pinnedChars);
-          ch.pinnedEventIds.set(data.pinnedEventIds);
-          ch.scenes.set(data.scenes);
-          ch.timeRef.set(data.timeRef);
-          ch.drafts.set(currentDrafts);
-
-          await updateFilesOnGitHub(token, bookId, filesToSync);
-
-          showToast("Chapter synced to cloud", "success");
-          if (formChapterIdRef.current === id) {
-            reset(data);
-          }
-          return true;
-        } catch (err) {
-          console.error(err);
-          showToast("Failed to sync chapter to cloud", "error");
-          return false;
-        } finally {
-          isSavingRef.current = false;
-          setIsSaving(false);
-          setSaveDoneAt((n) => n + 1);
-        }
-      } else {
-        ch.number.set(data.number);
-        ch.title.set(data.title);
-        ch.synopsis.set(data.synopsis);
-        ch.body.set(data.body);
-        ch.notes.set(data.notes);
-        ch.pinnedChars.set(data.pinnedChars);
-        ch.pinnedEventIds.set(data.pinnedEventIds);
-        ch.scenes.set(data.scenes);
-        ch.timeRef.set(data.timeRef);
-        const currentDrafts = overrideDrafts || ch.drafts.get() || [];
-        ch.drafts.set(currentDrafts);
-        reset(data);
-        showToast("Chapter saved locally", "success");
-        return true;
+      const draftUpdate = getUpdatedDrafts(overrideDrafts || ch.drafts.get(), activeDraftId, data.body);
+      if (activeDraftId !== draftUpdate.newActiveDraftId) {
+        setActiveDraftId(draftUpdate.newActiveDraftId);
       }
+      ch.drafts.set(draftUpdate.updatedDrafts);
+
+      if (formChapterIdRef.current === id) {
+        reset(data);
+      }
+      showToast("Chapter saved locally", "success");
+      setSaveDoneAt((n) => n + 1);
+      return true;
     },
     [bookIdx, bookId, id, chapterIdx, getValues, reset, activeDraftId],
   );

@@ -1016,16 +1016,18 @@ Seshat uses a completely serverless authentication and cloud synchronization mod
 
 ### JWT Authentication
 
-- **Cloudflare Worker Backend:** Endpoints (`/api/github/login`, `/api/github/register`, `/api/github/sync`) run on Cloudflare Workers.
-- **Token Generation:** The user registers/logs in with a `username` (branch name) and `accessCode` (secret password). The backend verifies this against `users.json` on the main GitHub branch, and generates a **JWT-like token** signed via the Web Crypto API using an `AUTH_SECRET` environment variable (HMAC-SHA256).
-- **Client Storage:** The frontend _never_ stores the raw `accessCode`. It saves the signed token to `localStorage`/`sessionStorage` as `seshat-auth-token`.
+- **Cloudflare Worker Backend:** Authentication endpoints (`/api/github/oauth/login`, `/api/github/oauth/callback`) run on Cloudflare Workers.
+- **GitHub OAuth:** Users authenticate natively via GitHub OAuth. The callback endpoint securely exchanges the code for a GitHub access token, fetches the user's GitHub profile, and uses the GitHub `login` name as the unique user identifier.
+- **Token Generation:** The backend generates a **JWT-like token** containing the GitHub username, signed via the Web Crypto API using an `AUTH_SECRET` environment variable (HMAC-SHA256). The legacy `users.json` shared-secret auth model is completely removed.
+- **Client Storage:** The frontend intercepts the token from the OAuth redirect URL and saves it to `localStorage`/`sessionStorage` as `seshat-auth-token`.
 - **AuthGuard (`src/components/AuthGuard.tsx`):** A wrapper component that intercepts rendering for protected routes. It synchronously decodes the token's payload in the browser to check the `exp` (expiration timestamp). If the token is missing or expired, it redirects to the `/auth` route natively without needing to make network requests.
 - **Performant Syncing:** Since the JWT contains the cryptographically signed `username`, the `sync.ts` backend worker bypasses fetching and parsing `users.json` for every sync request, resulting in significantly faster syncing and drastically reduced GitHub API rate-limit usage.
 
-### Cloud Syncing Architecture
+### Cloud Syncing Architecture (Local-First Commit Squashing)
 
-- Uses `src/lib/githubSync.ts` to trigger REST API requests to the Cloudflare Worker.
-- Converts the entire `appStore.get()` (all books, characters, chapters, events) into a flattened filesystem tree (JSON blobs) and directly hits the **GitHub Git Database API** (Trees, Commits, Refs) to safely persist the user's data to a unique branch per user (`user-username`).
+- **Local-First Writes:** When a user saves a chapter, generates a character, or updates the world, the data is instantly persisted to the local IndexedDB via Legend State, bypassing network latency.
+- **Commit Compaction:** To avoid GitHub API rate limits and commit history pollution, individual edits are *not* immediately pushed. Instead, `App.tsx` runs a background 3-minute interval that checks for unsynced changes.
+- **Tree Batching:** If changes exist, `syncToGitHub.ts` is triggered. It converts the entire `appStore.get()` (all books, characters, chapters, events) into a single batched filesystem tree update and commits it to the **GitHub Git Database API** as a single operation.
 
 ### Git-Style Conflict Resolution (Smart Merge UI)
 
@@ -1361,17 +1363,21 @@ query {
 
 ### 🔴 High-Impact Gaps (Fix Soon)
 
-#### 1. Weak Auth Model (`accessCode` is unscalable)
 
-The current auth model uses a `username` + `accessCode` mechanism backed by a `users.json` file in the main GitHub branch. This acts as a shared secret/password with no identity provider, no password reset, and poor scaling.
 
-**Action:** Migrate to a real identity provider. Given the heavy reliance on the GitHub API, implementing GitHub OAuth via Cloudflare Workers (or using email/password with bcrypt) is the required next step. The `/api/github/login` and `/api/github/register` functions will need to be rewritten to handle OAuth callbacks and issue JWTs based on the authenticated GitHub identity.
+
+
+
+
+#### 3. Lore Web Read-Only UX Friction
+
+The `LoreWebPage` two-pass DAG layout with time-scrubbing is visually impressive but entirely read-only. If a writer spots an incorrect relationship or timeline error while viewing the graph, they must close the graph, navigate to the specific entity, edit it, and reload the graph. This is high friction.
+
+**Action:** Conduct a UX test with 3 real users. If they use the time slider actively, we must add inline editing (clicking a node/edge opens an edit modal). If they don't use it, the feature's complexity should be cut down.
 
 ---
 
-
-
-#### 2. `AssetsPage` and `IssuesPage` Routes May Be Orphaned
+#### 4. `AssetsPage` and `IssuesPage` Routes May Be Orphaned
 
 The router definition (§3) only lists routes up to `lore-web`. `AssetsPage` (`/book/:bookId/assets`) and `IssuesPage` are both listed in the Features Map (§8) but must be verified in the active router config.
 
@@ -1403,12 +1409,7 @@ Tokens expire after 7 days with no silent refresh. The user gets kicked to `/aut
 
 ---
 
-#### 6. Bulk Asset Upload — One Commit Per File
-`uploadAssetsToGitHub` currently creates one Git commit per file. Uploading 10 images = 10 commits + 10 GitHub API round-trips, polluting commit history and hitting rate limits faster.
 
-**Resolution path:** Adapt the `updateFiles` batch pattern — create all blobs first (parallel), then build one tree with all new paths, then commit once. See `updateFiles.ts` for the reference implementation.
-
----
 
 #### 7. Chapter Drag-and-Drop Reorder
 Chapters have an `order` field, but `ChapterListPage` has no drag-and-drop UI. Reordering a 30-chapter book requires editing each chapter's `order` field individually.
@@ -1470,11 +1471,11 @@ The test suite (§12) covers sync integrity, conflict utils, `scoreFighter`, and
 
 | Priority | Item | Effort |
 |---|---|---|
-| 🔴 Fix | AI key exposed client-side → proxy via Cloudflare | Medium |
+| 🔴 Add | GitHub API Rate Limits & Commit Compaction | High |
+| 🔴 Add | Inline Editing for Lore Web Graph | Medium |
 | 🔴 Verify | `AssetsPage` + `IssuesPage` missing from router check | Low |
 | 🔴 Fix | `exportChapters` stale `lastSyncSha` | Low |
 | 🟡 Add | JWT token refresh endpoint | Low |
-| 🟡 Add | Bulk asset upload in one commit | Medium |
 | 🟡 Add | Full-text chapter search | High |
 | 🟡 Add | Chapter drag-and-drop reorder | Medium |
 | 🟡 Add | Chapter read mode | Low |
