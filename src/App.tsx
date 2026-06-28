@@ -56,9 +56,89 @@ export default function App() {
     serverSha: string;
   } | null>(null);
 
+  // Sidebar Drag and Drop for Chapters
+  const chapters = useChapters();
+  const bookIdx = useActiveBookIdx();
+  const [draggedChapterIdx, setDraggedChapterIdx] = useState<number | null>(null);
+  const [dragOverChapterIdx, setDragOverChapterIdx] = useState<number | null>(null);
+
+  const handleSidebarDragStart = (e: React.DragEvent, idx: number) => {
+    setDraggedChapterIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleSidebarDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggedChapterIdx !== null && draggedChapterIdx !== idx) {
+      setDragOverChapterIdx(idx);
+    }
+  };
+
+  const handleSidebarDrop = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    const fromIdx = draggedChapterIdx;
+    if (fromIdx !== null && fromIdx !== targetIdx && bookIdx >= 0) {
+      const sorted = [...(chapters || [])].sort((a, b) => a.order - b.order);
+      const [movedChapter] = sorted.splice(fromIdx, 1);
+      sorted.splice(targetIdx, 0, movedChapter);
+
+      sorted.forEach((ch, idx) => {
+        const storeIdx = appStore.books[bookIdx].chapters.get().findIndex(c => c.id === ch.id);
+        if (storeIdx >= 0) {
+          appStore.books[bookIdx].chapters[storeIdx].order.set(idx + 1);
+        }
+      });
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (token) syncToGitHub(token).catch(console.error);
+    }
+    setDraggedChapterIdx(null);
+    setDragOverChapterIdx(null);
+  };
+
+  const handleSidebarDragEnd = () => {
+    setDraggedChapterIdx(null);
+    setDragOverChapterIdx(null);
+  };
+
   useEffect(() => {
     appStore.activeBookId.set(bookId || null);
   }, [bookId]);
+
+  // Background JWT Refresh
+  useEffect(() => {
+    const checkRefresh = async () => {
+      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+      if (!token) return;
+
+      try {
+        const payloadStr = atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"));
+        const payload = JSON.parse(payloadStr);
+        const timeRemaining = payload.exp - Date.now();
+        
+        // If less than 3 days left, refresh
+        if (timeRemaining < 3 * 24 * 60 * 60 * 1000) {
+          const res = await fetch("/api/github/refresh", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (localStorage.getItem("seshat-auth-token")) {
+              localStorage.setItem("seshat-auth-token", data.token);
+            } else {
+              sessionStorage.setItem("seshat-auth-token", data.token);
+            }
+          }
+        }
+      } catch (e) {
+        // Silently fail if token format is invalid or network fails
+      }
+    };
+
+    checkRefresh();
+    const interval = setInterval(checkRefresh, 60 * 60 * 1000); // Check every hour
+    return () => clearInterval(interval);
+  }, []);
 
   // Load the complete list of books on startup.
   // This prevents losing/wiping out other books in the remote repository during a sync
@@ -117,7 +197,6 @@ export default function App() {
     };
   }, []);
 
-  const bookIdx = useActiveBookIdx();
   const isInsideBook = bookIdx >= 0;
 
   const fetchingRef = useRef<string | null>(null);
@@ -183,7 +262,6 @@ export default function App() {
   const title = useWorldTitle();
   const events = useEvents();
   const characters = useCharacters();
-  const chapters = useChapters();
 
   // Clean up stale timeRef values pointing to deleted events
   useEffect(() => {
@@ -838,18 +916,32 @@ export default function App() {
 
           {openSections.chapters && (
             <div>
-              {sortedChapters.map((ch: Chapter) => (
-                <SideItem
+              {sortedChapters.map((ch: Chapter, idx: number) => (
+                <div
                   key={ch.id}
-                  label={ch.title || "Untitled chapter"}
-                  sub={
-                    [ch.number, ch.timeRef].filter(Boolean).join(" · ") ||
-                    undefined
-                  }
-                  active={selChapter === ch.id}
-                  onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
-                  onDelete={() => delChapter(ch.id)}
-                />
+                  draggable
+                  onDragStart={(e) => handleSidebarDragStart(e, idx)}
+                  onDragOver={(e) => handleSidebarDragOver(e, idx)}
+                  onDrop={(e) => handleSidebarDrop(e, idx)}
+                  onDragEnd={handleSidebarDragEnd}
+                  style={{
+                    paddingTop: dragOverChapterIdx === idx ? 8 : 0,
+                    boxShadow: dragOverChapterIdx === idx ? "inset 0 2px 0 var(--color-purple)" : "none",
+                    transition: "padding-top 0.1s ease, box-shadow 0.1s ease",
+                    cursor: "grab"
+                  }}
+                >
+                  <SideItem
+                    label={ch.title || "Untitled chapter"}
+                    sub={
+                      [ch.number, ch.timeRef].filter(Boolean).join(" · ") ||
+                      undefined
+                    }
+                    active={selChapter === ch.id}
+                    onClick={() => navigate(`/book/${bookId}/chapters/${ch.id}`)}
+                    onDelete={() => delChapter(ch.id)}
+                  />
+                </div>
               ))}
 
               {sortedChapters.length === 0 && (

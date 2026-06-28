@@ -1,6 +1,5 @@
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { updateFilesOnGitHub } from "../lib/githubSync";
 import { useActiveBookIdx } from "../hooks/useWorldStore";
 import {
   S,
@@ -73,7 +72,7 @@ export default function WorldPage() {
     },
   });
 
-  const [isSaving, setIsSaving] = useState(false);
+  const isSaving = false;
   const lastBookIdxRef = useRef<number>(-1);
 
   const [modal, setModal] = useState<{

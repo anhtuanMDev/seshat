@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useLayoutEffect } from "react
 import { useForm } from "react-hook-form";
 import { appStore } from "../store/appStore";
 import { showToast } from "../store/toastStore";
-import { updateFilesOnGitHub, loadFileFromGitHub } from "../lib/githubSync";
+import { loadFileFromGitHub } from "../lib/githubSync";
 import { computeEventSync } from "../lib/eventSync";
 import { exportChapterToWord } from "../lib/exportUtils";
 import { getUpdatedDrafts } from "../lib/draftUtils";
@@ -29,7 +29,7 @@ export function useChapterForm(
   chapter: import("../store/appStore").Chapter | undefined
 ) {
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const isSaving = false;
   const isSavingRef = useRef(false);
   const [saveDoneAt, setSaveDoneAt] = useState(0);
   const formChapterIdRef = useRef<string | undefined>(undefined);
