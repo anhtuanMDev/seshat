@@ -10,9 +10,19 @@ export interface Env {
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const url = new URL(context.request.url);
   const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
   
-  if (!code) {
-    return new Response("Missing authorization code", { status: 400 }) as unknown as CloudflareResponse;
+  if (!code || !state) {
+    return new Response("Missing authorization code or state", { status: 400 }) as unknown as CloudflareResponse;
+  }
+
+  // CSRF Verification: Verify the state parameter matches the secure cookie
+  const cookieHeader = context.request.headers.get("Cookie") || "";
+  const match = cookieHeader.match(/oauth_state=([^;]+)/);
+  const cookieState = match ? match[1] : null;
+
+  if (!cookieState || state !== cookieState) {
+    return new Response("CSRF Verification Failed. Invalid state.", { status: 403 }) as unknown as CloudflareResponse;
   }
 
   const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, AUTH_SECRET } = context.env;
@@ -66,6 +76,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return Response.redirect(redirectUrl.toString(), 302) as unknown as CloudflareResponse;
 
   } catch (err) {
+    console.error("OAuth callback error:", err);
     return new Response("Internal Server Error during OAuth callback", { status: 500 }) as unknown as CloudflareResponse;
   }
 };

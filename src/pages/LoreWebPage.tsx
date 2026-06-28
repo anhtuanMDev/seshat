@@ -25,6 +25,7 @@ import type {
 } from "../lib/types";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { appStore } from "../store/appStore";
+import { QuickEditModal } from "../components/QuickEditModal";
 import { useSelector } from "@legendapp/state/react";
 import { EMPTY_ARR } from "../lib/constants";
 import { resolveStatusAt } from "../lib/resolveStatus";
@@ -115,6 +116,7 @@ const EntityInspector = memo(
     chapters,
     bookId,
     deferredTime,
+    onQuickEdit,
   }: {
     spotlightNodeId: string;
     characters: Character[];
@@ -126,6 +128,7 @@ const EntityInspector = memo(
     chapters: Chapter[];
     bookId?: string;
     deferredTime: number;
+    onQuickEdit: (id: string) => void;
   }) => {
     const navigate = useNavigate();
     if (!spotlightNodeId) return null;
@@ -347,20 +350,34 @@ const EntityInspector = memo(
         )}
 
         {buttonLink && (
-          <button
-            onClick={() => navigate(buttonLink)}
-            style={{
-              ...S.ghost,
-              marginTop: "auto",
-              border: "1px solid var(--border)",
-              color: "var(--text-primary)",
-              padding: "10px",
-              width: "100%",
-              borderRadius: 6,
-            }}
-          >
-            {buttonText}
-          </button>
+          <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+            <button
+              onClick={() => onQuickEdit(spotlightNodeId)}
+              style={{
+                ...S.ghost,
+                border: "1px solid var(--border)",
+                color: "var(--text-primary)",
+                padding: "10px",
+                flex: 1,
+                borderRadius: 6,
+              }}
+            >
+              Quick Edit
+            </button>
+            <button
+              onClick={() => navigate(buttonLink)}
+              style={{
+                ...S.ghost,
+                border: "1px solid var(--border)",
+                color: "var(--text-primary)",
+                padding: "10px",
+                flex: 1,
+                borderRadius: 6,
+              }}
+            >
+              {buttonText}
+            </button>
+          </div>
         )}
       </div>
     );
@@ -409,6 +426,7 @@ export default function LoreWebPage() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [spotlightNodeId, setSpotlightNodeId] = useState<string | null>(null);
+  const [editNodeId, setEditNodeId] = useState<string | null>(null);
 
   // Visibility toggles
   const [showChars, setShowChars] = useState(true);
@@ -1124,8 +1142,16 @@ export default function LoreWebPage() {
   );
 
   return (
-    <div
-      ref={ref}
+    <>
+      {editNodeId && bookId && (
+        <QuickEditModal
+          bookId={bookId}
+          nodeId={editNodeId}
+          onClose={() => setEditNodeId(null)}
+        />
+      )}
+      <div
+        ref={ref}
       className="seshat-page-container"
       style={{
         display: "flex",
@@ -1256,6 +1282,7 @@ export default function LoreWebPage() {
             chapters={chapters}
             bookId={bookId}
             deferredTime={deferredTime}
+            onQuickEdit={setEditNodeId}
           />
         ) : (
           <div
@@ -1619,5 +1646,6 @@ export default function LoreWebPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

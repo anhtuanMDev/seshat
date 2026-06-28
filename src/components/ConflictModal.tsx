@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Modal } from "./ui/Modal";
 import type { BookData } from "../store/appStore";
+import { appStore } from "../store/appStore";
 import { getConflicts } from "../lib/conflictUtils";
 
 interface ConflictModalProps {
@@ -152,9 +153,24 @@ export function ConflictModal({ localBook, serverBook, activeChapterId, onResolv
   return (
     <Modal title="Sync Conflicts Detected" onClose={onCancel} footer={footer}>
       <div style={{ padding: "0 24px 24px" }}>
-        <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 20, lineHeight: 1.5 }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 12, lineHeight: 1.5 }}>
           The cloud has changes that conflict with your local data. Please select which version to keep for each item.
         </p>
+        <div style={{ display: "flex", gap: 16, marginBottom: 20, fontSize: 13, background: "var(--bg-panel)", padding: "10px 14px", borderRadius: 6, border: "1px solid var(--border)" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", fontWeight: "bold" }}>Your Local Edits</div>
+            <div style={{ color: "var(--text-primary)", fontWeight: 500, marginTop: 4 }}>
+              Last updated: {appStore.lastModifiedLocal.get() ? new Date(appStore.lastModifiedLocal.get()!).toLocaleString() : "Unknown"}
+            </div>
+          </div>
+          <div style={{ width: 1, background: "var(--border)" }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "var(--text-muted)", fontSize: 11, textTransform: "uppercase", fontWeight: "bold" }}>Cloud Snapshot</div>
+            <div style={{ color: "var(--text-primary)", fontWeight: 500, marginTop: 4 }}>
+              Last synced: {appStore.lastSyncedCloud.get() ? new Date(appStore.lastSyncedCloud.get()!).toLocaleString() : "Unknown"}
+            </div>
+          </div>
+        </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
           <button onClick={() => handleResolveAll("local")} style={outlineBtnStyle}>Keep All Local</button>

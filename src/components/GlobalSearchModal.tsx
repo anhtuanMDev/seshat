@@ -48,37 +48,39 @@ export function GlobalSearchModal({ open, onClose, bookId }: Props) {
     }
   }, [open]);
 
-  useEffect(() => {
-    if (open && !hasFetchedRef.current) {
-      const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
-      const unloadedIds = unloadedChapters.map((c) => c.id);
-
-      if (token && unloadedIds.length > 0) {
-        hasFetchedRef.current = true;
-        setTimeout(() => setIsFetchingChapters(true), 0);
-        loadChaptersForExport(token, bookId, unloadedIds)
-          .then((fetchedChapters) => {
-            if (bookIdx >= 0) {
-              const currentChapters = appStore.books[bookIdx].chapters.get() || [];
-              const newChapters = currentChapters.map((c) => {
-                const fetched = fetchedChapters.find((fc) => fc.id === c.id);
-                if (fetched) {
-                  return { ...c, body: fetched.body, drafts: fetched.drafts } as Chapter;
-                }
-                return c;
-              });
-              appStore.books[bookIdx].chapters.set(newChapters);
-            }
-          })
-          .catch((err) => {
-            console.error("Failed to load unloaded chapters for search", err);
-          })
-          .finally(() => {
-            setIsFetchingChapters(false);
-          });
-      }
+  const handleFetchAll = () => {
+    const unloadedIds = unloadedChapters.map((c) => c.id);
+    if (isFetchingChapters || unloadedIds.length === 0) return;
+    
+    const token = localStorage.getItem("seshat-auth-token") || sessionStorage.getItem("seshat-auth-token");
+    if (token) {
+      setIsFetchingChapters(true);
+      loadChaptersForExport(token, bookId, unloadedIds)
+        .then((fetchedChapters) => {
+          if (bookIdx >= 0) {
+            const currentChapters = appStore.books[bookIdx].chapters.get() || [];
+            const newChapters = currentChapters.map((c) => {
+              const fetched = fetchedChapters.find((fc) => fc.id === c.id);
+              if (fetched) {
+                return { ...c, body: fetched.body, drafts: fetched.drafts } as Chapter;
+              }
+              return c;
+            });
+            appStore.books[bookIdx].chapters.set(newChapters);
+          }
+          showToast(`Successfully loaded ${fetchedChapters.length} chapters for search!`, "success");
+        })
+        .catch((err) => {
+          console.error("Failed to load unloaded chapters for search", err);
+          showToast("Failed to fetch chapters from GitHub.", "error");
+        })
+        .finally(() => {
+          setIsFetchingChapters(false);
+        });
+    } else {
+      showToast("Authentication token not found.", "error");
     }
-  }, [open, unloadedChapters, bookIdx, bookId]);
+  };
 
   const results = useMemo(() => {
     if (!query || query.length < 2) return [];
@@ -127,8 +129,38 @@ export function GlobalSearchModal({ open, onClose, bookId }: Props) {
 
     // Search Chapters
     chapters.forEach(ch => {
-      if (deepStringMatch(ch)) {
-        hits.push({ type: "Chapter", name: ch.title || "Untitled", snippet: ch.synopsis || "(Matched in text)" });
+      let matchedInBody = false;
+      let snippet = ch.synopsis || "";
+      
+      if (ch.body) {
+        // Strip HTML tags naively for searching and snippeting
+        const plainBody = typeof ch.body === 'string' ? ch.body.replace(/(<([^>]+)>)/gi, "") : "";
+        const lowerBody = plainBody.toLowerCase();
+        const matchIdx = lowerBody.indexOf(term);
+        
+        if (matchIdx !== -1) {
+          matchedInBody = true;
+          
+          // Calculate window
+          let start = Math.max(0, matchIdx - 30);
+          let end = Math.min(plainBody.length, matchIdx + term.length + 30);
+          
+          // Snap to word boundaries to avoid mid-word cutoffs
+          if (start > 0) {
+            const spaceIdx = plainBody.indexOf(' ', start);
+            if (spaceIdx !== -1 && spaceIdx < matchIdx) start = spaceIdx + 1;
+          }
+          if (end < plainBody.length) {
+            const spaceIdx = plainBody.lastIndexOf(' ', end);
+            if (spaceIdx !== -1 && spaceIdx > matchIdx + term.length) end = spaceIdx;
+          }
+
+          snippet = (start > 0 ? "..." : "") + plainBody.substring(start, end) + (end < plainBody.length ? "..." : "");
+        }
+      }
+      
+      if (matchedInBody || (ch.title && ch.title.toLowerCase().includes(term)) || (ch.synopsis && ch.synopsis.toLowerCase().includes(term))) {
+        hits.push({ type: "Chapter", name: ch.title || "Untitled", snippet: matchedInBody ? snippet : (ch.synopsis || "(Matched in title/metadata)") });
       }
     });
 
@@ -215,21 +247,39 @@ export function GlobalSearchModal({ open, onClose, bookId }: Props) {
 
   if (!open) return null;
 
+  const highlightMatch = (text: string, term: string) => {
+    if (!term || !text) return text;
+    // escape term for regex
+    const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const parts = text.split(new RegExp(`(${escapedTerm})`, 'gi'));
+    return parts.map((part, i) => 
+      part.toLowerCase() === term.toLowerCase() 
+        ? <mark key={i} style={{ background: "rgba(255, 213, 0, 0.3)", color: "inherit", borderRadius: 2, padding: "0 2px" }}>{part}</mark> 
+        : part
+    );
+  };
+
   return (
     <Modal title="Global Search & Replace" onClose={onClose}>
       <div className="seshat-flex-col" style={styles.content}>
-        <p style={styles.helpText}>
+        <div style={styles.helpText}>
           Search across all loaded characters, events, items, world glossary, and chapters. 
           {isFetchingChapters ? (
-            <span style={styles.warningText}>
+            <div style={styles.warningText}>
               🔄 Loading {unloadedCount} chapters to ensure full search coverage...
-            </span>
+            </div>
           ) : unloadedCount > 0 ? (
-            <span style={styles.warningText}>
-              ⚠️ {unloadedCount} chapters are unloaded and skipped.
-            </span>
+            <div style={{ ...styles.warningText, display: "flex", alignItems: "center", gap: 12 }}>
+              <span>⚠️ {unloadedCount} chapters are unloaded and skipped.</span>
+              <button 
+                onClick={handleFetchAll}
+                style={{ ...S.ghost, padding: "4px 8px", fontSize: 12, border: "1px solid var(--border)" }}
+              >
+                Fetch All
+              </button>
+            </div>
           ) : null}
-        </p>
+        </div>
 
         <div style={styles.inputsRow}>
           <input
@@ -273,9 +323,9 @@ export function GlobalSearchModal({ open, onClose, bookId }: Props) {
               {results.slice(0, 50).map((r, i) => (
                 <div key={i} style={styles.resultCard}>
                   <div style={styles.resultType}>{r.type}</div>
-                  <div style={styles.resultName}>{r.name}</div>
+                  <div style={styles.resultName}>{highlightMatch(r.name, query)}</div>
                   <div style={styles.resultSnippet}>
-                    "...{r.snippet.length > 60 ? r.snippet.substring(0, 60) + "..." : r.snippet}..."
+                    "{highlightMatch(r.snippet.length > 80 ? r.snippet.substring(0, 80) + "..." : r.snippet, query)}"
                   </div>
                 </div>
               ))}
