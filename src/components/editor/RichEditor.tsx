@@ -467,7 +467,7 @@ function RichEditorCore({
         }
       }
     });
-    const target = matchAfter || matchBefore;
+    const target = (matchAfter as { from: number; to: number } | null) || (matchBefore as { from: number; to: number } | null);
     if (target) {
       view.dispatch(
         state.tr

@@ -367,7 +367,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addWorldItem("nation", mkNation)}>
+          <GhostButton onClick={() => addWorldItem("nation", mkNation as () => Nation)}>
             + add
           </GhostButton>
         }
@@ -397,7 +397,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addWorldItem("technique", mkTechnique)}>
+          <GhostButton onClick={() => addWorldItem("technique", mkTechnique as () => Technique)}>
             + add
           </GhostButton>
         }
@@ -427,7 +427,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addWorldItem("ingredient", mkIngredient)}>
+          <GhostButton onClick={() => addWorldItem("ingredient", mkIngredient as () => Ingredient)}>
             + add
           </GhostButton>
         }
@@ -457,7 +457,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addWorldItem("monster", mkMonster)}>
+          <GhostButton onClick={() => addWorldItem("monster", mkMonster as () => Monster)}>
             + add
           </GhostButton>
         }
@@ -487,7 +487,7 @@ export default function WorldPage() {
           </>
         }
         action={
-          <GhostButton onClick={() => addWorldItem("treasure", mkTreasure)}>
+          <GhostButton onClick={() => addWorldItem("treasure", mkTreasure as () => Treasure)}>
             + add
           </GhostButton>
         }

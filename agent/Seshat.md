@@ -892,6 +892,33 @@ function ItemBlock({ control, index, setValue, onDelete }: ItemBlockProps) {
 | EventPage char attrs     | Separate `useState<Record<string, EventAttributes>>`, write on save                 |
 | Component memoization    | Wrap pure display components in `React.memo` (primitive-only props)                 |
 
+### TypeScript Narrowing in Synchronous Callbacks
+
+TypeScript's control flow analysis assumes that callbacks (like `editor.state.doc.descendants()`) might be executed asynchronously or not at all. If you initialize variables to `null` before a synchronous callback, mutate them inside the callback, and check them afterwards, TypeScript may incorrectly narrow their type to `null` (or `never`), causing strict mode build failures.
+
+**Incorrect:**
+```ts
+let matchAfter: { from: number; to: number } | null = null;
+state.doc.descendants((node, pos) => {
+  matchAfter = { from, to };
+});
+const target = matchAfter; 
+// TS thinks target is `null` here, so `if (target)` becomes unreachable (`never`).
+```
+
+**Correct (use explicit casting to bypass narrowing):**
+```ts
+let matchAfter: { from: number; to: number } | null = null;
+state.doc.descendants((node, pos) => {
+  matchAfter = { from, to };
+});
+// Explicitly cast to prevent TS from enforcing the `null` narrowing
+const target = matchAfter as { from: number; to: number } | null;
+if (target) {
+  // Works safely
+}
+```
+
 ---
 
 ## 12. Testing
