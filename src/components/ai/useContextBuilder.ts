@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSelector } from "@legendapp/state/react";
+import { useLocation } from "react-router-dom";
 import { appStore } from "../../store/appStore";
 import type {
   BookData,
@@ -23,9 +24,10 @@ import type { Chapter } from "../../lib/types";
 
 export function useContextBuilder(focusType: string | null, focusId: string | null) {
   const books = useSelector(() => appStore.books.get() || []);
+  const location = useLocation();
 
   const [selectedBookId, setSelectedBookId] = useState<string>(
-    () => appStore.activeBookId.get() || "none",
+    () => location.state?.bookId || appStore.activeBookId.get() || "none",
   );
   const [contextText, setContextText] = useState("");
   const [isLoadingContext, setIsLoadingContext] = useState(false);

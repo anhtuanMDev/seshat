@@ -21,7 +21,7 @@ import {
 } from "../components/ui/icons";
 import { useAnimateIn } from "../hooks/useAnimateIn";
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { useSelector } from "@legendapp/state/react";
 import { NationBlock } from "../components/world/NationBlock";
@@ -49,6 +49,7 @@ import type { NationConnection } from "../lib/types";
 export default function WorldPage() {
   const bookIdx = useActiveBookIdx();
   const navigate = useNavigate();
+  const { bookId } = useParams();
 
   const {
     register,
@@ -484,7 +485,7 @@ export default function WorldPage() {
                 )}
                 {!modal.isNew && (
                   <button
-                    onClick={() => navigate(`/ai?focusType=nation&focusId=${nations[modal.idx!].id}`)}
+                    onClick={() => navigate(`/ai?focusType=nation&focusId=${nations[modal.idx!].id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
                     className="seshat-modal-btn-cancel"
                     style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
                   >
@@ -545,7 +546,7 @@ export default function WorldPage() {
                 )}
                 {!modal.isNew && (
                   <button
-                    onClick={() => navigate(`/ai?focusType=technique&focusId=${techniques[modal.idx!].id}`)}
+                    onClick={() => navigate(`/ai?focusType=technique&focusId=${techniques[modal.idx!].id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
                     className="seshat-modal-btn-cancel"
                     style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
                   >
@@ -602,7 +603,7 @@ export default function WorldPage() {
                 )}
                 {!modal.isNew && (
                   <button
-                    onClick={() => navigate(`/ai?focusType=ingredient&focusId=${ingredients[modal.idx!].id}`)}
+                    onClick={() => navigate(`/ai?focusType=ingredient&focusId=${ingredients[modal.idx!].id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
                     className="seshat-modal-btn-cancel"
                     style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
                   >
@@ -660,7 +661,7 @@ export default function WorldPage() {
                 )}
                 {!modal.isNew && (
                   <button
-                    onClick={() => navigate(`/ai?focusType=monster&focusId=${monsters[modal.idx!].id}`)}
+                    onClick={() => navigate(`/ai?focusType=monster&focusId=${monsters[modal.idx!].id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
                     className="seshat-modal-btn-cancel"
                     style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
                   >
@@ -718,7 +719,7 @@ export default function WorldPage() {
                 )}
                 {!modal.isNew && (
                   <button
-                    onClick={() => navigate(`/ai?focusType=treasure&focusId=${treasures[modal.idx!].id}`)}
+                    onClick={() => navigate(`/ai?focusType=treasure&focusId=${treasures[modal.idx!].id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
                     className="seshat-modal-btn-cancel"
                     style={{ marginLeft: 12, color: "var(--color-purple)", border: "1px solid var(--color-purple)" }}
                   >

@@ -47,7 +47,7 @@ import { useCharacterForm } from "../hooks/useCharacterForm";
 import { scoreFighter } from "../lib/scoreFighter";
 
 export default function CharacterPage() {
-  const { id } = useParams();
+  const { id, bookId } = useParams();
   const navigate = useNavigate();
 
   const {
@@ -198,7 +198,7 @@ export default function CharacterPage() {
           </div>
           <div ref={dockedButtonsRef} style={styles.buttonsContainer}>
             <button
-              onClick={() => navigate(`/ai?focusType=character&focusId=${char.id}`)}
+              onClick={() => navigate(`/ai?focusType=character&focusId=${char.id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
               style={styles.exportBtn}
             >
               <SmartToyIcon sx={{ fontSize: 12 }} />

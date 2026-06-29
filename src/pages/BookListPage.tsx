@@ -233,7 +233,7 @@ export default function BookListPage() {
     <div style={styles.container}>
       <div style={styles.topBar}>
         <button
-          onClick={() => navigate("/ai")}
+          onClick={() => navigate("/ai", { state: { returnUrl: "/" } })}
           style={styles.forumBtn}
           title="Oracle AI"
         >

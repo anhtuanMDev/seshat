@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { AutoStoriesIcon, SmartToyIcon } from "../components/ui/icons";
 
 // AI-feature modules
@@ -24,6 +24,8 @@ import { MobileContextStrip } from "../components/ai/MobileContextStrip";
 
 export default function AIPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnUrl = location.state?.returnUrl || "/";
   const [searchParams, setSearchParams] = useSearchParams();
   const focusType = searchParams.get("focusType");
   const focusId = searchParams.get("focusId");
@@ -229,7 +231,7 @@ export default function AIPage() {
       >
         {/* Back button */}
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate(returnUrl)}
           style={{
             background: "transparent",
             border: "none",

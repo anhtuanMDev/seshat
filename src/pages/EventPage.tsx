@@ -58,7 +58,7 @@ const formatDatetimeLocal = (val?: string) => {
 };
 
 export default function EventPage() {
-  const { id } = useParams();
+  const { id, bookId } = useParams();
   const characters = useCharacters();
   const bookIdx = useActiveBookIdx();
   const allChapters = useChapters();
@@ -327,7 +327,7 @@ export default function EventPage() {
           />
           <div style={{ display: "flex", gap: 12 }}>
             <button
-              onClick={() => navigate(`/ai?focusType=event&focusId=${event.id}`)}
+              onClick={() => navigate(`/ai?focusType=event&focusId=${event.id}`, { state: { returnUrl: location.pathname, bookId: bookId } })}
               style={{ ...getSaveBtnStyle(true), background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", opacity: 1, boxShadow: "none" }}
               title="Ask AI about this event"
             >

@@ -130,7 +130,7 @@ export default function App() {
             }
           }
         }
-      } catch (e) {
+      } catch {
         // Silently fail if token format is invalid or network fails
       }
     };
@@ -673,7 +673,7 @@ export default function App() {
                 {isSyncing ? "Syncing..." : "Sync"}
               </span>
             </button>
-            <button onClick={() => navigate("/ai")} style={styles.exportBtn}>
+            <button onClick={() => navigate("/ai", { state: { returnUrl: location.pathname, bookId: bookId } })} style={styles.exportBtn}>
               <SmartToyIcon sx={{ fontSize: 16 }} />
               <span style={{ fontSize: 13, letterSpacing: 1 }}>Ask AI</span>
             </button>
@@ -734,7 +734,7 @@ export default function App() {
               <button
                 onClick={() => {
                   setShowMoreMenu(false);
-                  navigate("/ai");
+                  navigate("/ai", { state: { returnUrl: location.pathname, bookId: bookId } });
                 }}
                 style={styles.moreMenuBtn(false)}
               >
