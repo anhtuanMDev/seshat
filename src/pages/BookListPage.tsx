@@ -582,6 +582,9 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 8,
+    overflowY: "auto",
+    maxHeight: "30vh",
+    paddingRight: 4,
   },
   bookCard: {
     display: "flex",
