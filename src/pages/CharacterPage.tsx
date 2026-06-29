@@ -187,7 +187,7 @@ export default function CharacterPage() {
           </Modal>
         )}
         {/* ── Header ── */}
-        <div className="seshat-flex-between" style={styles.header}>
+        <div className="seshat-flex-between seshat-character-header" style={styles.header}>
           <div style={styles.nameContainer}>
             <span style={colorDotStyle} />
             <input
@@ -229,6 +229,7 @@ export default function CharacterPage() {
           <Section
             title={
               <div
+                className="seshat-section-title-row"
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -595,6 +596,7 @@ export default function CharacterPage() {
         <Section
           title={
             <div
+              className="seshat-section-title-row"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -728,7 +730,7 @@ export default function CharacterPage() {
               </div>
 
               {/* Quick Actions Row */}
-              <div style={styles.quickActionsContainer}>
+              <div className="seshat-character-quick-actions" style={styles.quickActionsContainer}>
                 <button onClick={autoEquip} style={styles.quickActionBtn}>
                   ⚡ Auto Equip
                 </button>
@@ -1345,6 +1347,7 @@ const styles = {
     alignItems: "center",
     gap: "var(--space-3)",
     flex: 1,
+    width: "100%",
   },
   colorDot: {
     width: 8,
@@ -1365,6 +1368,7 @@ const styles = {
   },
   buttonsContainer: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "var(--space-3)",
   },
   exportBtn: {
@@ -1477,7 +1481,7 @@ const styles = {
     padding: 16,
     borderRadius: 4,
     height: 360,
-    width: 500,
+    width: "100%",
     resize: "none",
     fontFamily: "monospace",
     fontSize: 13,
@@ -1709,6 +1713,7 @@ const styles = {
   quickActionsContainer: {
     display: "flex",
     justifyContent: "center",
+    flexWrap: "wrap",
     gap: "12px",
     marginTop: "20px",
     width: "100%",

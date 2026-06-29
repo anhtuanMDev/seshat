@@ -427,6 +427,7 @@ export default function LoreWebPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [spotlightNodeId, setSpotlightNodeId] = useState<string | null>(null);
   const [editNodeId, setEditNodeId] = useState<string | null>(null);
+  const [isMobileInspectorOpen, setIsMobileInspectorOpen] = useState(false);
 
   // Visibility toggles
   const [showChars, setShowChars] = useState(true);
@@ -1152,10 +1153,9 @@ export default function LoreWebPage() {
       )}
       <div
         ref={ref}
-      className="seshat-page-container"
+      className="seshat-page-container seshat-lore-layout"
       style={{
         display: "flex",
-        flexDirection: "row",
         overflow: "hidden",
         height: "100%",
         padding: 0,
@@ -1164,6 +1164,7 @@ export default function LoreWebPage() {
       }}
     >
       <div
+        className="seshat-lore-canvas-container"
         style={{
           flex: 1,
           position: "relative",
@@ -1176,8 +1177,14 @@ export default function LoreWebPage() {
           edges={renderedEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onNodeClick={(_, node) => setSpotlightNodeId(node.id)}
-          onPaneClick={() => setSpotlightNodeId(null)}
+          onNodeClick={(_, node) => {
+            setSpotlightNodeId(node.id);
+            setIsMobileInspectorOpen(true);
+          }}
+          onPaneClick={() => {
+            setSpotlightNodeId(null);
+            setIsMobileInspectorOpen(false);
+          }}
           fitView
           attributionPosition="bottom-right"
         >
@@ -1208,11 +1215,10 @@ export default function LoreWebPage() {
       </div>
 
       <div
+        className={`seshat-lore-inspector ${isMobileInspectorOpen ? "open" : ""}`}
         style={{
-          width: 320,
           display: "flex",
           flexDirection: "column",
-          background: "var(--bg-panel)",
           borderLeft: "1px solid var(--border)",
           zIndex: 10,
           flexShrink: 0,
@@ -1220,6 +1226,8 @@ export default function LoreWebPage() {
         }}
       >
         <div
+          className="seshat-lore-inspector-header"
+          onClick={() => setIsMobileInspectorOpen(!isMobileInspectorOpen)}
           style={{
             padding: "16px 20px",
             borderBottom: "1px solid var(--border)",
@@ -1229,7 +1237,12 @@ export default function LoreWebPage() {
             flexShrink: 0,
           }}
         >
-          <h2 style={{ ...S.h2, margin: 0, fontSize: 16 }}>Inspector</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <h2 style={{ ...S.h2, margin: 0, fontSize: 16 }}>Inspector</h2>
+            <span className="seshat-mobile-only" style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              {isMobileInspectorOpen ? "▼ Close" : "▲ Open"}
+            </span>
+          </div>
           {initialElements.nodes.length > 150 && (
             <span
               style={{

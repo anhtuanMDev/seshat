@@ -264,8 +264,10 @@ export default function AIPage() {
               }}
               title="Change context"
             >
-              <AutoStoriesIcon sx={{ fontSize: 14 }} />
-              {activeBookName}
+              <AutoStoriesIcon sx={{ fontSize: 14, flexShrink: 0 }} />
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {activeBookName}
+              </span>
             </button>
           )}
           <button
