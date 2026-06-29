@@ -94,7 +94,13 @@ export const loadFromGitHub = async (token: string): Promise<BookData[]> => {
     const response = await fetchApi(`/api/github/load?token=${encodeURIComponent(token)}&t=${Date.now()}`, { cache: "no-store" });
     const data = await response.json() as { books: BookData[]; branchSha?: string };
     if (data.branchSha) {
-      appStore.lastSyncSha.set(data.branchSha);
+      // Only advance the global SHA if we don't have any fully loaded books that might be holding stale deep data.
+      // If we blindly advance it here, a subsequent sync will bypass OCC and overwrite the cloud with stale local data.
+      const books = appStore.books.get() || [];
+      const hasFullyLoaded = books.some(b => b.isFullyLoaded);
+      if (!hasFullyLoaded) {
+        appStore.lastSyncSha.set(data.branchSha);
+      }
     }
     appStore.lastSyncedCloud.set(Date.now());
     return data.books;
@@ -111,12 +117,12 @@ export const loadBookFromGitHub = async (token: string, bookId: string): Promise
     appStore.isSyncingRemote.set(true);
     const response = await fetchApi(`/api/github/loadBook?token=${encodeURIComponent(token)}&bookId=${encodeURIComponent(bookId)}&t=${Date.now()}`, { cache: "no-store" });
     const data = (await response.json()) as { book?: BookData; books?: BookData[]; branchSha?: string };
-    if (data.branchSha) {
-      appStore.lastSyncSha.set(data.branchSha);
-    }
     const bookData = data.book || (data.books && data.books[0]);
     if (!bookData) throw new Error("No book data found in response");
     bookData.isFullyLoaded = true;
+    if (data.branchSha) {
+      (bookData as BookData & { _branchSha?: string })._branchSha = data.branchSha;
+    }
     appStore.lastSyncedCloud.set(Date.now());
     return bookData;
   } catch (error) {

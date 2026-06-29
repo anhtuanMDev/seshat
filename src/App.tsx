@@ -235,6 +235,10 @@ export default function App() {
                 } else {
                   appStore.books.push(fullBook);
                 }
+                const branchSha = (fullBook as BookData & { _branchSha?: string })._branchSha;
+                if (branchSha) {
+                  appStore.lastSyncSha.set(branchSha);
+                }
                 if (!cancelled)
                   showToast(`Loaded ${fullBook.title}`, "success");
               } else {
@@ -446,12 +450,14 @@ export default function App() {
             selChapter,
           );
           appStore.books[bookIdx].set(mergedBook);
+          const branchSha = (response as BookData & { _branchSha?: string })._branchSha;
+          if (branchSha) appStore.lastSyncSha.set(branchSha);
           showToast(
             "Local data is already up to date. No conflicts found!",
             "success",
           );
         } else {
-          setConflictData({ serverBook: response, serverSha: "merged" });
+          setConflictData({ serverBook: response, serverSha: (response as BookData & { _branchSha?: string })._branchSha || "merged" });
         }
       }
     } catch (err) {
@@ -465,9 +471,13 @@ export default function App() {
   };
 
   const handleResolveConflicts = async (mergedBook: BookData) => {
+    const shaToSet = conflictData?.serverSha;
     setConflictData(null);
     if (bookIdx >= 0) {
       appStore.books[bookIdx].set(mergedBook);
+      if (shaToSet && shaToSet !== "merged") {
+        appStore.lastSyncSha.set(shaToSet);
+      }
       showToast("Conflicts resolved and merged!", "success");
 
       // Auto-trigger sync to push the resolved state to the server
