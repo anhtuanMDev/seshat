@@ -1,11 +1,11 @@
 import { useFieldArray } from "react-hook-form";
 import { S, mkRelTimelineEntry } from "../../lib/utils";
-import { Field, Sel, EntryBlock } from "../ui";
+import { Field, Sel } from "../ui";
 import { AddIcon, DeleteIcon } from "../ui/icons";
 import type { BlockProps } from "./types";
 import type { Character } from "../../store/appStore";
 
-interface RelationshipBlockProps extends BlockProps {
+interface RelationshipBlockProps extends Omit<BlockProps, "onDelete"> {
   characters: Character[];
   currentCharacterId: string;
 }
@@ -13,7 +13,6 @@ interface RelationshipBlockProps extends BlockProps {
 export function RelationshipBlock({
   control,
   index,
-  onDelete,
   characters,
   currentCharacterId,
 }: RelationshipBlockProps) {
@@ -27,124 +26,158 @@ export function RelationshipBlock({
     .map((c) => ({ label: c.name, value: c.id }));
 
   return (
-    <EntryBlock color="var(--color-primary)" onDelete={onDelete}>
-      <div style={S.grid2} className="seshat-grid2">
-        <Sel
-          label="Other Character"
-          name={`relationships.${index}.withId` as const}
-          control={control}
-          options={availableCharacters}
-        />
-        <Field
-          label="General Feel (e.g. Love, Hate, Fear)"
-          name={`relationships.${index}.feel` as const}
-          control={control}
-          placeholder="Romantic, Hostile, Protective..."
-        />
+    <div style={styles.container}>
+      <div style={styles.grid}>
+        <div style={styles.fieldWrap}>
+          <Sel
+            label="Target Character"
+            name={`relationships.${index}.withId` as const}
+            control={control}
+            options={availableCharacters}
+          />
+        </div>
+        <div style={styles.fieldWrap}>
+          <Field
+            label="General Dynamic"
+            name={`relationships.${index}.feel` as const}
+            control={control}
+            placeholder="e.g. Rivalry, Mentorship..."
+          />
+        </div>
       </div>
 
       <div style={styles.timelineSection}>
-        <div style={styles.timelineHeaderRow}>
-          <p style={styles.timelineTitle}>
-            Evolution Timeline
-          </p>
+        <div style={styles.sectionHeader}>
+          <span style={styles.sectionTitle}>Evolution Timeline</span>
           <button
             type="button"
             onClick={() => append(mkRelTimelineEntry())}
-            style={styles.addEntryBtn}
+            style={styles.addBtnMinimal}
           >
-            <AddIcon sx={{ fontSize: 14 }} /> add timeline entry
+            <AddIcon sx={{ fontSize: 14 }} /> Add Event
           </button>
         </div>
 
-        <div style={styles.entriesContainer}>
+        <div style={styles.timelineList}>
           {fields.map((item, tIdx) => (
-            <div key={item.id} style={styles.entryRow}>
-              <div style={styles.timeCol}>
-                <Field
-                  label="Time (e.g. 1)"
-                  name={`relationships.${index}.timeline.${tIdx}.time` as const}
-                  control={control}
-                  type="number"
-                />
-              </div>
-              <div style={styles.dynamicCol}>
-                <Field
-                  label="Dynamic (e.g. Rivals, Allies)"
-                  name={`relationships.${index}.timeline.${tIdx}.dynamic` as const}
-                  control={control}
-                  placeholder="Rivals..."
-                />
+            <div key={item.id} style={styles.timelineNode}>
+              <div style={styles.nodeGrid}>
+                <div style={styles.timeCol}>
+                  <Field
+                    label="Time"
+                    name={`relationships.${index}.timeline.${tIdx}.time` as const}
+                    control={control}
+                    type="number"
+                  />
+                </div>
+                <div style={styles.dynamicCol}>
+                  <Field
+                    label="Evolved Dynamic"
+                    name={`relationships.${index}.timeline.${tIdx}.dynamic` as const}
+                    control={control}
+                    placeholder="e.g. Betrayal"
+                  />
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => remove(tIdx)}
-                style={styles.deleteBtn}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-red)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+                style={styles.deleteBtnMinimal}
               >
                 <DeleteIcon sx={{ fontSize: 16 }} />
               </button>
             </div>
           ))}
           {fields.length === 0 && (
-            <p style={styles.emptyText}>No timeline entries. Add one to see the relationship evolve over time!</p>
+            <div style={styles.emptyWrap}>
+              <span style={styles.emptyText}>No timeline events recorded.</span>
+            </div>
           )}
         </div>
       </div>
-    </EntryBlock>
+    </div>
   );
 }
 
 const styles = {
-  timelineSection: {
-    marginTop: 20,
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "48px",
+    padding: "8px 16px",
   },
-  timelineHeaderRow: {
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "32px",
+  },
+  fieldWrap: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  timelineSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "24px",
+  },
+  sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    borderBottom: "1px solid var(--border)",
+    paddingBottom: "8px",
   },
-  timelineTitle: {
-    ...S.h2,
-    margin: 0,
-    fontSize: 13,
+  sectionTitle: {
+    fontSize: "0.75rem",
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    fontWeight: 600,
     color: "var(--text-secondary)",
   },
-  addEntryBtn: {
+  addBtnMinimal: {
     ...S.ghost,
-    fontSize: 11,
+    fontSize: "0.75rem",
+    color: "var(--color-primary)",
     display: "flex",
     alignItems: "center",
-    gap: 3,
-    color: "var(--color-primary)",
+    gap: "4px",
   },
-  entriesContainer: {
+  timelineList: {
     display: "flex",
     flexDirection: "column",
-    gap: 8,
+    gap: "32px",
   },
-  entryRow: {
+  timelineNode: {
     display: "flex",
-    gap: 8,
-    alignItems: "flex-end",
+    gap: "24px",
+    alignItems: "flex-start",
+  },
+  nodeGrid: {
+    flex: 1,
+    display: "grid",
+    gridTemplateColumns: "100px 1fr",
+    gap: "32px",
   },
   timeCol: {
-    width: 80,
+    display: "flex",
+    flexDirection: "column",
   },
   dynamicCol: {
-    flex: 1,
+    display: "flex",
+    flexDirection: "column",
   },
-  deleteBtn: {
+  deleteBtnMinimal: {
     ...S.ghost,
     padding: "8px",
     color: "var(--text-muted)",
-    marginBottom: 16,
+    marginTop: "20px",
+  },
+  emptyWrap: {
+    padding: "16px 0",
   },
   emptyText: {
     ...S.dim,
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: "0.875rem",
+    fontStyle: "italic",
   },
 } satisfies Record<string, React.CSSProperties>;

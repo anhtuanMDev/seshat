@@ -1,18 +1,5 @@
 import { useState } from "react";
-import { Button } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { ExpandMoreIcon, ChevronRightIcon } from "./icons";
-
-const GhostButton = styled(Button)(() => ({
-  fontSize: 12,
-  fontWeight: 600,
-  letterSpacing: 1.5,
-  padding: "4px 0",
-  textTransform: "uppercase",
-  background: "none",
-  color: "var(--text-secondary)",
-  "&:hover": { background: "none" },
-}));
 
 interface SectionProps {
   title: React.ReactNode;
@@ -33,21 +20,25 @@ export function Section({
       <hr style={styles.hr} />
       <div
         className="seshat-flex-between"
-        onClick={() => setOpen((o) => !o)}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest("select, button, a, input")) return;
+          setOpen((o) => !o);
+        }}
         style={{
           ...styles.header,
           marginBottom: open ? "var(--space-4)" : 0,
           cursor: "pointer",
         }}
       >
-        <GhostButton sx={{ pointerEvents: "none" }}>
+        <div style={styles.titleWrapper}>
           {open ? (
             <ExpandMoreIcon sx={styles.expandIcon} />
           ) : (
             <ChevronRightIcon sx={styles.expandIcon} />
           )}
-          {title}
-        </GhostButton>
+          <div style={styles.titleText}>{title}</div>
+        </div>
         {open && action && (
           <div
             onClick={(e) => e.stopPropagation()}
@@ -74,12 +65,25 @@ export function Section({
 const styles = {
   container: {
     marginBottom: "var(--space-2)",
-    cursor: "pointer",
   },
   hr: {
     border: "none",
     borderTop: "1px solid var(--border)",
     margin: "var(--space-6) 0",
+  },
+  titleWrapper: {
+    display: "flex",
+    alignItems: "center",
+    padding: "4px 0",
+  },
+  titleText: {
+    fontSize: 12,
+    fontWeight: 600,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    color: "var(--text-secondary)",
+    display: "flex",
+    alignItems: "center",
   },
   expandIcon: {
     fontSize: 14,
@@ -87,7 +91,7 @@ const styles = {
     marginRight: "var(--space-2)",
   },
   header: {
-    // seshat-flex-between class covers flex settings, but keep placeholder/custom overrides if needed
+    // seshat-flex-between covers this
   },
   transitionWrapper: {
     display: "grid",

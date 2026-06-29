@@ -1113,20 +1113,44 @@ export default function CharacterPage() {
 
         {modal?.type === "equipment" && modal.idx !== null && (
           <Modal
-            title="Equipment"
+            title={modal.isNew ? "Add Equipment" : "Edit Equipment"}
             onClose={handleCancelModal}
+            variant="wide"
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => delItem("equipment", modal.idx!)}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this equipment"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <EquipmentBlock
               control={control}
               index={modal.idx}
-              color="var(--color-primary)"
-              onDelete={() => delItem("equipment", modal.idx!)}
               events={events}
             />
           </Modal>
@@ -1134,19 +1158,44 @@ export default function CharacterPage() {
 
         {modal?.type === "achievement" && modal.idx !== null && (
           <Modal
-            title="Achievement"
+            title={modal.isNew ? "Add Achievement" : "Edit Achievement"}
             onClose={handleCancelModal}
+            variant="wide"
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => delItem("achievement", modal.idx!)}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this achievement"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <AchievementBlock
               control={control}
               index={modal.idx}
-              onDelete={() => delItem("achievement", modal.idx!)}
               events={events}
             />
           </Modal>
@@ -1154,19 +1203,44 @@ export default function CharacterPage() {
 
         {modal?.type === "loss" && modal.idx !== null && (
           <Modal
-            title="Loss"
+            title={modal.isNew ? "Add Loss" : "Edit Loss"}
             onClose={handleCancelModal}
+            variant="wide"
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => delItem("loss", modal.idx!)}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this loss"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <LossBlock
               control={control}
               index={modal.idx}
-              onDelete={() => delItem("loss", modal.idx!)}
               events={events}
             />
           </Modal>
@@ -1174,19 +1248,44 @@ export default function CharacterPage() {
 
         {modal?.type === "relationship" && modal.idx !== null && (
           <Modal
-            title="Relationship"
+            title={modal.isNew ? "Add Relationship" : "Edit Relationship"}
             onClose={handleCancelModal}
+            variant="wide"
             footer={
-              <button onClick={handleSaveModal} style={styles.doneBtn}>
-                <SaveIcon sx={{ fontSize: 12 }} />
-                done
-              </button>
+              <div className="seshat-flex-between" style={{ width: "100%" }}>
+                <div>
+                  {!modal.isNew && (
+                    <button
+                      onClick={() => delItem("relationship", modal.idx!)}
+                      className="seshat-modal-btn-delete"
+                      title="Delete this relationship"
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="seshat-flex-align" style={{ gap: 12 }}>
+                  <button
+                    onClick={handleCancelModal}
+                    className="seshat-modal-btn-cancel"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveModal}
+                    className="seshat-modal-btn-submit"
+                  >
+                    <SaveIcon sx={{ fontSize: 16 }} />
+                    Save
+                  </button>
+                </div>
+              </div>
             }
           >
             <RelationshipBlock
               control={control}
               index={modal.idx}
-              onDelete={() => delItem("relationship", modal.idx!)}
               characters={allCharacters}
               currentCharacterId={char.id}
             />
