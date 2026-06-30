@@ -16,12 +16,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // Redirect user to GitHub's OAuth authorization page
   const redirectUri = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=read:user&state=${state}`;
   
-  const response = Response.redirect(redirectUri, 302);
-  // Set HttpOnly, Secure cookie to verify on callback
-  response.headers.set(
-    "Set-Cookie", 
-    `oauth_state=${state}; HttpOnly; Secure; Path=/api/github/oauth; Max-Age=600; SameSite=Lax`
-  );
+  const response = new Response(null, {
+    status: 302,
+    headers: {
+      "Location": redirectUri,
+      "Set-Cookie": `oauth_state=${state}; HttpOnly; Secure; Path=/api/github/oauth; Max-Age=600; SameSite=Lax`
+    }
+  });
   
   return response as unknown as CloudflareResponse;
 };

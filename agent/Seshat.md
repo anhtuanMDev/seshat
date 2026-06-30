@@ -1084,6 +1084,13 @@ _(Alternatively, if configured in `package.json`, use `npm run wrangler`)_
 **CRITICAL:** When developing locally, you **MUST** open the browser to the Wrangler proxy port (`http://localhost:8788`), **NOT** the Vite port (`5173`).
 If you visit the Vite port directly, your API calls will fail with 404s because Vite does not know how to execute Cloudflare Worker functions.
 
+### Cloudflare Pages SPA Routing & `_redirects` Pitfall
+
+When deploying a React Router SPA to Cloudflare Pages, **do NOT include a Netlify-style `public/_redirects` file** (e.g., `/* /index.html 200`). 
+Cloudflare Pages processes URL normalization (stripping `.html`), which causes the `/* /index.html` rule to loop infinitely against itself, triggering a build warning and ignoring the rule.
+
+Instead, Cloudflare Pages natively supports SPA routing out-of-the-box. When you configure the project with the "Vite" or "Create React App" framework preset in the dashboard, Cloudflare automatically routes any unmatched requests (e.g., a deep link to `/book/123`) to `index.html` seamlessly. No explicit redirects file is required.
+
 ### Secret Management
 
 For local testing, backend secrets (like `GITHUB_TOKEN`, `AUTH_SECRET`) must be placed in a `.dev.vars` file in the project root. Cloudflare Workers do _not_ read standard `.env` files for backend execution.

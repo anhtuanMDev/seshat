@@ -242,8 +242,11 @@ All endpoints are relative to the application origin. The base path is `/api/git
   }
   ```
 
-> [!WARNING]
 > **Known Gap — Stale `lastSyncSha` after export.** This endpoint does not return a `branchSha`, so `appStore.lastSyncSha` is not updated after a bulk export. If the user exports then immediately edits and saves, the next `updateFile` call will fire with a stale SHA and receive an unexpected `409 Conflict`. **Fix:** return `branchSha` from this endpoint and update `appStore.lastSyncSha` on the client after export completes.
+
+> [!NOTE]
+> **Resolved Bug — Premature OCC Bypass via `lastSyncSha`.** Previously, the lightweight `loadFromGitHub` (startup fetch) and the deep `loadBookFromGitHub` (pull fetch) would blindly update the global `appStore.lastSyncSha` immediately upon network success. This created a severe data-loss vulnerability: if a user had stale local data, the global SHA would advance without updating the stale data. A subsequent "Sync" would bypass the `409 Conflict` checks and overwrite the server with stale data. 
+> **Fix Applied:** `loadFromGitHub` only advances the SHA if `appStore` contains no fully loaded books. `loadBookFromGitHub` defers the SHA update by returning `_branchSha` to `App.tsx`, which only applies it *after* the `ConflictModal` merge is explicitly confirmed by the user.
 
 ---
 
