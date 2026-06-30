@@ -20,10 +20,12 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    console.log("[Auth Flow] AuthPage mounted. Current URL:", window.location.href);
     // 1. Check if we just returned from GitHub OAuth Callback
     const searchParams = new URLSearchParams(window.location.search);
     const oauthToken = searchParams.get("token");
     const user = searchParams.get("user") || "";
+    console.log("[Auth Flow] Extracted token from URL:", oauthToken ? "YES" : "NO", "| User:", user);
     
     if (oauthToken) {
       const storage = rememberMe ? localStorage : sessionStorage;

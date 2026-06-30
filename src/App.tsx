@@ -149,7 +149,10 @@ export default function App() {
       localStorage.getItem("seshat-auth-token") ||
       sessionStorage.getItem("seshat-auth-token");
 
-    if (!token) return;
+    if (!token) {
+      console.log("[Auth Flow] No token found in App.tsx initial load.");
+      return;
+    }
 
     const loadGlobalBooksList = async () => {
       appStore.isLoadingBooks.set(true);

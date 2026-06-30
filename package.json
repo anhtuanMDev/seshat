@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:bench": "vitest bench --run",
-    "wrangler": "wrangler pages dev dist"
+    "wrangler": "wrangler pages dev -- npm run dev"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
