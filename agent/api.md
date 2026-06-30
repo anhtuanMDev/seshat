@@ -216,9 +216,6 @@ All endpoints are relative to the application origin. The base path is `/api/git
 - `200 OK` or `206 Partial Content` (Range request) — `Content-Type` matches file extension, `Accept-Ranges: bytes` always set for media, `Content-Length` / `Content-Range` forwarded from GitHub upstream.
 - For Tier B (text/JSON files): `200 OK` with the raw file body.
 
-> [!WARNING]
-> **Known Tech Debt — Dual MIME maps.** Both `loadFile.ts` and `listAssets.ts` maintain separate, independent MIME maps. A format added to one but not the other causes silent breakage (e.g. file previews as "Preview unavailable" or misroutes to redirect instead of streaming). **Fix:** extract a shared `functions/api/github/mimeMap.ts` module and import it in both files.
-
 ---
 
 ### 9. Export Chapters (Bulk Fetch)
@@ -500,7 +497,8 @@ categorize === "image" (all others)?
 **Slide-in animation:** A separate `useEffect` fires on `asset.filename` change to animate the stage panel sliding in from the right (`translateX(12px) → 0`, `opacity 0 → 1`, 240ms ease).
 
 > [!WARNING]
-> **Known Tech Debt — `window.confirm` in single-file delete.** The `handleDelete` function inside the `Stage` component still uses `window.confirm()` for the individual file delete action. Only the bulk delete flow was upgraded to the inline two-step confirm pattern (`confirmingDelete` state). **Fix:** Replace `window.confirm` with the inline confirm pattern (or the `Modal` component from `src/components/ui/Modal.tsx`) to match UX Conventions (see Seshat.md §15 — "No Native Dialogs").
+> [!NOTE]
+> **Resolved Bug — `window.confirm` in single-file delete.** The `handleDelete` function inside the `Stage` component was previously using `window.confirm()` for the individual file delete action. This has been fully migrated to use the standard `Modal` component, aligning with the project UX conventions (No Native Dialogs).
 
 ### 10. AI Feature (`AIPage.tsx`)
 

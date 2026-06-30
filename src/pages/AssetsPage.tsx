@@ -21,6 +21,7 @@ import {
 } from "../lib/githubSync";
 import * as mammoth from "mammoth/mammoth.browser.js";
 import { showToast } from "../store/toastStore";
+import { Modal } from "../components/ui/Modal";
 import "./assets-page.css";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -109,9 +110,10 @@ function Stage({
   const stageRef = useRef<HTMLDivElement>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete ${asset.filename}?`))
-      return;
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  const performDelete = async () => {
+    setIsConfirmingDelete(false);
     setIsDeleting(true);
     try {
       const token = getToken();
@@ -286,7 +288,7 @@ function Stage({
         <div className="ap-stage-bar-actions">
           <button
             className="ap-stage-icon-btn"
-            onClick={handleDelete}
+            onClick={() => setIsConfirmingDelete(true)}
             title="Delete"
             disabled={isDeleting}
             style={{
@@ -368,6 +370,35 @@ function Stage({
             <pre className="ap-text">{textContent}</pre>
           ))}
       </div>
+
+      {isConfirmingDelete && (
+        <Modal
+          title="Delete File"
+          onClose={() => setIsConfirmingDelete(false)}
+          footer={
+            <>
+              <button
+                className="seshat-button seshat-button-ghost"
+                onClick={() => setIsConfirmingDelete(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="seshat-button seshat-button-danger"
+                onClick={performDelete}
+                disabled={isDeleting}
+              >
+                Yes, delete
+              </button>
+            </>
+          }
+        >
+          <div className="seshat-modal-body" style={{ padding: "16px 28px" }}>
+            Are you sure you want to delete <strong>{asset.filename}</strong>? This action cannot be undone.
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
